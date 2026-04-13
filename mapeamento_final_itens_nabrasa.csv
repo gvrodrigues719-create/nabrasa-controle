@@ -1,0 +1,215 @@
+﻿item_id,nome_item,unidade,observacao_unidade,categoria_original,setor_formulario,bloco_visual,ativo,grupo_final,macro_regra,average_cost,active_bool
+INS001,Espeto de Baby Beef,un,,COZINHA CENTRAL - ESPETOS,Cozinha,Espetos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS002,Espeto de Coração,un,,COZINHA CENTRAL - ESPETOS,Cozinha,Espetos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS003,Espeto de Frango,un,,COZINHA CENTRAL - ESPETOS,Cozinha,Espetos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS004,Espeto de Kafta Recheada,un,,COZINHA CENTRAL - ESPETOS,Cozinha,Espetos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS005,Espeto de Linguiça Mineira,un,,COZINHA CENTRAL - ESPETOS,Cozinha,Espetos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS006,Espeto Misto,un,,COZINHA CENTRAL - ESPETOS,Cozinha,Espetos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS007,Espeto de Queijo Coalho,un,,COZINHA CENTRAL - ESPETOS,Cozinha,Espetos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS008,Espeto de Salsichão,un,,COZINHA CENTRAL - ESPETOS,Cozinha,Espetos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS009,Espeto de Suíno,un,,COZINHA CENTRAL - ESPETOS,Cozinha,Espetos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS010,Espeto Vegetariano,un,,COZINHA CENTRAL - ESPETOS,Cozinha,Espetos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS011,Queijo Coalho Festival,un,,COZINHA CENTRAL - ESPETOS,Cozinha,Espetos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS012,Costela Bovina,un,item por peça,COZINHA CENTRAL - PROTEÍNAS,Cozinha,Proteínas e Entradas,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS013,Bife de Chorizo,un,,COZINHA CENTRAL - PROTEÍNAS,Cozinha,Proteínas e Entradas,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS014,Picanha Executiva,un,,COZINHA CENTRAL - PROTEÍNAS,Cozinha,Proteínas e Entradas,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS015,Mignon Executivo,un,,COZINHA CENTRAL - PROTEÍNAS,Cozinha,Proteínas e Entradas,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS016,Mignon Refeição,un,,COZINHA CENTRAL - PROTEÍNAS,Cozinha,Proteínas e Entradas,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS017,Galeto,un,,COZINHA CENTRAL - PROTEÍNAS,Cozinha,Proteínas e Entradas,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS018,Picanha Refeição,un,,COZINHA CENTRAL - PROTEÍNAS,Cozinha,Proteínas e Entradas,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS019,Tábua Coração de Alcatra,un,,COZINHA CENTRAL - PROTEÍNAS,Cozinha,Proteínas e Entradas,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS020,Sobrecoxa Desossada,kg,contar em kg,COZINHA CENTRAL - PROTEÍNAS,Cozinha,Proteínas e Entradas,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS021,Costelinha Suína,un,,COZINHA CENTRAL - PROTEÍNAS,Cozinha,Proteínas e Entradas,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS022,Pão de Alho,un,,COZINHA CENTRAL - ENTRADAS,Cozinha,Proteínas e Entradas,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS023,Meio Pão de Alho,un,,COZINHA CENTRAL - ENTRADAS,Cozinha,Proteínas e Entradas,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS024,Bolinho de Feijoada,porção,,COZINHA CENTRAL - ENTRADAS,Cozinha,Proteínas e Entradas,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS025,Linguiça de Pernil Pequena,pacote,,ENTRADAS,Cozinha,Proteínas e Entradas,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS026,Linguiça Toscana Grande,pacote,,COZINHA CENTRAL - ENTRADAS,Cozinha,Proteínas e Entradas,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS027,Linguiça Caracol Provolone,un,,ENTRADAS,Cozinha,Proteínas e Entradas,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS028,Palmito Metade,un,,COZINHA CENTRAL - ENTRADAS,Cozinha,Proteínas e Entradas,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS029,Pastel de Costela,porção,,COZINHA CENTRAL - ENTRADAS,Cozinha,Proteínas e Entradas,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS030,Pastel de Catupiry,porção,,COZINHA CENTRAL - ENTRADAS,Cozinha,Proteínas e Entradas,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS031,Pastel de Camarão,porção,,COZINHA CENTRAL - ENTRADAS,Cozinha,Proteínas e Entradas,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS032,Carne para Hambúrguer,un,contar por disco,LANCHES,Cozinha,Lanches,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS033,Pão de Hambúrguer,un,,LANCHES,Cozinha,Lanches,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS034,Cheddar 3 Fatias,porção,por porção padrão,COZINHA CENTRAL - LANCHES,Cozinha,Lanches,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS035,Bacon em Tiras 250g,kg,contar em kg,LANCHES,Cozinha,Lanches,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS036,Maionese Temperada 500g,pote,,COZINHA CENTRAL - LANCHES,Cozinha,Lanches,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS037,Pão Australiano 60g,un,,LANCHES,Cozinha,Lanches,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS038,Queijo Mussarela 200g,pote,,COZINHA CENTRAL - LANCHES,Cozinha,Lanches,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS039,Pão Ciabatta,un,,LANCHES,Cozinha,Lanches,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS040,Hambúrguer de Costela,un,,COZINHA CENTRAL - LANCHES,Cozinha,Lanches,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS041,Pudim,un,,COZINHA CENTRAL - SOBREMESAS,Cozinha,Lanches,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS048,Aipim,pacote,pacote fechado,CONGELADOS,Cozinha,Hortifruti e Congelados,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS049,Batata Canoa,pacote,pacote fechado,CONGELADOS,Cozinha,Hortifruti e Congelados,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS050,Batata Palito,pacote,pacote fechado,CONGELADOS,Cozinha,Hortifruti e Congelados,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS051,Batata Asterix,kg,,HORTIFRUTI,Cozinha,Hortifruti e Congelados,sim,Hortifruti,Regra 1: categoria_original = HORTIFRUTI,0,True
+INS052,Batata Calabresa,kg,,HORTIFRUTI,Cozinha,Hortifruti e Congelados,sim,Hortifruti,Regra 1: categoria_original = HORTIFRUTI,0,True
+INS092,Brócolis Comum,un,,HORTIFRUTI,Cozinha,Hortifruti e Congelados,sim,Hortifruti,Regra 1: categoria_original = HORTIFRUTI,0,True
+INS093,Couve,un,,HORTIFRUTI,Cozinha,Hortifruti e Congelados,sim,Hortifruti,Regra 1: categoria_original = HORTIFRUTI,0,True
+INS094,Alface Crespa,un,,HORTIFRUTI,Cozinha,Hortifruti e Congelados,sim,Hortifruti,Regra 1: categoria_original = HORTIFRUTI,0,True
+INS095,Salsa Crespa,un,,HORTIFRUTI,Cozinha,Hortifruti e Congelados,sim,Hortifruti,Regra 1: categoria_original = HORTIFRUTI,0,True
+INS097,Tomate Grape,kg,,HORTIFRUTI,Cozinha,Hortifruti e Congelados,sim,Hortifruti,Regra 1: categoria_original = HORTIFRUTI,0,True
+INS098,Tomate,kg,,HORTIFRUTI,Cozinha,Hortifruti e Congelados,sim,Hortifruti,Regra 1: categoria_original = HORTIFRUTI,0,True
+INS099,Cebola Roxa,kg,,HORTIFRUTI,Cozinha,Hortifruti e Congelados,sim,Hortifruti,Regra 1: categoria_original = HORTIFRUTI,0,True
+INS101,Alface Americana,un,,HORTIFRUTI,Cozinha,Hortifruti e Congelados,sim,Hortifruti,Regra 1: categoria_original = HORTIFRUTI,0,True
+INS102,Azeitona Preta 500g,un,,CONDIMENTOS,Cozinha,Hortifruti e Congelados,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS103,Milho,un,,HORTIFRUTI,Cozinha,Hortifruti e Congelados,sim,Hortifruti,Regra 1: categoria_original = HORTIFRUTI,0,True
+INS104,Rúcula,un,,HORTIFRUTI,Cozinha,Hortifruti e Congelados,sim,Hortifruti,Regra 1: categoria_original = HORTIFRUTI,0,True
+INS175,Batata Inglesa,kg,,HORTIFRUTI,Cozinha,Hortifruti e Congelados,sim,Hortifruti,Regra 1: categoria_original = HORTIFRUTI,0,True
+INS176,Cenoura,kg,,HORTIFRUTI,Cozinha,Hortifruti e Congelados,sim,Hortifruti,Regra 1: categoria_original = HORTIFRUTI,0,True
+INS177,Chuchu,kg,,HORTIFRUTI,Cozinha,Hortifruti e Congelados,sim,Hortifruti,Regra 1: categoria_original = HORTIFRUTI,0,True
+INS178,Pimentão Verde,kg,,HORTIFRUTI,Cozinha,Hortifruti e Congelados,sim,Hortifruti,Regra 1: categoria_original = HORTIFRUTI,0,True
+INS042,Leite,un,,LATICÍNIOS E OVOS,Cozinha,"Mercearia, Bases e Laticínios",sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS043,Ovos,un,,LATICÍNIOS E OVOS,Cozinha,"Mercearia, Bases e Laticínios",sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS044,Margarina,kg,,LATICÍNIOS E OVOS,Cozinha,"Mercearia, Bases e Laticínios",sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS045,Farinha de Mandioca Crua,kg,,MERCEARIA,Cozinha,"Mercearia, Bases e Laticínios",sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS046,"Farofa 2,5 kg",kg,,COZINHA CENTRAL - BASES,Cozinha,"Mercearia, Bases e Laticínios",sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS047,Feijão Cozido,kg,,COZINHA CENTRAL - BASES,Cozinha,"Mercearia, Bases e Laticínios",sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS054,Queijo Ralado 500g,pote,,LATICÍNIOS E OVOS,Cozinha,"Mercearia, Bases e Laticínios",sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS057,Arroz,kg,,MERCEARIA,Cozinha,"Mercearia, Bases e Laticínios",sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS064,Óleo de Soja 18L,un,,MERCEARIA,Cozinha,"Mercearia, Bases e Laticínios",sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS105,Croutons 500 ml,un,,COZINHA CENTRAL - BASES,Cozinha,"Mercearia, Bases e Laticínios",sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS199,Açúcar Refinado,kg,,MERCEARIA,Cozinha,"Mercearia, Bases e Laticínios",sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS053,Molho à Campanha,kg,,COZINHA CENTRAL - MOLHOS,Cozinha,Molhos e Condimentos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS058,Azeite do Salão,un,,CONDIMENTOS,Cozinha,Molhos e Condimentos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS059,Azeite de Oliva 60% 5 Litros,un,,CONDIMENTOS,Cozinha,Molhos e Condimentos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS060,Ketchup Pote 1kg,pote,,MOLHOS,Cozinha,Molhos e Condimentos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS061,Melado 500g,pote,,CONDIMENTOS,Cozinha,Molhos e Condimentos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS062,Barbecue Goiabada,pote,,COZINHA CENTRAL - MOLHOS,Cozinha,Molhos e Condimentos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS063,Mostarda Escura 200g,un,,MOLHOS,Cozinha,Molhos e Condimentos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS065,Pimenta Tabasco,un,,CONDIMENTOS,Cozinha,Molhos e Condimentos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS068,Vinagre,un,,CONDIMENTOS,Cozinha,Molhos e Condimentos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS106,Confit de Pimenta Biquinho 500g,un,,COZINHA CENTRAL - MOLHOS,Cozinha,Molhos e Condimentos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS107,Molho Gorgonzola 500g,un,,COZINHA CENTRAL - MOLHOS,Cozinha,Molhos e Condimentos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS108,Alho Triturado 500g,un,,COZINHA CENTRAL - MOLHOS,Cozinha,Molhos e Condimentos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS109,Molho Pesto,un,,COZINHA CENTRAL - MOLHOS,Cozinha,Molhos e Condimentos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS160,Pickles Pepino Rodelas 440g,pote,,CONDIMENTOS,Cozinha,Molhos e Condimentos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS161,"Cebola Caramelizada 1,05kg",un,,CONDIMENTOS,Cozinha,Molhos e Condimentos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS162,"Mostarda 1,1kg Junior",un,,MOLHOS,Cozinha,Molhos e Condimentos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS163,"Molho Cheddar 1,5kg Vigor",un,,COZINHA CENTRAL - MOLHOS,Cozinha,Molhos e Condimentos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS166,Milho Torrado C/ Mostarda e Mel 250g,un,,CONDIMENTOS,Cozinha,Molhos e Condimentos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS066,Sal Refinado 1kg,un,,TEMPEROS,Cozinha,Temperos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS067,Sal Parrilla 500g,pote,,TEMPEROS,Cozinha,Temperos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS087,Chimichurri 200g,un,,TEMPEROS,Cozinha,Temperos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS088,Louro Saquinho,un,,TEMPEROS,Cozinha,Temperos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS089,Sal Temperado 200g,un,,COZINHA CENTRAL - TEMPEROS,Cozinha,Temperos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS090,Lemon Pepper 400g,un,,TEMPEROS,Cozinha,Temperos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS091,Alecrim,un,,TEMPEROS,Cozinha,Temperos,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS055,Biscoito do Café,un,,COZINHA CENTRAL - CORTESIA,Cozinha,Cortesia e Café,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS056,Cápsula de Café Lavazza,un,,CAFÉ E CORTESIA,Cozinha,Cortesia e Café,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS200,Sachê Açúcar União PCT100,un,,OUTROS,Cozinha,Cortesia e Café,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS201,Sachê Sal ITA PCT100,un,,OUTROS,Cozinha,Cortesia e Café,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS202,Sachê Palito Dental PCT100,un,,OUTROS,Cozinha,Cortesia e Café,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS206,Sobrepaleta Suína Temp NaBrasa,kg,,FUNCIONÁRIO,Cozinha,Proteína Funcionário,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS207,Bisteca Funcionário,kg,,FUNCIONÁRIO,Cozinha,Proteína Funcionário,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS208,Acém Funcionário,kg,,FUNCIONÁRIO,Cozinha,Proteína Funcionário,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS209,Filé Frango Funcionário,kg,,FUNCIONÁRIO,Cozinha,Proteína Funcionário,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS210,Drumete Funcionário,kg,,FUNCIONÁRIO,Cozinha,Proteína Funcionário,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS211,Coxa Sobrecoxa Fgo Temp NaBrasa 800g,un,,FUNCIONÁRIO,Cozinha,Proteína Funcionário,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS212,Coxa com Sobrecoxa Funcionário,kg,,FUNCIONÁRIO,Cozinha,Proteína Funcionário,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS213,Salsicha Hot Dog Funcionário,kg,,FUNCIONÁRIO,Cozinha,Proteína Funcionário,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS214,Massa Penne Funcionário 500g,un,,FUNCIONÁRIO,Cozinha,Proteína Funcionário,sim,Cozinha,Regra 2: setor_formulario = Cozinha,0,True
+INS145,Heineken,un,,BEBIDAS BAR,Bar,Cervejas e Chope,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS146,Heineken Zero,un,,BEBIDAS BAR,Bar,Cervejas e Chope,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS147,Malzebier,un,,BEBIDAS BAR,Bar,Cervejas e Chope,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS148,Stella,un,,BEBIDAS BAR,Bar,Cervejas e Chope,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS149,Stella Pure Gold,un,,BEBIDAS BAR,Bar,Cervejas e Chope,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS150,Barril 50L,barril,,BEBIDAS BAR,Bar,Cervejas e Chope,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS110,Cachaça Seleta,un,,BEBIDAS BAR,Bar,Destilados,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS111,Cachaça Da Quinta,un,,BEBIDAS BAR,Bar,Destilados,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS112,Cachaça Charmosa de Minas,un,,BEBIDAS BAR,Bar,Destilados,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS113,Vodka Smirnoff,un,,BEBIDAS BAR,Bar,Destilados,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS114,Vodka Absolut,un,,BEBIDAS BAR,Bar,Destilados,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS115,Licor 43,un,,BEBIDAS BAR,Bar,Destilados,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS116,Cachaça 51,un,,BEBIDAS BAR,Bar,Destilados,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS117,Cachaça Lua Nova,un,,BEBIDAS BAR,Bar,Destilados,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS118,Cachaça Salinas,un,,BEBIDAS BAR,Bar,Destilados,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS119,Cachaça Werneck,un,,BEBIDAS BAR,Bar,Destilados,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS164,Aperitivo Aperol 750ml,un,,BEBIDAS BAR,Bar,Destilados,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS120,Coca Lata,un,,BEBIDAS BAR,Bar,Refrigerantes,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS121,Coca Lata Zero,un,,BEBIDAS BAR,Bar,Refrigerantes,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS122,"Coca 1,5L",un,,BEBIDAS BAR,Bar,Refrigerantes,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS123,"Coca 1,5L Zero",un,,BEBIDAS BAR,Bar,Refrigerantes,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS124,Guaraná Lata,un,,BEBIDAS BAR,Bar,Refrigerantes,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS125,Guaraná Zero,un,,BEBIDAS BAR,Bar,Refrigerantes,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS126,"Guaraná 1,5L",un,,BEBIDAS BAR,Bar,Refrigerantes,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS127,"Guaraná 1,5L Zero",un,,BEBIDAS BAR,Bar,Refrigerantes,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS135,Sprite,un,,BEBIDAS BAR,Bar,Refrigerantes,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS136,Fanta Uva,un,,BEBIDAS BAR,Bar,Refrigerantes,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS137,Fanta Laranja,un,,BEBIDAS BAR,Bar,Refrigerantes,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS140,Citrus,un,,BEBIDAS BAR,Bar,Refrigerantes,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS144,Mineirinho,un,,BEBIDAS BAR,Bar,Refrigerantes,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS128,Mate Zero,un,,BEBIDAS BAR,Bar,"Sucos, Chás e Isotônicos",sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS129,Mate Comum,un,,BEBIDAS BAR,Bar,"Sucos, Chás e Isotônicos",sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS130,Mate Limão,un,,BEBIDAS BAR,Bar,"Sucos, Chás e Isotônicos",sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS131,Ice Tea Pêssego,un,,BEBIDAS BAR,Bar,"Sucos, Chás e Isotônicos",sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS132,Ice Tea Limão,un,,BEBIDAS BAR,Bar,"Sucos, Chás e Isotônicos",sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS133,Del Valle Pêssego,un,,BEBIDAS BAR,Bar,"Sucos, Chás e Isotônicos",sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS134,Del Valle Uva,un,,BEBIDAS BAR,Bar,"Sucos, Chás e Isotônicos",sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS138,H2O,un,,BEBIDAS BAR,Bar,"Sucos, Chás e Isotônicos",sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS139,Limoneto,un,,BEBIDAS BAR,Bar,"Sucos, Chás e Isotônicos",sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS158,"H2O Limoneto 1,5L",un,,BEBIDAS BAR,Bar,"Sucos, Chás e Isotônicos",sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS141,Água Tônica,un,,BEBIDAS BAR,Bar,Águas,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS142,Água Comum,un,,BEBIDAS BAR,Bar,Águas,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS143,Água com Gás,un,,BEBIDAS BAR,Bar,Águas,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS156,Hocus Pocus Magic,un,,BEBIDAS BAR,Bar,Energéticos e Especiais,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS157,Hocus Pocus Orange,un,,BEBIDAS BAR,Bar,Energéticos e Especiais,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS159,Red Bull,un,,BEBIDAS BAR,Bar,Energéticos e Especiais,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS096,Limão Taiti Saco 8 un,saco,por saco fechado,HORTIFRUTI,Bar,Insumos do Bar,sim,Hortifruti,Regra 1: categoria_original = HORTIFRUTI,0,True
+INS100,"Limão Siciliano Saco 0,8 kg",saco,por saco fechado,HORTIFRUTI,Bar,Insumos do Bar,sim,Hortifruti,Regra 1: categoria_original = HORTIFRUTI,0,True
+INS151,Limão (solto),kg,contar em kg,HORTIFRUTI,Bar,Insumos do Bar,sim,Hortifruti,Regra 1: categoria_original = HORTIFRUTI,0,True
+INS152,Frutas Vermelhas para Drink,pacote,,CONGELADOS,Bar,Insumos do Bar,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS153,Maracujá para Drink,pacote,,CONGELADOS,Bar,Insumos do Bar,sim,Salão,Regra 3: setor_formulario = Bar,0,True
+INS155,Laranja Natal,kg,contar em kg,HORTIFRUTI,Bar,Insumos do Bar,sim,Hortifruti,Regra 1: categoria_original = HORTIFRUTI,0,True
+INS069,Saco Delivery GG,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens Delivery,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS070,Saco Delivery G,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens Delivery,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS071,Saco Delivery M,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens Delivery,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS154,Fita Delivery,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens Delivery,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS167,Jogo Americano 30x40 60g,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens Delivery,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS172,Sacola Verde P 110unid,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens Delivery,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS203,Folha Bilhete Delivery,un,,PAPELARIA,Apoio Operacional,Embalagens Delivery,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS072,Embalagem Executivo,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS073,Tampa Executivo,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS074,Embalagem Isopor Carne,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS075,Etiqueta NaBrasa Ouro,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS076,Papel Acoplado 1kg,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS077,Pote 60 ml,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS078,Pote 145 ml (25),un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS079,Pote 250 ml (25),un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS080,Pote 30 ml (50),un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS081,Pote 500 ml (25),un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS082,Saladeira 500 ml,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS083,Saladeira 1000 ml,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS084,Embalagem Espeto,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS085,Embalagem Galeto,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS086,Talher Descartável,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS168,Quentinha 1100ml,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS169,Embalagem Isopor Hamburgueira,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS170,Saco Embalar Talher Personalizado,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS171,Quentinha 220ml,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS173,Guardanapo Simples,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS174,Canudo Biodegradável PCT100,un,,DESCARTÁVEIS,Apoio Operacional,Embalagens de Produto,sim,Delivery e Embalagens,Regra 4: Apoio Operacional + Embalagens,0,True
+INS179,Carvão,un,contar por saco — CRÍTICO,INSUMOS OPERACIONAIS,Apoio Operacional,Insumos Operacionais,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS180,"Bobina Picote 40x60 Rolo 2,36kg",un,,INSUMOS OPERACIONAIS,Apoio Operacional,Insumos Operacionais,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS181,Bobina Térmica Amarela 79x30 CX30,un,,INSUMOS OPERACIONAIS,Apoio Operacional,Insumos Operacionais,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS182,Papel Alumínio Rolo 45x65m,un,,INSUMOS OPERACIONAIS,Apoio Operacional,Insumos Operacionais,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS183,"Bobina Picote 30x40 Rolo 1,71kg",un,,INSUMOS OPERACIONAIS,Apoio Operacional,Insumos Operacionais,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS184,Bobina Picotada 16x30 Rolo,un,,INSUMOS OPERACIONAIS,Apoio Operacional,Insumos Operacionais,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS165,Detergente 500ml Odd Neutro,un,,LIMPEZA,Apoio Operacional,Limpeza,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS185,Perfex Azul 240m,un,,LIMPEZA,Apoio Operacional,Limpeza,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS186,Papel Toalha Mão PCT Funcionários,un,,LIMPEZA,Apoio Operacional,Limpeza,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS187,Desinfetante Audax 5L,un,,LIMPEZA,Apoio Operacional,Limpeza,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS188,Álcool Líquido 70%,un,,LIMPEZA,Apoio Operacional,Limpeza,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS189,Vassoura,un,,LIMPEZA,Apoio Operacional,Limpeza,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS190,Esponja 3M Dupla Face,un,,LIMPEZA,Apoio Operacional,Limpeza,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS191,Master Grill 1L,un,,LIMPEZA,Apoio Operacional,Limpeza,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS192,Papel Toalha Rolo Snob PCT2,un,,LIMPEZA,Apoio Operacional,Limpeza,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS193,Bombril Lã de Aço,un,,LIMPEZA,Apoio Operacional,Limpeza,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS194,Pano de Chão Grande,un,,LIMPEZA,Apoio Operacional,Limpeza,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS195,Touca Descartável PCT100,un,,LIMPEZA,Apoio Operacional,Limpeza,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS196,Esponja Fibraco 3M Limpeza Pesada,un,,LIMPEZA,Apoio Operacional,Limpeza,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS197,Luva de Limpeza,un,,LIMPEZA,Apoio Operacional,Limpeza,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS198,Master Cloro Garrafa 1L,un,,LIMPEZA,Apoio Operacional,Limpeza,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS204,Hidrocor Compactor Vermelho,un,,PAPELARIA,Apoio Operacional,Papelaria e Outros,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
+INS205,Folha Desenho 20unid,un,,PAPELARIA,Apoio Operacional,Papelaria e Outros,sim,Operacional e Limpeza,Regra 5: Apoio Operacional + Operacional/Limpeza,0,True
