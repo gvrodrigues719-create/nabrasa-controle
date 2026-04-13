@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Loader2, Save, Check, ShieldAlert, CloudOff, Wifi, AlertTriangle } from 'lucide-react'
 import { ConfirmModal } from '@/components/ConfirmModal'
+import { getActiveOperator } from '@/app/actions/pinAuth'
 import toast from 'react-hot-toast'
 import React, { use } from 'react'
 

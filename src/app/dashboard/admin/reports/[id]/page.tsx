@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Loader2, ArrowLeft, CheckCircle, XCircle, AlertTriangle, ChevronRight, Calculator, FileWarning } from 'lucide-react'
-import { ConfirmModal } from '@/components/ConfirmModal'
+import { PinConfirmModal } from '@/components/PinConfirmModal'
+import { approveAuditAction, rejectAuditAction } from '@/app/actions/criticalActions'
 import toast from 'react-hot-toast'
 import React, { use } from 'react'
 
@@ -198,16 +199,15 @@ export default function ReportDetailsPage({ params }: { params: Promise<{ id: st
                 </div>
             )}
 
-            <ConfirmModal
+            <PinConfirmModal
                 isOpen={!!confirmAction}
                 title={confirmAction === 'approved' ? 'Aprovar Auditoria' : 'Reprovar Auditoria'}
                 message={confirmAction === 'approved'
-                    ? 'Tem certeza que deseja APROVAR e AJUSTAR O ESTOQUE FISICAMENTE com estes valores contados? Esta ação é irreversível.'
-                    : 'Tem certeza que deseja REPROVAR e descartar as contagens deste ciclo?'}
-                confirmText={confirmAction === 'approved' ? 'Sim, Aprovar e Ajustar' : 'Sim, Reprovar'}
-                cancelText="Cancelar"
-                onConfirm={executeApproval}
-                onCancel={() => setConfirmAction(null)}
+                    ? 'Digite seu PIN Operacional para CONFIRMAR OS VALORES FÍSICOS DA AUDITORIA. O estoque será atualizado baseando-se nas contagens realizadas.'
+                    : 'Digite seu PIN Gerencial para REPROVAR as contagens sem alterar o estoque físico do sistema.'}
+                onConfirmPin={executeApproval}
+                onClose={() => setConfirmAction(null)}
+                isDanger={confirmAction === 'rejected'}
             />
         </div>
     )

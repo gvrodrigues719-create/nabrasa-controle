@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation'
 import { Loader2, ArrowLeft, PlayCircle, CheckCircle2, Clock, Play } from 'lucide-react'
 import toast from 'react-hot-toast'
 import React, { use } from 'react'
-import { ConfirmModal } from '@/components/ConfirmModal'
+import { PinConfirmModal } from '@/components/PinConfirmModal'
+import { verifyCriticalPin } from '@/app/actions/criticalActions'
 
 type GroupStatus = {
     id: string
@@ -74,22 +75,30 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
         if (!silent) setLoading(false)
     }
 
-    const handleStartRoutine = async () => {
+    const handleStartRoutine = async (pin: string) => {
         setStarting(true)
-        // RPC retorna execution_id (UUID) após criação do ciclo
-        const { data: executionId, error } = await supabase.rpc('start_routine_snapshot', { p_routine_id: routineId })
-        if (error) {
-            toast.error(error.message || 'Erro ao congelar estoque teórico.')
+        try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) throw new Error("Usuário não autenticado.")
+
+            // Valida PIN no backend via Next.js Action
+            await verifyCriticalPin(user.id, pin)
+
+            // RPC retorna execution_id (UUID) após criação do ciclo
+            const { data: executionId, error } = await supabase.rpc('start_routine_snapshot', { p_routine_id: routineId })
+            if (error) throw new Error(error.message || 'Erro ao congelar estoque teórico.')
+
+            // Persistir execution_id em storage local para propagar para count_sessions
+            if (executionId) {
+                sessionStorage.setItem(`exec_${routineId}`, executionId)
+            }
+            toast.success('Ciclo iniciado! Estoque teórico congelado.')
+            load()
+        } catch (err: any) {
             setStarting(false)
-            return
+            throw new Error(err.message) // Modal captura isso
         }
-        // Persistir execution_id em storage local para propagar para count_sessions
-        if (executionId) {
-            sessionStorage.setItem(`exec_${routineId}`, executionId)
-        }
-        toast.success('Ciclo iniciado! Estoque teórico congelado.')
         setStarting(false)
-        load()
     }
 
     const handleGroupClick = (group: GroupStatus) => {
@@ -102,13 +111,15 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
 
     return (
         <div className="p-4 space-y-6">
-            <ConfirmModal
+            <PinConfirmModal
                 isOpen={showStartConfirm}
                 title="Iniciar Ciclo Oficial?"
-                message="Isso congela o estoque teórico e abre a contagem para os operadores. Não é possível desfazer."
-                confirmText="Iniciar"
-                onCancel={() => setShowStartConfirm(false)}
-                onConfirm={() => { setShowStartConfirm(false); handleStartRoutine() }}
+                message="Isso congela o estoque teórico e abre a contagem. Digite seu PIN Gerencial para autorizar esse início."
+                onClose={() => setShowStartConfirm(false)}
+                onConfirmPin={async (pin) => {
+                    await handleStartRoutine(pin);
+                    setShowStartConfirm(false);
+                }}
             />
 
             <div className="flex items-center space-x-3 mb-6 mt-2">
