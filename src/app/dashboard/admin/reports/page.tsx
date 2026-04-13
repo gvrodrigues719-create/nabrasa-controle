@@ -29,26 +29,30 @@ export default function ReportsPage() {
         const { data: allRoutines } = await supabase.from('routines').select('id, name').order('created_at', { ascending: false })
 
         if (allRoutines) {
-            // Manual heavy fetch for MVP dashboard
-            const results: RoutineResult[] = []
-            for (let r of allRoutines) {
+            const results: RoutineResult[] = await Promise.all(allRoutines.map(async r => {
                 const { count: tGroups } = await supabase.from('routine_groups').select('id', { count: 'exact' }).eq('routine_id', r.id)
 
-                // completed sessions today limit logic or generally completed for that routine
-                // since MVP we just count generally for the routine
-                const { count: cGroups } = await supabase.from('count_sessions').select('id', { count: 'exact' }).eq('routine_id', r.id).eq('status', 'completed')
+                // The report system now targets the active or most recent EXECUTION cycle instead of arbitrary routine scope
+                const { data: latestExec } = await supabase.from('routine_executions').select('id').eq('routine_id', r.id).order('started_at', { ascending: false }).limit(1).maybeSingle()
 
-                const { data: reports } = await supabase.from('audit_reports').select('id, status_approval').eq('routine_id', r.id).order('closed_at', { ascending: false }).limit(1).maybeSingle()
+                let cGroups = 0
+                if (latestExec) {
+                    const { count: currentCount } = await supabase.from('count_sessions').select('id', { count: 'exact' }).eq('execution_id', latestExec.id).eq('status', 'completed')
+                    cGroups = currentCount || 0
+                }
 
-                results.push({
-                    id: r.id,
+                // Report is bound to the execution
+                const { data: reports } = await supabase.from('audit_reports').select('id, status_approval').eq('execution_id', latestExec?.id).order('closed_at', { ascending: false }).limit(1).maybeSingle()
+
+                return {
+                    id: latestExec?.id || r.id, // For routing we use execution_id if available (or fallback to routineId if it has no cycles yet to show waiting)
                     name: r.name,
                     total_groups: tGroups || 0,
                     completed_groups: cGroups || 0,
                     report_id: reports?.id || null,
                     status_approval: reports?.status_approval || null
-                })
-            }
+                }
+            }))
             setRoutines(results)
         }
         setLoading(false)

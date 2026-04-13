@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Loader2, Save, Check, ShieldAlert, CloudOff, Wifi, AlertTriangle } from 'lucide-react'
+import { ConfirmModal } from '@/components/ConfirmModal'
 import toast from 'react-hot-toast'
 import React, { use } from 'react'
 
@@ -25,6 +26,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     const [groupName, setGroupName] = useState('')
     const [blocked, setBlocked] = useState<string | null>(null)
     const [syncStatus, setSyncStatus] = useState<'synced' | 'saving' | 'offline'>('synced')
+    const [isConfirming, setIsConfirming] = useState(false)
 
     const LOCAL_KEY = `count_${routineId}_${groupId}`
 
@@ -71,12 +73,15 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
             }
         } else {
             // Create Session
+            const { data: exec } = await supabase.from('routine_executions').select('id').eq('routine_id', routineId).eq('status', 'in_progress').maybeSingle()
+
             const { data: newSession } = await supabase.from('count_sessions').insert([{
                 routine_id: routineId,
                 group_id: groupId,
                 user_id: user.id,
                 status: 'in_progress',
-                started_at: new Date().toISOString()
+                started_at: new Date().toISOString(),
+                execution_id: exec?.id || null
             }]).select('id').single()
 
             if (newSession) currentSessionId = newSession.id
@@ -144,13 +149,29 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
             // Actually count_session_items has UUID PK, so we could just insert them, but there'll be duplicates.
             // Easiest is to manually clear and write, OR just push it on "Save/Conclude" but requirement says partial resilient.
             // Since supabase JS SDK doesn't natively do "upsert by non-PK" cleanly unless configured, we'll clear and recreate.
-            await supabase.from('count_session_items').delete().eq('session_id', sessionId)
-            if (upserts.length > 0) {
-                await supabase.from('count_session_items').insert(upserts)
+            const { error: delErr } = await supabase.from('count_session_items').delete().eq('session_id', sessionId)
+            if (delErr) {
+                setSyncStatus('offline')
+                toast.error('Falha de comunicação: o salvamento aguardará recarga.', { id: 'sync-err' })
+                return
             }
-            await supabase.from('count_sessions').update({ updated_at: new Date().toISOString() }).eq('id', sessionId)
+
+            if (upserts.length > 0) {
+                const { error: insErr } = await supabase.from('count_session_items').insert(upserts)
+                if (insErr) {
+                    setSyncStatus('offline')
+                    toast.error('Erro ao registrar os dados na nuvem. Tentando em breve.', { id: 'sync-err' })
+                    return
+                }
+            }
+            const { error: updErr } = await supabase.from('count_sessions').update({ updated_at: new Date().toISOString() }).eq('id', sessionId)
+            if (updErr) {
+                setSyncStatus('offline')
+                return
+            }
 
             setSyncStatus('synced')
+            toast.success("Progresso salvo no banco!", { icon: '☁️', id: 'sync-success' })
         }, 2000)
     }
 
@@ -160,7 +181,6 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
             return
         }
         debouncedSync(counts)
-        toast.success("Progresso salvo no banco!", { icon: '☁️' })
     }
 
     const handleCompleteGroup = async () => {
@@ -178,28 +198,46 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
             return
         }
 
-        if (confirm('Deseja realmente CONCLUIR esta contagem? Você não poderá alterá-la depois.')) {
-            setSyncStatus('saving')
+        setIsConfirming(true)
+    }
 
-            // Final Sync Ensure
-            const finalPayload = items.map(i => ({
-                session_id: sessionId,
-                item_id: i.id,
-                counted_quantity: parseFloat(counts[i.id].replace(',', '.'))
-            }))
+    const executeCompleteGroup = async () => {
+        setIsConfirming(false)
+        setSyncStatus('saving')
 
-            await supabase.from('count_session_items').delete().eq('session_id', sessionId)
-            await supabase.from('count_session_items').insert(finalPayload)
+        const finalPayload = items.map(i => ({
+            session_id: sessionId,
+            item_id: i.id,
+            counted_quantity: parseFloat(counts[i.id].replace(',', '.'))
+        }))
 
-            await supabase.from('count_sessions').update({
-                status: 'completed',
-                updated_at: new Date().toISOString(),
-                completed_at: new Date().toISOString()
-            }).eq('id', sessionId)
-
-            localStorage.removeItem(LOCAL_KEY)
-            router.push(`/dashboard/routines/${routineId}`)
+        const { error: delErr } = await supabase.from('count_session_items').delete().eq('session_id', sessionId)
+        if (delErr) {
+            setSyncStatus('offline')
+            toast.error('Erro ao preparar conclusão. Verifique conexão e tente novamente.')
+            return
         }
+
+        const { error: insErr } = await supabase.from('count_session_items').insert(finalPayload)
+        if (insErr) {
+            setSyncStatus('offline')
+            toast.error('Ocorreu um erro ao salvar itens finais. Os dados estão seguros localmente. Tente novamente.')
+            return
+        }
+
+        const { error: updErr } = await supabase.from('count_sessions').update({
+            status: 'completed',
+            updated_at: new Date().toISOString(),
+            completed_at: new Date().toISOString()
+        }).eq('id', sessionId)
+
+        if (updErr) {
+            toast.error('Erro ao marcar como concluído, interrupção na rede.')
+            return
+        }
+
+        localStorage.removeItem(LOCAL_KEY)
+        router.push(`/dashboard/routines/${routineId}`)
     }
 
     if (loadingInit) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 text-indigo-600 animate-spin" /></div>
@@ -226,7 +264,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                         <ArrowLeft className="w-5 h-5 text-white" />
                     </button>
                     <div className="flex items-center space-x-2 text-xs font-semibold bg-indigo-800/40 px-3 py-1 rounded-full">
-                        {syncStatus === 'synced' ? <><Check className="w-3 h-3 text-green-300" /><span className="text-indigo-100">Sicronizado</span></> :
+                        {syncStatus === 'synced' ? <><Check className="w-3 h-3 text-green-300" /><span className="text-indigo-100">Sincronizado</span></> :
                             syncStatus === 'saving' ? <><Loader2 className="w-3 h-3 text-white animate-spin" /><span className="text-indigo-100">Salvando...</span></> :
                                 <><CloudOff className="w-3 h-3 text-red-300" /><span className="text-red-100">Modo Offline (Local)</span></>
                         }
@@ -297,6 +335,15 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                 </button>
             </div>
 
+            <ConfirmModal
+                isOpen={isConfirming}
+                title="Concluir Contagem"
+                message="Deseja realmente CONCLUIR esta contagem? Você não poderá alterá-la depois e os dados ficarão bloqueados."
+                confirmText="Verifiquei e Quero Concluir"
+                cancelText="Cancelar"
+                onConfirm={executeCompleteGroup}
+                onCancel={() => setIsConfirming(false)}
+            />
         </div>
     )
 }

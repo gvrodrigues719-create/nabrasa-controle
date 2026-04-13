@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Loader2, ArrowLeft, CheckCircle, XCircle, AlertTriangle, ChevronRight, Calculator, FileWarning } from 'lucide-react'
+import { ConfirmModal } from '@/components/ConfirmModal'
 import toast from 'react-hot-toast'
 import React, { use } from 'react'
 
@@ -15,6 +16,7 @@ export default function ReportDetailsPage({ params }: { params: Promise<{ id: st
     const [report, setReport] = useState<any>(null)
     const [items, setItems] = useState<any[]>([])
     const [processing, setProcessing] = useState(false)
+    const [confirmAction, setConfirmAction] = useState<'approved' | 'rejected' | null>(null)
 
     useEffect(() => {
         load()
@@ -35,9 +37,14 @@ export default function ReportDetailsPage({ params }: { params: Promise<{ id: st
         setLoading(false)
     }
 
-    const handleApproval = async (status: 'approved' | 'rejected') => {
-        if (!confirm(`Tem certeza que deseja ${status === 'approved' ? 'APROVAR e AJUSTAR O ESTOQUE FISICAMENTE' : 'REPROVAR'} a contagem?`)) return
+    const requestApproval = (status: 'approved' | 'rejected') => {
+        setConfirmAction(status)
+    }
 
+    const executeApproval = async () => {
+        if (!confirmAction) return
+        const status = confirmAction
+        setConfirmAction(null)
         setProcessing(true)
 
         const { data: { user } } = await supabase.auth.getUser()
@@ -64,8 +71,14 @@ export default function ReportDetailsPage({ params }: { params: Promise<{ id: st
                 setProcessing(false)
                 return
             }
-            // Manteve log isolado pra reprova
-            await supabase.from('audit_logs').insert([{ action: status, user_id: user?.id, entity_type: 'audit_report', entity_id: reportId }])
+            // Log de auditoria vinculando o execution_id para aparecer na timeline
+            await supabase.from('audit_logs').insert([{
+                action: status,
+                user_id: user?.id,
+                entity_type: 'audit_report',
+                entity_id: reportId,
+                execution_id: report.execution_id
+            }])
             toast.success("Auditoria reprovada/descartada.")
         }
 
@@ -157,7 +170,7 @@ export default function ReportDetailsPage({ params }: { params: Promise<{ id: st
                 <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 flex space-x-3 max-w-md mx-auto">
                     <button
                         disabled={processing}
-                        onClick={() => handleApproval('rejected')}
+                        onClick={() => requestApproval('rejected')}
                         className="p-4 bg-red-50 text-red-700 border border-red-200 rounded-2xl active:scale-95 transition flex flex-col items-center justify-center min-w-[80px]"
                     >
                         {processing ? <Loader2 className="w-6 h-6 animate-spin" /> : <XCircle className="w-6 h-6" />}
@@ -165,7 +178,7 @@ export default function ReportDetailsPage({ params }: { params: Promise<{ id: st
                     </button>
                     <button
                         disabled={processing}
-                        onClick={() => handleApproval('approved')}
+                        onClick={() => requestApproval('approved')}
                         className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl font-bold flex flex-col justify-center items-center active:scale-95 transition shadow-sm hover:bg-indigo-700"
                     >
                         {processing ? <Loader2 className="w-6 h-6 animate-spin" /> : <CheckCircle className="w-6 h-6" />}
@@ -185,6 +198,17 @@ export default function ReportDetailsPage({ params }: { params: Promise<{ id: st
                 </div>
             )}
 
+            <ConfirmModal
+                isOpen={!!confirmAction}
+                title={confirmAction === 'approved' ? 'Aprovar Auditoria' : 'Reprovar Auditoria'}
+                message={confirmAction === 'approved'
+                    ? 'Tem certeza que deseja APROVAR e AJUSTAR O ESTOQUE FISICAMENTE com estes valores contados? Esta ação é irreversível.'
+                    : 'Tem certeza que deseja REPROVAR e descartar as contagens deste ciclo?'}
+                confirmText={confirmAction === 'approved' ? 'Sim, Aprovar e Ajustar' : 'Sim, Reprovar'}
+                cancelText="Cancelar"
+                onConfirm={executeApproval}
+                onCancel={() => setConfirmAction(null)}
+            />
         </div>
     )
 }

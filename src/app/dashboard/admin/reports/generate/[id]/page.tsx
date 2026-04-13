@@ -9,8 +9,9 @@ import React, { use } from 'react'
 
 export default function GenerateReportPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter()
-    const { id: routineId } = use(params)
+    const { id: executionId } = use(params)
     const [error, setError] = useState<string | null>(null)
+    const [routineIdDb, setRoutineIdDb] = useState<string>('')
 
     useEffect(() => {
         generate()
@@ -18,16 +19,22 @@ export default function GenerateReportPage({ params }: { params: Promise<{ id: s
 
     const generate = async () => {
         try {
-            // Verifying if a report already exists to prevent duplication on reload
-            const { data: existing } = await supabase.from('audit_reports').select('id').eq('routine_id', routineId).maybeSingle()
+            // Descobrindo a qual rotina pertence essa execução
+            const { data: execData } = await supabase.from('routine_executions').select('routine_id').eq('id', executionId).single()
+            if (!execData) throw new Error("Ciclo referenciado não encontrado.")
+            const routineId = execData.routine_id
+            setRoutineIdDb(routineId)
+
+            // Verifying if a report already exists for THIS execution
+            const { data: existing } = await supabase.from('audit_reports').select('id').eq('execution_id', executionId).maybeSingle()
             if (existing) {
                 router.push(`/dashboard/admin/reports/${existing.id}`)
                 return
             }
 
-            // Fetch the sessions
-            const { data: sessions } = await supabase.from('count_sessions').select('id').eq('routine_id', routineId).eq('status', 'completed')
-            if (!sessions || sessions.length === 0) throw new Error("Nenhuma sessão de contagem finalizada encontrada para esta rotina.")
+            // Fetch the sessions of THIS execution
+            const { data: sessions } = await supabase.from('count_sessions').select('id').eq('execution_id', executionId).eq('status', 'completed')
+            if (!sessions || sessions.length === 0) throw new Error("Nenhuma sessão de contagem finalizada encontrada para este ciclo.")
 
             const sessionIds = sessions.map(s => s.id)
 
@@ -44,11 +51,11 @@ export default function GenerateReportPage({ params }: { params: Promise<{ id: s
                 }
             }
 
-            // Fetch items theoretical details from SNAPSHOT table instead of live DB
+            // Fetch items theoretical details from SNAPSHOT table by execution_id
             const itemIds = Object.keys(agg)
             if (itemIds.length === 0) throw new Error("A contagem está vazia.")
 
-            const { data: theo } = await supabase.from('routine_theoretical_snapshot').select('item_id, theoretical_quantity_snapshot, average_cost_snapshot').eq('routine_id', routineId).in('item_id', itemIds)
+            const { data: theo } = await supabase.from('routine_theoretical_snapshot').select('item_id, theoretical_quantity_snapshot, average_cost_snapshot').eq('execution_id', executionId).in('item_id', itemIds)
 
             const costMap: Record<string, number> = {}
             const theoMap: Record<string, number> = {}
@@ -92,6 +99,7 @@ export default function GenerateReportPage({ params }: { params: Promise<{ id: s
             // Create Report
             const { data: rep, error: rErr } = await supabase.from('audit_reports').insert([{
                 routine_id: routineId,
+                execution_id: executionId,
                 total_theoretical_value: totalTheoValue,
                 total_counted_value: totalCountedValue,
                 divergence_value: totalDivergValue,
