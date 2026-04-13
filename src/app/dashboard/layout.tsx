@@ -14,22 +14,36 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const router = useRouter()
 
     useEffect(() => {
-        getActiveOperator().then(op => setOpName(op?.name || null))
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            if (!session) {
+        let isMounted = true
+
+        async function checkAuth() {
+            const op = await getActiveOperator()
+            if (!isMounted) return
+
+            if (op) {
+                setOpName(op.name)
+                setLoading(false)
+                return // Operator is logged in, no Supabase Auth needed
+            }
+
+            const { data: { session } } = await supabase.auth.getSession()
+            if (!session && isMounted) {
                 router.push('/login')
-            } else {
+            } else if (isMounted) {
                 setLoading(false)
             }
-        })
+        }
+
+        checkAuth()
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            if (!session) {
-                router.push('/login')
+            if (!session && !opName) {
+                // router.push('/login')
+                // Wait for strict checkAuth over opName, don't aggressively push.
             }
         })
 
-        return () => subscription.unsubscribe()
+        return () => { isMounted = false; subscription.unsubscribe() }
     }, [router])
 
     if (loading) {

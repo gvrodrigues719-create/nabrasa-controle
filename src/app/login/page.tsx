@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { Lock, Mail, Loader2, User, KeyRound, ArrowLeft, ArrowRight, X } from 'lucide-react'
-import { loginOperatorWithPin } from '../actions/pinAuth'
+import { loginOperatorWithPin, getActiveEmployeesAction } from '../actions/pinAuth'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
@@ -29,8 +29,12 @@ export default function LoginPage() {
 
     const fetchEmployees = async () => {
         setLoading(true)
-        const { data } = await supabase.from('v_active_employees').select('*')
-        if (data) setEmployees(data)
+        const res = await getActiveEmployeesAction()
+        if (res.success && res.data) {
+            setEmployees(res.data)
+        } else {
+            console.error("Erro ao buscar ops:", res.error)
+        }
         setLoading(false)
     }
 

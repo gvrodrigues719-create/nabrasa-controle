@@ -69,3 +69,9 @@ export async function getActiveOperator() {
     if (!decrypted) return null
     return JSON.parse(decrypted) as { userId: string, name: string, role: string }
 }
+
+export async function getActiveEmployeesAction() {
+    const { data, error } = await supabase.from('users').select('id, name, role').eq('active', true).order('name')
+    if (error) return { success: false, error: error.message }
+    return { success: true, data }
+}
