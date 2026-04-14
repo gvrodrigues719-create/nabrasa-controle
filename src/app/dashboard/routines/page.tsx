@@ -1,38 +1,17 @@
-'use client'
+import Link from 'next/link'
+import { ClipboardList, ChevronRight, ArrowLeft } from 'lucide-react'
+import { getActiveRoutinesAction } from '@/app/actions/routinesAction'
 
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
-import { ClipboardList, ChevronRight, Loader2, ArrowLeft } from 'lucide-react'
-
-type Routine = {
-    id: string
-    name: string
-    frequency: string
-}
-
-export default function ActiveRoutinesPage() {
-    const [routines, setRoutines] = useState<Routine[]>([])
-    const [loading, setLoading] = useState(true)
-    const router = useRouter()
-
-    useEffect(() => {
-        async function load() {
-            const { data } = await supabase.from('routines').select('*').eq('active', true).order('created_at', { ascending: false })
-            if (data) setRoutines(data)
-            setLoading(false)
-        }
-        load()
-    }, [])
-
-    if (loading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-indigo-600 w-8 h-8" /></div>
+export default async function ActiveRoutinesPage() {
+    const res = await getActiveRoutinesAction()
+    const routines = res.data || []
 
     return (
         <div className="p-4 space-y-4">
             <div className="flex items-center space-x-3 mb-6 mt-2">
-                <button onClick={() => router.push('/dashboard')} className="p-2 bg-white rounded-lg shadow-sm border border-gray-200 text-gray-600">
+                <Link href="/dashboard" className="p-2 bg-white rounded-lg shadow-sm border border-gray-200 text-gray-600 hover:bg-gray-50 active:scale-95 transition-all block">
                     <ArrowLeft className="w-5 h-5" />
-                </button>
+                </Link>
                 <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">Rotinas Ativas</h2>
             </div>
 
@@ -44,9 +23,9 @@ export default function ActiveRoutinesPage() {
             ) : (
                 <div className="space-y-3">
                     {routines.map(r => (
-                        <button
+                        <Link
                             key={r.id}
-                            onClick={() => router.push(`/dashboard/routines/${r.id}`)}
+                            href={`/dashboard/routines/${r.id}`}
                             className="w-full bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex justify-between items-center hover:border-indigo-300 hover:shadow-md transition-all active:scale-95"
                         >
                             <div className="text-left">
@@ -58,10 +37,11 @@ export default function ActiveRoutinesPage() {
                             <div className="bg-indigo-50 p-3 rounded-xl text-indigo-600">
                                 <ChevronRight className="w-6 h-6" />
                             </div>
-                        </button>
+                        </Link>
                     ))}
                 </div>
             )}
         </div>
     )
 }
+

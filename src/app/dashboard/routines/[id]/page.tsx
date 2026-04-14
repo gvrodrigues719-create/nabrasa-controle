@@ -8,6 +8,7 @@ import toast from 'react-hot-toast'
 import React, { use } from 'react'
 import { PinConfirmModal } from '@/components/PinConfirmModal'
 import { verifyCriticalPin } from '@/app/actions/criticalActions'
+import { getRoutineDetailsAction } from '@/app/actions/routinesAction'
 
 type GroupStatus = {
     id: string
@@ -29,49 +30,21 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
 
     useEffect(() => {
         load()
-        const channel = supabase.channel('sessions_changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'count_sessions', filter: `routine_id=eq.${routineId}` }, () => {
-                load(true)
-            }).subscribe()
-        return () => { supabase.removeChannel(channel) }
+        const interv = setInterval(() => load(true), 10000)
+        return () => clearInterval(interv)
     }, [routineId])
 
     const load = async (silent = false) => {
         if (!silent) setLoading(true)
 
-        const { data: routine } = await supabase.from('routines').select('name, snapshot_started_at').eq('id', routineId).single()
-
-        if (routine) {
-            let isStartedToday = false
-            const today = new Date().toISOString().split('T')[0]
-            if (routine.snapshot_started_at) {
-                const snapDate = new Date(routine.snapshot_started_at).toISOString().split('T')[0]
-                isStartedToday = snapDate === today
-            }
-            setHasSnapshot(isStartedToday)
-
-            const { data: rGroups } = await supabase.from('routine_groups').select('groups(id, name)').eq('routine_id', routineId)
-            const { data: sessions } = await supabase
-                .from('count_sessions')
-                .select('id, group_id, status, updated_at, users(name)')
-                .eq('routine_id', routineId)
-                .gte('started_at', `${today}T00:00:00Z`)
-
-            const mappedGroups: GroupStatus[] = rGroups?.map(rg => {
-                const group: any = rg.groups
-                const sessionForGroup = sessions?.find(s => s.group_id === group.id)
-                return {
-                    id: group.id,
-                    name: group.name,
-                    session_id: sessionForGroup?.id || null,
-                    status: sessionForGroup?.status || 'available',
-                    user_name: (sessionForGroup?.users as any)?.name || null,
-                    updated_at: sessionForGroup?.updated_at || null
-                }
-            }) || []
-
-            setData({ name: routine.name, groups: mappedGroups })
+        const res = await getRoutineDetailsAction(routineId)
+        if (res.data) {
+            setHasSnapshot(res.data.hasSnapshot)
+            setData({ name: res.data.name, groups: res.data.groups })
+        } else {
+            toast.error(res.error || 'Erro ao carregar rotina')
         }
+
         if (!silent) setLoading(false)
     }
 

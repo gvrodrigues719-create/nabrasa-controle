@@ -5,9 +5,10 @@ import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Loader2, Save, Check, ShieldAlert, CloudOff, Wifi, AlertTriangle } from 'lucide-react'
 import { ConfirmModal } from '@/components/ConfirmModal'
-import { getActiveOperator } from '@/app/actions/pinAuth'
 import toast from 'react-hot-toast'
 import React, { use } from 'react'
+import { initCountSessionAction, syncCountSessionAction } from '@/app/actions/countAction'
+import { getActiveOperator } from '@/app/actions/pinAuth'
 
 type Item = {
     id: string
@@ -38,78 +39,34 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     const initSession = async () => {
         setLoadingInit(true)
 
-        // Auth info
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return router.push('/login')
-
-        // Group info
-        const { data: group } = await supabase.from('groups').select('name').eq('id', groupId).single()
-        if (group) setGroupName(group.name)
-
-        // Verify existing session for today
-        const today = new Date().toISOString().split('T')[0]
-        const { data: existingSession } = await supabase
-            .from('count_sessions')
-            .select('id, status, user_id, users(name)')
-            .eq('routine_id', routineId)
-            .eq('group_id', groupId)
-            .gte('started_at', `${today}T00:00:00Z`)
-            .order('started_at', { ascending: false })
-            .limit(1)
-            .single()
-
-        let currentSessionId = existingSession?.id
-
-        if (existingSession) {
-            if (existingSession.status === 'completed') {
-                setBlocked('Este grupo já foi concluído hoje e não pode mais ser editado.')
-                setLoadingInit(false)
-                return
-            }
-            if (existingSession.status === 'in_progress' && existingSession.user_id !== user.id) {
-                const uName = (existingSession.users as any)?.name || 'Outro usuário'
-                setBlocked(`Este grupo está em andamento por ${uName}. Contagem paralela no mesmo grupo não é permitida sem permissão.`)
-                setLoadingInit(false)
-                return
-            }
+        // Descobre User ID hibrido (Operator Cookie vs Auth)
+        const op = await getActiveOperator()
+        let userId = null
+        if (op) {
+            userId = op.userId
         } else {
-            // Create Session
-            const { data: exec } = await supabase.from('routine_executions').select('id').eq('routine_id', routineId).eq('status', 'in_progress').maybeSingle()
-
-            const { data: newSession } = await supabase.from('count_sessions').insert([{
-                routine_id: routineId,
-                group_id: groupId,
-                user_id: user.id,
-                status: 'in_progress',
-                started_at: new Date().toISOString(),
-                execution_id: exec?.id || null
-            }]).select('id').single()
-
-            if (newSession) currentSessionId = newSession.id
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) userId = user.id
         }
 
-        setSessionId(currentSessionId)
+        if (!userId) return router.push('/login')
 
-        // Load items for this group
-        const { data: itemsData } = await supabase.from('items').select('id, name, unit, unit_observation').eq('group_id', groupId).eq('active', true).order('name', { ascending: true })
-        if (itemsData) setItems(itemsData)
+        const res = await initCountSessionAction(routineId, groupId, userId)
 
-        // Load previous answers (DB first, local fallback)
+        if (res.blocked) {
+            setBlocked(res.blocked)
+            setLoadingInit(false)
+            return
+        }
+
+        if (res.groupName) setGroupName(res.groupName)
+        if (res.sessionId) setSessionId(res.sessionId)
+        if (res.items) setItems(res.items)
+
         const stored = localStorage.getItem(LOCAL_KEY)
         const localDict = stored ? JSON.parse(stored) : {}
 
-        if (currentSessionId) {
-            const { data: dbItems } = await supabase.from('count_session_items').select('item_id, counted_quantity').eq('session_id', currentSessionId)
-            const newCounts = { ...localDict }
-            if (dbItems) {
-                dbItems.forEach(d => {
-                    if (d.counted_quantity !== null && d.counted_quantity !== undefined) {
-                        newCounts[d.item_id] = d.counted_quantity.toString()
-                    }
-                })
-            }
-            setCounts(newCounts)
-        }
+        setCounts({ ...localDict, ...res.dbCounts })
 
         setLoadingInit(false)
     }
@@ -137,37 +94,10 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         syncTimeoutRef.current = setTimeout(async () => {
             if (!sessionId) return
 
-            const upserts = Object.keys(currentCounts).map(itemId => {
-                const qty = currentCounts[itemId]
-                return {
-                    session_id: sessionId,
-                    item_id: itemId,
-                    counted_quantity: qty === '' ? null : parseFloat(qty.replace(',', '.'))
-                }
-            })
-
-            // Delete old and insert to update (since our N:M doesn't have simple composite unique yet easily accessible via PK)
-            // Actually count_session_items has UUID PK, so we could just insert them, but there'll be duplicates.
-            // Easiest is to manually clear and write, OR just push it on "Save/Conclude" but requirement says partial resilient.
-            // Since supabase JS SDK doesn't natively do "upsert by non-PK" cleanly unless configured, we'll clear and recreate.
-            const { error: delErr } = await supabase.from('count_session_items').delete().eq('session_id', sessionId)
-            if (delErr) {
+            const res = await syncCountSessionAction(sessionId, currentCounts, false)
+            if (res.error) {
                 setSyncStatus('offline')
-                toast.error('Falha de comunicação: o salvamento aguardará recarga.', { id: 'sync-err' })
-                return
-            }
-
-            if (upserts.length > 0) {
-                const { error: insErr } = await supabase.from('count_session_items').insert(upserts)
-                if (insErr) {
-                    setSyncStatus('offline')
-                    toast.error('Erro ao registrar os dados na nuvem. Tentando em breve.', { id: 'sync-err' })
-                    return
-                }
-            }
-            const { error: updErr } = await supabase.from('count_sessions').update({ updated_at: new Date().toISOString() }).eq('id', sessionId)
-            if (updErr) {
-                setSyncStatus('offline')
+                toast.error(res.error, { id: 'sync-err' })
                 return
             }
 
@@ -206,34 +136,12 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         setIsConfirming(false)
         setSyncStatus('saving')
 
-        const finalPayload = items.map(i => ({
-            session_id: sessionId,
-            item_id: i.id,
-            counted_quantity: parseFloat(counts[i.id].replace(',', '.'))
-        }))
+        if (!sessionId) return
 
-        const { error: delErr } = await supabase.from('count_session_items').delete().eq('session_id', sessionId)
-        if (delErr) {
+        const res = await syncCountSessionAction(sessionId, counts, true)
+        if (res.error) {
             setSyncStatus('offline')
-            toast.error('Erro ao preparar conclusão. Verifique conexão e tente novamente.')
-            return
-        }
-
-        const { error: insErr } = await supabase.from('count_session_items').insert(finalPayload)
-        if (insErr) {
-            setSyncStatus('offline')
-            toast.error('Ocorreu um erro ao salvar itens finais. Os dados estão seguros localmente. Tente novamente.')
-            return
-        }
-
-        const { error: updErr } = await supabase.from('count_sessions').update({
-            status: 'completed',
-            updated_at: new Date().toISOString(),
-            completed_at: new Date().toISOString()
-        }).eq('id', sessionId)
-
-        if (updErr) {
-            toast.error('Erro ao marcar como concluído, interrupção na rede.')
+            toast.error(res.error)
             return
         }
 
