@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { getActiveOperator } from './pinAuth'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -53,3 +54,26 @@ export async function getRoutineDetailsAction(routineId: string) {
         }
     }
 }
+
+export async function verifyAndStartRoutineAction(routineId: string, pin: string, clientManagerId?: string) {
+    let userId = clientManagerId;
+    if (!userId) {
+        const op = await getActiveOperator()
+        userId = op?.userId
+    }
+
+    if (!userId) {
+        return { error: "Usuário não autenticado." }
+    }
+
+    // Valida PIN
+    const { data: isValid } = await supabase.rpc('verify_user_pin', { p_user_id: userId, p_pin: pin })
+    if (!isValid) return { error: "PIN Incorreto ou não cadastrado." }
+
+    // Efetiva inicio da rotina (usando a master key que já temos instanciada aqui)
+    const { data: executionId, error } = await supabase.rpc('start_routine_snapshot', { p_routine_id: routineId })
+    if (error) return { error: error.message || 'Erro ao congelar estoque teórico.' }
+
+    return { success: true, executionId }
+}
+

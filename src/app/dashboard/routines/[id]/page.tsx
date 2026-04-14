@@ -8,7 +8,7 @@ import toast from 'react-hot-toast'
 import React, { use } from 'react'
 import { PinConfirmModal } from '@/components/PinConfirmModal'
 import { verifyCriticalPin } from '@/app/actions/criticalActions'
-import { getRoutineDetailsAction } from '@/app/actions/routinesAction'
+import { getRoutineDetailsAction, verifyAndStartRoutineAction } from '@/app/actions/routinesAction'
 
 type GroupStatus = {
     id: string
@@ -52,24 +52,18 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
         setStarting(true)
         try {
             const { data: { user } } = await supabase.auth.getUser()
-            if (!user) throw new Error("Usuário não autenticado.")
 
-            // Valida PIN no backend via Next.js Action
-            await verifyCriticalPin(user.id, pin)
+            const res = await verifyAndStartRoutineAction(routineId, pin, user?.id)
+            if (res.error) throw new Error(res.error)
 
-            // RPC retorna execution_id (UUID) após criação do ciclo
-            const { data: executionId, error } = await supabase.rpc('start_routine_snapshot', { p_routine_id: routineId })
-            if (error) throw new Error(error.message || 'Erro ao congelar estoque teórico.')
-
-            // Persistir execution_id em storage local para propagar para count_sessions
-            if (executionId) {
-                sessionStorage.setItem(`exec_${routineId}`, executionId)
+            if (res.executionId) {
+                sessionStorage.setItem(`exec_${routineId}`, res.executionId)
             }
             toast.success('Ciclo iniciado! Estoque teórico congelado.')
             load()
         } catch (err: any) {
             setStarting(false)
-            throw new Error(err.message) // Modal captura isso
+            throw new Error(err.message)
         }
         setStarting(false)
     }
