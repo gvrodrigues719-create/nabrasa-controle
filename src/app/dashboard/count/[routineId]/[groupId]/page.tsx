@@ -72,9 +72,15 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     }
 
     // Handle single count change
-    const handleChange = (itemId: string, val: string) => {
-        // Only numbers dots and commas allowed roughly handled
-        const newCounts = { ...counts, [itemId]: val }
+    const handleChange = (item: Item, val: string) => {
+        const isInt = ['un', 'und', 'cx', 'pct'].includes(item.unit.toLowerCase().trim())
+
+        // Se for inteiro e vier com virgula ou ponto (ex: 5,06 ou 5.0), arrancamos o que vier depois
+        if (isInt) {
+            val = val.split(/[.,]/)[0].replace(/\D/g, '')
+        }
+
+        const newCounts = { ...counts, [item.id]: val }
         setCounts(newCounts)
         localStorage.setItem(LOCAL_KEY, JSON.stringify(newCounts))
         debouncedSync(newCounts) // Trigger remote save
@@ -195,6 +201,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                 ) : items.map((item, index) => {
                     const val = counts[item.id] ?? ''
                     const isFilled = val !== ''
+                    const isInt = ['un', 'und', 'cx', 'pct'].includes(item.unit.toLowerCase().trim())
 
                     return (
                         <div key={item.id} className={`p-5 rounded-2xl border-2 transition-colors shadow-sm ${isFilled ? 'bg-white border-green-200' : 'bg-white border-gray-100'}`}>
@@ -215,12 +222,15 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                                     <label className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1 block">Quantidade Física</label>
                                     <input
                                         type="number"
-                                        step="0.01"
-                                        inputMode="decimal"
+                                        step={isInt ? "1" : "0.01"}
+                                        inputMode={isInt ? "numeric" : "decimal"}
+                                        onKeyDown={(e) => {
+                                            if (isInt && (e.key === '.' || e.key === ',')) e.preventDefault()
+                                        }}
                                         className="w-full text-3xl font-extrabold text-gray-900 p-4 border border-gray-200 rounded-xl outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all text-center bg-gray-50"
                                         placeholder=" "
                                         value={val}
-                                        onChange={(e) => handleChange(item.id, e.target.value)}
+                                        onChange={(e) => handleChange(item, e.target.value)}
                                     />
                                 </div>
                                 <div className="flex flex-col items-center justify-center shrink-0 min-w-[70px] bg-indigo-50 py-3 rounded-xl border border-indigo-100 mt-5">
