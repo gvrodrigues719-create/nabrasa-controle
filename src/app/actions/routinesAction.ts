@@ -55,20 +55,24 @@ export async function getRoutineDetailsAction(routineId: string) {
     }
 }
 
-export async function verifyAndStartRoutineAction(routineId: string, pin: string, clientManagerId?: string) {
+export async function verifyAndStartRoutineAction(routineId: string, pin: string, clientManagerId?: string | null) {
     let userId = clientManagerId;
+    let authSource = 'manager';
+
+    const op = await getActiveOperator()
+
     if (!userId) {
-        const op = await getActiveOperator()
         userId = op?.userId
+        authSource = 'operator'
     }
 
     if (!userId) {
-        return { error: "Usuário não autenticado." }
+        return { error: `Usuário não autenticado. op is: ${op ? JSON.stringify(op) : 'null'}` }
     }
 
     // Valida PIN
     const { data: isValid } = await supabase.rpc('verify_user_pin', { p_user_id: userId, p_pin: pin })
-    if (!isValid) return { error: "PIN Incorreto ou não cadastrado." }
+    if (!isValid) return { error: `PIN Incorreto ou não cadastrado (Source: ${authSource}, ID: ${userId}).` }
 
     // Efetiva inicio da rotina (usando a master key que já temos instanciada aqui)
     const { data: executionId, error } = await supabase.rpc('start_routine_snapshot', { p_routine_id: routineId })
@@ -76,4 +80,3 @@ export async function verifyAndStartRoutineAction(routineId: string, pin: string
 
     return { success: true, executionId }
 }
-
