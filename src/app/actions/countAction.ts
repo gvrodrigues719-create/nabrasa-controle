@@ -13,7 +13,7 @@ export async function initCountSessionAction(routineId: string, groupId: string,
     const today = new Date().toISOString().split('T')[0]
     const { data: existingSession } = await supabase
         .from('count_sessions')
-        .select('id, status, user_id, users(name)')
+        .select('id, status, user_id, execution_id, users(name)')
         .eq('routine_id', routineId)
         .eq('group_id', groupId)
         .gte('started_at', `${today}T00:00:00Z`)
@@ -33,8 +33,10 @@ export async function initCountSessionAction(routineId: string, groupId: string,
 
     let sessionId = existingSession?.id
 
+    // Puxa a execução ativa
+    const { data: exec } = await supabase.from('routine_executions').select('id').eq('routine_id', routineId).eq('status', 'active').maybeSingle()
+
     if (!existingSession) {
-        const { data: exec } = await supabase.from('routine_executions').select('id').eq('routine_id', routineId).eq('status', 'in_progress').maybeSingle()
         const { data: newSession } = await supabase.from('count_sessions').insert([{
             routine_id: routineId,
             group_id: groupId,
@@ -44,6 +46,12 @@ export async function initCountSessionAction(routineId: string, groupId: string,
             execution_id: exec?.id || null
         }]).select('id').single()
         if (newSession) sessionId = newSession.id
+    } else {
+        // Se a sessão já existia (ex: operador abriu antes de o gerente iniciar ciclo),
+        // amarra ela obrigatoriamente na execução oficial gerada agora
+        if (exec?.id && existingSession.execution_id !== exec.id) {
+            await supabase.from('count_sessions').update({ execution_id: exec.id }).eq('id', sessionId)
+        }
     }
 
     const { data: items } = await supabase.from('items').select('id, name, unit, unit_observation').eq('group_id', groupId).eq('active', true).order('name', { ascending: true })
