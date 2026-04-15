@@ -63,6 +63,21 @@ export async function loginOperatorWithPin(userId: string, pin: string) {
     return { success: true }
 }
 
+export async function syncManagerCookie(userId: string) {
+    const { data: usr } = await supabase.from('users').select('name, role').eq('id', userId).single()
+    if (!usr) return { success: false, error: 'User info not found' }
+
+    const payload = JSON.stringify({ userId, name: usr.name, role: usr.role })
+    const cookieStore = await cookies()
+    cookieStore.set('operator_session', encryptId(payload), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7 // 7 dias para gerente
+    })
+    return { success: true }
+}
+
 export async function logoutOperator() {
     const cookieStore = await cookies()
     cookieStore.delete('operator_session')

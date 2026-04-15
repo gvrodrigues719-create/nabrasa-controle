@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { Flame, Lock, Loader2, ArrowLeft, X, Settings } from 'lucide-react'
-import { loginOperatorWithPin, getActiveEmployeesAction } from '../actions/pinAuth'
+import { loginOperatorWithPin, getActiveEmployeesAction, syncManagerCookie } from '../actions/pinAuth'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
@@ -43,7 +43,11 @@ export default function LoginPage() {
         setLoading(true); setError(null)
         const { data, error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) { setError(error.message); setLoading(false); return }
-        if (data.session) router.push('/dashboard')
+        
+        if (data.session && data.user) {
+            try { await syncManagerCookie(data.user.id) } catch(e) { console.error(e) }
+            router.push('/dashboard')
+        }
     }
 
     const handlePinDigit = async (digit: string) => {
