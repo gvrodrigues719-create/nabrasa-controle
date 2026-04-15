@@ -14,6 +14,9 @@ type Item = {
     unit_observation: string
     group_id: string
     average_cost: number
+    cost_mode: 'direct' | 'conversion' | 'manual'
+    purchase_unit: string | null
+    conversion_factor: number | null
     min_expected: number | null
     max_expected: number | null
     image_url: string | null
@@ -41,6 +44,9 @@ export default function ItemsPage() {
     const [groupId, setGroupId] = useState('')
     const [minExpected, setMinExpected] = useState('')
     const [maxExpected, setMaxExpected] = useState('')
+    const [costMode, setCostMode] = useState<'direct' | 'conversion' | 'manual'>('direct')
+    const [purchaseUnit, setPurchaseUnit] = useState('')
+    const [conversionFactor, setConversionFactor] = useState('')
     const [imageUrl, setImageUrl] = useState<string | null>(null)
     const [imageUploading, setImageUploading] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -107,6 +113,9 @@ export default function ItemsPage() {
             unit,
             unit_observation: unitObs,
             group_id: groupId,
+            cost_mode: costMode,
+            purchase_unit: costMode === 'conversion' ? purchaseUnit || null : null,
+            conversion_factor: costMode === 'conversion' && conversionFactor ? parseFloat(conversionFactor) : null,
             min_expected: minExpected === '' ? null : parseFloat(minExpected),
             max_expected: maxExpected === '' ? null : parseFloat(maxExpected),
             image_url: imageUrl ?? null,
@@ -138,6 +147,9 @@ export default function ItemsPage() {
         setUnit('un')
         setUnitObs('')
         setGroupId('')
+        setCostMode('direct')
+        setPurchaseUnit('')
+        setConversionFactor('')
         setMinExpected('')
         setMaxExpected('')
         setImageUrl(null)
@@ -314,6 +326,33 @@ export default function ItemsPage() {
                     </div>
 
                     <div>
+                        <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Modo de Custo</label>
+                        <select value={costMode} onChange={e => setCostMode(e.target.value as any)} className="w-full border border-gray-200 bg-gray-50 p-4 rounded-xl mt-1.5 outline-none focus:ring-2 focus:ring-[#B13A2B] text-gray-900 font-medium">
+                            <option value="direct">Direto — preço na unidade de contagem</option>
+                            <option value="conversion">Com conversão — compra em unidade diferente</option>
+                            <option value="manual">Manual — gestor controla custo</option>
+                        </select>
+                    </div>
+
+                    {costMode === 'conversion' && (
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Unidade de Compra</label>
+                                <input required value={purchaseUnit} onChange={e => setPurchaseUnit(e.target.value)} className="w-full border border-gray-200 bg-gray-50 p-4 rounded-xl mt-1.5 outline-none focus:ring-2 focus:ring-[#B13A2B] text-gray-900 font-medium" placeholder="Ex: cx, balde, saco" />
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Fator de Conversão</label>
+                                <input required type="number" step="0.01" min="0.01" value={conversionFactor} onChange={e => setConversionFactor(e.target.value)} className="w-full border border-gray-200 bg-gray-50 p-4 rounded-xl mt-1.5 outline-none focus:ring-2 focus:ring-[#B13A2B] text-gray-900 font-medium" placeholder="Ex: 12" />
+                            </div>
+                            {purchaseUnit && conversionFactor && (
+                                <p className="col-span-2 text-xs text-gray-500 -mt-1 pl-1">
+                                    1 {purchaseUnit} = {conversionFactor} {unit}
+                                </p>
+                            )}
+                        </div>
+                    )}
+
+                    <div>
                         <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Observação da Contagem</label>
                         <input value={unitObs} onChange={e => setUnitObs(e.target.value)} className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl mt-1.5 outline-none focus:ring-2 focus:ring-[#B13A2B] text-gray-900 text-sm" placeholder="Ex: Contar garrafas abertas em décimos" />
                     </div>
@@ -381,6 +420,9 @@ export default function ItemsPage() {
                                         setUnit(i.unit);
                                         setUnitObs(i.unit_observation || '');
                                         setGroupId(i.group_id || '');
+                                        setCostMode(i.cost_mode || 'direct');
+                                        setPurchaseUnit(i.purchase_unit || '');
+                                        setConversionFactor(i.conversion_factor != null ? String(i.conversion_factor) : '');
                                         setMinExpected(i.min_expected != null ? String(i.min_expected) : '');
                                         setMaxExpected(i.max_expected != null ? String(i.max_expected) : '');
                                         setImageUrl(i.image_url || null);
