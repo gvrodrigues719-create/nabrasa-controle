@@ -74,7 +74,7 @@ export default function ClientDashboardLayout({
                 }}
             />
             <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-                <div className="px-4 h-16 flex justify-between items-center max-w-6xl mx-auto">
+                <div className="px-4 h-16 flex justify-between items-center max-w-md lg:max-w-6xl mx-auto">
                     <h1 className="text-lg font-extrabold text-gray-900 tracking-tight">NaBrasa <span className="text-[#b33324]">Controle</span></h1>
                     <div className="flex items-center gap-3">
                         {opName && <span className="text-xs font-bold bg-indigo-100 text-indigo-700 px-2 py-1 rounded-lg">OP: {opName}</span>}
@@ -84,7 +84,7 @@ export default function ClientDashboardLayout({
                     </div>
                 </div>
             </header>
-            <main className="pb-20 max-w-6xl mx-auto relative z-0">
+            <main className="pb-20 max-w-md lg:max-w-6xl mx-auto relative z-0">
                 {children}
             </main>
         </div>

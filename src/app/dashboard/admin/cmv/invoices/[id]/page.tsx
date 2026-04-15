@@ -214,9 +214,10 @@ export default function InvoiceMappingPage() {
                     </div>
                 </div>
 
-                {/* Lado Direito: Grid de Itens */}
+                {/* Lado Direito: Itens (Tabela no Desktop / Cards no Mobile) */}
                 <div className="lg:col-span-3 space-y-4">
-                    <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+                    {/* Versão DESKTOP: Tabela */}
+                    <div className="hidden md:block bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm whitespace-nowrap">
                                 <thead className="bg-gray-50 border-b border-gray-100">
@@ -297,8 +298,76 @@ export default function InvoiceMappingPage() {
                             </table>
                         </div>
                     </div>
+
+                    {/* Versão MOBILE: Cards */}
+                    <div className="md:hidden space-y-4">
+                        {invoice.items.map((item: any) => (
+                            <div key={item.id} className={`bg-white rounded-3xl border ${item.review_status === 'reviewed' ? 'border-green-100 shadow-[0_4px_12px_rgb(34,197,94,0.05)]' : 'border-gray-200 shadow-sm'} p-5 space-y-4 transition-all overflow-hidden`}>
+                                <div className="flex justify-between items-start gap-2">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-extrabold text-gray-900 text-xs uppercase leading-tight">{item.item_description}</p>
+                                        <p className="text-[10px] text-gray-400 font-semibold mt-1 uppercase tracking-tight">
+                                            {item.purchase_quantity} {item.purchase_unit} • {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.purchase_unit_cost)}
+                                        </p>
+                                    </div>
+                                    {!isApproved && (
+                                        <button 
+                                            onClick={() => setItemToDelete(item)}
+                                            className="p-2.5 bg-gray-50 text-gray-300 hover:text-red-600 rounded-xl active:scale-90 transition-all"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                </div>
+
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5 ml-1">Mapeamento Interno</label>
+                                        <select 
+                                            disabled={isApproved || isActioning}
+                                            value={item.matched_item_id || ''}
+                                            onChange={(e) => handleUpdateRow(item.id, {
+                                                matched_item_id: e.target.value || null,
+                                                conversion_factor_snapshot: item.conversion_factor_snapshot || 1,
+                                                review_notes: item.review_notes
+                                            })}
+                                            className="w-full bg-gray-50 border border-gray-100 rounded-2xl p-3.5 text-xs font-bold text-gray-700 focus:ring-2 focus:ring-[#B13A2B] outline-none shadow-inner appearance-none"
+                                        >
+                                            <option value="">-- Selecione o Ingrediente --</option>
+                                            {internalItems.map((ii: any) => (
+                                                <option key={ii.id} value={ii.id}>{ii.name} ({ii.unit})</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {item.matched_item_id && (
+                                        <div className="flex items-center gap-3 bg-gray-50 rounded-2xl p-3 animate-in fade-in slide-in-from-top-1">
+                                            <div className="flex-1">
+                                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1 ml-1">Fator Conv.</label>
+                                                <input 
+                                                    type="number"
+                                                    disabled={isApproved || isActioning}
+                                                    value={item.conversion_factor_snapshot || 1}
+                                                    step="0.001"
+                                                    onChange={(e) => handleUpdateRow(item.id, {
+                                                        matched_item_id: item.matched_item_id,
+                                                        conversion_factor_snapshot: parseFloat(e.target.value),
+                                                        review_notes: item.review_notes
+                                                    })}
+                                                    className="w-full bg-white border border-gray-100 rounded-xl p-2.5 text-xs font-extrabold text-[#B13A2B] outline-none focus:ring-2 focus:ring-[#B13A2B]"
+                                                />
+                                            </div>
+                                            <div className="flex flex-col items-center justify-center bg-green-500/10 px-4 py-2 rounded-xl">
+                                                <CheckCircle className="w-5 h-5 text-green-600 mb-0.5" />
+                                                <span className="text-[8px] font-black text-green-700 uppercase">Mapeado</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </div>
         </div>
     )
 }
