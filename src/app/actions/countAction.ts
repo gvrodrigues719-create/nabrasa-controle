@@ -60,12 +60,16 @@ export async function initCountSessionAction(routineId: string, groupId: string,
     const { data: items } = await supabase.from('items').select('id, name, unit, unit_observation, min_expected, max_expected').eq('group_id', groupId).eq('active', true).order('name', { ascending: true })
 
     const dbCounts: Record<string, string> = {}
+    const dbZeroed: Record<string, boolean> = {}
     if (sessionId) {
-        const { data: dbItems } = await supabase.from('count_session_items').select('item_id, counted_quantity').eq('session_id', sessionId)
+        const { data: dbItems } = await supabase.from('count_session_items').select('item_id, counted_quantity, is_zeroed').eq('session_id', sessionId)
         if (dbItems) {
             dbItems.forEach(d => {
                 if (d.counted_quantity !== null && d.counted_quantity !== undefined) {
                     dbCounts[d.item_id] = d.counted_quantity.toString()
+                }
+                if (d.is_zeroed) {
+                    dbZeroed[d.item_id] = true
                 }
             })
         }
@@ -75,17 +79,19 @@ export async function initCountSessionAction(routineId: string, groupId: string,
         sessionId,
         groupName: group?.name || '',
         items: items || [],
-        dbCounts
+        dbCounts,
+        dbZeroed
     }
 }
 
-export async function syncCountSessionAction(sessionId: string, currentCounts: Record<string, string>, complete: boolean = false) {
+export async function syncCountSessionAction(sessionId: string, currentCounts: Record<string, string>, complete: boolean = false, zeroedMap: Record<string, boolean> = {}) {
     const upserts = Object.keys(currentCounts).map(itemId => {
         const qty = currentCounts[itemId]
         return {
             session_id: sessionId,
             item_id: itemId,
-            counted_quantity: qty === '' ? null : parseFloat(qty.replace(',', '.'))
+            counted_quantity: qty === '' ? null : parseFloat(qty.replace(',', '.')),
+            is_zeroed: !!zeroedMap[itemId]
         }
     })
 

@@ -73,7 +73,8 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
 
         const storedZeroed = localStorage.getItem(ZEROED_KEY)
         const localZeroed = storedZeroed ? JSON.parse(storedZeroed) : {}
-        setZeroed(localZeroed)
+        const mergedZeroed = { ...(res.dbZeroed || {}), ...localZeroed }
+        setZeroed(mergedZeroed)
 
         const merged = { ...res.dbCounts, ...localDict }
         setCounts(merged)
@@ -113,7 +114,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
             }
         }
 
-        debouncedSync(newCounts) // Trigger remote save
+        debouncedSync(newCounts, zeroed) // Trigger remote save
     }
 
     // Handle zerado button
@@ -124,12 +125,12 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         setZeroed(newZeroed)
         localStorage.setItem(LOCAL_KEY, JSON.stringify(newCounts))
         localStorage.setItem(ZEROED_KEY, JSON.stringify(newZeroed))
-        debouncedSync(newCounts)
+        debouncedSync(newCounts, newZeroed)
     }
 
     const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-    const debouncedSync = (currentCounts: Record<string, string>) => {
+    const debouncedSync = (currentCounts: Record<string, string>, currentZeroed?: Record<string, boolean>) => {
         if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current)
         setSyncStatus('saving')
 
@@ -141,7 +142,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         syncTimeoutRef.current = setTimeout(async () => {
             if (!sessionId) return
 
-            const res = await syncCountSessionAction(sessionId, currentCounts, false)
+            const res = await syncCountSessionAction(sessionId, currentCounts, false, currentZeroed || zeroed)
             if (res.error) {
                 setSyncStatus('offline')
                 toast.error(res.error, { id: 'sync-err' })
@@ -184,7 +185,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
 
         if (!sessionId) return
 
-        const res = await syncCountSessionAction(sessionId, counts, true)
+        const res = await syncCountSessionAction(sessionId, counts, true, zeroed)
         if (res.error) {
             setSyncStatus('offline')
             toast.error(res.error)
