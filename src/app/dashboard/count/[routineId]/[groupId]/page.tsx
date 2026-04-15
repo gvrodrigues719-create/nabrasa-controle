@@ -14,6 +14,8 @@ type Item = {
     name: string
     unit: string
     unit_observation: string
+    min_expected: number | null
+    max_expected: number | null
 }
 
 export default function BlindCountPage({ params }: { params: Promise<{ routineId: string, groupId: string }> }) {
@@ -98,6 +100,18 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         const newCounts = { ...counts, [item.id]: val }
         setCounts(newCounts)
         localStorage.setItem(LOCAL_KEY, JSON.stringify(newCounts))
+
+        // Range check warnings (non-blocking)
+        const numVal = parseFloat(val)
+        if (!isNaN(numVal) && numVal > 0) {
+            if (item.max_expected != null && numVal > item.max_expected * 2) {
+                toast(`Valor alto para ${item.name}: ${val} ${item.unit}. Confere se está certo.`, { icon: '⚠️', id: `range-high-${item.id}` })
+            }
+            if (item.min_expected != null && numVal < item.min_expected * 0.1) {
+                toast(`Valor baixo para ${item.name}: ${val} ${item.unit}. Confere se está certo.`, { icon: '⚠️', id: `range-low-${item.id}` })
+            }
+        }
+
         debouncedSync(newCounts) // Trigger remote save
     }
 
