@@ -45,6 +45,27 @@ async function requireManagerOrAdmin() {
     return userId
 }
 
+// Helper para travar escritura em ciclos já aprovados
+async function requireActiveCycle(executionId: string) {
+    const { data: exec, error: execErr } = await supabase
+        .from('routine_executions')
+        .select(`
+            id,
+            audit_reports ( approved_at )
+        `)
+        .eq('id', executionId)
+        .single()
+        
+    if (execErr || !exec) throw new Error("Ciclo não encontrado.")
+    
+    const reports = Array.isArray(exec.audit_reports) ? exec.audit_reports : [exec.audit_reports]
+    const hasApproved = reports.some((r: any) => r && r.approved_at != null)
+    
+    if (hasApproved) {
+        throw new Error("Transação fechada: Este ciclo já possui auditoria aprovada e não pode receber mutações em compras.")
+    }
+}
+
 export async function addStockEntry(data: {
     executionId: string,
     itemId: string,
@@ -53,8 +74,9 @@ export async function addStockEntry(data: {
     updateAvgCost?: boolean,
     notes?: string
 }) {
-    // 1. Extrair auth via servidor
+    // 1. Extrair auth via servidor e testar ciclo
     const userId = await requireManagerOrAdmin()
+    await requireActiveCycle(data.executionId)
 
     // 2. Buscar informações do item
     const { data: item, error: itemErr } = await supabase
@@ -178,8 +200,13 @@ export async function getStockEntries(executionId: string) {
 }
 
 export async function deleteStockEntry(entryId: string) {
-    // Apenas validação de segurança (sem necessidade de resgatar o userId retornado)
+    // Apenas validação de segurança na hierarquia 
     await requireManagerOrAdmin()
+
+    // Verifica bloqueio de ciclo via entry referenciada
+    const { data: entry } = await supabase.from('stock_entries').select('execution_id').eq('id', entryId).single()
+    if (!entry) throw new Error("Compra não referenciada.")
+    await requireActiveCycle(entry.execution_id)
 
     // Deleção simples da entrada sem recálculo retroativo estrito (limitação conhecida do MVP)
     const { error } = await supabase.from('stock_entries').delete().eq('id', entryId)
