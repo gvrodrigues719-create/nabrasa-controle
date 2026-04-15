@@ -86,12 +86,9 @@ export async function syncCountSessionAction(sessionId: string, currentCounts: R
         }
     })
 
-    const { error: delErr } = await supabase.from('count_session_items').delete().eq('session_id', sessionId)
-    if (delErr) return { error: `Delete Error: ${delErr.message}` }
-
     if (upserts.length > 0) {
-        const { error: insErr } = await supabase.from('count_session_items').insert(upserts)
-        if (insErr) return { error: `Insert Error: ${insErr.message}` }
+        const { error: upsErr } = await supabase.from('count_session_items').upsert(upserts, { onConflict: 'session_id,item_id' })
+        if (upsErr) return { error: `Upsert Error: ${upsErr.message}` }
     }
 
     const payload: any = { updated_at: new Date().toISOString() }
