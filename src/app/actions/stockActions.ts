@@ -3,10 +3,16 @@
 import { createClient } from '@supabase/supabase-js'
 import { requireManagerOrAdmin } from '@/lib/auth-utils'
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const supabase = new Proxy({} as any, {
+    get(target, prop) {
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+        if (!url || !key) throw new Error("Ambiente Vercel incompleto: Faltam chaves de banco de dados.")
+        const client = createClient(url, key)
+        const value = client[prop as keyof typeof client]
+        return typeof value === 'function' ? value.bind(client) : value
+    }
+})
 
 
 

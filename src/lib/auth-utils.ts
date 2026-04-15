@@ -2,10 +2,12 @@ import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/supabase/server'
 import { getActiveOperator } from '@/app/actions/pinAuth'
 
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getServiceSupabase() {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!url || !key) return null
+    return createClient(url, key)
+}
 
 export async function requireManagerOrAdmin() {
     // 0. Bypass de DEV (Apenas se configurado explicitamente)
@@ -43,6 +45,11 @@ export async function requireManagerOrAdmin() {
     
     // 3. Valida no perfil real do usuário
     // Usamos o supabaseAdmin para garantir que podemos ler o perfil mesmo com RLS restrito
+    const supabaseAdmin = getServiceSupabase()
+    if (!supabaseAdmin) {
+        throw new Error("Ambiente do servidor incompleto ou em processo de build. Supabase Service Role Key faltando.")
+    }
+    
     const { data: usr, error } = await supabaseAdmin
         .from('users')
         .select('role')
