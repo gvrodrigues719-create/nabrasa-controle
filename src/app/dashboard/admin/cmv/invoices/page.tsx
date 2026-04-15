@@ -203,7 +203,11 @@ export default function InvoicesPage() {
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
                                     {invoices.map(inv => (
-                                        <tr key={inv.id} className="hover:bg-gray-50/50 transition-colors cursor-pointer">
+                                        <tr 
+                                            key={inv.id} 
+                                            className="hover:bg-gray-50/50 transition-colors cursor-pointer"
+                                            onClick={() => router.push(`/dashboard/admin/cmv/invoices/${inv.id}`)}
+                                        >
                                             <td className="p-4">
                                                 <p className="font-bold text-gray-900">{inv.supplier_name}</p>
                                                 <p className="text-[10px] text-gray-400 uppercase tracking-tight">Nota #{inv.invoice_number} • <span className="font-mono">{inv.supplier_document}</span></p>
