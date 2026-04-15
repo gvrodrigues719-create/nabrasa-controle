@@ -10,11 +10,17 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-const SECRET = process.env.SUPABASE_SERVICE_ROLE_KEY!.substring(0, 32)
+function getSecret() {
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!key) return null
+    return key.substring(0, 32)
+}
 
 function encryptId(text: string) {
+    const secret = getSecret()
+    if (!secret) return text // Fallback inseguro mas evita crash fatal
     const iv = crypto.randomBytes(16)
-    const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(SECRET), iv)
+    const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(secret), iv)
     let encrypted = cipher.update(text)
     encrypted = Buffer.concat([encrypted, cipher.final()])
     return iv.toString('hex') + ':' + encrypted.toString('hex')
@@ -22,10 +28,12 @@ function encryptId(text: string) {
 
 function decryptId(text: string) {
     try {
+        const secret = getSecret()
+        if (!secret) return null
         const textParts = text.split(':')
         const iv = Buffer.from(textParts.shift()!, 'hex')
         const encryptedText = Buffer.from(textParts.join(':'), 'hex')
-        const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(SECRET), iv)
+        const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(secret), iv)
         let decrypted = decipher.update(encryptedText)
         decrypted = Buffer.concat([decrypted, decipher.final()])
         return decrypted.toString()

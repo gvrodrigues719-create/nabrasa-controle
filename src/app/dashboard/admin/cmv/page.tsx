@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, Loader2, ShoppingCart, TrendingUp, Calculator,
-    DollarSign, AlertTriangle, ChevronDown, ChevronUp, Package
+    DollarSign, AlertTriangle, ChevronDown, ChevronUp, Package, FileText
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { supabase } from '@/lib/supabase/client'
@@ -41,6 +41,7 @@ export default function CMVPage() {
     // Abas
     const [activeTab, setActiveTab] = useState<'summary' | 'cycle'>('cycle')
     const [summaryFilter, setSummaryFilter] = useState<'4' | '6' | 'month' | 'custom'>('4')
+    const [customDates, setCustomDates] = useState({ start: '', end: '' })
     const [consolidatedData, setConsolidatedData] = useState<any>(null)
     const [loadingSummary, setLoadingSummary] = useState(false)
 
@@ -50,13 +51,23 @@ export default function CMVPage() {
     }, [])
 
     useEffect(() => {
-        if (activeTab === 'summary') loadConsolidated()
-    }, [activeTab, summaryFilter])
+        if (activeTab === 'summary') {
+            if (summaryFilter === 'custom') {
+                if (customDates.start && customDates.end) loadConsolidated()
+            } else {
+                loadConsolidated()
+            }
+        }
+    }, [activeTab, summaryFilter, customDates])
 
     const loadConsolidated = async () => {
         setLoadingSummary(true)
         try {
-            const res = await getCMVConsolidated({ mode: summaryFilter })
+            const res = await getCMVConsolidated({ 
+                mode: summaryFilter,
+                startDate: customDates.start || undefined,
+                endDate: customDates.end || undefined
+            })
             if (res.success) setConsolidatedData(res.data)
         } catch (e: any) {
             toast.error(e.message)
@@ -166,15 +177,22 @@ export default function CMVPage() {
 
     return (
         <div className="p-4 space-y-5 pb-24 max-w-3xl mx-auto">
-            {/* Header */}
-            <div className="flex items-center gap-3 mt-2">
-                <button onClick={() => router.push('/dashboard/admin')} className="p-2 bg-white border border-gray-200 rounded-xl shadow-sm text-gray-600 hover:bg-gray-50 transition active:scale-95">
-                    <ArrowLeft className="w-5 h-5" />
-                </button>
-                <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Gestão Financeira</p>
-                    <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">CMV & Compras</h1>
+            <div className="flex items-center justify-between mt-2">
+                <div className="flex items-center gap-3">
+                    <button onClick={() => router.push('/dashboard/admin')} className="p-2 bg-white border border-gray-200 rounded-xl shadow-sm text-gray-600 hover:bg-gray-50 transition active:scale-95">
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Gestão Financeira</p>
+                        <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">CMV & Compras</h1>
+                    </div>
                 </div>
+                <button 
+                    onClick={() => router.push('/dashboard/admin/cmv/invoices')}
+                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 transition shadow-sm active:scale-95"
+                >
+                    <FileText className="w-4 h-4 text-gray-400" /> Notas XML
+                </button>
             </div>
 
             {/* Abas */}
@@ -195,23 +213,42 @@ export default function CMVPage() {
 
             {activeTab === 'summary' && (
                 <div className="space-y-6 animate-in fade-in duration-500">
-                    {/* Filtros Rápidos */}
-                    <div className="flex flex-wrap gap-2">
-                        {[
-                            { id: '4', label: 'Últimos 4 ciclos' },
-                            { id: '6', label: 'Últimos 6 ciclos' },
-                            { id: 'month', label: 'Mês atual' },
-                            { id: 'custom', label: 'Personalizado' },
-                        ].map(f => (
-                            <button
-                                key={f.id}
-                                onClick={() => setSummaryFilter(f.id as any)}
-                                disabled={loadingSummary}
-                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${summaryFilter === f.id ? 'bg-[#B13A2B] border-[#B13A2B] text-white shadow-md' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
-                            >
-                                {f.label}
-                            </button>
-                        ))}
+                    <div className="space-y-3">
+                        <div className="flex flex-wrap gap-2">
+                            {[
+                                { id: '4', label: 'Últimos 4 ciclos' },
+                                { id: '6', label: 'Últimos 6 ciclos' },
+                                { id: 'month', label: 'Mês atual' },
+                                { id: 'custom', label: 'Personalizado' },
+                            ].map(f => (
+                                <button
+                                    key={f.id}
+                                    onClick={() => setSummaryFilter(f.id as any)}
+                                    disabled={loadingSummary}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${summaryFilter === f.id ? 'bg-[#B13A2B] border-[#B13A2B] text-white shadow-md' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                                >
+                                    {f.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {summaryFilter === 'custom' && (
+                            <div className="flex items-center gap-2 animate-in slide-in-from-top-2 duration-300">
+                                <input 
+                                    type="date" 
+                                    value={customDates.start}
+                                    onChange={e => setCustomDates(prev => ({ ...prev, start: e.target.value }))}
+                                    className="bg-white border border-gray-200 rounded-lg p-2 text-xs font-bold text-gray-600 outline-none focus:ring-2 focus:ring-[#B13A2B]"
+                                />
+                                <span className="text-gray-400 font-bold">até</span>
+                                <input 
+                                    type="date" 
+                                    value={customDates.end}
+                                    onChange={e => setCustomDates(prev => ({ ...prev, end: e.target.value }))}
+                                    className="bg-white border border-gray-200 rounded-lg p-2 text-xs font-bold text-gray-600 outline-none focus:ring-2 focus:ring-[#B13A2B]"
+                                />
+                            </div>
+                        )}
                     </div>
 
                     {loadingSummary ? (

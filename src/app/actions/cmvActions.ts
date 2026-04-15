@@ -1,48 +1,15 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
-import { getActiveOperator } from './pinAuth'
-import { createServerClient } from '@/lib/supabase/server'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// Helper para validar permissão
-async function requireManagerOrAdmin() {
-    let userId: string | null = null
+import { requireManagerOrAdmin } from '@/lib/auth-utils'
 
-    // 1. Tenta Auth nativo do Supabase primeiro via Server Client
-    try {
-        const supabaseServer = await createServerClient()
-        const { data: { user } } = await supabaseServer.auth.getUser()
-        if (user) {
-            userId = user.id
-        }
-    } catch (e) {
-        console.error("Falha ao consultar usuário via cookie Supabase:", e)
-    }
 
-    // 2. Fallback: Tenta Cookie PIN operacional caso Auth nativo falhe
-    if (!userId) {
-        const op = await getActiveOperator()
-        if (op) userId = op.userId
-    }
-
-    if (!userId) {
-        throw new Error("Usuário não autenticado no servidor.")
-    }
-    
-    // 3. Valida no perfil real do usuário
-    const { data: usr, error } = await supabase.from('users').select('role').eq('id', userId).single()
-    if (error || !usr) throw new Error("Erro ao validar credenciais do usuário.")
-    if (usr.role !== 'admin' && usr.role !== 'manager') {
-        throw new Error("Acesso negado: Perfil apenas de operador ou insuficiente.")
-    }
-    
-    return userId
-}
 
 export async function saveRevenue(executionId: string, revenue: number) {
     await requireManagerOrAdmin()
