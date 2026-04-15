@@ -33,8 +33,8 @@ export default function DashboardPage() {
     return (
         <div className="p-4 space-y-6">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-4">
-                <div className="h-14 w-14 rounded-full bg-indigo-100 flex items-center justify-center">
-                    <span className="text-indigo-700 font-bold text-xl uppercase tracking-wider">
+                <div className="h-14 w-14 rounded-full bg-[#FDF0EF] flex items-center justify-center">
+                    <span className="text-[#B13A2B] font-bold text-xl uppercase tracking-wider">
                         {userName ? userName.substring(0, 2) : ''}
                     </span>
                 </div>
@@ -49,7 +49,7 @@ export default function DashboardPage() {
 
                 <Link
                     href="/dashboard/routines"
-                    className="w-full bg-indigo-600 text-white p-5 rounded-2xl flex items-center justify-between shadow-md hover:bg-indigo-700 hover:shadow-lg transition-all active:scale-95 block"
+                    className="w-full bg-[#B13A2B] text-white p-5 rounded-2xl flex items-center justify-between shadow-md hover:bg-[#8F2E21] hover:shadow-lg transition-all active:scale-95 block"
                 >
                     <div className="flex items-center space-x-4">
                         <ClipboardList className="w-8 h-8" />
@@ -63,7 +63,7 @@ export default function DashboardPage() {
                             href="/dashboard/admin/reports"
                             className="bg-white border border-gray-200 p-5 rounded-2xl flex flex-col items-center justify-center text-gray-800 hover:bg-gray-50 hover:border-gray-300 transition shadow-sm space-y-3 active:scale-95 text-center"
                         >
-                            <ShieldCheck className="w-8 h-8 text-indigo-600" />
+                            <ShieldCheck className="w-8 h-8 text-[#B13A2B]" />
                             <span className="font-semibold text-sm">Auditoria</span>
                         </Link>
                         <Link

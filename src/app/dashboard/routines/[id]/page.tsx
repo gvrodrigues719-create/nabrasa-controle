@@ -108,10 +108,10 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
             </div>
 
             {!hasSnapshot && (
-                <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-2xl shadow-sm text-center">
-                    <p className="text-indigo-800 font-bold mb-1">Rotina Offline</p>
-                    <p className="text-sm text-indigo-600 mb-4">Para iniciar a contagem hoje, precisamos congelar o estoque teórico.</p>
-                    <button disabled={starting} onClick={() => setShowStartConfirm(true)} className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold flex justify-center items-center active:scale-95 transition">
+                <div className="bg-[#FDF0EF] border border-[#D4564A] p-4 rounded-2xl shadow-sm text-center">
+                    <p className="text-[#8F2E21] font-bold mb-1">Rotina Offline</p>
+                    <p className="text-sm text-[#B13A2B] mb-4">Para iniciar a contagem hoje, precisamos congelar o estoque teórico.</p>
+                    <button disabled={starting} onClick={() => setShowStartConfirm(true)} className="w-full py-3 bg-[#B13A2B] hover:bg-[#8F2E21] text-white rounded-xl font-bold flex justify-center items-center active:scale-95 transition">
                         {starting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Play className="w-5 h-5 mr-2" /> Iniciar Ciclo Oficial</>}
                     </button>
                 </div>
@@ -133,7 +133,7 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
                                 onClick={() => handleGroupClick(g)}
                                 className={`w-full p-4 rounded-2xl border text-left flex justify-between items-center transition-all shadow-sm ${isCompleted ? 'bg-gray-50 border-gray-200 opacity-80' :
                                     isInProgress ? 'bg-orange-50 border-orange-200 hover:bg-orange-100' :
-                                        'bg-white border-indigo-100 hover:border-indigo-300 hover:shadow-md'
+                                        'bg-white border-[#FDF0EF] hover:border-[#D4564A] hover:shadow-md'
                                     }`}
                             >
                                 <div>
@@ -160,7 +160,7 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
                                     ) : isInProgress ? (
                                         <PlayCircle className="w-8 h-8 text-orange-400" />
                                     ) : (
-                                        <PlayCircle className="w-8 h-8 text-indigo-200" />
+                                        <PlayCircle className="w-8 h-8 text-[#D4564A]" />
                                     )}
                                 </div>
                             </button>
@@ -182,8 +182,8 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
                         </button>
 
                         <div className="flex items-center space-x-3 mb-5">
-                            <div className="p-3 bg-indigo-50 rounded-xl">
-                                <ClipboardList className="w-7 h-7 text-indigo-600" />
+                            <div className="p-3 bg-[#FDF0EF] rounded-xl">
+                                <ClipboardList className="w-7 h-7 text-[#B13A2B]" />
                             </div>
                             <div>
                                 <h3 className="text-xl font-extrabold text-gray-900">{selectedGroup.name}</h3>
@@ -196,7 +196,7 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
                         <div className="space-y-3">
                             <button
                                 onClick={confirmNavigation}
-                                className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-lg flex justify-center items-center active:scale-95 transition shadow-sm"
+                                className="w-full py-4 bg-[#B13A2B] hover:bg-[#8F2E21] text-white rounded-2xl font-bold text-lg flex justify-center items-center active:scale-95 transition shadow-sm"
                             >
                                 <Play className="w-5 h-5 mr-2" /> Estou aqui, começar
                             </button>

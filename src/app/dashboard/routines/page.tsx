@@ -21,12 +21,12 @@ export default async function ActiveRoutinesPage() {
                     <p className="font-medium text-gray-600">Nenhuma rotina ativa no momento.</p>
                 </div>
             ) : (
-                <div className="space-y-3">
+                <div className="space-y-4">
                     {routines.map(r => (
                         <Link
                             key={r.id}
                             href={`/dashboard/routines/${r.id}`}
-                            className="w-full bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex justify-between items-center hover:border-indigo-300 hover:shadow-md transition-all active:scale-95"
+                            className="w-full bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex justify-between items-center hover:border-[#D4564A] hover:shadow-md transition-all active:scale-95"
                         >
                             <div className="text-left">
                                 <h3 className="font-bold text-gray-900 text-lg">{r.name}</h3>
@@ -34,7 +34,7 @@ export default async function ActiveRoutinesPage() {
                                     {r.frequency === 'daily' ? 'Diária' : r.frequency === 'weekly' ? 'Semanal' : 'Mensal'}
                                 </p>
                             </div>
-                            <div className="bg-indigo-50 p-3 rounded-xl text-indigo-600">
+                            <div className="bg-[#FDF0EF] p-3 rounded-xl text-[#B13A2B]">
                                 <ChevronRight className="w-6 h-6" />
                             </div>
                         </Link>

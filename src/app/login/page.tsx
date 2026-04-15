@@ -67,8 +67,7 @@ export default function LoginPage() {
     const handleDelete = () => setPin(pin.slice(0, -1))
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-            {/* Branding Original do NaBrasa Restaurado */}
+        <div className="min-h-screen bg-[#F7F6F3] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
             <div className="sm:mx-auto sm:w-full sm:max-w-md mb-8">
                 <div className="flex justify-center">
                     <img src="/Logo Vermelha.png" alt="NaBrasa Controle" className="h-28 w-auto object-contain drop-shadow-md" />
@@ -76,45 +75,40 @@ export default function LoginPage() {
                 <h2 className="mt-6 text-center text-4xl font-extrabold text-gray-900 tracking-tight">
                     NaBrasa Controle
                 </h2>
-                <p className="mt-2 text-center text-base text-gray-600 font-medium tracking-tight">
+                <p className="mt-2 text-center text-base text-gray-500 font-medium tracking-tight">
                     Contagem, auditoria e controle operacional
                 </p>
-                <div className="mt-3 flex justify-center">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-gray-100 text-gray-500 uppercase tracking-widest">
-                        Uso Interno NaBrasa
-                    </span>
-                </div>
             </div>
 
             <div className="sm:mx-auto sm:w-full sm:max-w-md px-4">
 
                 {mode === 'select' && (
-                    <div className="bg-white py-10 px-6 shadow-2xl rounded-3xl border border-gray-100 flex flex-col gap-4 text-center">
+                    <div className="bg-white py-10 px-6 shadow-sm rounded-3xl border border-gray-100 flex flex-col gap-4 text-center">
                         <h2 className="text-xl font-black text-gray-900 tracking-tight mb-2">Acesso ao Sistema</h2>
                         <button
                             onClick={() => setMode('operator_select')}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white p-5 rounded-2xl font-bold text-lg flex items-center justify-between transition-transform active:scale-95 shadow-md shadow-indigo-600/20"
+                            className="bg-[#B13A2B] hover:bg-[#8F2E21] text-white p-5 rounded-2xl font-bold text-lg flex items-center justify-between transition-transform active:scale-95 shadow-md shadow-[#B13A2B]/20"
                         >
-                            <span className="flex items-center"><KeyRound className="w-6 h-6 mr-3" /> Acesso Operacional</span>
-                            <ArrowRight className="w-5 h-5 text-indigo-300" />
+                            <span className="flex items-center"><KeyRound className="w-6 h-6 mr-3" /> Acessar operação</span>
+                            <ArrowRight className="w-5 h-5 text-[#D4564A]" />
                         </button>
                         <button
                             onClick={() => setMode('manager')}
-                            className="bg-white hover:bg-gray-50 text-gray-800 border-2 border-gray-200 p-5 rounded-2xl font-bold text-lg flex items-center justify-between transition-transform active:scale-95"
+                            className="bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 p-4 rounded-2xl font-semibold text-sm flex items-center justify-between transition-transform active:scale-95"
                         >
-                            <span className="flex items-center"><Lock className="w-6 h-6 mr-3 text-gray-400" /> Acesso Gerencial</span>
-                            <ArrowRight className="w-5 h-5 text-gray-400" />
+                            <span className="flex items-center"><Lock className="w-5 h-5 mr-2 text-gray-400" /> Acesso Gerencial</span>
+                            <ArrowRight className="w-4 h-4 text-gray-300" />
                         </button>
                     </div>
                 )}
 
                 {mode === 'manager' && (
                     <div className="bg-white py-8 px-6 shadow-2xl rounded-3xl border border-gray-100 relative">
-                        <button onClick={() => { setMode('select'); setError(null) }} className="absolute -top-4 -left-4 bg-white p-2 rounded-full shadow-md text-gray-500 hover:text-indigo-600">
+                        <button onClick={() => { setMode('select'); setError(null) }} className="absolute -top-4 -left-4 bg-white p-2 rounded-full shadow-md text-gray-500 hover:text-[#B13A2B]">
                             <ArrowLeft className="w-5 h-5" />
                         </button>
                         <h3 className="text-xl font-bold text-center text-gray-900 mb-6 flex items-center justify-center">
-                            <Lock className="w-5 h-5 mr-2 text-indigo-600" /> Gerência Geral
+                            <Lock className="w-5 h-5 mr-2 text-[#B13A2B]" /> Gerência Geral
                         </h3>
                         <form className="space-y-5" onSubmit={handleManagerLogin}>
                             {error && <div className="p-3 rounded-xl bg-red-50 text-red-600 text-sm font-semibold text-center">{error}</div>}
@@ -125,7 +119,7 @@ export default function LoginPage() {
                                     <input
                                         type="email" required
                                         value={email} onChange={(e) => setEmail(e.target.value)}
-                                        className="w-full pl-10 pr-3 py-3 bg-gray-50 border-transparent rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 focus:bg-white transition-all outline-none font-medium"
+                                        className="w-full pl-10 pr-3 py-3 bg-gray-50 border-transparent rounded-xl focus:ring-4 focus:ring-[#FDF0EF] focus:border-[#B13A2B] focus:bg-white transition-all outline-none font-medium"
                                         placeholder="Seu email"
                                     />
                                 </div>
@@ -137,7 +131,7 @@ export default function LoginPage() {
                                     <input
                                         type="password" required
                                         value={password} onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full pl-10 pr-3 py-3 bg-gray-50 border-transparent rounded-xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 focus:bg-white transition-all outline-none font-medium"
+                                        className="w-full pl-10 pr-3 py-3 bg-gray-50 border-transparent rounded-xl focus:ring-4 focus:ring-[#FDF0EF] focus:border-[#B13A2B] focus:bg-white transition-all outline-none font-medium"
                                         placeholder="••••••••"
                                     />
                                 </div>
@@ -154,14 +148,14 @@ export default function LoginPage() {
 
                 {mode === 'operator_select' && (
                     <div className="bg-white pt-6 pb-4 px-4 shadow-2xl rounded-3xl border border-gray-100 relative max-h-[80vh] flex flex-col h-full">
-                        <button onClick={() => setMode('select')} className="absolute -top-4 -left-4 bg-white p-2 rounded-full shadow-md text-gray-500 hover:text-indigo-600 z-10">
+                        <button onClick={() => setMode('select')} className="absolute -top-4 -left-4 bg-white p-2 rounded-full shadow-md text-gray-500 hover:text-[#B13A2B] z-10">
                             <ArrowLeft className="w-5 h-5" />
                         </button>
                         <h3 className="text-xl font-extrabold text-center text-gray-900 mb-4 px-8 leading-tight">Quem vai operar?</h3>
 
                         <div className="overflow-y-auto pr-2 space-y-2 flex-1 pb-4">
                             {loading ? (
-                                <div className="flex justify-center p-8"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /></div>
+                                <div className="flex justify-center p-8"><Loader2 className="w-8 h-8 animate-spin text-[#B13A2B]" /></div>
                             ) : employees.length === 0 ? (
                                 <div className="text-center text-gray-500 p-6 text-sm font-semibold border-2 border-dashed border-gray-200 rounded-xl">
                                     Nenhum operador ativo.<br /><span className="text-xs font-normal">Aguardando a execução do script (migration_pins.sql) pelo banco de dados.</span>
@@ -170,10 +164,10 @@ export default function LoginPage() {
                                 <button
                                     key={emp.id}
                                     onClick={() => { setSelectedOp(emp); setMode('operator_pin'); setPin('') }}
-                                    className="w-full text-left p-4 rounded-2xl bg-gray-50 hover:bg-indigo-50 border border-t border-gray-100 active:bg-indigo-100 transition-colors flex items-center justify-between"
+                                    className="w-full text-left p-4 rounded-2xl bg-gray-50 hover:bg-[#FDF0EF] border border-t border-gray-100 active:bg-[#FDF0EF] transition-colors flex items-center justify-between"
                                 >
                                     <div className="flex items-center">
-                                        <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg mr-3">
+                                        <div className="w-10 h-10 rounded-full bg-[#FDF0EF] text-[#B13A2B] flex items-center justify-center font-bold text-lg mr-3">
                                             {emp.name.charAt(0).toUpperCase()}
                                         </div>
                                         <span className="font-bold text-gray-800 text-lg">{emp.name}</span>
@@ -187,11 +181,11 @@ export default function LoginPage() {
 
                 {mode === 'operator_pin' && (
                     <div className="bg-white py-8 px-6 shadow-2xl rounded-3xl border border-gray-100 flex flex-col items-center relative">
-                        <button onClick={() => setMode('operator_select')} className="absolute -top-4 -left-4 bg-white p-2 rounded-full shadow-md text-gray-500 hover:text-indigo-600 z-10">
+                        <button onClick={() => setMode('operator_select')} className="absolute -top-4 -left-4 bg-white p-2 rounded-full shadow-md text-gray-500 hover:text-[#B13A2B] z-10">
                             <ArrowLeft className="w-5 h-5" />
                         </button>
 
-                        <div className="w-16 h-16 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-3xl font-black mb-3">
+                        <div className="w-16 h-16 rounded-full bg-[#FDF0EF] text-[#B13A2B] flex items-center justify-center text-3xl font-black mb-3">
                             {selectedOp?.name.charAt(0).toUpperCase()}
                         </div>
                         <h3 className="text-xl font-bold text-gray-900">{selectedOp?.name}</h3>
@@ -199,12 +193,12 @@ export default function LoginPage() {
 
                         <div className="flex justify-center space-x-3 mb-8 w-full">
                             {[0, 1, 2, 3].map(i => (
-                                <div key={i} className={`w-4 h-4 rounded-full transition-all duration-200 ${i < pin.length ? 'bg-indigo-600 scale-125 shadow-sm' : 'bg-gray-200'}`} />
+                                <div key={i} className={`w-4 h-4 rounded-full transition-all duration-200 ${i < pin.length ? 'bg-[#B13A2B] scale-125 shadow-sm' : 'bg-gray-200'}`} />
                             ))}
                         </div>
 
                         {loading ? (
-                            <div className="py-12"><Loader2 className="w-10 h-10 animate-spin text-indigo-600" /></div>
+                            <div className="py-12"><Loader2 className="w-10 h-10 animate-spin text-[#B13A2B]" /></div>
                         ) : (
                             <div className="grid grid-cols-3 gap-3 w-full max-w-[280px]">
                                 {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (

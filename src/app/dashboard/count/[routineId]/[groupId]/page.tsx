@@ -197,14 +197,14 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         router.push(`/dashboard/routines/${routineId}`)
     }
 
-    if (loadingInit) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 text-indigo-600 animate-spin" /></div>
+    if (loadingInit) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 text-[#B13A2B] animate-spin" /></div>
 
     if (blocked) return (
         <div className="p-4 flex flex-col items-center justify-center min-h-[50vh] text-center space-y-4">
             <ShieldAlert className="w-16 h-16 text-orange-500" />
             <h2 className="text-xl font-bold text-gray-900">Acesso Bloqueado</h2>
             <p className="text-gray-600 font-medium">{blocked}</p>
-            <button onClick={() => router.push(`/dashboard/routines/${routineId}`)} className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold mt-4 shrink-0 shadow-sm">
+            <button onClick={() => router.push(`/dashboard/routines/${routineId}`)} className="bg-[#B13A2B] text-white px-6 py-3 rounded-xl font-bold mt-4 shrink-0 shadow-sm">
                 Voltar para Locais
             </button>
         </div>
@@ -215,12 +215,12 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     return (
         <div className="bg-gray-50 min-h-screen pb-32">
             {/* HEADER */}
-            <div className="bg-indigo-600 text-white p-4 sticky top-0 z-40 shadow-md">
+            <div className="bg-[#B13A2B] text-white p-4 sticky top-0 z-40 shadow-md">
                 <div className="flex justify-between items-center mb-2">
-                    <button onClick={() => router.push(`/dashboard/routines/${routineId}`)} className="p-2 bg-indigo-700/50 rounded-lg hover:bg-indigo-700 transition">
+                    <button onClick={() => router.push(`/dashboard/routines/${routineId}`)} className="p-2 bg-[#8F2E21]/50 rounded-lg hover:bg-[#8F2E21] transition">
                         <ArrowLeft className="w-5 h-5 text-white" />
                     </button>
-                    <div className="flex items-center space-x-2 text-xs font-semibold bg-indigo-800/40 px-3 py-1 rounded-full">
+                    <div className="flex items-center space-x-2 text-xs font-semibold bg-black/20 px-3 py-1 rounded-full">
                         {syncStatus === 'synced' ? <><Check className="w-3 h-3 text-green-300" /><span className="text-indigo-100">Sincronizado</span></> :
                             syncStatus === 'saving' ? <><Loader2 className="w-3 h-3 text-white animate-spin" /><span className="text-indigo-100">Salvando...</span></> :
                                 <><CloudOff className="w-3 h-3 text-red-300" /><span className="text-red-100">Modo Offline (Local)</span></>
@@ -229,7 +229,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                 </div>
                 <h1 className="text-2xl font-extrabold tracking-tight">{groupName}</h1>
                 <div className="mt-3 flex items-center space-x-2">
-                    <div className="bg-indigo-500/30 h-2 flex-1 rounded-full overflow-hidden">
+                    <div className="bg-white/20 h-2 flex-1 rounded-full overflow-hidden">
                         <div className="bg-green-400 h-full rounded-full transition-all" style={{ width: `${((items.length - itemsPendentes) / (items.length || 1)) * 100}%` }}></div>
                     </div>
                     <span className="text-xs font-bold w-12 text-right">{items.length - itemsPendentes}/{items.length}</span>
@@ -244,8 +244,8 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                 return (
                     <div className="p-4 space-y-4">
                         <div className="text-center py-6">
-                            <div className="bg-indigo-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Lock className="w-8 h-8 text-indigo-600" />
+                            <div className="bg-[#FDF0EF] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Lock className="w-8 h-8 text-[#B13A2B]" />
                             </div>
                             <h2 className="text-2xl font-extrabold text-gray-900">Resumo da Contagem</h2>
                             <p className="text-sm text-gray-500 mt-1">Revise antes de concluir. Após confirmar, os dados serão bloqueados.</p>
@@ -372,7 +372,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                                                 onKeyDown={(e) => {
                                                     if (isInt && (e.key === '.' || e.key === ',')) e.preventDefault()
                                                 }}
-                                                className={`w-full text-3xl font-extrabold p-4 border rounded-xl outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all text-center ${
+                                                className={`w-full text-3xl font-extrabold p-4 border rounded-xl outline-none focus:ring-4 focus:ring-[#FDF0EF] focus:border-[#B13A2B] transition-all text-center ${
                                                     isZeroed ? 'text-gray-400 bg-gray-50 border-gray-200' : 'text-gray-900 bg-gray-50 border-gray-200'
                                                 }`}
                                                 placeholder=" "
@@ -390,9 +390,9 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                                         >
                                             Zerado
                                         </button>
-                                        <div className="flex flex-col items-center justify-center shrink-0 min-w-[55px] bg-indigo-50 py-3 rounded-xl border border-indigo-100 mt-5">
-                                            <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">UND</span>
-                                            <span className="text-lg font-black text-indigo-600">{item.unit}</span>
+                                        <div className="flex flex-col items-center justify-center shrink-0 min-w-[55px] bg-[#FDF0EF] py-3 rounded-xl border border-red-100 mt-5">
+                                            <span className="text-xs font-bold text-[#B13A2B] uppercase tracking-widest mb-1">UND</span>
+                                            <span className="text-lg font-black text-[#B13A2B]">{item.unit}</span>
                                         </div>
                                     </div>
                                 </div>
