@@ -26,31 +26,57 @@ export default function ReportsPage() {
 
     const load = async () => {
         setLoading(true)
-        const { data: allRoutines } = await supabase.from('routines').select('id, name').order('created_at', { ascending: false })
+
+        const { data: allRoutines } = await supabase
+            .from('routines')
+            .select('id, name')
+            .order('created_at', { ascending: false })
 
         if (allRoutines) {
+            // Calcula o "hoje" no fuso America/Sao_Paulo
+            const brDate = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'America/Sao_Paulo',
+                year: 'numeric', month: '2-digit', day: '2-digit'
+            }).format(new Date())
+            const startOfDayBR = `${brDate}T03:00:00Z` // meia-noite BRT = 03:00 UTC
+            const nextBrDate = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'America/Sao_Paulo',
+                year: 'numeric', month: '2-digit', day: '2-digit'
+            }).format(new Date(Date.now() + 86400000))
+            const endOfDayBR = `${nextBrDate}T02:59:59Z`
+
             const results: RoutineResult[] = await Promise.all(allRoutines.map(async r => {
-                const { count: tGroups } = await supabase.from('routine_groups').select('id', { count: 'exact' }).eq('routine_id', r.id)
+                // Total de grupos da rotina
+                const { count: tGroups } = await supabase
+                    .from('routine_groups')
+                    .select('id', { count: 'exact' })
+                    .eq('routine_id', r.id)
 
-                // The report system now targets the active or most recent EXECUTION cycle instead of arbitrary routine scope
-                const { data: latestExec } = await supabase.from('routine_executions').select('id').eq('routine_id', r.id).order('started_at', { ascending: false }).limit(1).maybeSingle()
+                // Grupos concluídos HOJE (count_sessions usa routine_id, não execution_id)
+                const { count: cGroups } = await supabase
+                    .from('count_sessions')
+                    .select('id', { count: 'exact' })
+                    .eq('routine_id', r.id)
+                    .eq('status', 'completed')
+                    .gte('started_at', startOfDayBR)
+                    .lte('started_at', endOfDayBR)
 
-                let cGroups = 0
-                if (latestExec) {
-                    const { count: currentCount } = await supabase.from('count_sessions').select('id', { count: 'exact' }).eq('execution_id', latestExec.id).eq('status', 'completed')
-                    cGroups = currentCount || 0
-                }
-
-                // Report is bound to the execution
-                const { data: reports } = await supabase.from('audit_reports').select('id, status_approval').eq('execution_id', latestExec?.id).order('closed_at', { ascending: false }).limit(1).maybeSingle()
+                // Relatório mais recente da rotina (audit_reports usa routine_id)
+                const { data: report } = await supabase
+                    .from('audit_reports')
+                    .select('id, status_approval')
+                    .eq('routine_id', r.id)
+                    .order('closed_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle()
 
                 return {
-                    id: latestExec?.id || r.id, // For routing we use execution_id if available (or fallback to routineId if it has no cycles yet to show waiting)
+                    id: r.id,
                     name: r.name,
                     total_groups: tGroups || 0,
                     completed_groups: cGroups || 0,
-                    report_id: reports?.id || null,
-                    status_approval: reports?.status_approval || null
+                    report_id: report?.id || null,
+                    status_approval: report?.status_approval || null
                 }
             }))
             setRoutines(results)
@@ -102,7 +128,7 @@ export default function ReportsPage() {
                                     <FileSearch className="w-4 h-4 mr-2" /> Acessar Auditoria
                                 </button>
                             ) : allDone ? (
-                                <button onClick={() => router.push(`/dashboard/admin/reports/generate/${r.id}`)} className="bg-indigo-600 text-white py-2.5 px-4 rounded-xl flex items-center font-bold text-sm shadow-sm hover:bg-indigo-700 active:scale-95 transition">
+                                <button onClick={() => router.push(`/dashboard/admin/reports/generate/${r.id}`)} className="bg-[#B13A2B] text-white py-2.5 px-4 rounded-xl flex items-center font-bold text-sm shadow-sm hover:bg-[#8F2E21] active:scale-95 transition">
                                     <Calculator className="w-4 h-4 mr-2" /> Consolidar Dados
                                 </button>
                             ) : (
