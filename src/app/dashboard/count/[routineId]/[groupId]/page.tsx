@@ -25,12 +25,14 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     const [sessionId, setSessionId] = useState<string | null>(null)
     const [items, setItems] = useState<Item[]>([])
     const [counts, setCounts] = useState<Record<string, string>>({})
+    const [zeroed, setZeroed] = useState<Record<string, boolean>>({})
     const [groupName, setGroupName] = useState('')
     const [blocked, setBlocked] = useState<string | null>(null)
     const [syncStatus, setSyncStatus] = useState<'synced' | 'saving' | 'offline'>('synced')
     const [isConfirming, setIsConfirming] = useState(false)
 
     const LOCAL_KEY = `count_${routineId}_${groupId}`
+    const ZEROED_KEY = `zeroed_${routineId}_${groupId}`
 
     useEffect(() => {
         initSession()
@@ -66,6 +68,10 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         const stored = localStorage.getItem(LOCAL_KEY)
         const localDict = stored ? JSON.parse(stored) : {}
 
+        const storedZeroed = localStorage.getItem(ZEROED_KEY)
+        const localZeroed = storedZeroed ? JSON.parse(storedZeroed) : {}
+        setZeroed(localZeroed)
+
         setCounts({ ...localDict, ...res.dbCounts })
 
         setLoadingInit(false)
@@ -80,10 +86,29 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
             val = val.split(/[.,]/)[0].replace(/\D/g, '')
         }
 
+        // Se o operador digitar manualmente, remove o estado zeroed
+        if (zeroed[item.id]) {
+            const newZeroed = { ...zeroed }
+            delete newZeroed[item.id]
+            setZeroed(newZeroed)
+            localStorage.setItem(ZEROED_KEY, JSON.stringify(newZeroed))
+        }
+
         const newCounts = { ...counts, [item.id]: val }
         setCounts(newCounts)
         localStorage.setItem(LOCAL_KEY, JSON.stringify(newCounts))
         debouncedSync(newCounts) // Trigger remote save
+    }
+
+    // Handle zerado button
+    const handleZerado = (item: Item) => {
+        const newCounts = { ...counts, [item.id]: '0' }
+        const newZeroed = { ...zeroed, [item.id]: true }
+        setCounts(newCounts)
+        setZeroed(newZeroed)
+        localStorage.setItem(LOCAL_KEY, JSON.stringify(newCounts))
+        localStorage.setItem(ZEROED_KEY, JSON.stringify(newZeroed))
+        debouncedSync(newCounts)
     }
 
     const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -124,7 +149,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         if (syncStatus === 'saving') return toast.error('Aguarde o salvamento online terminar.')
 
         // Validate all items counted
-        const uncounted = items.filter(i => counts[i.id] === undefined || counts[i.id] === '')
+        const uncounted = items.filter(i => !zeroed[i.id] && (counts[i.id] === undefined || counts[i.id] === ''))
         if (uncounted.length > 0) {
             toast.error(`Ainda há ${uncounted.length} itens não contados. Lembre-se: Vazio não é Zero.`)
             return
@@ -152,6 +177,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         }
 
         localStorage.removeItem(LOCAL_KEY)
+        localStorage.removeItem(ZEROED_KEY)
         router.push(`/dashboard/routines/${routineId}`)
     }
 
@@ -168,7 +194,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         </div>
     )
 
-    const itemsPendentes = items.filter(i => counts[i.id] === undefined || counts[i.id] === '').length
+    const itemsPendentes = items.filter(i => !zeroed[i.id] && (counts[i.id] === undefined || counts[i.id] === '')).length
 
     return (
         <div className="bg-gray-50 min-h-screen pb-32">
@@ -200,24 +226,31 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                     <p className="text-center mt-10 text-gray-500 font-medium">Não há itens vinculados a este local.</p>
                 ) : items.map((item, index) => {
                     const val = counts[item.id] ?? ''
-                    const isFilled = val !== ''
+                    const isZeroed = !!zeroed[item.id]
+                    const isFilled = val !== '' || isZeroed
                     const isInt = ['un', 'und', 'cx', 'pct'].includes(item.unit.toLowerCase().trim())
 
                     return (
-                        <div key={item.id} className={`p-5 rounded-2xl border-2 transition-colors shadow-sm ${isFilled ? 'bg-white border-green-200' : 'bg-white border-gray-100'}`}>
+                        <div key={item.id} className={`p-5 rounded-2xl border-2 transition-colors shadow-sm ${
+                            isZeroed ? 'bg-gray-100 border-gray-200' :
+                            isFilled ? 'bg-white border-green-200' : 'bg-white border-gray-100'
+                        }`}>
                             <div className="flex justify-between items-start mb-3 border-b border-gray-50 pb-3">
-                                <div>
+                                <div className="flex-1">
                                     <p className="text-xs font-bold text-gray-400 mb-1">#{index + 1}</p>
-                                    <h3 className="text-lg font-bold text-gray-900 leading-tight">{item.name}</h3>
+                                    <h3 className={`text-lg font-bold leading-tight ${isZeroed ? 'text-gray-400' : 'text-gray-900'}`}>{item.name}</h3>
                                     {item.unit_observation && (
-                                        <p className="text-sm font-medium text-amber-600 mt-1 flex items-center">
+                                        <p className={`text-sm font-medium mt-1 flex items-center ${isZeroed ? 'text-amber-400' : 'text-amber-600'}`}>
                                             <AlertTriangle className="w-4 h-4 mr-1 shrink-0" /> {item.unit_observation}
                                         </p>
                                     )}
                                 </div>
+                                {isZeroed && (
+                                    <span className="bg-gray-300 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider shrink-0">Zerado</span>
+                                )}
                             </div>
 
-                            <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-3">
                                 <div className="flex-1">
                                     <label className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1 block">Quantidade Física</label>
                                     <input
@@ -227,15 +260,27 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                                         onKeyDown={(e) => {
                                             if (isInt && (e.key === '.' || e.key === ',')) e.preventDefault()
                                         }}
-                                        className="w-full text-3xl font-extrabold text-gray-900 p-4 border border-gray-200 rounded-xl outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all text-center bg-gray-50"
+                                        className={`w-full text-3xl font-extrabold p-4 border rounded-xl outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all text-center ${
+                                            isZeroed ? 'text-gray-400 bg-gray-50 border-gray-200' : 'text-gray-900 bg-gray-50 border-gray-200'
+                                        }`}
                                         placeholder=" "
                                         value={val}
                                         onChange={(e) => handleChange(item, e.target.value)}
                                     />
                                 </div>
-                                <div className="flex flex-col items-center justify-center shrink-0 min-w-[70px] bg-indigo-50 py-3 rounded-xl border border-indigo-100 mt-5">
+                                <button
+                                    onClick={() => handleZerado(item)}
+                                    className={`shrink-0 px-3 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-95 mt-5 ${
+                                        isZeroed
+                                            ? 'bg-gray-300 text-gray-500 border border-gray-300'
+                                            : 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'
+                                    }`}
+                                >
+                                    Zerado
+                                </button>
+                                <div className="flex flex-col items-center justify-center shrink-0 min-w-[55px] bg-indigo-50 py-3 rounded-xl border border-indigo-100 mt-5">
                                     <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">UND</span>
-                                    <span className="text-xl font-black text-indigo-600">{item.unit}</span>
+                                    <span className="text-lg font-black text-indigo-600">{item.unit}</span>
                                 </div>
                             </div>
                         </div>
