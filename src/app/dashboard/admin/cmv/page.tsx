@@ -40,6 +40,7 @@ export default function CMVPage() {
 
     // Abas
     const [activeTab, setActiveTab] = useState<'summary' | 'cycle'>('cycle')
+    const [summaryFilter, setSummaryFilter] = useState<'4' | '6' | 'month' | 'custom'>('4')
 
     useEffect(() => {
         loadCycles()
@@ -175,10 +176,74 @@ export default function CMVPage() {
             </div>
 
             {activeTab === 'summary' && (
-                <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center shadow-sm">
-                    <TrendingUp className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-                    <p className="font-bold text-gray-400">Resumo consolidado em construção</p>
-                    <p className="text-xs text-gray-400 mt-2">Visão histórica e comparativa em breve.</p>
+                <div className="space-y-6 animate-in fade-in duration-500">
+                    {/* Filtros Rápidos */}
+                    <div className="flex flex-wrap gap-2">
+                        {[
+                            { id: '4', label: 'Últimos 4 ciclos' },
+                            { id: '6', label: 'Últimos 6 ciclos' },
+                            { id: 'month', label: 'Mês atual' },
+                            { id: 'custom', label: 'Personalizado' },
+                        ].map(f => (
+                            <button
+                                key={f.id}
+                                onClick={() => setSummaryFilter(f.id as any)}
+                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${summaryFilter === f.id ? 'bg-[#B13A2B] border-[#B13A2B] text-white shadow-md' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                            >
+                                {f.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Cards de Resumo */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {[
+                            { label: 'Receita Total', value: 'R$ 45.200,00', icon: DollarSign, color: 'text-gray-600', bg: 'bg-white' },
+                            { label: 'Compras Totais', value: 'R$ 12.450,00', icon: ShoppingCart, color: 'text-[#B13A2B]', bg: 'bg-[#FDF0EF]' },
+                            { label: 'CMV Total', value: 'R$ 13.120,00', icon: Calculator, color: 'text-indigo-600', bg: 'bg-indigo-50/50' },
+                            { label: 'CMV %', value: '29.0%', icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-50/50' },
+                            { label: 'Meta', value: '30.0%', icon: Package, color: 'text-gray-400', bg: 'bg-white' },
+                            { label: 'Lacuna', value: '-1.0%', icon: AlertTriangle, color: 'text-green-600', bg: 'bg-green-50/50' },
+                        ].map((c, i) => (
+                            <div key={i} className={`${c.bg} border border-gray-100 rounded-2xl p-4 shadow-sm space-y-2`}>
+                                <div className="flex items-center gap-2">
+                                    <c.icon className={`w-3 h-3 ${c.color}`} />
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{c.label}</p>
+                                </div>
+                                <p className={`text-lg font-extrabold ${c.color.includes('text-gray') ? 'text-gray-900' : c.color}`}>{c.value}</p>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Tabela de Ciclos Selecionados */}
+                    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                        <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Ciclos Selecionados</p>
+                            <span className="text-[10px] font-bold bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">MOCK DATA</span>
+                        </div>
+                        <div className="divide-y divide-gray-100">
+                            {[1, 2, 3, 4].map(i => (
+                                <div key={i} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-not-allowed">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 font-bold text-xs">
+                                            #{i}
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-gray-800">Ciclo de {i <= 2 ? 'Março' : 'Fevereiro'} - Semanal</p>
+                                            <p className="text-[10px] text-gray-400">0{i}/03/2026 · 12:00</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-sm font-bold text-[#B13A2B]">28.{i}%</p>
+                                        <p className="text-[10px] text-gray-400">CMV %</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="p-8 text-center bg-gray-50/30 border-t border-gray-100 italic text-gray-400 text-sm">
+                            Conexão com histórico consolidado em breve...
+                        </div>
+                    </div>
                 </div>
             )}
 
