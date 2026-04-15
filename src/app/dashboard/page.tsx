@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { ClipboardList, ShieldCheck, Settings, Flame } from 'lucide-react'
+import { ClipboardList, ShieldCheck, Settings, Flame, TrendingUp } from 'lucide-react'
 import { getActiveOperator } from '@/app/actions/pinAuth'
 
 export default function DashboardPage() {
@@ -95,25 +95,43 @@ export default function DashboardPage() {
                     <>
                         <div>
                             <p className="text-[11px] font-bold text-[#8c716c] uppercase tracking-widest mb-3">Gerência</p>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-3">
                                 <Link
-                                    href="/dashboard/admin/reports"
-                                    className="bg-white rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-[0_2px_12px_rgba(27,28,26,0.06)] border border-[#f0eeed] active:scale-[0.98] transition-transform text-center"
+                                    href="/dashboard/admin/cmv"
+                                    className="flex items-center gap-4 bg-white rounded-2xl p-5 shadow-[0_2px_12px_rgba(27,28,26,0.06)] border border-[#f0eeed] active:scale-[0.98] transition-transform block"
                                 >
-                                    <div className="w-10 h-10 rounded-xl bg-[#FDF0EF] flex items-center justify-center">
-                                        <ShieldCheck className="w-5 h-5 text-[#B13A2B]" />
+                                    <div className="w-12 h-12 rounded-xl bg-[#B13A2B] flex items-center justify-center shrink-0">
+                                        <TrendingUp className="w-6 h-6 text-white" />
                                     </div>
-                                    <span className="font-semibold text-sm text-[#1b1c1a]">Auditoria</span>
-                                </Link>
-                                <Link
-                                    href="/dashboard/admin"
-                                    className="bg-white rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-[0_2px_12px_rgba(27,28,26,0.06)] border border-[#f0eeed] active:scale-[0.98] transition-transform text-center"
-                                >
-                                    <div className="w-10 h-10 rounded-xl bg-[#efeeeb] flex items-center justify-center">
-                                        <Settings className="w-5 h-5 text-[#58413e]" />
+                                    <div className="flex-1">
+                                        <p className="font-extrabold text-[#1b1c1a] text-base" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
+                                            CMV & Compras
+                                        </p>
+                                        <p className="text-sm text-[#8c716c] mt-0.5">Acompanhe compras, faturamento e CMV do ciclo</p>
                                     </div>
-                                    <span className="font-semibold text-sm text-[#1b1c1a]">Configurar</span>
+                                    <span className="text-[#dfbfba] text-xl">→</span>
                                 </Link>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Link
+                                        href="/dashboard/admin/reports"
+                                        className="bg-white rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-[0_2px_12px_rgba(27,28,26,0.06)] border border-[#f0eeed] active:scale-[0.98] transition-transform text-center"
+                                    >
+                                        <div className="w-10 h-10 rounded-xl bg-[#FDF0EF] flex items-center justify-center">
+                                            <ShieldCheck className="w-5 h-5 text-[#B13A2B]" />
+                                        </div>
+                                        <span className="font-semibold text-sm text-[#1b1c1a]">Auditoria</span>
+                                    </Link>
+                                    <Link
+                                        href="/dashboard/admin"
+                                        className="bg-white rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-[0_2px_12px_rgba(27,28,26,0.06)] border border-[#f0eeed] active:scale-[0.98] transition-transform text-center"
+                                    >
+                                        <div className="w-10 h-10 rounded-xl bg-[#efeeeb] flex items-center justify-center">
+                                            <Settings className="w-5 h-5 text-[#58413e]" />
+                                        </div>
+                                        <span className="font-semibold text-sm text-[#1b1c1a]">Configurar</span>
+                                    </Link>
+                                </div>
                             </div>
                         </div>
                     </>
