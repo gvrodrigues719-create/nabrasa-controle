@@ -2,15 +2,18 @@
 
 import React, { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, FileText, Loader2, Plus, Search, CheckCircle, X, Box } from 'lucide-react'
-import { getSupplierInvoices, previewInvoiceXml, confirmImportInvoice } from '@/app/actions/invoiceImportActions'
+import { ArrowLeft, FileText, Loader2, Plus, Search, CheckCircle, X, Box, Trash2 } from 'lucide-react'
+import { getSupplierInvoices, previewInvoiceXml, confirmImportInvoice, deleteSupplierInvoice } from '@/app/actions/invoiceImportActions'
 import { ParsedInvoiceResult } from '@/modules/invoice-import/types'
 import toast from 'react-hot-toast'
+import { ConfirmModal } from '@/components/ConfirmModal'
 
 export default function InvoicesPage() {
     const router = useRouter()
     const [invoices, setInvoices] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const [isDeleting, setIsDeleting] = useState<string | null>(null)
+    const [invoiceToDelete, setInvoiceToDelete] = useState<any>(null)
 
     // Etapa 2 States
     const [previewData, setPreviewData] = useState<ParsedInvoiceResult | null>(null)
@@ -30,6 +33,21 @@ export default function InvoicesPage() {
             toast.error(e.message)
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleDeleteInvoice = async () => {
+        if (!invoiceToDelete) return
+        setIsDeleting(invoiceToDelete.id)
+        try {
+            await deleteSupplierInvoice(invoiceToDelete.id)
+            toast.success("Nota excluída com sucesso")
+            loadInvoices()
+        } catch (err: any) {
+            toast.error(err.message)
+        } finally {
+            setInvoiceToDelete(null)
+            setIsDeleting(null)
         }
     }
 
@@ -91,6 +109,14 @@ export default function InvoicesPage() {
                     <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Importação de Notas</h1>
                 </div>
             </div>
+
+            <ConfirmModal 
+                isOpen={!!invoiceToDelete}
+                title="Excluir Nota?"
+                message={`Você tem certeza que deseja excluir a nota de ${invoiceToDelete?.supplier_name}? Esta ação não pode ser desfeita.`}
+                onCancel={() => setInvoiceToDelete(null)}
+                onConfirm={handleDeleteInvoice}
+            />
 
             {/* Preview de Nova Nota (Etapa 2) */}
             {previewData && previewData.header && previewData.items ? (
@@ -199,6 +225,7 @@ export default function InvoicesPage() {
                                         <th className="p-4 font-bold text-gray-500 uppercase text-[10px] tracking-wider text-right">Valor Total</th>
                                         <th className="p-4 font-bold text-gray-500 uppercase text-[10px] tracking-wider text-center">Status</th>
                                         <th className="p-4 font-bold text-gray-500 uppercase text-[10px] tracking-wider">Importador</th>
+                                        <th className="p-4 font-bold text-gray-500 uppercase text-[10px] tracking-wider text-center">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
@@ -223,6 +250,18 @@ export default function InvoicesPage() {
                                             <td className="p-4 text-xs font-semibold text-gray-500">
                                                 {inv.users?.name || 'Sistema'}
                                                 <div className="text-[9px] font-normal text-gray-400 mt-0.5">{new Date(inv.created_at).toLocaleDateString('pt-BR')}</div>
+                                            </td>
+                                            <td className="p-4 text-center">
+                                                <button 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setInvoiceToDelete(inv);
+                                                    }}
+                                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                    title="Excluir Nota"
+                                                >
+                                                    {isDeleting === inv.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}
