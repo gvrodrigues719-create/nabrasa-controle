@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { supabase } from '@/lib/supabase/client'
-import { calculateCMV, saveRevenue, getCMVTarget, getCMVItemDetail } from '@/app/actions/cmvActions'
+import { calculateCMV, saveRevenue, getCMVTarget, getCMVItemDetail, getCMVConsolidated } from '@/app/actions/cmvActions'
 
 function formatMoney(val: number) {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0)
@@ -41,11 +41,29 @@ export default function CMVPage() {
     // Abas
     const [activeTab, setActiveTab] = useState<'summary' | 'cycle'>('cycle')
     const [summaryFilter, setSummaryFilter] = useState<'4' | '6' | 'month' | 'custom'>('4')
+    const [consolidatedData, setConsolidatedData] = useState<any>(null)
+    const [loadingSummary, setLoadingSummary] = useState(false)
 
     useEffect(() => {
         loadCycles()
         getCMVTarget().then(t => setCmvTarget(t))
     }, [])
+
+    useEffect(() => {
+        if (activeTab === 'summary') loadConsolidated()
+    }, [activeTab, summaryFilter])
+
+    const loadConsolidated = async () => {
+        setLoadingSummary(true)
+        try {
+            const res = await getCMVConsolidated({ mode: summaryFilter })
+            if (res.success) setConsolidatedData(res.data)
+        } catch (e: any) {
+            toast.error(e.message)
+        } finally {
+            setLoadingSummary(false)
+        }
+    }
 
     useEffect(() => {
         if (selectedId) loadCycleDetail(selectedId)
@@ -188,6 +206,7 @@ export default function CMVPage() {
                             <button
                                 key={f.id}
                                 onClick={() => setSummaryFilter(f.id as any)}
+                                disabled={loadingSummary}
                                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${summaryFilter === f.id ? 'bg-[#B13A2B] border-[#B13A2B] text-white shadow-md' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'}`}
                             >
                                 {f.label}
@@ -195,55 +214,102 @@ export default function CMVPage() {
                         ))}
                     </div>
 
-                    {/* Cards de Resumo */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {[
-                            { label: 'Receita Total', value: 'R$ 45.200,00', icon: DollarSign, color: 'text-gray-600', bg: 'bg-white' },
-                            { label: 'Compras Totais', value: 'R$ 12.450,00', icon: ShoppingCart, color: 'text-[#B13A2B]', bg: 'bg-[#FDF0EF]' },
-                            { label: 'CMV Total', value: 'R$ 13.120,00', icon: Calculator, color: 'text-indigo-600', bg: 'bg-indigo-50/50' },
-                            { label: 'CMV %', value: '29.0%', icon: TrendingUp, color: 'text-green-600', bg: 'bg-green-50/50' },
-                            { label: 'Meta', value: '30.0%', icon: Package, color: 'text-gray-400', bg: 'bg-white' },
-                            { label: 'Lacuna', value: '-1.0%', icon: AlertTriangle, color: 'text-green-600', bg: 'bg-green-50/50' },
-                        ].map((c, i) => (
-                            <div key={i} className={`${c.bg} border border-gray-100 rounded-2xl p-4 shadow-sm space-y-2`}>
-                                <div className="flex items-center gap-2">
-                                    <c.icon className={`w-3 h-3 ${c.color}`} />
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{c.label}</p>
-                                </div>
-                                <p className={`text-lg font-extrabold ${c.color.includes('text-gray') ? 'text-gray-900' : c.color}`}>{c.value}</p>
+                    {loadingSummary ? (
+                        <div className="flex flex-col items-center justify-center py-20 gap-4">
+                            <Loader2 className="w-10 h-10 animate-spin text-[#B13A2B]" />
+                            <p className="text-sm font-bold text-gray-400">Consolidando dados do histórico...</p>
+                        </div>
+                    ) : !consolidatedData || consolidatedData.cycles.length === 0 ? (
+                        <div className="bg-white border border-dashed border-gray-200 rounded-2xl p-12 text-center shadow-sm">
+                            <TrendingUp className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+                            <p className="font-bold text-gray-400">Nenhum dado encontrado para o período</p>
+                            <p className="text-xs text-gray-400 mt-2">Selecione outro filtro ou registre novos ciclos.</p>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Cards de Resumo */}
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                {[
+                                    { label: 'Receita Total', value: formatMoney(consolidatedData.summary.revenue_total), icon: DollarSign, color: 'text-gray-600', bg: 'bg-white' },
+                                    { label: 'Compras Totais', value: formatMoney(consolidatedData.summary.purchases_total), icon: ShoppingCart, color: 'text-[#B13A2B]', bg: 'bg-[#FDF0EF]' },
+                                    { label: 'CMV Total', value: formatMoney(consolidatedData.summary.cmv_total), icon: Calculator, color: 'text-indigo-600', bg: 'bg-indigo-50/50' },
+                                    { 
+                                        label: 'CMV %', 
+                                        value: consolidatedData.summary.cmv_percentage_consolidated != null ? (consolidatedData.summary.cmv_percentage_consolidated * 100).toFixed(1) + '%' : '—', 
+                                        icon: TrendingUp, 
+                                        color: consolidatedData.summary.cmv_percentage_consolidated <= consolidatedData.summary.target ? 'text-green-600' : 'text-red-600', 
+                                        bg: 'bg-white' 
+                                    },
+                                    { label: 'Meta', value: (consolidatedData.summary.target * 100).toFixed(1) + '%', icon: Package, color: 'text-gray-400', bg: 'bg-white' },
+                                    { 
+                                        label: 'Lacuna', 
+                                        value: consolidatedData.summary.cmv_percentage_consolidated != null ? ((consolidatedData.summary.cmv_percentage_consolidated - consolidatedData.summary.target) * 100).toFixed(1) + '%' : '—', 
+                                        icon: AlertTriangle, 
+                                        color: consolidatedData.summary.gap <= 0 ? 'text-green-600' : 'text-amber-600', 
+                                        bg: consolidatedData.summary.gap <= 0 ? 'bg-green-50/50' : 'bg-amber-50/50' 
+                                    },
+                                ].map((c, i) => (
+                                    <div key={i} className={`${c.bg} border border-gray-100 rounded-2xl p-4 shadow-sm space-y-2 transition-all hover:shadow-md`}>
+                                        <div className="flex items-center gap-2">
+                                            <c.icon className={`w-3 h-3 ${c.color}`} />
+                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{c.label}</p>
+                                        </div>
+                                        <p className={`text-lg font-extrabold ${c.color.includes('text-gray') ? 'text-gray-900' : c.color}`}>{c.value}</p>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
-                    </div>
 
-                    {/* Tabela de Ciclos Selecionados */}
-                    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                        <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
-                            <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Ciclos Selecionados</p>
-                            <span className="text-[10px] font-bold bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">MOCK DATA</span>
-                        </div>
-                        <div className="divide-y divide-gray-100">
-                            {[1, 2, 3, 4].map(i => (
-                                <div key={i} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-not-allowed">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 font-bold text-xs">
-                                            #{i}
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-gray-800">Ciclo de {i <= 2 ? 'Março' : 'Fevereiro'} - Semanal</p>
-                                            <p className="text-[10px] text-gray-400">0{i}/03/2026 · 12:00</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-sm font-bold text-[#B13A2B]">28.{i}%</p>
-                                        <p className="text-[10px] text-gray-400">CMV %</p>
+                            {/* Tabela de Ciclos Selecionados */}
+                            <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                                <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+                                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">{consolidatedData.summary.cycles_count} Ciclos Selecionados</p>
+                                    <div className="flex gap-2">
+                                        {consolidatedData.summary.cycles_with_anomalies > 0 && (
+                                            <span className="text-[9px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                                <AlertTriangle className="w-2.5 h-2.5" /> {consolidatedData.summary.cycles_with_anomalies} Anomalias
+                                            </span>
+                                        )}
+                                        {consolidatedData.summary.cycles_with_uncounted > 0 && (
+                                            <span className="text-[9px] font-bold bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                                <AlertTriangle className="w-2.5 h-2.5" /> {consolidatedData.summary.cycles_with_uncounted} Alert. Contagem
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                        <div className="p-8 text-center bg-gray-50/30 border-t border-gray-100 italic text-gray-400 text-sm">
-                            Conexão com histórico consolidado em breve...
-                        </div>
-                    </div>
+                                <div className="divide-y divide-gray-100">
+                                    {consolidatedData.cycles.map((c: any) => (
+                                        <div 
+                                            key={c.execution_id} 
+                                            onClick={() => { setSelectedId(c.execution_id); setActiveTab('cycle'); }}
+                                            className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer group"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs ${c.anomalies_count > 0 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-400'}`}>
+                                                    {c.anomalies_count > 0 ? '!' : '#'}
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-bold text-gray-800 group-hover:text-[#B13A2B] transition-colors">{c.name}</p>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        <p className="text-[10px] text-gray-400">{formatDate(c.date)}</p>
+                                                        {c.uncounted_count > 0 && <span className="text-[9px] text-amber-600 font-bold">· {c.uncounted_count} não contados</span>}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className={`text-sm font-bold ${c.cmv_percentage != null && c.cmv_percentage <= consolidatedData.summary.target ? 'text-green-600' : 'text-[#B13A2B]'}`}>
+                                                    {c.cmv_percentage != null ? (c.cmv_percentage * 100).toFixed(1) + '%' : '—'}
+                                                </p>
+                                                <p className="text-[10px] text-gray-400">{formatMoney(c.cmv_total)} CMV</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="p-4 text-center bg-gray-50/30 border-t border-gray-100 text-gray-400 text-[10px] font-medium uppercase tracking-widest">
+                                    Fim do histórico selecionado
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
 

@@ -345,3 +345,104 @@ export async function getCMVItemDetail(executionId: string) {
     
     return { success: true, data: details }
 }
+
+export async function getCMVConsolidated(filter: { mode: '4' | '6' | 'month' | 'custom', startDate?: string, endDate?: string }) {
+    await requireManagerOrAdmin()
+
+    let query = supabase
+        .from('routine_executions')
+        .select('id, started_at, revenue, cmv_total, cmv_percentage, routines(name)')
+        .order('started_at', { ascending: false })
+
+    if (filter.mode === '4') query = query.limit(4)
+    else if (filter.mode === '6') query = query.limit(6)
+    else if (filter.mode === 'month') {
+        const firstDay = new Date()
+        firstDay.setDate(1)
+        firstDay.setHours(0, 0, 0, 0)
+        query = query.gte('started_at', firstDay.toISOString())
+    } else if (filter.mode === 'custom' && filter.startDate && filter.endDate) {
+        query = query.gte('started_at', filter.startDate).lte('started_at', filter.endDate)
+    }
+
+    const { data: cycles, error: cyclesError } = await query
+    if (cyclesError) throw new Error(cyclesError.message)
+    if (!cycles || cycles.length === 0) {
+        return { success: true, data: { cycles: [], summary: null } }
+    }
+
+    const execIds = cycles.map(c => c.id)
+
+    // 1. Compras por ciclo
+    const { data: allEntries } = await supabase
+        .from('stock_entries')
+        .select('execution_id, converted_quantity, converted_unit_cost')
+        .in('execution_id', execIds)
+    
+    const purchasesByExec: Record<string, number> = {}
+    allEntries?.forEach(e => {
+        const val = Number(e.converted_quantity || 0) * Number(e.converted_unit_cost || 0)
+        purchasesByExec[e.execution_id] = (purchasesByExec[e.execution_id] || 0) + val
+    })
+
+    // 2. Alertas (Anomalias e Não Contados)
+    // Para simplificar e evitar queries excessivas no resumo, buscamos apenas contadores brutos
+    // onde o valor de anomalia é detectado se o item aparece em EF mas não em EI/Compras.
+    // Como a lógica completa é pesada, calcularemos dinamicamente para os ciclos selecionados.
+    
+    const cycleData = []
+    let revenueTotal = 0
+    let purchasesTotal = 0
+    let cmvTotal = 0
+    let cyclesWithAnomalies = 0
+    let cyclesWithUncounted = 0
+
+    for (const cycle of cycles) {
+        // Aproveitamos a lógica de calculateCMV mas de forma otimizada para apenas pegar os counts
+        // Nota: Em um sistema real com muitos dados, salvaríamos esses counts no banco no momento do fechamento.
+        const res = await calculateCMV(cycle.id) // Recalcula para garantir counts atualizados (Action já existe)
+        const counts = res.data
+
+        const cyclePurchases = purchasesByExec[cycle.id] || 0
+        
+        cycleData.push({
+            execution_id: cycle.id,
+            name: (cycle.routines as any)?.name || 'Ciclo Sem Nome',
+            date: cycle.started_at,
+            revenue: cycle.revenue || 0,
+            compras_total: cyclePurchases,
+            cmv_total: cycle.cmv_total || 0,
+            cmv_percentage: cycle.cmv_percentage,
+            status: 'draft', // Simplificado
+            anomalies_count: counts.anomalies_count,
+            uncounted_count: counts.uncounted_count
+        })
+
+        revenueTotal += (cycle.revenue || 0)
+        purchasesTotal += cyclePurchases
+        cmvTotal += (cycle.cmv_total || 0)
+        if (counts.anomalies_count > 0) cyclesWithAnomalies++
+        if (counts.uncounted_count > 0) cyclesWithUncounted++
+    }
+
+    const cmvTarget = await getCMVTarget()
+
+    return {
+        success: true,
+        data: {
+            cycles: cycleData,
+            summary: {
+                revenue_total: revenueTotal,
+                purchases_total: purchasesTotal,
+                cmv_total: cmvTotal,
+                cmv_percentage_consolidated: revenueTotal > 0 ? cmvTotal / revenueTotal : null,
+                target: cmvTarget,
+                gap: revenueTotal > 0 ? (cmvTotal / revenueTotal) - cmvTarget : 0,
+                cycles_count: cycles.length,
+                cycles_with_anomalies: cyclesWithAnomalies,
+                cycles_with_uncounted: cyclesWithUncounted
+            }
+        }
+    }
+}
+
