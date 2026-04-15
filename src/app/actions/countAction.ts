@@ -10,16 +10,30 @@ const supabase = createClient(
 export async function initCountSessionAction(routineId: string, groupId: string, userId: string) {
     const { data: group } = await supabase.from('groups').select('name').eq('id', groupId).single()
 
-    // Calcula o "hoje" no fuso de Brasília (America/Sao_Paulo)
-    const brDateParts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
-    const startOfDayBR = `${brDateParts}T03:00:00Z` // meia-noite BRT = 03:00 UTC
+    // Busca o snapshot_started_at da rotina — âncora oficial do ciclo atual
+    // Fallback: início do dia em BRT (meia-noite BRT = 03:00 UTC)
+    const { data: routineRow } = await supabase
+        .from('routines')
+        .select('snapshot_started_at')
+        .eq('id', routineId)
+        .single()
+
+    const brDateParts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Sao_Paulo',
+        year: 'numeric', month: '2-digit', day: '2-digit'
+    }).format(new Date())
+    const startOfDayBR = `${brDateParts}T03:00:00Z`
+
+    // Usa o snapshot como âncora quando disponível — mais correto que "hoje meia-noite"
+    // porque o ciclo pode ter começado às 22h BRT (= 01h UTC do dia seguinte)
+    const cycleStart = routineRow?.snapshot_started_at || startOfDayBR
 
     const { data: existingSession } = await supabase
         .from('count_sessions')
         .select('id, status, user_id, execution_id, users(name)')
         .eq('routine_id', routineId)
         .eq('group_id', groupId)
-        .gte('started_at', startOfDayBR)
+        .gte('started_at', cycleStart)
         .order('started_at', { ascending: false })
         .limit(1)
         .single()
