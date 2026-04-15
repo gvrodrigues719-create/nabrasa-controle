@@ -71,7 +71,17 @@ export async function adminUpdateUserAction(
         if (createErr) throw new Error("Erro criando autenticação: " + createErr.message)
         finalUserId = newUser.user.id
 
-        await supabase.from('users').update({ role: targetUser.role, active: targetUser.active }).eq('id', finalUserId)
+        // upsert em vez de update:
+        // - se o trigger já rodou: atualiza a linha existente com role/name corretos
+        // - se o trigger ainda não rodou: insere a linha diretamente (sem depender de timing)
+        const { error: upsErr } = await supabase.from('users').upsert({
+            id: finalUserId,
+            email: targetUser.email,
+            name: targetUser.name,
+            role: targetUser.role,
+            active: targetUser.active
+        }, { onConflict: 'id' })
+        if (upsErr) throw new Error('Erro ao configurar perfil: ' + upsErr.message)
     } else {
         const { error: updErr } = await supabase.from('users').update({
             name: targetUser.name,
