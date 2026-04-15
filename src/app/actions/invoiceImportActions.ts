@@ -337,3 +337,190 @@ export async function deleteSupplierInvoiceItem(itemId: string) {
     return { success: true };
 }
 
+/**
+ * Etapa 4: Busca ciclos (execuções) ativos para seleção manual se necessário
+ */
+export async function getRecentActiveCycles() {
+    await requireManagerOrAdmin();
+    const supabase = getSupabaseServerClient();
+    const { data, error } = await supabase
+        .from('routine_executions')
+        .select(`
+            id,
+            started_at,
+            routines ( name )
+        `)
+        .eq('status', 'active')
+        .order('started_at', { ascending: false });
+
+    if (error) throw new Error(error.message);
+    return data;
+}
+
+/**
+ * Etapa 4: Processa uma nota aprovada, gerando entradas reais de estoque
+ */
+export async function processApprovedInvoice(invoiceId: string, manualCycleId?: string) {
+    const userId = await requireManagerOrAdmin();
+    const supabase = getSupabaseServerClient();
+
+    // 1. Buscar nota e itens detalhados com classificação
+    const { data: invoice, error: invErr } = await supabase
+        .from('supplier_invoices')
+        .select(`
+            *,
+            items:supplier_invoice_items (
+                *,
+                internal_product:matched_item_id (
+                    id, name, cost_category, affects_cmv, affects_average_cost
+                )
+            )
+        `)
+        .eq('id', invoiceId)
+        .single();
+
+    if (invErr || !invoice) throw new Error("Nota não encontrada.");
+
+    // 2. Validações de Status e Reprocessamento
+    if (invoice.status !== 'approved') {
+        throw new Error("Apenas notas aprovadas podem ser processadas.");
+    }
+
+    if (invoice.processed_at) {
+        throw new Error("Esta nota já foi marcada como processada.");
+    }
+
+    // Validação extra: verificar via campo supplier_invoice_item_id se algum item da nota já gerou entrada
+    const itemIds = invoice.items.map((i: any) => i.id);
+    const { data: conflictingEntries } = await supabase
+        .from('stock_entries')
+        .select('id')
+        .in('supplier_invoice_item_id', itemIds)
+        .limit(1);
+
+    if (conflictingEntries && conflictingEntries.length > 0) {
+        throw new Error("Detectamos entradas de estoque já existentes vinculadas a itens desta nota. Processamento abortado por segurança.");
+    }
+
+    // 3. Definir Ciclo (execution_id)
+    let targetCycleId = invoice.cycle_id || manualCycleId;
+
+    if (!targetCycleId) {
+        const activeCycles = await getRecentActiveCycles();
+        if (activeCycles.length === 1) {
+            targetCycleId = activeCycles[0].id;
+        } else if (activeCycles.length === 0) {
+            throw new Error("Nenhum ciclo de estoque ativo encontrado. Inicie um ciclo antes de processar a nota ou selecione manualmente.");
+        } else {
+            return { requiresSelection: true, activeCycles };
+        }
+    }
+
+    // 4. Validar Classificação dos Itens
+    const mappedItems = invoice.items.filter((i: any) => i.matched_item_id);
+    const unclassified = mappedItems.filter((i: any) => !i.internal_product?.cost_category);
+    
+    if (unclassified.length > 0) {
+        const names = unclassified.map((i: any) => i.internal_product?.name).join(', ');
+        throw new Error(`Os seguintes itens mapeados não possuem classificação gerencial definida no cadastro: ${names}. Corrija no cadastro de itens antes de prosseguir.`);
+    }
+
+    // 5. Gerar Entradas de Estoque
+    const itemsToProcess = mappedItems.filter((i: any) => i.review_status === 'reviewed');
+    
+    for (const item of itemsToProcess) {
+        const convertedQty = item.converted_quantity || (item.purchase_quantity * (item.conversion_factor_snapshot || 1));
+        const convertedCost = item.converted_unit_cost || (item.purchase_unit_cost / (item.conversion_factor_snapshot || 1));
+
+        const { error: entryErr } = await supabase.from('stock_entries').insert([{
+            execution_id: targetCycleId,
+            item_id: item.matched_item_id,
+            supplier_invoice_item_id: item.id,
+            quantity_purchased: item.purchase_quantity,
+            purchase_unit: item.purchase_unit,
+            purchase_unit_price: item.purchase_unit_cost,
+            conversion_factor_used: item.conversion_factor_snapshot,
+            converted_quantity: convertedQty,
+            converted_unit_cost: convertedCost,
+            update_avg_cost: item.internal_product?.affects_average_cost || false,
+            affects_avg_cost: item.internal_product?.affects_average_cost || false,
+            notes: `Importação XML: Nota ${invoice.invoice_number}`,
+            created_by: userId
+        }]);
+
+        if (entryErr) throw new Error(`Erro ao gerar entrada para o item ${item.item_description}: ${entryErr.message}`);
+
+        // 6. Atualizar Custo Médio se necessário
+        if (item.internal_product?.affects_average_cost) {
+            await updateItemAverageCostHelper(item.matched_item_id, targetCycleId!);
+        }
+    }
+
+    // 7. Finalizar Nota
+    await supabase.from('supplier_invoices').update({
+        processed_at: new Date().toISOString(),
+        processed_by: userId,
+        cycle_id: targetCycleId // Garante que a nota fica vinculada ao ciclo usado
+    }).eq('id', invoiceId);
+
+    // 8. Log
+    await supabase.from('invoice_import_logs').insert([{
+        supplier_invoice_id: invoiceId,
+        action: 'invoice_processed',
+        performed_by: userId,
+        payload_json: { 
+            itemsProcessed: itemsToProcess.length, 
+            cycleId: targetCycleId 
+        }
+    }]);
+
+    return { success: true };
+}
+
+/**
+ * Helper para recalcular custo médio (reaproveitado de stockActions)
+ */
+async function updateItemAverageCostHelper(itemId: string, executionId: string) {
+    const supabase = getSupabaseServerClient();
+    
+    // Buscar routine_id
+    const { data: exec } = await supabase.from('routine_executions').select('routine_id').eq('id', executionId).single();
+    if (!exec) return;
+
+    // Snapshot base
+    const { data: snapshot } = await supabase
+        .from('routine_theoretical_snapshot')
+        .select('theoretical_quantity, average_cost_snapshot')
+        .eq('routine_id', exec.routine_id)
+        .eq('item_id', itemId)
+        .maybeSingle();
+
+    const base_qty = snapshot?.theoretical_quantity || 0;
+    const base_val = base_qty * (snapshot?.average_cost_snapshot || 0);
+
+    // Entradas
+    const { data: entries } = await supabase
+        .from('stock_entries')
+        .select('converted_quantity, converted_unit_cost')
+        .eq('execution_id', executionId)
+        .eq('item_id', itemId)
+        .eq('affects_avg_cost', true);
+
+    let compras_qty = 0;
+    let compras_val = 0;
+    if (entries) {
+        for (const entry of entries) {
+            compras_qty += Number(entry.converted_quantity || 0);
+            compras_val += Number(entry.converted_quantity || 0) * Number(entry.converted_unit_cost || 0);
+        }
+    }
+
+    const total_qty = base_qty + compras_qty;
+    const total_val = base_val + compras_val;
+
+    if (total_qty > 0) {
+        const new_avg = total_val / total_qty;
+        await supabase.from('items').update({ average_cost: new_avg }).eq('id', itemId);
+    }
+}
+

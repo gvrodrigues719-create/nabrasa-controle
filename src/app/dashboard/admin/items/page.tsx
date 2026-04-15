@@ -21,6 +21,9 @@ type Item = {
     max_expected: number | null
     image_url: string | null
     active: boolean
+    cost_category: string | null
+    affects_cmv: boolean
+    affects_average_cost: boolean
     groups?: { name: string } | null
 }
 
@@ -49,6 +52,9 @@ export default function ItemsPage() {
     const [maxExpected, setMaxExpected] = useState('')
     const [imageUrl, setImageUrl] = useState<string | null>(null)
     const [imageUploading, setImageUploading] = useState(false)
+    const [costCategory, setCostCategory] = useState('')
+    const [affectsCmv, setAffectsCmv] = useState(false)
+    const [affectsAvgCost, setAffectsAvgCost] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
@@ -119,6 +125,9 @@ export default function ItemsPage() {
             min_expected: minExpected === '' ? null : parseFloat(minExpected),
             max_expected: maxExpected === '' ? null : parseFloat(maxExpected),
             image_url: imageUrl ?? null,
+            cost_category: costCategory || null,
+            affects_cmv: affectsCmv,
+            affects_average_cost: affectsAvgCost,
         }
 
         if (costMode === 'conversion' && (!purchaseUnit || !conversionFactor)) {
@@ -157,6 +166,9 @@ export default function ItemsPage() {
         setMinExpected('')
         setMaxExpected('')
         setImageUrl(null)
+        setCostCategory('')
+        setAffectsCmv(false)
+        setAffectsAvgCost(false)
     }
 
     const handleDelete = async (id: string) => {
@@ -376,6 +388,57 @@ export default function ItemsPage() {
                     </div>
                     <p className="text-xs text-gray-400 -mt-2">Usado para alertar contagens fora do padrão</p>
 
+                    <div className="bg-amber-50 rounded-2xl p-5 border border-amber-100 space-y-4">
+                        <h4 className="text-[10px] font-black text-amber-700 uppercase tracking-widest flex items-center gap-2">
+                            <Save className="w-3 h-3" /> Classificação Operacional (Etapa 4)
+                        </h4>
+                        
+                        <div>
+                            <label className="text-xs font-bold uppercase tracking-wider text-gray-600">Categoria de Gasto</label>
+                            <select 
+                                value={costCategory} 
+                                onChange={e => setCostCategory(e.target.value)} 
+                                className="w-full border border-amber-200 bg-white p-3.5 rounded-xl mt-1.5 outline-none focus:ring-2 focus:ring-amber-500 text-gray-900 font-medium"
+                            >
+                                <option value="">-- Selecione a Categoria --</option>
+                                <option value="cmv">CMV (Insumos/Produtos)</option>
+                                <option value="embalagem">Embalagens</option>
+                                <option value="limpeza">Material de Limpeza</option>
+                                <option value="uso_consumo">Uso e Consumo</option>
+                                <option value="administrativo">Administrativo</option>
+                                <option value="imobilizado">Imobilizado</option>
+                            </select>
+                        </div>
+
+                        <div className="flex flex-col gap-3 pt-1">
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                                <div className="relative">
+                                    <input 
+                                        type="checkbox" 
+                                        className="sr-only peer" 
+                                        checked={affectsCmv}
+                                        onChange={e => setAffectsCmv(e.target.checked)}
+                                    />
+                                    <div className="w-10 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                </div>
+                                <span className="text-sm font-bold text-gray-700 group-hover:text-amber-700 transition-colors">Afeta cálculo de CMV</span>
+                            </label>
+
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                                <div className="relative">
+                                    <input 
+                                        type="checkbox" 
+                                        className="sr-only peer" 
+                                        checked={affectsAvgCost}
+                                        onChange={e => setAffectsAvgCost(e.target.checked)}
+                                    />
+                                    <div className="w-10 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                                </div>
+                                <span className="text-sm font-bold text-gray-700 group-hover:text-amber-700 transition-colors">Afeta custo médio do estoque</span>
+                            </label>
+                        </div>
+                    </div>
+
                     <div className="flex space-x-3 pt-4 sticky bottom-0 bg-white pb-4 pt-3 px-0 z-20">
                         <button type="button" onClick={() => { setIsEditing(null); resetForm() }} className="flex-1 py-4 border border-gray-200 text-gray-600 rounded-xl font-bold flex justify-center items-center hover:bg-gray-50 transition active:scale-95 text-sm">
                             <X className="w-5 h-5 mr-2" /> Cancelar
@@ -433,6 +496,9 @@ export default function ItemsPage() {
                                         setMinExpected(i.min_expected != null ? String(i.min_expected) : '');
                                         setMaxExpected(i.max_expected != null ? String(i.max_expected) : '');
                                         setImageUrl(i.image_url || null);
+                                        setCostCategory(i.cost_category || '');
+                                        setAffectsCmv(!!i.affects_cmv);
+                                        setAffectsAvgCost(!!i.affects_average_cost);
                                     }} className="p-2.5 text-[#B13A2B] bg-[#FDF0EF] rounded-xl hover:bg-[#f5ddd9] transition active:scale-95">
                                         <Edit2 className="w-4 h-4" />
                                     </button>

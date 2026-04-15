@@ -9,7 +9,10 @@ import {
     updateInvoiceItemReview, 
     deleteSupplierInvoice, 
     deleteSupplierInvoiceItem,
-    approveSupplierInvoice
+    deleteSupplierInvoiceItem,
+    approveSupplierInvoice,
+    processApprovedInvoice,
+    getRecentActiveCycles
 } from '@/app/actions/invoiceImportActions'
 import toast from 'react-hot-toast'
 import { ConfirmModal } from '@/components/ConfirmModal'
@@ -22,6 +25,10 @@ export default function InvoiceMappingPage() {
     const [internalItems, setInternalItems] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [isActioning, setIsActioning] = useState(false)
+    
+    // Status de Processamento (Etapa 4)
+    const [activeCycles, setActiveCycles] = useState<any[]>([])
+    const [showCycleModal, setShowCycleModal] = useState(false)
     
     // Modais
     const [showDeleteInvoice, setShowDeleteInvoice] = useState(false)
@@ -100,7 +107,28 @@ export default function InvoiceMappingPage() {
         try {
             await approveSupplierInvoice(id as string)
             toast.success("Nota aprovada com sucesso!")
-            router.push('/dashboard/admin/cmv/invoices')
+            loadData() // Recarrega para ver mudança de status e botão de processar
+        } catch (e: any) {
+            toast.error(e.message)
+        } finally {
+            setIsActioning(false)
+        }
+    }
+
+    const handleProcess = async (cycleId?: string) => {
+        setIsActioning(true)
+        try {
+            const res = await processApprovedInvoice(id as string, cycleId)
+            
+            if (res.requiresSelection) {
+                setActiveCycles(res.activeCycles)
+                setShowCycleModal(true)
+                return
+            }
+
+            toast.success("Entradas de estoque geradas com sucesso!")
+            setShowCycleModal(false)
+            loadData()
         } catch (e: any) {
             toast.error(e.message)
         } finally {
@@ -120,6 +148,7 @@ export default function InvoiceMappingPage() {
     if (!invoice) return <div className="p-10 text-center font-bold text-gray-400">Nota não encontrada.</div>
 
     const isApproved = invoice.status === 'approved'
+    const isProcessed = !!invoice.processed_at
 
     return (
         <div className="p-4 space-y-6 max-w-6xl mx-auto pb-24">
@@ -139,6 +168,40 @@ export default function InvoiceMappingPage() {
                 onConfirm={handleDeleteItem}
             />
 
+            {/* Modal de Seleção de Ciclo (Etapa 4) */}
+            {showCycleModal && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative">
+                        <div className="p-6 border-b border-gray-100 bg-amber-50">
+                            <h3 className="text-xl font-black text-amber-900 tracking-tight">Vincular Ciclo de Estoque</h3>
+                            <p className="text-sm text-amber-700 font-semibold mt-1">
+                                Detectamos múltiplos ciclos ativos. Selecione em qual ciclo as entradas desta nota devem ser registradas.
+                            </p>
+                        </div>
+                        <div className="p-4 max-h-[300px] overflow-y-auto space-y-2">
+                            {activeCycles.map((c: any) => (
+                                <button
+                                    key={c.id}
+                                    onClick={() => handleProcess(c.id)}
+                                    className="w-full p-4 rounded-2xl border border-gray-200 hover:border-amber-500 hover:bg-amber-50 text-left transition-all group"
+                                >
+                                    <p className="font-extrabold text-gray-900 group-hover:text-amber-900">{(c.routines as any)?.name || 'Ciclo sem nome'}</p>
+                                    <p className="text-xs text-gray-400 font-bold mt-1 uppercase tracking-tighter">Iniciado em {new Date(c.started_at).toLocaleDateString('pt-BR')}</p>
+                                </button>
+                            ))}
+                        </div>
+                        <div className="p-4 bg-gray-50 flex gap-3">
+                            <button 
+                                onClick={() => setShowCycleModal(false)}
+                                className="flex-1 py-3 bg-white border border-gray-200 text-gray-600 font-bold rounded-xl text-sm hover:bg-gray-100"
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -150,12 +213,14 @@ export default function InvoiceMappingPage() {
                     </button>
                     <div>
                         <div className="flex items-center gap-2">
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Etapa 3: Revisão</p>
-                            <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter ${isApproved ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                                {invoice.status}
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Importação NaBrasa</p>
+                            <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-tighter ${isProcessed ? 'bg-indigo-100 text-indigo-700' : isApproved ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                                {isProcessed ? 'Processada e Integrada' : isApproved ? 'Aprovada para Estoque' : 'Pendente de Revisão'}
                             </span>
                         </div>
-                        <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-none mt-1">Revisão de Itens</h1>
+                        <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-none mt-1">
+                            {isProcessed ? 'Nota Processada' : 'Revisão e Integração'}
+                        </h1>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -167,14 +232,29 @@ export default function InvoiceMappingPage() {
                             <Trash2 className="w-4 h-4" /> Excluir Nota
                         </button>
                     )}
-                    <button 
-                        onClick={handleApprove}
-                        disabled={isApproved || isActioning}
-                        className="px-6 py-2.5 bg-[#B13A2B] text-white font-bold text-sm rounded-xl flex items-center gap-2 shadow-lg hover:bg-[#902216] transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                        {isActioning ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />} 
-                        {isApproved ? 'Nota Aprovada' : 'Finalizar e Aprovar'}
-                    </button>
+                    )}
+
+                    {!isProcessed && isApproved && (
+                        <button 
+                            onClick={() => handleProcess()}
+                            disabled={isActioning}
+                            className="px-6 py-2.5 bg-indigo-600 text-white font-bold text-sm rounded-xl flex items-center gap-2 shadow-lg hover:bg-indigo-700 transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                            {isActioning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} 
+                            Gerar Entradas de Estoque
+                        </button>
+                    )}
+
+                    {!isApproved && (
+                        <button 
+                            onClick={handleApprove}
+                            disabled={isActioning}
+                            className="px-6 py-2.5 bg-[#B13A2B] text-white font-bold text-sm rounded-xl flex items-center gap-2 shadow-lg hover:bg-[#902216] transition active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                            {isActioning ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />} 
+                            Aprovar Nota agora
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -204,6 +284,24 @@ export default function InvoiceMappingPage() {
                             </div>
                         </div>
                     </div>
+
+                    {isProcessed && (
+                        <div className="bg-indigo-50 rounded-3xl p-5 border border-indigo-100 space-y-3">
+                            <h4 className="text-[10px] font-black text-indigo-700 uppercase tracking-widest flex items-center gap-2">
+                                <CheckCircle className="w-3 h-3" /> Status do Processamento
+                            </h4>
+                            <div className="space-y-2">
+                                <div>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase">Processado em</p>
+                                    <p className="text-xs font-bold text-gray-700">{new Date(invoice.processed_at).toLocaleString('pt-BR')}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase">Ciclo Destino</p>
+                                    <p className="text-xs font-bold text-gray-700">{invoice.cycle_id ? 'Vinculado ao Ciclo' : 'Não informado'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     
                     <div className="bg-indigo-50 rounded-2xl p-4 border border-indigo-100 flex gap-3">
                         <Info className="w-5 h-5 text-indigo-500 shrink-0" />
@@ -242,7 +340,7 @@ export default function InvoiceMappingPage() {
                                             <td className="p-4">
                                                 <div className="flex flex-col gap-1">
                                                     <select 
-                                                        disabled={isApproved || isActioning}
+                                                        disabled={isApproved || isActioning || isProcessed}
                                                         value={item.matched_item_id || ''}
                                                         onChange={(e) => handleUpdateRow(item.id, {
                                                             matched_item_id: e.target.value || null,
@@ -268,7 +366,7 @@ export default function InvoiceMappingPage() {
                                                 <div className="flex justify-center">
                                                     <input 
                                                         type="number"
-                                                        disabled={isApproved || isActioning || !item.matched_item_id}
+                                                        disabled={isApproved || isActioning || isProcessed || !item.matched_item_id}
                                                         value={item.conversion_factor_snapshot || 1}
                                                         step="0.001"
                                                         onChange={(e) => handleUpdateRow(item.id, {
@@ -283,7 +381,7 @@ export default function InvoiceMappingPage() {
                                             <td className="p-4">
                                                 <div className="flex justify-center">
                                                     <button 
-                                                        disabled={isApproved || isActioning}
+                                                        disabled={isApproved || isActioning || isProcessed}
                                                         onClick={() => setItemToDelete(item)}
                                                         className="p-2 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all disabled:opacity-0 active:scale-90"
                                                         title="Remover item da nota"
@@ -324,7 +422,7 @@ export default function InvoiceMappingPage() {
                                     <div>
                                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1.5 ml-1">Mapeamento Interno</label>
                                         <select 
-                                            disabled={isApproved || isActioning}
+                                            disabled={isApproved || isActioning || isProcessed}
                                             value={item.matched_item_id || ''}
                                             onChange={(e) => handleUpdateRow(item.id, {
                                                 matched_item_id: e.target.value || null,
