@@ -10,13 +10,16 @@ const supabase = createClient(
 export async function initCountSessionAction(routineId: string, groupId: string, userId: string) {
     const { data: group } = await supabase.from('groups').select('name').eq('id', groupId).single()
 
-    const today = new Date().toISOString().split('T')[0]
+    // Calcula o "hoje" no fuso de Brasília (America/Sao_Paulo)
+    const brDateParts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
+    const startOfDayBR = `${brDateParts}T03:00:00Z` // meia-noite BRT = 03:00 UTC
+
     const { data: existingSession } = await supabase
         .from('count_sessions')
         .select('id, status, user_id, execution_id, users(name)')
         .eq('routine_id', routineId)
         .eq('group_id', groupId)
-        .gte('started_at', `${today}T00:00:00Z`)
+        .gte('started_at', startOfDayBR)
         .order('started_at', { ascending: false })
         .limit(1)
         .single()

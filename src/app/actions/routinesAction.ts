@@ -15,15 +15,18 @@ export async function getActiveRoutinesAction() {
 }
 
 export async function getRoutineDetailsAction(routineId: string) {
-    const today = new Date().toISOString().split('T')[0]
+    // Calcula o "hoje" no fuso de Brasília (America/Sao_Paulo)
+    const brDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
+    const startOfDayBR = `${brDate}T03:00:00Z` // meia-noite BRT = 03:00 UTC
 
     const { data: routine } = await supabase.from('routines').select('name, snapshot_started_at').eq('id', routineId).single()
     if (!routine) return { error: 'Rotina não encontrada' }
 
     let isStartedToday = false
     if (routine.snapshot_started_at) {
-        const snapDate = new Date(routine.snapshot_started_at).toISOString().split('T')[0]
-        isStartedToday = snapDate === today
+        // Converte o snapshot_started_at para a data em Brasília e compara
+        const snapBrDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(routine.snapshot_started_at))
+        isStartedToday = snapBrDate === brDate
     }
 
     const { data: rGroups } = await supabase.from('routine_groups').select('groups(id, name)').eq('routine_id', routineId)
@@ -31,7 +34,7 @@ export async function getRoutineDetailsAction(routineId: string) {
         .from('count_sessions')
         .select('id, group_id, status, updated_at, users(name)')
         .eq('routine_id', routineId)
-        .gte('started_at', `${today}T00:00:00Z`)
+        .gte('started_at', startOfDayBR)
 
     const groupIds = rGroups?.map(rg => (rg.groups as any).id) || []
 
