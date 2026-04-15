@@ -29,22 +29,10 @@ export default function ReportsPage() {
 
         const { data: allRoutines } = await supabase
             .from('routines')
-            .select('id, name')
+            .select('id, name, snapshot_started_at')
             .order('created_at', { ascending: false })
 
         if (allRoutines) {
-            // Calcula o "hoje" no fuso America/Sao_Paulo
-            const brDate = new Intl.DateTimeFormat('en-CA', {
-                timeZone: 'America/Sao_Paulo',
-                year: 'numeric', month: '2-digit', day: '2-digit'
-            }).format(new Date())
-            const startOfDayBR = `${brDate}T03:00:00Z` // meia-noite BRT = 03:00 UTC
-            const nextBrDate = new Intl.DateTimeFormat('en-CA', {
-                timeZone: 'America/Sao_Paulo',
-                year: 'numeric', month: '2-digit', day: '2-digit'
-            }).format(new Date(Date.now() + 86400000))
-            const endOfDayBR = `${nextBrDate}T02:59:59Z`
-
             const results: RoutineResult[] = await Promise.all(allRoutines.map(async r => {
                 // Total de grupos da rotina
                 const { count: tGroups } = await supabase
@@ -52,16 +40,20 @@ export default function ReportsPage() {
                     .select('id', { count: 'exact' })
                     .eq('routine_id', r.id)
 
-                // Grupos concluídos HOJE (count_sessions usa routine_id, não execution_id)
-                const { count: cGroups } = await supabase
-                    .from('count_sessions')
-                    .select('id', { count: 'exact' })
-                    .eq('routine_id', r.id)
-                    .eq('status', 'completed')
-                    .gte('started_at', startOfDayBR)
-                    .lte('started_at', endOfDayBR)
+                // Grupos concluídos desde o último snapshot_started_at
+                // (não filtra por "hoje" para não perder contagens de ciclos anteriores ou de testes)
+                let cGroups = 0
+                if (r.snapshot_started_at) {
+                    const { count } = await supabase
+                        .from('count_sessions')
+                        .select('id', { count: 'exact' })
+                        .eq('routine_id', r.id)
+                        .eq('status', 'completed')
+                        .gte('started_at', r.snapshot_started_at)
+                    cGroups = count || 0
+                }
 
-                // Relatório mais recente da rotina (audit_reports usa routine_id)
+                // Relatório mais recente da rotina
                 const { data: report } = await supabase
                     .from('audit_reports')
                     .select('id, status_approval')
@@ -74,7 +66,7 @@ export default function ReportsPage() {
                     id: r.id,
                     name: r.name,
                     total_groups: tGroups || 0,
-                    completed_groups: cGroups || 0,
+                    completed_groups: cGroups,
                     report_id: report?.id || null,
                     status_approval: report?.status_approval || null
                 }
