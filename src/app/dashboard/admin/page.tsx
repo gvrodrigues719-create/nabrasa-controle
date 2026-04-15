@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { LayoutGrid, Package, CalendarSync, History } from 'lucide-react'
+import { LayoutGrid, Package, CalendarSync, History, TrendingUp } from 'lucide-react'
 
 export default function AdminHome() {
     const router = useRouter()
@@ -46,6 +46,16 @@ export default function AdminHome() {
                 <div>
                     <h3 className="font-bold text-gray-900 text-lg">Histórico de Ciclos</h3>
                     <p className="text-sm text-gray-500">Consultar execuções passadas por período</p>
+                </div>
+            </button>
+
+            <button onClick={() => router.push('/dashboard/admin/cmv')} className="w-full bg-[#B13A2B] border border-[#8F2E21] p-5 rounded-2xl flex items-center text-left hover:bg-[#8F2E21] transition-all shadow-sm space-x-4 active:scale-95">
+                <div className="bg-white/20 p-3 rounded-xl">
+                    <TrendingUp className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                    <h3 className="font-bold text-white text-lg">CMV &amp; Compras</h3>
+                    <p className="text-sm text-white/80">Faturamento, custo médio e indicador financeiro</p>
                 </div>
             </button>
         </div>
