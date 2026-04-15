@@ -368,6 +368,7 @@ export default function InvoiceMappingPage() {
                         ))}
                     </div>
                 </div>
+            </div>
         </div>
     )
 }

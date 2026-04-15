@@ -87,7 +87,7 @@ export async function calculateCMV(executionId: string) {
     let EF_map: Record<string, number> = {}
     
     if (countSessions && countSessions.length > 0) {
-        const sessionIds = countSessions.map(s => s.id)
+        const sessionIds = countSessions.map((s: any) => s.id)
         // Precisamos processar do mais antigo para o mais novo para que o mais novo sobrescreva
         const sessDesc = [...sessionIds].reverse()
         
@@ -113,7 +113,7 @@ export async function calculateCMV(executionId: string) {
     const Compras_map: Record<string, { qty: number, val: number }> = {}
 
     if (snapshots) {
-        snapshots.forEach(s => {
+        snapshots.forEach((s: any) => {
             allItemIds.add(s.item_id)
             const qty = s.theoretical_quantity || 0
             const cost = s.average_cost_snapshot || 0
@@ -122,7 +122,7 @@ export async function calculateCMV(executionId: string) {
     }
 
     if (entries) {
-        entries.forEach(e => {
+        entries.forEach((e: any) => {
             allItemIds.add(e.item_id)
             const qty = Number(e.converted_quantity || 0)
             const val = qty * Number(e.converted_unit_cost || 0)
@@ -227,7 +227,7 @@ export async function getCMVItemDetail(executionId: string) {
 
     let EF_map: Record<string, number> = {}
     if (countSessions && countSessions.length > 0) {
-        const sessionIds = countSessions.map(s => s.id)
+        const sessionIds = countSessions.map((s: any) => s.id)
         const sessDesc = [...sessionIds].reverse()
         for (const sId of sessDesc) {
             const { data: csi } = await supabase.from('count_session_items').select('item_id, counted_quantity').eq('session_id', sId)
@@ -244,7 +244,7 @@ export async function getCMVItemDetail(executionId: string) {
     const Compras_map: Record<string, { qty: number, val: number }> = {}
 
     if (snapshots) {
-        snapshots.forEach(s => {
+        snapshots.forEach((s: any) => {
             allItemIds.add(s.item_id)
             const qty = s.theoretical_quantity || 0
             const cost = s.average_cost_snapshot || 0
@@ -253,7 +253,7 @@ export async function getCMVItemDetail(executionId: string) {
     }
 
     if (entries) {
-        entries.forEach(e => {
+        entries.forEach((e: any) => {
             allItemIds.add(e.item_id)
             const qty = Number(e.converted_quantity || 0)
             const val = qty * Number(e.converted_unit_cost || 0)
@@ -263,12 +263,12 @@ export async function getCMVItemDetail(executionId: string) {
         })
     }
 
-    Object.keys(EF_map).forEach(id => allItemIds.add(id))
+    Object.keys(EF_map).forEach((id: any) => allItemIds.add(id))
 
     const details = []
 
     for (const itemId of Array.from(allItemIds)) {
-        const itemObj = items?.find(i => i.id === itemId)
+        const itemObj = items?.find((i: any) => i.id === itemId)
         if (!itemObj) continue
 
         const ei = EI_map[itemId] || { qty: 0, val: 0, avg_cost: 0 }
@@ -314,7 +314,7 @@ export async function getCMVItemDetail(executionId: string) {
         })
     }
 
-    details.sort((a, b) => b.cmv_item - a.cmv_item) // Ordena por maior cmv_item decrescente
+    details.sort((a: any, b: any) => b.cmv_item - a.cmv_item) // Ordena por maior cmv_item decrescente
     
     return { success: true, data: details }
 }
@@ -344,7 +344,7 @@ export async function getCMVConsolidated(filter: { mode: '4' | '6' | 'month' | '
         return { success: true, data: { cycles: [], summary: null } }
     }
 
-    const execIds = cycles.map(c => c.id)
+    const execIds = cycles.map((c: any) => c.id)
 
     // 1. Compras por ciclo
     const { data: allEntries } = await supabase
@@ -353,7 +353,7 @@ export async function getCMVConsolidated(filter: { mode: '4' | '6' | 'month' | '
         .in('execution_id', execIds)
     
     const purchasesByExec: Record<string, number> = {}
-    allEntries?.forEach(e => {
+    allEntries?.forEach((e: any) => {
         const val = Number(e.converted_quantity || 0) * Number(e.converted_unit_cost || 0)
         purchasesByExec[e.execution_id] = (purchasesByExec[e.execution_id] || 0) + val
     })
