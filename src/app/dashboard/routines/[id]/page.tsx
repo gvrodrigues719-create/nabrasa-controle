@@ -56,12 +56,26 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
             const { data: { user } } = await supabase.auth.getUser()
 
             const res = await verifyAndStartRoutineAction(routineId, pin, user?.id)
-            if (res.error) throw new Error(res.error)
+
+            if (res.error) {
+                // Se o erro menciona PIN, relança para o modal mostrar no campo
+                // Caso contrário, é falha de RPC/banco — mostra toast e fecha o modal
+                const isPinError = res.error.toLowerCase().includes('pin') || res.error.toLowerCase().includes('incorreto') || res.error.toLowerCase().includes('autenticado')
+                if (isPinError) {
+                    throw new Error(res.error)
+                }
+                // Erro de infra (RPC, banco, migration faltando)
+                setShowStartConfirm(false)
+                setStarting(false)
+                toast.error(`Erro ao iniciar ciclo: ${res.error}`)
+                return
+            }
 
             if (res.executionId) {
                 sessionStorage.setItem(`exec_${routineId}`, res.executionId)
             }
             toast.success('Ciclo iniciado! Estoque teórico congelado.')
+            setShowStartConfirm(false)
             load()
         } catch (err: any) {
             setStarting(false)
@@ -81,7 +95,7 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
         setSelectedGroup(null)
     }
 
-    if (loading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-indigo-600 w-8 h-8" /></div>
+    if (loading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-[#B13A2B] w-8 h-8" /></div>
     if (!data) return <div className="p-4 text-center">Rotina não encontrada</div>
 
     return (
