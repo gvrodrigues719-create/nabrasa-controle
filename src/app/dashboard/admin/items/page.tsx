@@ -165,7 +165,19 @@ export default function ItemsPage() {
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Unidade</label>
-                            <input required value={unit} onChange={e => setUnit(e.target.value)} className="w-full border border-gray-200 bg-gray-50 p-4 rounded-xl mt-1.5 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-medium" placeholder="Ex: un, kg, pct" />
+                            <select required value={unit} onChange={e => setUnit(e.target.value)} className="w-full border border-gray-200 bg-gray-50 p-4 rounded-xl mt-1.5 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-medium">
+                                {!['kg', 'g', 'L', 'ml', 'un', 'cx', 'pct', 'dz'].includes(unit) && unit !== '' && (
+                                    <option value={unit}>{unit} (legado)</option>
+                                )}
+                                <option value="un">un</option>
+                                <option value="kg">kg</option>
+                                <option value="g">g</option>
+                                <option value="L">L</option>
+                                <option value="ml">ml</option>
+                                <option value="cx">cx</option>
+                                <option value="pct">pct</option>
+                                <option value="dz">dz</option>
+                            </select>
                         </div>
                         <div>
                             <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Local Primário</label>
