@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Loader2, Save, Check, ShieldAlert, CloudOff, AlertTriangle, ChevronDown, Edit3, Lock } from 'lucide-react'
+import { ArrowLeft, Loader2, Save, Check, ShieldAlert, CloudOff, AlertTriangle, ChevronDown, Edit3, Lock, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import React, { use } from 'react'
 import { initCountSessionAction, syncCountSessionAction } from '@/app/actions/countAction'
@@ -16,6 +16,7 @@ type Item = {
     unit_observation: string
     min_expected: number | null
     max_expected: number | null
+    image_url: string | null
 }
 
 export default function BlindCountPage({ params }: { params: Promise<{ routineId: string, groupId: string }> }) {
@@ -33,6 +34,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     const [showSummary, setShowSummary] = useState(false)
     const [expandZeroed, setExpandZeroed] = useState(false)
     const [expandUncounted, setExpandUncounted] = useState(false)
+    const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
 
     const LOCAL_KEY = `count_${routineId}_${groupId}`
     const ZEROED_KEY = `zeroed_${routineId}_${groupId}`
@@ -357,9 +359,24 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                                                 </p>
                                             )}
                                         </div>
-                                        {isZeroed && (
-                                            <span className="bg-gray-300 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider shrink-0">Zerado</span>
-                                        )}
+                                        <div className="flex items-start gap-2 ml-2">
+                                            {item.image_url && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setLightboxUrl(item.image_url)}
+                                                    className="shrink-0"
+                                                >
+                                                    <img
+                                                        src={item.image_url}
+                                                        alt={item.name}
+                                                        className="w-14 h-14 rounded-xl object-cover border-2 border-[#FDF0EF] shadow-sm"
+                                                    />
+                                                </button>
+                                            )}
+                                            {isZeroed && (
+                                                <span className="bg-gray-300 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider shrink-0">Zerado</span>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div className="flex items-center space-x-3">
@@ -411,6 +428,26 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                         </button>
                     </div>
                 </>
+            )}
+
+            {/* LIGHTBOX */}
+            {lightboxUrl && (
+                <div
+                    className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4"
+                    onClick={() => setLightboxUrl(null)}
+                >
+                    <img
+                        src={lightboxUrl}
+                        alt="Foto do item"
+                        className="max-w-full max-h-[80vh] rounded-2xl shadow-2xl object-contain"
+                    />
+                    <button
+                        onClick={() => setLightboxUrl(null)}
+                        className="absolute top-5 right-5 bg-white/20 text-white p-2 rounded-full hover:bg-white/30 transition"
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
             )}
         </div>
     )

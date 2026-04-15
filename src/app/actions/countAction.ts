@@ -57,7 +57,7 @@ export async function initCountSessionAction(routineId: string, groupId: string,
         }
     }
 
-    const { data: items } = await supabase.from('items').select('id, name, unit, unit_observation, min_expected, max_expected').eq('group_id', groupId).eq('active', true).order('name', { ascending: true })
+    const { data: items } = await supabase.from('items').select('id, name, unit, unit_observation, min_expected, max_expected, image_url').eq('group_id', groupId).eq('active', true).order('name', { ascending: true })
 
     const dbCounts: Record<string, string> = {}
     const dbZeroed: Record<string, boolean> = {}
