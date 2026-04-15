@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Loader2, ArrowLeft, PlayCircle, CheckCircle2, Clock, Play } from 'lucide-react'
+import { Loader2, ArrowLeft, PlayCircle, CheckCircle2, Clock, Play, X, ClipboardList } from 'lucide-react'
 import toast from 'react-hot-toast'
 import React, { use } from 'react'
 import { PinConfirmModal } from '@/components/PinConfirmModal'
@@ -13,6 +13,7 @@ import { getRoutineDetailsAction, verifyAndStartRoutineAction } from '@/app/acti
 type GroupStatus = {
     id: string
     name: string
+    item_count: number
     session_id: string | null
     status: string
     user_name: string | null
@@ -26,6 +27,7 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
     const [hasSnapshot, setHasSnapshot] = useState(false)
     const [starting, setStarting] = useState(false)
     const [showStartConfirm, setShowStartConfirm] = useState(false)
+    const [selectedGroup, setSelectedGroup] = useState<GroupStatus | null>(null)
     const router = useRouter()
 
     useEffect(() => {
@@ -70,7 +72,13 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
 
     const handleGroupClick = (group: GroupStatus) => {
         if (!hasSnapshot) return toast.error('Clique em "Iniciar Ciclo Oficial" para liberar a contagem.', { icon: '🔒' })
-        router.push(`/dashboard/count/${routineId}/${group.id}`)
+        setSelectedGroup(group)
+    }
+
+    const confirmNavigation = () => {
+        if (!selectedGroup) return
+        router.push(`/dashboard/count/${routineId}/${selectedGroup.id}`)
+        setSelectedGroup(null)
     }
 
     if (loading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-indigo-600 w-8 h-8" /></div>
@@ -160,6 +168,48 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
                     })}
                 </div>
             </div>
+
+            {/* BOTTOM SHEET DE CONFIRMAÇÃO */}
+            {selectedGroup && (
+                <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setSelectedGroup(null)}>
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+                    <div
+                        className="relative w-full max-w-md bg-white rounded-t-3xl shadow-2xl p-6 pb-8 animate-in slide-in-from-bottom duration-300"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button onClick={() => setSelectedGroup(null)} className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition">
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        <div className="flex items-center space-x-3 mb-5">
+                            <div className="p-3 bg-indigo-50 rounded-xl">
+                                <ClipboardList className="w-7 h-7 text-indigo-600" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-extrabold text-gray-900">{selectedGroup.name}</h3>
+                                <p className="text-sm font-semibold text-gray-400">{selectedGroup.item_count} {selectedGroup.item_count === 1 ? 'item' : 'itens'} para contar</p>
+                            </div>
+                        </div>
+
+                        <p className="text-sm text-gray-500 mb-6">Confirme que você está no local correto antes de iniciar a contagem. Após começar, os itens deste grupo ficarão vinculados a você.</p>
+
+                        <div className="space-y-3">
+                            <button
+                                onClick={confirmNavigation}
+                                className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-lg flex justify-center items-center active:scale-95 transition shadow-sm"
+                            >
+                                <Play className="w-5 h-5 mr-2" /> Estou aqui, começar
+                            </button>
+                            <button
+                                onClick={() => setSelectedGroup(null)}
+                                className="w-full py-3 bg-gray-100 text-gray-600 rounded-2xl font-bold text-sm active:scale-95 transition"
+                            >
+                                Voltar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

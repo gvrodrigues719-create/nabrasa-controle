@@ -33,12 +33,27 @@ export async function getRoutineDetailsAction(routineId: string) {
         .eq('routine_id', routineId)
         .gte('started_at', `${today}T00:00:00Z`)
 
+    const groupIds = rGroups?.map(rg => (rg.groups as any).id) || []
+
+    // Fetch item counts per group
+    const { data: itemCounts } = await supabase
+        .from('items')
+        .select('group_id')
+        .in('group_id', groupIds)
+        .eq('active', true)
+
+    const itemCountMap: Record<string, number> = {}
+    itemCounts?.forEach(i => {
+        itemCountMap[i.group_id] = (itemCountMap[i.group_id] || 0) + 1
+    })
+
     const mappedGroups = rGroups?.map(rg => {
         const group: any = rg.groups
         const sessionForGroup = sessions?.find(s => s.group_id === group.id)
         return {
             id: group.id,
             name: group.name,
+            item_count: itemCountMap[group.id] || 0,
             session_id: sessionForGroup?.id || null,
             status: sessionForGroup?.status || 'available',
             user_name: (sessionForGroup?.users as any)?.name || null,
