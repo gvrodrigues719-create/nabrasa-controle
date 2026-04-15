@@ -56,6 +56,9 @@ export default function ItemsPage() {
         setLoading(false)
     }
 
+    // Normaliza texto para comparação: lowercase, trim, sem acentos
+    const normalize = (s: string) => s.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!name || !groupId) return toast.error('Nome e local são obrigatórios.')
@@ -160,6 +163,27 @@ export default function ItemsPage() {
                     <div>
                         <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Nome do Produto</label>
                         <input required autoFocus value={name} onChange={e => setName(e.target.value)} className="w-full border border-gray-200 bg-gray-50 p-4 rounded-xl mt-1.5 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 font-medium" placeholder="Ex: Cerveja Heineken 600ml" />
+                        {(() => {
+                            if (!name.trim() || !groupId) return null
+                            const normalName = normalize(name)
+                            const similar = items.filter(i =>
+                                i.group_id === groupId &&
+                                i.id !== isEditing &&
+                                normalize(i.name) === normalName
+                            )
+                            if (similar.length === 0) return null
+                            return (
+                                <div className="mt-2 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start space-x-2">
+                                    <span className="text-amber-500 text-lg leading-none shrink-0">⚠️</span>
+                                    <div>
+                                        <p className="text-xs font-bold text-amber-700">Item parecido já existe neste local:</p>
+                                        {similar.map(s => (
+                                            <p key={s.id} className="text-xs text-amber-600 font-medium">• {s.name} ({s.unit})</p>
+                                        ))}
+                                    </div>
+                                </div>
+                            )
+                        })()}
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
