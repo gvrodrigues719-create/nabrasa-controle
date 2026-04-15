@@ -75,7 +75,8 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         const localZeroed = storedZeroed ? JSON.parse(storedZeroed) : {}
         setZeroed(localZeroed)
 
-        setCounts({ ...localDict, ...res.dbCounts })
+        const merged = { ...res.dbCounts, ...localDict }
+        setCounts(merged)
 
         setLoadingInit(false)
     }
