@@ -38,6 +38,9 @@ export default function CMVPage() {
     const [details, setDetails] = useState<any[]>([])
     const [loadingDetails, setLoadingDetails] = useState(false)
 
+    // Abas
+    const [activeTab, setActiveTab] = useState<'summary' | 'cycle'>('cycle')
+
     useEffect(() => {
         loadCycles()
         getCMVTarget().then(t => setCmvTarget(t))
@@ -155,7 +158,33 @@ export default function CMVPage() {
                 </div>
             </div>
 
-            {/* Seletor de Ciclo */}
+            {/* Abas */}
+            <div className="flex bg-gray-100 p-1 rounded-2xl w-fit">
+                <button
+                    onClick={() => setActiveTab('summary')}
+                    className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'summary' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    Resumo
+                </button>
+                <button
+                    onClick={() => setActiveTab('cycle')}
+                    className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === 'cycle' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    Ciclo
+                </button>
+            </div>
+
+            {activeTab === 'summary' && (
+                <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center shadow-sm">
+                    <TrendingUp className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+                    <p className="font-bold text-gray-400">Resumo consolidado em construção</p>
+                    <p className="text-xs text-gray-400 mt-2">Visão histórica e comparativa em breve.</p>
+                </div>
+            )}
+
+            {activeTab === 'cycle' && (
+                <div className="space-y-5">
+                    {/* Seletor de Ciclo */}
             <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm space-y-2">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Ciclo de Referência</p>
                 {loadingCycles ? (
@@ -379,6 +408,8 @@ export default function CMVPage() {
                     <TrendingUp className="w-10 h-10 text-gray-300 mx-auto mb-3" />
                     <p className="font-bold text-gray-600">Selecione um ciclo acima</p>
                     <p className="text-sm text-gray-400 mt-1">para visualizar compras e calcular o CMV do período</p>
+                </div>
+            )}
                 </div>
             )}
         </div>
