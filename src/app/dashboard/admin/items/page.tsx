@@ -14,6 +14,8 @@ type Item = {
     unit_observation: string
     group_id: string
     average_cost: number
+    min_expected: number | null
+    max_expected: number | null
     active: boolean
     groups?: { name: string } | null
 }
@@ -36,6 +38,8 @@ export default function ItemsPage() {
     const [unit, setUnit] = useState('un')
     const [unitObs, setUnitObs] = useState('')
     const [groupId, setGroupId] = useState('')
+    const [minExpected, setMinExpected] = useState('')
+    const [maxExpected, setMaxExpected] = useState('')
 
     useEffect(() => {
         fetchData()
@@ -56,11 +60,13 @@ export default function ItemsPage() {
         e.preventDefault()
         if (!name || !groupId) return toast.error('Nome e local são obrigatórios.')
 
-        const payload = {
+        const payload: any = {
             name,
             unit,
             unit_observation: unitObs,
-            group_id: groupId
+            group_id: groupId,
+            min_expected: minExpected === '' ? null : parseFloat(minExpected),
+            max_expected: maxExpected === '' ? null : parseFloat(maxExpected)
         }
 
         let error = null
@@ -89,6 +95,8 @@ export default function ItemsPage() {
         setUnit('un')
         setUnitObs('')
         setGroupId('')
+        setMinExpected('')
+        setMaxExpected('')
     }
 
     const handleDelete = async (id: string) => {
@@ -175,6 +183,18 @@ export default function ItemsPage() {
                         <input value={unitObs} onChange={e => setUnitObs(e.target.value)} className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl mt-1.5 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 text-sm" placeholder="Ex: Contar garrafas abertas em décimos" />
                     </div>
 
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Mínimo esperado em estoque</label>
+                            <input type="number" step="0.01" value={minExpected} onChange={e => setMinExpected(e.target.value)} className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl mt-1.5 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 text-sm" placeholder="Ex: 5" />
+                        </div>
+                        <div>
+                            <label className="text-xs font-bold uppercase tracking-wider text-gray-500">Máximo esperado em estoque</label>
+                            <input type="number" step="0.01" value={maxExpected} onChange={e => setMaxExpected(e.target.value)} className="w-full border border-gray-200 bg-gray-50 p-3 rounded-xl mt-1.5 outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 text-sm" placeholder="Ex: 50" />
+                        </div>
+                    </div>
+                    <p className="text-xs text-gray-400 -mt-2">Usado para alertar contagens fora do padrão</p>
+
                     <div className="flex space-x-3 pt-4 sticky bottom-0 bg-white pb-4 pt-3 px-0 z-20">
                         <button type="button" onClick={() => { setIsEditing(null); resetForm() }} className="flex-1 py-4 border border-gray-200 text-gray-600 rounded-xl font-bold flex justify-center items-center hover:bg-gray-50 transition active:scale-95 text-sm">
                             <X className="w-5 h-5 mr-2" /> Cancelar
@@ -216,6 +236,8 @@ export default function ItemsPage() {
                                         setUnit(i.unit);
                                         setUnitObs(i.unit_observation || '');
                                         setGroupId(i.group_id || '');
+                                        setMinExpected(i.min_expected != null ? String(i.min_expected) : '');
+                                        setMaxExpected(i.max_expected != null ? String(i.max_expected) : '');
                                     }} className="p-2.5 text-indigo-600 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition active:scale-95">
                                         <Edit2 className="w-4 h-4" />
                                     </button>
