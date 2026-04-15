@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
-import { Lock, Mail, Loader2, User, KeyRound, ArrowLeft, ArrowRight, X } from 'lucide-react'
+import { Flame, Lock, Loader2, ArrowLeft, X, Settings } from 'lucide-react'
 import { loginOperatorWithPin, getActiveEmployeesAction } from '../actions/pinAuth'
 import toast from 'react-hot-toast'
 
@@ -67,78 +67,116 @@ export default function LoginPage() {
     const handleDelete = () => setPin(pin.slice(0, -1))
 
     return (
-        <div className="min-h-screen bg-[#F7F6F3] flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md mb-8">
-                <div className="flex justify-center">
-                    <img src="/Logo Vermelha.png" alt="NaBrasa Controle" className="h-28 w-auto object-contain drop-shadow-md" />
-                </div>
-                <h2 className="mt-6 text-center text-4xl font-extrabold text-gray-900 tracking-tight">
-                    NaBrasa Controle
-                </h2>
-                <p className="mt-2 text-center text-base text-gray-500 font-medium tracking-tight">
-                    Contagem, auditoria e controle operacional
-                </p>
+        <div className="min-h-screen bg-[#FAF9F6] flex flex-col items-center justify-center p-6" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
+
+            {/* Decorative blur blobs */}
+            <div className="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none overflow-hidden">
+                <div className="absolute -top-[10%] -right-[10%] w-[40%] h-[40%] rounded-full bg-[#902216]/5 blur-[120px]" />
+                <div className="absolute -bottom-[10%] -left-[10%] w-[40%] h-[40%] rounded-full bg-[#8b4d43]/5 blur-[120px]" />
             </div>
 
-            <div className="sm:mx-auto sm:w-full sm:max-w-md px-4">
+            <main className="w-full max-w-[480px] flex flex-col items-center">
 
-                {mode === 'select' && (
-                    <div className="bg-white py-10 px-6 shadow-sm rounded-3xl border border-gray-100 flex flex-col gap-4 text-center">
-                        <h2 className="text-xl font-black text-gray-900 tracking-tight mb-2">Acesso ao Sistema</h2>
-                        <button
-                            onClick={() => setMode('operator_select')}
-                            className="bg-[#B13A2B] hover:bg-[#8F2E21] text-white p-5 rounded-2xl font-bold text-lg flex items-center justify-between transition-transform active:scale-95 shadow-md shadow-[#B13A2B]/20"
-                        >
-                            <span className="flex items-center"><KeyRound className="w-6 h-6 mr-3" /> Acessar operação</span>
-                            <ArrowRight className="w-5 h-5 text-[#D4564A]" />
-                        </button>
-                        <button
-                            onClick={() => setMode('manager')}
-                            className="bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 p-4 rounded-2xl font-semibold text-sm flex items-center justify-between transition-transform active:scale-95"
-                        >
-                            <span className="flex items-center"><Lock className="w-5 h-5 mr-2 text-gray-400" /> Acesso Gerencial</span>
-                            <ArrowRight className="w-4 h-4 text-gray-300" />
-                        </button>
+                {/* ── HEADER ── */}
+                <header className="text-center mb-10 space-y-3">
+                    <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white shadow-sm mb-1">
+                        <Flame className="w-7 h-7 text-[#B13A2B]" strokeWidth={2} fill="currentColor" />
                     </div>
+                    <div>
+                        <h1 className="font-extrabold text-3xl tracking-tight text-[#1b1c1a]" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
+                            NaBrasa Controle
+                        </h1>
+                        <p className="text-[#58413e] text-base mt-1">
+                            Contagem e controle da operação
+                        </p>
+                    </div>
+                </header>
+
+                {/* ── MODE: SELECT ── */}
+                {mode === 'select' && (
+                    <>
+                        <div className="w-full bg-white rounded-2xl shadow-[0_40px_80px_rgba(27,28,26,0.05)] overflow-hidden">
+                            {/* Hero image */}
+                            <div className="aspect-video w-full overflow-hidden bg-[#efeeeb]">
+                                <img
+                                    src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&q=80"
+                                    alt="Preparo de carnes na brasa"
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+
+                            {/* Actions */}
+                            <div className="p-8 space-y-4">
+                                <button
+                                    onClick={() => setMode('operator_select')}
+                                    className="w-full text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-transform text-lg"
+                                    style={{
+                                        fontFamily: 'var(--font-manrope), sans-serif',
+                                        background: 'linear-gradient(135deg, #902216 0%, #B13A2B 100%)'
+                                    }}
+                                >
+                                    Acessar operação
+                                    <span className="text-xl">→</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Footer secondary */}
+                        <footer className="mt-8 flex flex-col items-center gap-5 w-full">
+                            <button
+                                onClick={() => setMode('manager')}
+                                className="text-[#902216] font-semibold text-sm hover:bg-[#efeeeb] px-6 py-2 rounded-full transition-colors flex items-center gap-2"
+                            >
+                                <Settings className="w-4 h-4" />
+                                Acesso gerencial
+                            </button>
+                            <div className="flex flex-col items-center gap-1.5 opacity-40">
+                                <div className="w-10 h-px bg-[#dfbfba]" />
+                                <span className="text-[10px] tracking-widest uppercase text-[#58413e]">Versão 2.4.0</span>
+                            </div>
+                        </footer>
+                    </>
                 )}
 
+                {/* ── MODE: MANAGER ── */}
                 {mode === 'manager' && (
-                    <div className="bg-white py-8 px-6 shadow-2xl rounded-3xl border border-gray-100 relative">
-                        <button onClick={() => { setMode('select'); setError(null) }} className="absolute -top-4 -left-4 bg-white p-2 rounded-full shadow-md text-gray-500 hover:text-[#B13A2B]">
+                    <div className="w-full bg-white rounded-2xl shadow-[0_40px_80px_rgba(27,28,26,0.05)] p-8 relative">
+                        <button
+                            onClick={() => { setMode('select'); setError(null) }}
+                            className="absolute -top-4 -left-4 bg-white p-2 rounded-full shadow-md text-[#58413e] hover:text-[#B13A2B] transition"
+                        >
                             <ArrowLeft className="w-5 h-5" />
                         </button>
-                        <h3 className="text-xl font-bold text-center text-gray-900 mb-6 flex items-center justify-center">
-                            <Lock className="w-5 h-5 mr-2 text-[#B13A2B]" /> Gerência Geral
-                        </h3>
+
+                        <h2 className="font-extrabold text-xl text-[#1b1c1a] mb-6 flex items-center gap-2" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
+                            <Lock className="w-5 h-5 text-[#B13A2B]" /> Gerência Geral
+                        </h2>
+
                         <form className="space-y-5" onSubmit={handleManagerLogin}>
                             {error && <div className="p-3 rounded-xl bg-red-50 text-red-600 text-sm font-semibold text-center">{error}</div>}
+
                             <div>
-                                <label className="block text-sm font-semibold text-gray-600 mb-1">Email</label>
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none"><Mail className="h-5 w-5 text-gray-400" /></div>
-                                    <input
-                                        type="email" required
-                                        value={email} onChange={(e) => setEmail(e.target.value)}
-                                        className="w-full pl-10 pr-3 py-3 bg-gray-50 border-transparent rounded-xl focus:ring-4 focus:ring-[#FDF0EF] focus:border-[#B13A2B] focus:bg-white transition-all outline-none font-medium"
-                                        placeholder="Seu email"
-                                    />
-                                </div>
+                                <label className="block text-sm font-semibold text-[#58413e] mb-2 px-1">Email</label>
+                                <input
+                                    type="email" required
+                                    value={email} onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full bg-[#f4f3f0] border-none rounded-xl py-3.5 px-4 text-[#1b1c1a] font-medium focus:bg-white focus:ring-1 focus:ring-[#B13A2B]/30 transition-all outline-none placeholder:text-[#8c716c]"
+                                    placeholder="seu@email.com"
+                                />
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-gray-600 mb-1">Senha</label>
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none"><Lock className="h-5 w-5 text-gray-400" /></div>
-                                    <input
-                                        type="password" required
-                                        value={password} onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full pl-10 pr-3 py-3 bg-gray-50 border-transparent rounded-xl focus:ring-4 focus:ring-[#FDF0EF] focus:border-[#B13A2B] focus:bg-white transition-all outline-none font-medium"
-                                        placeholder="••••••••"
-                                    />
-                                </div>
+                                <label className="block text-sm font-semibold text-[#58413e] mb-2 px-1">Senha</label>
+                                <input
+                                    type="password" required
+                                    value={password} onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full bg-[#f4f3f0] border-none rounded-xl py-3.5 px-4 text-[#1b1c1a] font-medium focus:bg-white focus:ring-1 focus:ring-[#B13A2B]/30 transition-all outline-none placeholder:text-[#8c716c]"
+                                    placeholder="••••••••"
+                                />
                             </div>
                             <button
                                 type="submit" disabled={loading}
-                                className="w-full py-4 rounded-xl shadow-md text-sm font-bold text-white bg-gray-900 hover:bg-black active:scale-95 transition-all flex items-center justify-center mt-2"
+                                className="w-full py-4 rounded-xl text-white font-bold flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] transition-transform mt-2"
+                                style={{ background: 'linear-gradient(135deg, #902216 0%, #B13A2B 100%)', fontFamily: 'var(--font-manrope), sans-serif' }}
                             >
                                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Entrar como Gerente'}
                             </button>
@@ -146,66 +184,81 @@ export default function LoginPage() {
                     </div>
                 )}
 
+                {/* ── MODE: OPERATOR SELECT ── */}
                 {mode === 'operator_select' && (
-                    <div className="bg-white pt-6 pb-4 px-4 shadow-2xl rounded-3xl border border-gray-100 relative max-h-[80vh] flex flex-col h-full">
-                        <button onClick={() => setMode('select')} className="absolute -top-4 -left-4 bg-white p-2 rounded-full shadow-md text-gray-500 hover:text-[#B13A2B] z-10">
+                    <div className="w-full bg-white rounded-2xl shadow-[0_40px_80px_rgba(27,28,26,0.05)] relative overflow-hidden max-h-[70vh] flex flex-col">
+                        <button
+                            onClick={() => setMode('select')}
+                            className="absolute top-4 left-4 bg-[#f4f3f0] p-2 rounded-full text-[#58413e] hover:text-[#B13A2B] z-10 transition"
+                        >
                             <ArrowLeft className="w-5 h-5" />
                         </button>
-                        <h3 className="text-xl font-extrabold text-center text-gray-900 mb-4 px-8 leading-tight">Quem vai operar?</h3>
 
-                        <div className="overflow-y-auto pr-2 space-y-2 flex-1 pb-4">
+                        <div className="pt-14 pb-4 px-6 border-b border-[#efeeeb]">
+                            <h2 className="font-extrabold text-xl text-[#1b1c1a]" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
+                                Quem vai operar?
+                            </h2>
+                            <p className="text-sm text-[#58413e] mt-1">Selecione seu nome</p>
+                        </div>
+
+                        <div className="overflow-y-auto flex-1 p-3 space-y-1">
                             {loading ? (
                                 <div className="flex justify-center p-8"><Loader2 className="w-8 h-8 animate-spin text-[#B13A2B]" /></div>
                             ) : employees.length === 0 ? (
-                                <div className="text-center text-gray-500 p-6 text-sm font-semibold border-2 border-dashed border-gray-200 rounded-xl">
-                                    Nenhum operador ativo.<br /><span className="text-xs font-normal">Aguardando a execução do script (migration_pins.sql) pelo banco de dados.</span>
+                                <div className="text-center text-[#58413e] p-6 text-sm font-semibold border-2 border-dashed border-[#dfbfba] rounded-xl m-2">
+                                    Nenhum operador ativo.<br /><span className="text-xs font-normal">Execute a migration_pins.sql no banco para ativar.</span>
                                 </div>
                             ) : employees.map(emp => (
                                 <button
                                     key={emp.id}
                                     onClick={() => { setSelectedOp(emp); setMode('operator_pin'); setPin('') }}
-                                    className="w-full text-left p-4 rounded-2xl bg-gray-50 hover:bg-[#FDF0EF] border border-t border-gray-100 active:bg-[#FDF0EF] transition-colors flex items-center justify-between"
+                                    className="w-full text-left p-4 rounded-xl hover:bg-[#f4f3f0] active:bg-[#efeeeb] transition-colors flex items-center justify-between group"
                                 >
-                                    <div className="flex items-center">
-                                        <div className="w-10 h-10 rounded-full bg-[#FDF0EF] text-[#B13A2B] flex items-center justify-center font-bold text-lg mr-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-[#FDF0EF] text-[#B13A2B] flex items-center justify-center font-bold text-base">
                                             {emp.name.charAt(0).toUpperCase()}
                                         </div>
-                                        <span className="font-bold text-gray-800 text-lg">{emp.name}</span>
+                                        <span className="font-semibold text-[#1b1c1a] text-base">{emp.name}</span>
                                     </div>
-                                    <ArrowRight className="w-4 h-4 text-gray-300" />
+                                    <span className="text-[#dfbfba] group-hover:text-[#B13A2B] transition-colors text-xl">→</span>
                                 </button>
                             ))}
                         </div>
                     </div>
                 )}
 
+                {/* ── MODE: OPERATOR PIN ── */}
                 {mode === 'operator_pin' && (
-                    <div className="bg-white py-8 px-6 shadow-2xl rounded-3xl border border-gray-100 flex flex-col items-center relative">
-                        <button onClick={() => setMode('operator_select')} className="absolute -top-4 -left-4 bg-white p-2 rounded-full shadow-md text-gray-500 hover:text-[#B13A2B] z-10">
+                    <div className="w-full bg-white rounded-2xl shadow-[0_40px_80px_rgba(27,28,26,0.05)] p-8 flex flex-col items-center relative">
+                        <button
+                            onClick={() => setMode('operator_select')}
+                            className="absolute top-4 left-4 bg-[#f4f3f0] p-2 rounded-full text-[#58413e] hover:text-[#B13A2B] transition"
+                        >
                             <ArrowLeft className="w-5 h-5" />
                         </button>
 
-                        <div className="w-16 h-16 rounded-full bg-[#FDF0EF] text-[#B13A2B] flex items-center justify-center text-3xl font-black mb-3">
+                        <div className="w-16 h-16 rounded-full bg-[#FDF0EF] text-[#B13A2B] flex items-center justify-center text-2xl font-black mb-3 mt-2">
                             {selectedOp?.name.charAt(0).toUpperCase()}
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900">{selectedOp?.name}</h3>
-                        <p className="text-sm font-medium text-gray-400 mb-8 mt-1">Insira seu PIN de 4 dígitos</p>
+                        <h3 className="text-xl font-bold text-[#1b1c1a]" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>{selectedOp?.name}</h3>
+                        <p className="text-sm text-[#8c716c] mb-8 mt-1">Insira seu PIN de 4 dígitos</p>
 
+                        {/* PIN dots */}
                         <div className="flex justify-center space-x-3 mb-8 w-full">
                             {[0, 1, 2, 3].map(i => (
-                                <div key={i} className={`w-4 h-4 rounded-full transition-all duration-200 ${i < pin.length ? 'bg-[#B13A2B] scale-125 shadow-sm' : 'bg-gray-200'}`} />
+                                <div key={i} className={`w-3.5 h-3.5 rounded-full transition-all duration-200 ${i < pin.length ? 'bg-[#B13A2B] scale-125' : 'bg-[#e3e2df]'}`} />
                             ))}
                         </div>
 
                         {loading ? (
-                            <div className="py-12"><Loader2 className="w-10 h-10 animate-spin text-[#B13A2B]" /></div>
+                            <div className="py-10"><Loader2 className="w-10 h-10 animate-spin text-[#B13A2B]" /></div>
                         ) : (
                             <div className="grid grid-cols-3 gap-3 w-full max-w-[280px]">
                                 {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
                                     <button
                                         key={num}
                                         onClick={() => handlePinDigit(num.toString())}
-                                        className="h-16 rounded-2xl bg-gray-50 active:bg-gray-200 font-bold text-2xl text-gray-800 touch-manipulation transition-colors"
+                                        className="h-16 rounded-2xl bg-[#f4f3f0] hover:bg-[#efeeeb] active:bg-[#e3e2df] font-bold text-2xl text-[#1b1c1a] touch-manipulation transition-colors"
                                     >
                                         {num}
                                     </button>
@@ -213,7 +266,7 @@ export default function LoginPage() {
                                 <div />
                                 <button
                                     onClick={() => handlePinDigit('0')}
-                                    className="h-16 rounded-2xl bg-gray-50 active:bg-gray-200 font-bold text-2xl text-gray-800 touch-manipulation transition-colors"
+                                    className="h-16 rounded-2xl bg-[#f4f3f0] hover:bg-[#efeeeb] active:bg-[#e3e2df] font-bold text-2xl text-[#1b1c1a] touch-manipulation transition-colors"
                                 >
                                     0
                                 </button>
@@ -227,7 +280,8 @@ export default function LoginPage() {
                         )}
                     </div>
                 )}
-            </div>
+
+            </main>
         </div>
     )
 }
