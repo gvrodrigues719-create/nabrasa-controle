@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 
 export async function createServerClient() {
     const cookieStore = await cookies()
+    const cookieString = cookieStore.getAll().map(c => `${c.name}=${encodeURIComponent(c.value)}`).join('; ')
 
     // Encaminhando o header de Cookie ativo da request atual para o client SSR.
     // Isso delega o parse do 'sb-*-auth-token' e refresh de sessão ao próprio padrão do SupabaseJS.
@@ -15,7 +16,7 @@ export async function createServerClient() {
             },
             global: {
                 headers: {
-                    Cookie: cookieStore.toString()
+                    Cookie: cookieString
                 }
             }
         }

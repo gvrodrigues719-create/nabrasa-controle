@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc versao="4.00" xmlns="http://www.portalfiscal.inf.br/nfe">
+  <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
+    <infNFe Id="NFe35190498765432000188550010000010021000010022" versao="4.00">
+      <ide>
+        <nNF>1002</nNF>
+        <serie>1</serie>
+        <dhEmi>2026-04-15T11:15:00-03:00</dhEmi>
+      </ide>
+      <emit>
+        <CNPJ>98765432000188</CNPJ>
+        <xNome>DISTRIBUIDORA TESTE ALIMENTOS LTDA</xNome>
+      </emit>
+      <det nItem="1">
+        <prod>
+          <cProd>INS002</cProd>
+          <cEAN>7891111111111</cEAN>
+          <xProd>CONTRA FILÉ BOVINO</xProd>
+          <uCom>KG</uCom>
+          <qCom>8.0000</qCom>
+          <vUnCom>32.0000</vUnCom>
+          <vProd>256.00</vProd>
+        </prod>
+      </det>
+      <det nItem="2">
+        <prod>
+          <cProd>INS003</cProd>
+          <cEAN>7892222222222</cEAN>
+          <xProd>CARVÃO VEGETAL 10KG</xProd>
+          <uCom>SC</uCom>
+          <qCom>5.0000</qCom>
+          <vUnCom>24.5000</vUnCom>
+          <vProd>122.50</vProd>
+        </prod>
+      </det>
+      <det nItem="3">
+        <prod>
+          <cProd>INS004</cProd>
+          <cEAN>7893333333333</cEAN>
+          <xProd>REFRIGERANTE COLA 2L</xProd>
+          <uCom>UN</uCom>
+          <qCom>12.0000</qCom>
+          <vUnCom>9.0000</vUnCom>
+          <vProd>108.00</vProd>
+        </prod>
+      </det>
+      <det nItem="4">
+        <prod>
+          <cProd>INS005</cProd>
+          <cEAN>7894444444444</cEAN>
+          <xProd>GUARDANAPO FOLHA DUPLA</xProd>
+          <uCom>PCT</uCom>
+          <qCom>2.0000</qCom>
+          <vUnCom>5.0000</vUnCom>
+          <vProd>10.00</vProd>
+        </prod>
+      </det>
+      <total>
+        <ICMSTot>
+          <vNF>496.50</vNF>
+        </ICMSTot>
+      </total>
+    </infNFe>
+  </NFe>
+</nfeProc>

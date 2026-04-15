@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc versao="4.00" xmlns="http://www.portalfiscal.inf.br/nfe">
+  <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
+    <infNFe Id="NFe35190412345678000199550010000010011000010011" versao="4.00">
+      <ide>
+        <nNF>1001</nNF>
+        <serie>1</serie>
+        <dhEmi>2026-04-15T10:30:00-03:00</dhEmi>
+      </ide>
+      <emit>
+        <CNPJ>12345678000199</CNPJ>
+        <xNome>FORNECEDOR TESTE LTDA</xNome>
+      </emit>
+      <det nItem="1">
+        <prod>
+          <cProd>INS001</cProd>
+          <cEAN>7891234567890</cEAN>
+          <xProd>PICANHA BOVINA RESFRIADA</xProd>
+          <uCom>KG</uCom>
+          <qCom>10.0000</qCom>
+          <vUnCom>25.0000</vUnCom>
+          <vProd>250.00</vProd>
+        </prod>
+      </det>
+      <total>
+        <ICMSTot>
+          <vNF>250.00</vNF>
+        </ICMSTot>
+      </total>
+    </infNFe>
+  </NFe>
+</nfeProc>
