@@ -221,68 +221,75 @@ export default function InvoiceMappingPage() {
                             <table className="w-full text-left text-sm whitespace-nowrap">
                                 <thead className="bg-gray-50 border-b border-gray-100">
                                     <tr>
-                                        <th className="p-4 font-bold text-gray-500 uppercase text-[10px] tracking-wider">Item Fornecedor</th>
-                                        <th className="p-4 font-bold text-gray-500 uppercase text-[10px] tracking-wider">Mapeamento Interno</th>
+                                        <th className="p-4 font-bold text-gray-500 uppercase text-[10px] tracking-wider w-[35%]">Item Fornecedor</th>
+                                        <th className="p-4 font-bold text-gray-500 uppercase text-[10px] tracking-wider w-[45%]">Mapeamento Interno</th>
                                         <th className="p-4 font-bold text-gray-500 uppercase text-[10px] tracking-wider w-24 text-center">Fator</th>
                                         <th className="p-4 font-bold text-gray-500 uppercase text-[10px] tracking-wider text-center">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
                                     {invoice.items.map((item: any) => (
-                                        <tr key={item.id} className={`transition-colors ${item.review_status === 'reviewed' ? 'bg-green-50/30' : ''}`}>
-                                            <td className="p-4 max-w-xs">
-                                                <div className="truncate">
-                                                    <p className="font-bold text-gray-900 text-xs uppercase">{item.item_description}</p>
+                                        <tr key={item.id} className={`transition-colors hover:bg-gray-50/30 ${item.review_status === 'reviewed' ? 'bg-green-50/20' : ''}`}>
+                                            <td className="p-4">
+                                                <div className="max-w-[280px]">
+                                                    <p className="font-bold text-gray-900 text-xs uppercase truncate" title={item.item_description}>{item.item_description}</p>
                                                     <p className="text-[10px] text-gray-400 mt-1">
                                                         Cód: {item.supplier_item_code} | {item.purchase_quantity} {item.purchase_unit} @ {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.purchase_unit_cost)}
                                                     </p>
                                                 </div>
                                             </td>
                                             <td className="p-4">
-                                                <select 
-                                                    disabled={isApproved || isActioning}
-                                                    value={item.matched_item_id || ''}
-                                                    onChange={(e) => handleUpdateRow(item.id, {
-                                                        matched_item_id: e.target.value || null,
-                                                        conversion_factor_snapshot: item.conversion_factor_snapshot || 1,
-                                                        review_notes: item.review_notes
-                                                    })}
-                                                    className="w-full bg-white border border-gray-200 rounded-lg p-2 text-xs font-bold text-gray-700 focus:ring-2 focus:ring-[#B13A2B] outline-none"
-                                                >
-                                                    <option value="">Não vinculado</option>
-                                                    {internalItems.map((ii: any) => (
-                                                        <option key={ii.id} value={ii.id}>{ii.name} ({ii.unit})</option>
-                                                    ))}
-                                                </select>
-                                                {item.matched_item_id && (
-                                                    <div className="flex items-center gap-1 mt-1 px-1">
-                                                        <CheckCircle className="w-3 h-3 text-green-500" />
-                                                        <span className="text-[9px] font-bold text-green-600 uppercase">Mapeado</span>
-                                                    </div>
-                                                )}
+                                                <div className="flex flex-col gap-1">
+                                                    <select 
+                                                        disabled={isApproved || isActioning}
+                                                        value={item.matched_item_id || ''}
+                                                        onChange={(e) => handleUpdateRow(item.id, {
+                                                            matched_item_id: e.target.value || null,
+                                                            conversion_factor_snapshot: item.conversion_factor_snapshot || 1,
+                                                            review_notes: item.review_notes
+                                                        })}
+                                                        className="w-full bg-white border border-gray-200 rounded-xl p-2.5 text-xs font-bold text-gray-700 focus:ring-2 focus:ring-[#B13A2B] outline-none shadow-sm disabled:bg-gray-50"
+                                                    >
+                                                        <option value="">-- Selecione o Ingrediente --</option>
+                                                        {internalItems.map((ii: any) => (
+                                                            <option key={ii.id} value={ii.id}>{ii.name} ({ii.unit})</option>
+                                                        ))}
+                                                    </select>
+                                                    {item.matched_item_id && (
+                                                        <div className="flex items-center gap-1.5 px-1 animate-in fade-in duration-300">
+                                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                                                            <span className="text-[9px] font-black text-green-600 uppercase tracking-tighter">Vinculado ao Sistema</span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="p-4">
-                                                <input 
-                                                    type="number"
-                                                    disabled={isApproved || isActioning || !item.matched_item_id}
-                                                    value={item.conversion_factor_snapshot || 1}
-                                                    step="0.001"
-                                                    onChange={(e) => handleUpdateRow(item.id, {
-                                                        matched_item_id: item.matched_item_id,
-                                                        conversion_factor_snapshot: parseFloat(e.target.value),
-                                                        review_notes: item.review_notes
-                                                    })}
-                                                    className="w-20 bg-gray-50 border border-gray-200 rounded-lg p-2 text-center text-xs font-bold text-gray-900 focus:ring-2 focus:ring-[#B13A2B] outline-none disabled:opacity-30"
-                                                />
+                                                <div className="flex justify-center">
+                                                    <input 
+                                                        type="number"
+                                                        disabled={isApproved || isActioning || !item.matched_item_id}
+                                                        value={item.conversion_factor_snapshot || 1}
+                                                        step="0.001"
+                                                        onChange={(e) => handleUpdateRow(item.id, {
+                                                            matched_item_id: item.matched_item_id,
+                                                            conversion_factor_snapshot: parseFloat(e.target.value),
+                                                            review_notes: item.review_notes
+                                                        })}
+                                                        className="w-20 bg-gray-50 border border-gray-200 rounded-xl p-2.5 text-center text-xs font-extrabold text-gray-900 focus:ring-2 focus:ring-[#B13A2B] outline-none disabled:opacity-30 transition-all"
+                                                    />
+                                                </div>
                                             </td>
-                                            <td className="p-4 text-center">
-                                                <button 
-                                                    disabled={isApproved || isActioning}
-                                                    onClick={() => setItemToDelete(item)}
-                                                    className="p-2 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-0"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
+                                            <td className="p-4">
+                                                <div className="flex justify-center">
+                                                    <button 
+                                                        disabled={isApproved || isActioning}
+                                                        onClick={() => setItemToDelete(item)}
+                                                        className="p-2 text-gray-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all disabled:opacity-0 active:scale-90"
+                                                        title="Remover item da nota"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
