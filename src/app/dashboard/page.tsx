@@ -15,7 +15,7 @@ export default function DashboardPage() {
             const op = await getActiveOperator()
             if (op?.name) {
                 setUserName(op.name.split(' ')[0])
-                setUserRole('operator')
+                setUserRole(op.role || 'operator')
                 return
             }
             const { data: { user } } = await supabase.auth.getUser()
