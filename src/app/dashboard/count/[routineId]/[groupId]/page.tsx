@@ -133,7 +133,6 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
             }
 
             setSyncStatus('synced')
-            toast.success("Progresso salvo no banco!", { icon: '☁️', id: 'sync-success' })
         }, 2000)
     }
 
