@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { ClipboardList, Settings, ShieldCheck, Box } from 'lucide-react'
+import { ClipboardList, ShieldCheck, Settings, Flame } from 'lucide-react'
+import { getActiveOperator } from '@/app/actions/pinAuth'
 
 export default function DashboardPage() {
     const [userRole, setUserRole] = useState<string>('operator')
@@ -11,6 +12,12 @@ export default function DashboardPage() {
 
     useEffect(() => {
         async function loadProfile() {
+            const op = await getActiveOperator()
+            if (op?.name) {
+                setUserName(op.name.split(' ')[0])
+                setUserRole('operator')
+                return
+            }
             const { data: { user } } = await supabase.auth.getUser()
             if (user) {
                 const { data: profile } = await supabase
@@ -18,11 +25,9 @@ export default function DashboardPage() {
                     .select('role, name')
                     .eq('id', user.id)
                     .single()
-
                 if (profile) {
                     setUserRole(profile.role)
-                    // Bug 3: prioriza nome real, fallback para parte local do email
-                    const displayName = profile.name?.trim() || user.email?.split('@')[0] || 'Usuário'
+                    const displayName = profile.name?.split(' ')[0] || user.email?.split('@')[0] || 'você'
                     setUserName(displayName)
                 }
             }
@@ -30,53 +35,91 @@ export default function DashboardPage() {
         loadProfile()
     }, [])
 
+    function getGreeting() {
+        const h = new Date().getHours()
+        if (h < 12) return 'Bom dia'
+        if (h < 18) return 'Boa tarde'
+        return 'Bom turno'
+    }
+
+    const roleLabel = userRole === 'operator' ? 'Operador' : userRole === 'manager' ? 'Gerente' : 'Administrador'
+
     return (
-        <div className="p-4 space-y-6">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-4">
-                <div className="h-14 w-14 rounded-full bg-[#FDF0EF] flex items-center justify-center">
-                    <span className="text-[#B13A2B] font-bold text-xl uppercase tracking-wider">
-                        {userName ? userName.substring(0, 2) : ''}
+        <div className="min-h-screen bg-[#F5F4F1]" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
+
+            {/* ── HEADER ── */}
+            <div className="flex items-center justify-between px-5 pt-6 pb-4">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 bg-white rounded-xl shadow-sm border border-[#e9e8e5] flex items-center justify-center">
+                        <Flame className="w-4 h-4 text-[#B13A2B]" strokeWidth={2} fill="currentColor" />
+                    </div>
+                    <span className="font-bold text-[#1b1c1a] text-base" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
+                        NaBrasa Controle
                     </span>
                 </div>
-                <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Olá, {userName}</h2>
-                    <p className="text-sm text-gray-500 capitalize">{userRole === 'operator' ? 'Operador' : userRole === 'manager' ? 'Gerente' : 'Administrador'}</p>
+                <div className="w-9 h-9 rounded-full bg-[#FDF0EF] flex items-center justify-center">
+                    <span className="text-sm font-bold text-[#B13A2B]">{userName.charAt(0).toUpperCase()}</span>
                 </div>
             </div>
 
-            <div className="space-y-4">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Ações Principais</h3>
+            <div className="px-5 pb-8 space-y-6">
 
+                {/* ── GREETING ── */}
+                <div>
+                    <h1 className="text-xl font-extrabold text-[#1b1c1a]" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
+                        {getGreeting()}{userName ? `, ${userName}` : ''}
+                    </h1>
+                    <p className="text-sm text-[#58413e] mt-0.5 capitalize">{roleLabel}</p>
+                </div>
+
+                {/* ── PRIMARY ACTION ── */}
                 <Link
                     href="/dashboard/routines"
-                    className="w-full bg-[#B13A2B] text-white p-5 rounded-2xl flex items-center justify-between shadow-md hover:bg-[#8F2E21] hover:shadow-lg transition-all active:scale-95 block"
+                    className="flex items-center gap-4 bg-white rounded-2xl p-5 shadow-[0_2px_12px_rgba(27,28,26,0.06)] border border-[#f0eeed] active:scale-[0.98] transition-transform block"
                 >
-                    <div className="flex items-center space-x-4">
-                        <ClipboardList className="w-8 h-8" />
-                        <span className="font-semibold text-xl tracking-tight">Efetuar Contagem</span>
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ background: 'linear-gradient(135deg, #902216 0%, #B13A2B 100%)' }}>
+                        <ClipboardList className="w-6 h-6 text-white" />
                     </div>
+                    <div className="flex-1">
+                        <p className="font-extrabold text-[#1b1c1a] text-base" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
+                            Efetuar Contagem
+                        </p>
+                        <p className="text-sm text-[#8c716c] mt-0.5">Ver rotinas ativas do turno</p>
+                    </div>
+                    <span className="text-[#dfbfba] text-xl">→</span>
                 </Link>
 
+                {/* ── MANAGER SHORTCUTS ── */}
                 {['admin', 'manager'].includes(userRole) && (
-                    <div className="grid grid-cols-2 gap-4 mt-6">
-                        <Link
-                            href="/dashboard/admin/reports"
-                            className="bg-white border border-gray-200 p-5 rounded-2xl flex flex-col items-center justify-center text-gray-800 hover:bg-gray-50 hover:border-gray-300 transition shadow-sm space-y-3 active:scale-95 text-center"
-                        >
-                            <ShieldCheck className="w-8 h-8 text-[#B13A2B]" />
-                            <span className="font-semibold text-sm">Auditoria</span>
-                        </Link>
-                        <Link
-                            href="/dashboard/admin"
-                            className="bg-white border border-gray-200 p-5 rounded-2xl flex flex-col items-center justify-center text-gray-800 hover:bg-gray-50 hover:border-gray-300 transition shadow-sm space-y-3 active:scale-95 text-center"
-                        >
-                            <Settings className="w-8 h-8 text-gray-500" />
-                            <span className="font-semibold text-sm">Configurar</span>
-                        </Link>
-                    </div>
+                    <>
+                        <div>
+                            <p className="text-[11px] font-bold text-[#8c716c] uppercase tracking-widest mb-3">Gerência</p>
+                            <div className="grid grid-cols-2 gap-3">
+                                <Link
+                                    href="/dashboard/admin/reports"
+                                    className="bg-white rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-[0_2px_12px_rgba(27,28,26,0.06)] border border-[#f0eeed] active:scale-[0.98] transition-transform text-center"
+                                >
+                                    <div className="w-10 h-10 rounded-xl bg-[#FDF0EF] flex items-center justify-center">
+                                        <ShieldCheck className="w-5 h-5 text-[#B13A2B]" />
+                                    </div>
+                                    <span className="font-semibold text-sm text-[#1b1c1a]">Auditoria</span>
+                                </Link>
+                                <Link
+                                    href="/dashboard/admin"
+                                    className="bg-white rounded-2xl p-5 flex flex-col items-center justify-center gap-3 shadow-[0_2px_12px_rgba(27,28,26,0.06)] border border-[#f0eeed] active:scale-[0.98] transition-transform text-center"
+                                >
+                                    <div className="w-10 h-10 rounded-xl bg-[#efeeeb] flex items-center justify-center">
+                                        <Settings className="w-5 h-5 text-[#58413e]" />
+                                    </div>
+                                    <span className="font-semibold text-sm text-[#1b1c1a]">Configurar</span>
+                                </Link>
+                            </div>
+                        </div>
+                    </>
                 )}
+
             </div>
         </div>
     )
 }
-
