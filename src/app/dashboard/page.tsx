@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { ClipboardList, ShieldCheck, Settings, Flame, TrendingUp, Calendar, ArrowRight } from 'lucide-react'
+import { ClipboardList, ShieldCheck, Settings, Flame, TrendingUp, Calendar, ArrowRight, ListChecks } from 'lucide-react'
 import { getActiveOperator } from '@/app/actions/pinAuth'
 import { getActiveRoutinesAction } from '@/app/actions/routinesAction'
 
@@ -62,7 +62,7 @@ export default function DashboardPage() {
     const roleLabel = userRole === 'operator' ? 'Operador' : userRole === 'manager' ? 'Gerente' : 'Administrador'
 
     return (
-        <div className="min-h-screen bg-[#F5F4F1] pb-10" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
+        <div className="min-h-screen bg-[#F8F7F4] pb-10" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
 
             {/* ── HEADER ── */}
             <div className="flex items-center justify-between px-5 pt-6 pb-4">
@@ -90,48 +90,65 @@ export default function DashboardPage() {
                     <h1 className="text-2xl font-extrabold text-[#1b1c1a] tracking-tight" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
                         {getGreeting()}{userName ? `, ${userName}` : ''}
                     </h1>
-                    <p className="text-sm text-[#58413e] mt-1 font-medium">{roleLabel} • Módulo Operacional</p>
+                    <div className="flex items-center space-x-2 mt-1">
+                        <p className="text-sm text-[#58413e] font-medium">{roleLabel}</p>
+                        <span className="w-1 h-1 bg-gray-300 rounded-full" />
+                        <span className="text-[10px] font-black text-[#b13a2b] uppercase tracking-widest bg-red-50 px-2 py-0.5 rounded-md">Módulo MOC</span>
+                    </div>
                 </div>
 
                 {/* ── CARD OPERACIONAL (MOC HUB) ── */}
                 <section>
-                    <p className="text-[11px] font-bold text-[#8c716c] uppercase tracking-widest mb-3">Minha Operação</p>
-                    <div className="space-y-3">
+                    <div className="flex items-center justify-between mb-3 px-1">
+                        <p className="text-[11px] font-bold text-[#8c716c] uppercase tracking-widest">Rotinas Operacionais</p>
+                    </div>
+                    <div className="space-y-4">
                         {/* CARD CONTAGEM - ROTINA PRINCIPAL */}
                         <Link
                             href="/dashboard/routines"
-                            className="bg-white rounded-3xl p-6 shadow-[0_4px_16px_rgba(27,28,26,0.06)] border border-[#e9e8e5] active:scale-[0.98] transition-all block relative overflow-hidden group"
+                            className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e9e8e5] active:scale-[0.98] transition-all block relative overflow-hidden group"
                         >
-                            <div className="flex items-start justify-between relative z-10">
-                                <div className="space-y-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-[#FDF0EF] flex items-center justify-center text-[#B13A2B] group-hover:bg-[#B13A2B] group-hover:text-white transition-colors">
-                                        <ClipboardList className="w-6 h-6" />
+                            <div className="flex items-center justify-between relative z-10">
+                                <div className="flex items-center space-x-4">
+                                    <div className="w-14 h-14 rounded-2xl bg-[#FDF0EF] flex items-center justify-center text-[#B13A2B] group-hover:bg-[#B13A2B] group-hover:text-white transition-colors">
+                                        <ClipboardList className="w-7 h-7" />
                                     </div>
                                     <div>
                                         <h3 className="font-extrabold text-[#1b1c1a] text-lg leading-tight" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
                                             Contagem de Estoque
                                         </h3>
-                                        <p className="text-sm text-[#58413e] mt-1">
-                                            {loading ? 'Calculando rotinas...' : routinesCount > 0 
-                                                ? `${routinesCount} ${routinesCount === 1 ? 'rotina pendente' : 'rotinas pendentes'} para hoje`
-                                                : 'Nenhuma rotina pendente hoje'
+                                        <p className="text-sm text-[#58413e] mt-0.5">
+                                            {loading ? 'Carregando...' : routinesCount > 0 
+                                                ? `${routinesCount} ${routinesCount === 1 ? 'rotina pendente' : 'rotinas pendentes'}`
+                                                : 'MOC em dia'
                                             }
                                         </p>
                                     </div>
                                 </div>
-                                <div className="bg-[#F5F4F1] p-2 rounded-full">
+                                <div className="bg-[#F8F7F4] p-2.5 rounded-xl border border-[#eeedea]">
                                     <ArrowRight className="w-5 h-5 text-[#B13A2B]" />
                                 </div>
                             </div>
-                            
-                            {/* Visual Hint for Progress */}
-                            {!loading && routinesCount > 0 && (
-                                <div className="mt-6 pt-4 border-t border-[#f5f4f1] flex justify-between items-center text-[10px] font-bold text-[#8c716c] uppercase tracking-widest">
-                                    <span>Rotina Principal MOC</span>
-                                    <span className="text-[#B13A2B]">Acessar agora</span>
-                                </div>
-                            )}
                         </Link>
+
+                        {/* CARD CHECKLIST - PRÓXIMA ROTINA (EM BREVE) */}
+                        <div className="bg-[#F8F7F4]/50 rounded-[32px] p-6 border border-[#e9e8e5] border-dashed flex items-center justify-between opacity-80 cursor-default">
+                             <div className="flex items-center space-x-4">
+                                <div className="w-14 h-14 rounded-2xl bg-white border border-[#eeedea] flex items-center justify-center text-gray-400">
+                                    <ListChecks className="w-7 h-7" />
+                                </div>
+                                <div>
+                                    <div className="flex items-center space-x-2 mb-0.5">
+                                        <h3 className="font-bold text-gray-500 text-lg leading-none">Checklist</h3>
+                                        <span className="text-[9px] font-black text-white bg-gray-400 px-1.5 py-0.5 rounded uppercase tracking-widest">Em breve</span>
+                                    </div>
+                                    <p className="text-xs text-gray-400 font-medium">Controle de abertura e fechamento</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
 
                         {/* FUTUROS MÓDULOS (INDICADOR SUTIL) */}
                         <div className="px-2">

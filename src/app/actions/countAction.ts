@@ -114,5 +114,32 @@ export async function syncCountSessionAction(sessionId: string, currentCounts: R
     const { error: updErr } = await supabase.from('count_sessions').update(payload).eq('id', sessionId)
     if (updErr) return { error: `Update Error: ${updErr.message}` }
 
+    // --- GAMIFICAÇÃO (Camada Secundária e Resiliente) ---
+    if (complete) {
+        // Rodamos a gamificação de forma "fire and forget" controlada ou apenas com catch isolado
+        // para garantir que falhas aqui NÃO afetem o retorno de sucesso da contagem.
+        try {
+            const { data: sess } = await supabase.from('count_sessions').select('user_id').eq('id', sessionId).single()
+            if (sess?.user_id) {
+                const { recordPointsAction, checkAndRewardRoutineCompletionAction } = await import('./gamificationAction')
+                
+                // 1. Pontua conclusão de grupo (+50)
+                await recordPointsAction(
+                    sess.user_id,
+                    'count_group_completion',
+                    sessionId,
+                    50,
+                    'Setor conferido com sucesso.'
+                )
+
+                // 2. Verifica e pontua conclusão de rotina (+100)
+                await checkAndRewardRoutineCompletionAction(sessionId)
+            }
+        } catch (gamErr) {
+            // Logamos o erro mas não interrompemos o fluxo
+            console.error('[Gamification] Falha silenciosa na integração:', gamErr)
+        }
+    }
+
     return { success: true }
 }
