@@ -16,7 +16,7 @@ export interface ChecklistTemplateItem {
     section_name?: string;
     label: string;
     description?: string;
-    type: ChecklistItemType;
+    response_type: ChecklistItemType;
     required: boolean;
     evidence_required: boolean;
     options?: string[]; // Somente para o tipo 'choice'

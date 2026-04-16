@@ -221,21 +221,28 @@ export default function DashboardPage() {
                             </div>
                         </Link>
 
-                        {/* CARD CHECKLIST - PRÓXIMA ROTINA (EM BREVE) */}
-                        <div className="bg-white/60 rounded-[32px] p-6 border border-[#e9e8e5] border-dashed flex items-center justify-between group/checklist">
-                             <div className="flex items-center space-x-4">
-                                <div className="w-14 h-14 rounded-2xl bg-white/50 border border-[#eeedea] flex items-center justify-center text-[#dfbfba] group-hover/checklist:text-[#B13A2B] transition-colors">
-                                    <ListChecks className="w-7 h-7" />
-                                </div>
-                                <div>
-                                    <div className="flex items-center space-x-2 mb-0.5">
-                                        <h3 className="font-bold text-[#a8928f] text-lg leading-none">Checklist</h3>
-                                        <span className="text-[9px] font-black text-white bg-[#dfbfba] px-1.5 py-0.5 rounded uppercase tracking-widest">Em breve</span>
+                        {/* CARD CHECKLIST - SEGUNDA ROTINA REAL */}
+                        <Link 
+                            href="/dashboard/checklist"
+                            className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e9e8e5] active:scale-[0.98] transition-all block relative overflow-hidden group/checklist"
+                        >
+                             <div className="flex items-center justify-between relative z-10">
+                                <div className="flex items-center space-x-4">
+                                    <div className="w-14 h-14 rounded-2xl bg-[#F0F4FD] flex items-center justify-center text-[#2b58b1] group-hover/checklist:bg-[#2b58b1] group-hover/checklist:text-white transition-colors">
+                                        <ListChecks className="w-7 h-7" />
                                     </div>
-                                    <p className="text-xs text-[#c0b3b1] font-medium">Controle de abertura e fechamento</p>
+                                    <div>
+                                        <h3 className="font-extrabold text-[#1b1c1a] text-lg leading-tight" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
+                                            Checklist Operacional
+                                        </h3>
+                                        <p className="text-sm text-[#58413e] mt-0.5">Rotinas de abertura e fechamento</p>
+                                    </div>
+                                </div>
+                                <div className="bg-[#F8F7F4] p-2.5 rounded-xl border border-[#eeedea]">
+                                    <ArrowRight className="w-5 h-5 text-[#2b58b1]" />
                                 </div>
                             </div>
-                        </div>
+                        </Link>
 
                     </div>
                     
