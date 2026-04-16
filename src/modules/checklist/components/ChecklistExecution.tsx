@@ -18,7 +18,8 @@ import {
     TemperatureInput, 
     TextInput 
 } from './ChecklistInputs'
-import { Loader2, CheckCircle2, AlertCircle, Info } from 'lucide-react'
+import { EvidenceUploader } from './EvidenceUploader'
+import { Loader2, CheckCircle2, AlertCircle, Info, Camera } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Props {
@@ -30,6 +31,7 @@ interface Props {
 export default function ChecklistExecution({ template, sessionId, userId }: Props) {
     const router = useRouter()
     const [responses, setResponses] = useState<Record<string, any>>({})
+    const [evidences, setEvidences] = useState<Record<string, string>>({})
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState<string | null>(null) // itemId sendo salvo
     const [completing, setCompleting] = useState(false)
@@ -39,22 +41,32 @@ export default function ChecklistExecution({ template, sessionId, userId }: Prop
         const loadResponses = async () => {
             const res = await getSessionResponsesAction(sessionId)
             if (res.success && res.data) {
-                const initial: Record<string, any> = {}
+                const initialVals: Record<string, any> = {}
+                const initialEvid: Record<string, string> = {}
                 res.data.forEach((r: any) => {
-                    initial[r.item_id] = r.value
+                    initialVals[r.item_id] = r.value
+                    if (r.evidence_url) {
+                        initialEvid[r.item_id] = r.evidence_url
+                    }
                 })
-                setResponses(initial)
+                setResponses(initialVals)
+                setEvidences(initialEvid)
             }
             setLoading(false)
         }
         loadResponses()
     }, [sessionId])
 
-    const handleSave = async (itemId: string, value: any) => {
+    const handleSave = async (itemId: string, value: any, evidenceUrl?: string) => {
         setSaving(itemId)
-        setResponses(prev => ({ ...prev, [itemId]: value }))
+        
+        const currentVal = value !== undefined ? value : responses[itemId]
+        const currentEvid = evidenceUrl !== undefined ? evidenceUrl : evidences[itemId]
 
-        const res = await saveChecklistResponseAction(sessionId, itemId, value)
+        if (value !== undefined) setResponses(prev => ({ ...prev, [itemId]: value }))
+        if (evidenceUrl !== undefined) setEvidences(prev => ({ ...prev, [itemId]: evidenceUrl }))
+
+        const res = await saveChecklistResponseAction(sessionId, itemId, currentVal, undefined, currentEvid)
         if (!res.success) {
             toast.error('Erro ao salvar resposta')
         }
@@ -76,9 +88,19 @@ export default function ChecklistExecution({ template, sessionId, userId }: Prop
 
     // Cálculos de Progresso
     const requiredItems = template.items.filter(i => i.required)
-    const totalRequired = requiredItems.length
+    const evidenceRequiredItems = template.items.filter(i => i.evidence_required)
+    
+    // Check de preenchimento (valor)
     const filledRequired = requiredItems.filter(i => responses[i.id] !== undefined && responses[i.id] !== null).length
-    const isCompleteReady = filledRequired === totalRequired
+    
+    // Check de fotos
+    const filledEvidence = evidenceRequiredItems.filter(i => !!evidences[i.id]).length
+    
+    // Total de travas (Obrigatórios + Fotos Obrigatórias)
+    const totalMandatory = requiredItems.length + evidenceRequiredItems.length
+    const totalFilled = filledRequired + filledEvidence
+    
+    const isCompleteReady = totalFilled === totalMandatory
 
     if (loading) {
         return (
@@ -95,13 +117,13 @@ export default function ChecklistExecution({ template, sessionId, userId }: Prop
             <div className="sticky top-[73px] z-30 bg-white/80 backdrop-blur-md border-b border-[#e9e8e5] px-5 py-3 shadow-sm">
                 <div className="max-w-md mx-auto">
                     <div className="flex justify-between items-end mb-1.5">
-                        <span className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest">Itens Obrigatórios</span>
-                        <span className="text-xs font-black text-[#2b58b1]">{filledRequired} / {totalRequired}</span>
+                        <span className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest">Progresso Auditoria</span>
+                        <span className="text-xs font-black text-[#2b58b1]">{totalFilled} / {totalMandatory}</span>
                     </div>
                     <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div 
                             className="h-full bg-gradient-to-r from-[#2b58b1] to-[#3b71db] transition-all duration-500" 
-                            style={{ width: `${(filledRequired / totalRequired) * 100}%` }}
+                            style={{ width: `${(totalFilled / totalMandatory) * 100}%` }}
                         />
                     </div>
                 </div>
@@ -163,6 +185,17 @@ export default function ChecklistExecution({ template, sessionId, userId }: Prop
                                     />
                                 )}
                             </div>
+
+                            {/* UPLOAD DE EVIDÊNCIA SE NECESSÁRIO */}
+                            {item.evidence_required && (
+                                <EvidenceUploader 
+                                    sessionId={sessionId}
+                                    itemId={item.id}
+                                    initialValue={evidences[item.id]}
+                                    onUploadSuccess={(url) => handleSave(item.id, undefined, url)}
+                                    onRemove={() => handleSave(item.id, undefined, '')}
+                                />
+                            )}
                         </div>
                     )
                 })}

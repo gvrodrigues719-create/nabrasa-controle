@@ -97,7 +97,8 @@ export async function saveChecklistResponseAction(
     sessionId: string, 
     itemId: string, 
     value: any,
-    observation?: string
+    observation?: string,
+    evidenceUrl?: string
 ) {
     try {
         const { error } = await supabase
@@ -106,7 +107,8 @@ export async function saveChecklistResponseAction(
                 session_id: sessionId,
                 item_id: itemId,
                 value: value,
-                observation: observation
+                observation: observation,
+                evidence_url: evidenceUrl
             }, {
                 onConflict: 'session_id,item_id'
             })
@@ -152,30 +154,50 @@ export async function completeChecklistSessionAction(sessionId: string) {
 
         if (!session) throw new Error('Sessão não encontrada')
 
-        // Buscamos IDs dos itens obrigatórios deste template
+        // Buscamos IDs dos itens obrigatórios (valor) deste template
         const { data: requiredItems } = await supabase
             .from('checklist_template_items')
             .select('id')
             .eq('template_id', session.template_id)
             .eq('required', true)
-
+        
         const requiredIds = requiredItems?.map(i => i.id) || []
 
-        // Buscamos as respostas já salvas
+        // Buscamos IDs dos itens que EXIGEM evidência deste template
+        const { data: evidenceItems } = await supabase
+            .from('checklist_template_items')
+            .select('id')
+            .eq('template_id', session.template_id)
+            .eq('evidence_required', true)
+        
+        const evidenceRequiredIds = evidenceItems?.map(i => i.id) || []
+
+        // Buscamos as respostas já salvas com as evidências
         const { data: responses } = await supabase
             .from('checklist_session_items')
-            .select('item_id, value')
+            .select('item_id, value, evidence_url')
             .eq('session_id', sessionId)
 
         const respondedIds = responses?.filter(r => r.value !== null && r.value !== undefined).map(r => r.item_id) || []
+        const evidencedIds = responses?.filter(r => r.evidence_url !== null && r.evidence_url !== '').map(r => r.item_id) || []
 
         // Verifica se faltam itens obrigatórios
         const missingIds = requiredIds.filter(id => !respondedIds.includes(id))
+        
+        // Verifica se faltam evidências obrigatórias
+        const missingEvidenceIds = evidenceRequiredIds.filter(id => !evidencedIds.includes(id))
 
         if (missingIds.length > 0) {
             return { 
                 success: false, 
                 error: `Faltam ${missingIds.length} itens obrigatórios para preencher.` 
+            }
+        }
+
+        if (missingEvidenceIds.length > 0) {
+            return {
+                success: false,
+                error: `Faltam ${missingEvidenceIds.length} fotos obrigatórias.`
             }
         }
 
