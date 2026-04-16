@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -6,6 +8,7 @@ import toast from 'react-hot-toast'
 import React, { use } from 'react'
 import { initCountSessionAction, syncCountSessionAction } from '@/app/actions/countAction'
 import { getActiveOperator } from '@/app/actions/pinAuth'
+import { getOperatorSummaryAction } from '@/app/actions/gamificationAction'
 import { CountItem } from '@/modules/count/types'
 import { isIntegerUnit, calculateCountProgress } from '@/modules/count/helpers'
 
@@ -440,99 +443,6 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                 <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-6 backdrop-blur-sm" onClick={() => setLightboxUrl(null)}>
                     <img src={lightboxUrl} alt="Visualização" className="max-w-full max-h-[80vh] rounded-[40px] shadow-2xl animate-in zoom-in-95 duration-200" />
                     <button className="absolute top-8 right-8 bg-white/10 text-white p-3 rounded-full hover:bg-white/20"><X className="w-6 h-6" /></button>
-                </div>
-            )}
-        </div>
-    )
-}
-                                        <div className="flex items-start gap-2 ml-2">
-                                            {item.image_url && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setLightboxUrl(item.image_url)}
-                                                    className="shrink-0"
-                                                >
-                                                    <img
-                                                        src={item.image_url}
-                                                        alt={item.name}
-                                                        className="w-14 h-14 rounded-xl object-cover border-2 border-[#FDF0EF] shadow-sm"
-                                                    />
-                                                </button>
-                                            )}
-                                            {isZeroed && (
-                                                <span className="bg-gray-300 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-md uppercase tracking-wider shrink-0">Zerado</span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-center space-x-3">
-                                        <div className="flex-1">
-                                            <label className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1 block">Quantidade Física</label>
-                                            <input
-                                                type="number"
-                                                step={isInt ? "1" : "0.01"}
-                                                inputMode={isInt ? "numeric" : "decimal"}
-                                                onKeyDown={(e) => {
-                                                    if (isInt && (e.key === '.' || e.key === ',')) e.preventDefault()
-                                                }}
-                                                className={`w-full text-3xl font-extrabold p-4 border rounded-xl outline-none focus:ring-4 focus:ring-[#FDF0EF] focus:border-[#B13A2B] transition-all text-center ${
-                                                    isZeroed ? 'text-gray-400 bg-gray-50 border-gray-200' : 'text-gray-900 bg-gray-50 border-gray-200'
-                                                }`}
-                                                placeholder=" "
-                                                value={val}
-                                                onChange={(e) => handleChange(item, e.target.value)}
-                                            />
-                                        </div>
-                                        <button
-                                            onClick={() => handleZerado(item)}
-                                            className={`shrink-0 px-3 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all active:scale-95 mt-5 ${
-                                                isZeroed
-                                                    ? 'bg-gray-300 text-gray-500 border border-gray-300'
-                                                    : 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'
-                                            }`}
-                                        >
-                                            Zerado
-                                        </button>
-                                        <div className="flex flex-col items-center justify-center shrink-0 min-w-[55px] bg-[#FDF0EF] py-3 rounded-xl border border-red-100 mt-5">
-                                            <span className="text-xs font-bold text-[#B13A2B] uppercase tracking-widest mb-1">UND</span>
-                                            <span className="text-lg font-black text-[#B13A2B]">{item.unit}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )
-                        })}
-                    </div>
-
-                    {/* FLOAT BUTTON CONCLUDE */}
-                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 flex space-x-3 max-w-md mx-auto">
-                        <button onClick={handleManualSave} className="p-4 bg-gray-100 text-gray-700 rounded-2xl active:scale-95 transition">
-                            <Save className="w-6 h-6" />
-                        </button>
-                        <button onClick={handleCompleteGroup} className={`flex-1 py-4 rounded-2xl font-bold flex justify-center items-center text-lg active:scale-95 transition shadow-sm ${itemsPendentes === 0 ? 'bg-green-500 text-white shadow-green-500/30' : 'bg-gray-200 text-gray-400'}`}>
-                            <Check className="w-6 h-6 mr-2" />
-                            Concluir Grupo {itemsPendentes > 0 ? `(${itemsPendentes})` : ''}
-                        </button>
-                    </div>
-                </>
-            )}
-
-            {/* LIGHTBOX */}
-            {lightboxUrl && (
-                <div
-                    className="fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-4"
-                    onClick={() => setLightboxUrl(null)}
-                >
-                    <img
-                        src={lightboxUrl}
-                        alt="Foto do item"
-                        className="max-w-full max-h-[80vh] rounded-2xl shadow-2xl object-contain"
-                    />
-                    <button
-                        onClick={() => setLightboxUrl(null)}
-                        className="absolute top-5 right-5 bg-white/20 text-white p-2 rounded-full hover:bg-white/30 transition"
-                    >
-                        <X className="w-6 h-6" />
-                    </button>
                 </div>
             )}
         </div>

@@ -1,6 +1,8 @@
+"use client"
+
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, ClipboardList, User, Target, CheckCircle2, LayoutDashboard, Trophy, Medal, Crown } from 'lucide-react'
+import { ArrowLeft, ClipboardList, User, Target, CheckCircle2, LayoutDashboard, Trophy, Medal, Crown, Zap, ListChecks } from 'lucide-react'
 import { getActiveRoutinesAction } from '@/app/actions/routinesAction'
 import { supabase } from '@/lib/supabase/client'
 import { getActiveOperator } from '@/app/actions/pinAuth'
