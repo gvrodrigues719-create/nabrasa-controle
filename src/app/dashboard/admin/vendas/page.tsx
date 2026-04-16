@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { checkTakeatConfigAction } from '@/app/actions/takeatAction'
 import {
   ArrowLeft, Zap, CheckCircle2, Clock, AlertCircle,
   ShoppingCart, CreditCard, FileText, Package,
   TrendingUp, ArrowRight, BarChart3, Layers,
-  Utensils, Wifi, Truck, ChevronDown, ChevronUp
+  Utensils, Wifi, Truck, ChevronDown, ChevronUp,
+  CalendarSync
 } from 'lucide-react'
 import { MOCK_SESSIONS, MOCK_SUMMARY, MOCK_PERIOD } from '@/lib/takeat/takeatMockData'
 
@@ -94,6 +96,45 @@ function DataSourceChip({ label, icon: Icon }: { label: string; icon: React.Elem
 export default function VendasPage() {
   const router = useRouter()
   const [tableExpanded, setTableExpanded] = useState(false)
+  
+  // Estados para Cronograma e Config
+  const [isConfigured, setIsConfigured] = useState(false)
+  const [loadingConfig, setLoadingConfig] = useState(true)
+  
+  // Estados para o Seletor de Datas (Inicializados com o Mock)
+  const [startDate, setStartDate] = useState(MOCK_PERIOD.start.split('T')[0])
+  const [endDate, setEndDate] = useState(MOCK_PERIOD.end.split('T')[0])
+  const [dateError, setDateError] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function checkConfig() {
+      try {
+        const configured = await checkTakeatConfigAction()
+        setIsConfigured(configured)
+      } catch (err) {
+        console.error("Falha ao verificar config Takeat:", err)
+      } finally {
+        setLoadingConfig(false)
+      }
+    }
+    checkConfig()
+  }, [])
+
+  // Validação de 3 dias (Regra Takeat)
+  useEffect(() => {
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    const diffTime = Math.abs(end.getTime() - start.getTime())
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    if (diffDays > 3) {
+      setDateError("A API Takeat permite no máximo 3 dias por consulta.")
+    } else if (end < start) {
+      setDateError("A data final deve ser posterior à inicial.")
+    } else {
+      setDateError(null)
+    }
+  }, [startDate, endDate])
 
   const visibleSessions = tableExpanded ? MOCK_SESSIONS : MOCK_SESSIONS.slice(0, 3)
 
@@ -123,10 +164,54 @@ export default function VendasPage() {
       <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-2xl">
         <p className="text-sm text-indigo-800 font-medium leading-relaxed">
           Integração em desenvolvimento com a <strong>API da Takeat</strong> para alimentar relatórios,
-          estoque, CMV e análises futuras. Interface e estrutura criadas — dados reais serão puxados
-          após configuração das credenciais.
+          estoque, CMV e análises futuras. Interface e estrutura criadas — {isConfigured ? 'credenciais detectadas, pronto para ativar.' : 'aguardando configuração das credenciais.'}
         </p>
       </div>
+
+      {/* ── SELETOR DE PERÍODO (AJUSTE INCREMENTAL) ──────────────── */}
+      <section className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CalendarSync className="w-4 h-4 text-indigo-600" />
+            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-widest">Consultar Período</h3>
+          </div>
+          <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full uppercase">Janela: 3 Dias</span>
+        </div>
+        
+        <div className="p-4 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 space-y-1">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Início</label>
+              <input 
+                type="date" 
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+              />
+            </div>
+            <div className="flex-1 space-y-1">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Fim</label>
+              <input 
+                type="date" 
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+              />
+            </div>
+          </div>
+
+          {dateError ? (
+            <div className="flex items-center gap-2 p-3 bg-rose-50 border border-rose-100 rounded-xl">
+              <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+              <p className="text-xs font-bold text-rose-700">{dateError}</p>
+            </div>
+          ) : (
+            <button className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold transition-all shadow-md active:scale-95 flex items-center justify-center gap-2">
+              <BarChart3 className="w-4 h-4" /> Atualizar Dashboard (Mock)
+            </button>
+          )}
+        </div>
+      </section>
 
       {/* ── BLOCO B — STATUS DA INTEGRAÇÃO ─────────────────────── */}
       <section>
@@ -140,8 +225,14 @@ export default function VendasPage() {
           <StatusBadge label="Endpoints /payment-methods e /products confirmados" ok={true} />
           <StatusBadge label="Janela máxima por consulta: 3 dias" ok={true} />
           <StatusBadge label="Timezone da API: UTC-0 (tratamento Brasília pendente)" ok={false} />
-          <StatusBadge label="Credenciais de produção configuradas" ok={false} />
-          <StatusBadge label="Sincronização real com banco de dados" ok={false} />
+          <StatusBadge 
+            label={loadingConfig ? "Verificando credenciais..." : isConfigured ? "Credenciais detectadas (.env.local)" : "Credenciais ausentes (.env.local)"} 
+            ok={!loadingConfig && isConfigured} 
+          />
+          <StatusBadge 
+            label={isConfigured ? "Pronto para sincronização" : "Sincronização bloqueada — aguardando config"} 
+            ok={!loadingConfig && isConfigured} 
+          />
         </div>
         <div className="mt-2 flex items-center gap-2 px-1">
           <div className="flex items-center gap-1.5">
