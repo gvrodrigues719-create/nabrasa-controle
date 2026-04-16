@@ -150,23 +150,26 @@ export default function VendasPage() {
 
   // Handler para Atualização Real
   async function handleUpdateDashboard() {
-    if (!isConfigured) {
-      setStatus('missing_config')
-      return
-    }
-
     setStatus('loading')
     setErrorMessage(null)
 
     try {
+      // Chama a action diretamente. Ela já faz a validação de config internamente.
       const result = await getTakeatDataAction(startDate, endDate)
       
       if (result.success && result.data) {
         setData(result.data)
         setStatus('real')
+        setIsConfigured(true) // Sincroniza o estado de config
       } else {
         setErrorMessage(result.error || 'Erro desconhecido ao carregar dados.')
-        setStatus(result.code === 'MISSING_CONFIG' ? 'missing_config' : 'error')
+        
+        if (result.code === 'MISSING_CONFIG') {
+          setIsConfigured(false)
+          setStatus('missing_config')
+        } else {
+          setStatus('error')
+        }
       }
     } catch (err) {
       console.error("Erro no dashboard:", err)
@@ -281,9 +284,20 @@ export default function VendasPage() {
             <div className="flex flex-col items-center gap-2 p-4 bg-amber-50 border border-amber-100 rounded-xl text-center">
               <AlertCircle className="w-5 h-5 text-amber-500" />
               <div className="space-y-1">
-                <p className="text-sm font-bold text-amber-800">Possível Configuração Pendente</p>
-                <p className="text-xs text-amber-700">Verifique se as variáveis TAKEAT_EMAIL e PASSWORD estão no seu .env.local.</p>
+                <p className="text-sm font-bold text-amber-800">Credenciais Não Encontradas</p>
+                <p className="text-xs text-amber-700">
+                  O servidor não detectou as variáveis <code className="bg-amber-100 px-1 rounded">TAKEAT_EMAIL</code> ou <code className="bg-amber-100 px-1 rounded">TAKEAT_PASSWORD</code>.
+                </p>
+                <p className="text-[10px] text-amber-600 mt-2">
+                  Se você acabou de configurar o Vercel, tente recarregar a página (F5) ou aguarde o deploy finalizar.
+                </p>
               </div>
+              <button 
+                onClick={handleUpdateDashboard}
+                className="mt-2 text-xs font-bold text-amber-700 underline"
+              >
+                Tentar novamente
+              </button>
             </div>
           )}
 
