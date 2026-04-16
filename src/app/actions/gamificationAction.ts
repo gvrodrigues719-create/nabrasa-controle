@@ -180,10 +180,11 @@ export async function getWeeklyRankingAction(userId: string) {
 
         if (eErr) throw eErr
 
-        // 2. Busca todos os usuários para ter os nomes
+        // 2. Busca apenas os operadores (colaboradores) para o ranking
         const { data: users, error: uErr } = await supabase
             .from('users')
             .select('id, name')
+            .eq('role', 'operator')
 
         if (uErr) throw uErr
 
