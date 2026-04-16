@@ -31,7 +31,7 @@ import type {
   TakeatPeriodSummary,
 } from './takeatTypes'
 
-import { MOCK_SESSIONS, MOCK_SUMMARY } from './takeatMockData'
+import { MOCK_SESSIONS, MOCK_SUMMARY, MOCK_PAYMENT_METHODS } from './takeatMockData'
 
 const BASE_URL     = 'https://backend-pdv.takeat.app'
 const BASE_API     = `${BASE_URL}/api/v1`
@@ -97,7 +97,7 @@ export async function getPaymentMethods(token: string) {
   // return res.json()
 
   console.info('[TakeatService] getPaymentMethods() — mock.')
-  return []
+  return MOCK_PAYMENT_METHODS
 }
 
 // -------------------------------------------------------------------

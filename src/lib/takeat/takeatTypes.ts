@@ -66,6 +66,7 @@ export type TakeatWaiter = {
 
 // -------------------------------------------------------------------
 // CONTA / BILL
+// Hierarquia: bill → order_baskets → orders → order_products
 // -------------------------------------------------------------------
 export type TakeatBill = {
   id: string
@@ -73,7 +74,7 @@ export type TakeatBill = {
   total_service_price: string  // com taxa de serviço
   total_discount: string
   status: string
-  orders: TakeatOrder[]
+  order_baskets: TakeatOrderBasket[]
 }
 
 // -------------------------------------------------------------------

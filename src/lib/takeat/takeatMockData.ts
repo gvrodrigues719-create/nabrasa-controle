@@ -2,7 +2,8 @@
  * Takeat Mock Data — Demonstração Estrutural
  *
  * ATENÇÃO: Estes dados são MOCKADOS para demonstração.
- * A estrutura respeita o retorno esperado da API /table-sessions.
+ * A estrutura foi elaborada com base na documentação confirmada da API,
+ * com simplificações pontuais para fins de demonstração visual.
  * Substituir por chamada real ao plugar TakeatService.
  */
 
@@ -30,16 +31,21 @@ export const MOCK_SESSIONS: TakeatTableSession[] = [
       total_service_price: '206.25',
       total_discount: '0.00',
       status: 'paid',
-      orders: [{
-        id: 'ord-001',
-        status: 'delivered',
-        total_price: '187.50',
-        created_at: '2026-04-13T20:22:00Z',
-        order_products: [
-          { id: 'op-1', name: 'Picanha 300g', amount: 2, price: '58.90', total_price: '117.80', complements: [] },
-          { id: 'op-2', name: 'Cerveja Artesanal 500ml', amount: 4, price: '14.90', total_price: '59.60', complements: [] },
-          { id: 'op-3', name: 'Pão de Alho', amount: 1, price: '10.10', total_price: '10.10', complements: [] },
-        ]
+      order_baskets: [{
+        id: 'ob-001',
+        status: 'finished',
+        created_at: '2026-04-13T20:20:00Z',
+        orders: [{
+          id: 'ord-001',
+          status: 'delivered',
+          total_price: '187.50',
+          created_at: '2026-04-13T20:22:00Z',
+          order_products: [
+            { id: 'op-1', name: 'Picanha 300g', amount: 2, price: '58.90', total_price: '117.80', complements: [] },
+            { id: 'op-2', name: 'Cerveja Artesanal 500ml', amount: 4, price: '14.90', total_price: '59.60', complements: [] },
+            { id: 'op-3', name: 'Pão de Alho', amount: 1, price: '10.10', total_price: '10.10', complements: [] },
+          ]
+        }]
       }]
     }],
     payments: [{ id: 'pay-001', payment_method: { id: 'pm-1', name: 'Crédito' }, value: '206.25', created_at: '2026-04-13T22:38:00Z' }],
@@ -60,15 +66,20 @@ export const MOCK_SESSIONS: TakeatTableSession[] = [
       total_service_price: '64.80',
       total_discount: '5.00',
       status: 'paid',
-      orders: [{
-        id: 'ord-002',
-        status: 'delivered',
-        total_price: '64.80',
-        created_at: '2026-04-13T21:10:00Z',
-        order_products: [
-          { id: 'op-4', name: 'Fraldinha 250g', amount: 1, price: '48.90', total_price: '48.90', complements: [] },
-          { id: 'op-5', name: 'Refrigerante Lata', amount: 2, price: '7.95', total_price: '15.90', complements: [] },
-        ]
+      order_baskets: [{
+        id: 'ob-002',
+        status: 'finished',
+        created_at: '2026-04-13T21:08:00Z',
+        orders: [{
+          id: 'ord-002',
+          status: 'delivered',
+          total_price: '64.80',
+          created_at: '2026-04-13T21:10:00Z',
+          order_products: [
+            { id: 'op-4', name: 'Fraldinha 250g', amount: 1, price: '48.90', total_price: '48.90', complements: [] },
+            { id: 'op-5', name: 'Refrigerante Lata', amount: 2, price: '7.95', total_price: '15.90', complements: [] },
+          ]
+        }]
       }]
     }],
     payments: [{ id: 'pay-002', payment_method: { id: 'pm-2', name: 'PIX' }, value: '64.80', created_at: '2026-04-13T21:36:00Z' }],
@@ -89,16 +100,21 @@ export const MOCK_SESSIONS: TakeatTableSession[] = [
       total_service_price: '453.20',
       total_discount: '20.00',
       status: 'paid',
-      orders: [{
-        id: 'ord-003',
-        status: 'delivered',
-        total_price: '412.00',
-        created_at: '2026-04-14T19:45:00Z',
-        order_products: [
-          { id: 'op-6', name: 'Costela Assada kg', amount: 3, price: '89.90', total_price: '269.70', complements: [] },
-          { id: 'op-7', name: 'Caipirinha', amount: 6, price: '18.90', total_price: '113.40', complements: [] },
-          { id: 'op-8', name: 'Farofa Especial', amount: 2, price: '14.45', total_price: '28.90', complements: [] },
-        ]
+      order_baskets: [{
+        id: 'ob-003',
+        status: 'finished',
+        created_at: '2026-04-14T19:43:00Z',
+        orders: [{
+          id: 'ord-003',
+          status: 'delivered',
+          total_price: '412.00',
+          created_at: '2026-04-14T19:45:00Z',
+          order_products: [
+            { id: 'op-6', name: 'Costela Assada kg', amount: 3, price: '89.90', total_price: '269.70', complements: [] },
+            { id: 'op-7', name: 'Caipirinha', amount: 6, price: '18.90', total_price: '113.40', complements: [] },
+            { id: 'op-8', name: 'Farofa Especial', amount: 2, price: '14.45', total_price: '28.90', complements: [] },
+          ]
+        }]
       }]
     }],
     payments: [
@@ -122,17 +138,22 @@ export const MOCK_SESSIONS: TakeatTableSession[] = [
       total_service_price: '95.70',
       total_discount: '0.00',
       status: 'paid',
-      orders: [{
-        id: 'ord-004',
-        status: 'delivered',
-        total_price: '95.70',
-        created_at: '2026-04-14T20:15:00Z',
-        order_products: [
-          { id: 'op-9', name: 'Combo Churrasco 2 pessoas', amount: 1, price: '79.90', total_price: '79.90', complements: [
-            { id: 'comp-1', name: '+ Molho Especial', amount: 1, price: '5.90' },
-          ]},
-          { id: 'op-10', name: 'Água Mineral 500ml', amount: 2, price: '4.90', total_price: '9.80', complements: [] },
-        ]
+      order_baskets: [{
+        id: 'ob-004',
+        status: 'finished',
+        created_at: '2026-04-14T20:13:00Z',
+        orders: [{
+          id: 'ord-004',
+          status: 'delivered',
+          total_price: '95.70',
+          created_at: '2026-04-14T20:15:00Z',
+          order_products: [
+            { id: 'op-9', name: 'Combo Churrasco 2 pessoas', amount: 1, price: '79.90', total_price: '79.90', complements: [
+              { id: 'comp-1', name: '+ Molho Especial', amount: 1, price: '5.90' },
+            ]},
+            { id: 'op-10', name: 'Água Mineral 500ml', amount: 2, price: '4.90', total_price: '9.80', complements: [] },
+          ]
+        }]
       }]
     }],
     payments: [{ id: 'pay-004', payment_method: { id: 'pm-3', name: 'Débito' }, value: '95.70', created_at: '2026-04-14T21:00:00Z' }],
@@ -152,15 +173,20 @@ export const MOCK_SESSIONS: TakeatTableSession[] = [
       total_service_price: '81.18',
       total_discount: '0.00',
       status: 'paid',
-      orders: [{
-        id: 'ord-005',
-        status: 'delivered',
-        total_price: '73.80',
-        created_at: '2026-04-14T12:10:00Z',
-        order_products: [
-          { id: 'op-11', name: 'Alcatra 300g', amount: 1, price: '52.90', total_price: '52.90', complements: [] },
-          { id: 'op-12', name: 'Suco Natural 500ml', amount: 2, price: '10.45', total_price: '20.90', complements: [] },
-        ]
+      order_baskets: [{
+        id: 'ob-005',
+        status: 'finished',
+        created_at: '2026-04-14T12:08:00Z',
+        orders: [{
+          id: 'ord-005',
+          status: 'delivered',
+          total_price: '73.80',
+          created_at: '2026-04-14T12:10:00Z',
+          order_products: [
+            { id: 'op-11', name: 'Alcatra 300g', amount: 1, price: '52.90', total_price: '52.90', complements: [] },
+            { id: 'op-12', name: 'Suco Natural 500ml', amount: 2, price: '10.45', total_price: '20.90', complements: [] },
+          ]
+        }]
       }]
     }],
     payments: [{ id: 'pay-005', payment_method: { id: 'pm-4', name: 'Dinheiro' }, value: '81.18', created_at: '2026-04-14T13:28:00Z' }],

@@ -64,7 +64,7 @@ Acessível via: **Dashboard → Configurar (admin) → Módulo de Vendas**
 | Período de demonstração | `takeatMockData.ts` → `MOCK_PERIOD` |
 | Métodos de pagamento | `takeatMockData.ts` → `MOCK_PAYMENT_METHODS` |
 
-O mock respeita fielmente a estrutura de tipos esperada da API — campos, nomes e hierarquia de objetos são os mesmos que o retorno real terá.
+O mock foi estruturado com base na documentação confirmada da API. Campos e nomes respeitam o retorno esperado; a hierarquia `bill → order_baskets → orders → order_products` está corretamente representada. Complementos são simplificados (campo único em vez de `complement_categories → order_complements`) para fins de demonstração visual.
 
 ---
 

@@ -305,7 +305,7 @@ export default function VendasPage() {
             const totalService = parseFloat(bill?.total_service_price ?? '0')
             const discount = parseFloat(bill?.total_discount ?? '0')
             const paymentNames = s.payments.map(p => p.payment_method.name).join(', ')
-            const itemCount = bill?.orders.reduce((acc, o) => acc + o.order_products.length, 0) ?? 0
+            const itemCount = bill?.order_baskets.flatMap(b => b.orders).reduce((acc, o) => acc + o.order_products.length, 0) ?? 0
 
             return (
               <div
