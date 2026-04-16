@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { getActiveOperator } from './pinAuth'
+import { mapRoutineGroupsToStatus } from '@/modules/count/mappers'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -50,19 +51,7 @@ export async function getRoutineDetailsAction(routineId: string) {
         itemCountMap[i.group_id] = (itemCountMap[i.group_id] || 0) + 1
     })
 
-    const mappedGroups = rGroups?.map(rg => {
-        const group: any = rg.groups
-        const sessionForGroup = sessions?.find(s => s.group_id === group.id)
-        return {
-            id: group.id,
-            name: group.name,
-            item_count: itemCountMap[group.id] || 0,
-            session_id: sessionForGroup?.id || null,
-            status: sessionForGroup?.status || 'available',
-            user_name: (sessionForGroup?.users as any)?.name || null,
-            updated_at: sessionForGroup?.updated_at || null
-        }
-    }) || []
+    const mappedGroups = mapRoutineGroupsToStatus(rGroups || [], sessions || [], itemCountMap)
 
     return {
         data: {

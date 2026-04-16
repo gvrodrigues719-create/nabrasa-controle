@@ -9,25 +9,17 @@ import React, { use } from 'react'
 import { PinConfirmModal } from '@/components/PinConfirmModal'
 import { verifyCriticalPin } from '@/app/actions/criticalActions'
 import { getRoutineDetailsAction, verifyAndStartRoutineAction } from '@/app/actions/routinesAction'
+import { CountGroupStatus } from '@/modules/count/types'
 
-type GroupStatus = {
-    id: string
-    name: string
-    item_count: number
-    session_id: string | null
-    status: string
-    user_name: string | null
-    updated_at: string | null
-}
 
 export default function RoutineDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id: routineId } = use(params)
-    const [data, setData] = useState<{ name: string, groups: GroupStatus[] } | null>(null)
+    const [data, setData] = useState<{ name: string, groups: CountGroupStatus[] } | null>(null)
     const [loading, setLoading] = useState(true)
     const [hasSnapshot, setHasSnapshot] = useState(false)
     const [starting, setStarting] = useState(false)
     const [showStartConfirm, setShowStartConfirm] = useState(false)
-    const [selectedGroup, setSelectedGroup] = useState<GroupStatus | null>(null)
+    const [selectedGroup, setSelectedGroup] = useState<CountGroupStatus | null>(null)
     const router = useRouter()
 
     useEffect(() => {
@@ -84,7 +76,7 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
         setStarting(false)
     }
 
-    const handleGroupClick = (group: GroupStatus) => {
+    const handleGroupClick = (group: CountGroupStatus) => {
         if (!hasSnapshot) return toast.error('Clique em "Iniciar Ciclo Oficial" para liberar a contagem.', { icon: '🔒' })
         setSelectedGroup(group)
     }

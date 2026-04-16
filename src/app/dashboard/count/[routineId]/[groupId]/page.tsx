@@ -8,16 +8,9 @@ import toast from 'react-hot-toast'
 import React, { use } from 'react'
 import { initCountSessionAction, syncCountSessionAction } from '@/app/actions/countAction'
 import { getActiveOperator } from '@/app/actions/pinAuth'
+import { CountItem } from '@/modules/count/types'
+import { isIntegerUnit, calculateCountProgress } from '@/modules/count/helpers'
 
-type Item = {
-    id: string
-    name: string
-    unit: string
-    unit_observation: string
-    min_expected: number | null
-    max_expected: number | null
-    image_url: string | null
-}
 
 export default function BlindCountPage({ params }: { params: Promise<{ routineId: string, groupId: string }> }) {
     const router = useRouter()
@@ -25,7 +18,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
 
     const [loadingInit, setLoadingInit] = useState(true)
     const [sessionId, setSessionId] = useState<string | null>(null)
-    const [items, setItems] = useState<Item[]>([])
+    const [items, setItems] = useState<CountItem[]>([])
     const [counts, setCounts] = useState<Record<string, string>>({})
     const [zeroed, setZeroed] = useState<Record<string, boolean>>({})
     const [groupName, setGroupName] = useState('')
@@ -85,8 +78,8 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     }
 
     // Handle single count change
-    const handleChange = (item: Item, val: string) => {
-        const isInt = ['un', 'und', 'cx', 'pct'].includes(item.unit.toLowerCase().trim())
+    const handleChange = (item: CountItem, val: string) => {
+        const isInt = isIntegerUnit(item.unit)
 
         // Se for inteiro e vier com virgula ou ponto (ex: 5,06 ou 5.0), arrancamos o que vier depois
         if (isInt) {
@@ -120,7 +113,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     }
 
     // Handle zerado button
-    const handleZerado = (item: Item) => {
+    const handleZerado = (item: CountItem) => {
         const newCounts = { ...counts, [item.id]: '0' }
         const newZeroed = { ...zeroed, [item.id]: true }
         setCounts(newCounts)
@@ -232,7 +225,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                 <h1 className="text-2xl font-extrabold tracking-tight">{groupName}</h1>
                 <div className="mt-3 flex items-center space-x-2">
                     <div className="bg-white/20 h-2 flex-1 rounded-full overflow-hidden">
-                        <div className="bg-green-400 h-full rounded-full transition-all" style={{ width: `${((items.length - itemsPendentes) / (items.length || 1)) * 100}%` }}></div>
+                        <div className="bg-green-400 h-full rounded-full transition-all" style={{ width: `${calculateCountProgress(items.length, itemsPendentes)}%` }}></div>
                     </div>
                     <span className="text-xs font-bold w-12 text-right">{items.length - itemsPendentes}/{items.length}</span>
                 </div>
@@ -342,7 +335,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                             const val = counts[item.id] ?? ''
                             const isZeroed = !!zeroed[item.id]
                             const isFilled = val !== '' || isZeroed
-                            const isInt = ['un', 'und', 'cx', 'pct'].includes(item.unit.toLowerCase().trim())
+                            const isInt = isIntegerUnit(item.unit)
 
                             return (
                                 <div key={item.id} className={`p-5 rounded-2xl border-2 transition-colors shadow-sm ${

@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { getCycleAnchorDate } from '@/modules/count/helpers'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,23 +11,13 @@ const supabase = createClient(
 export async function initCountSessionAction(routineId: string, groupId: string, userId: string) {
     const { data: group } = await supabase.from('groups').select('name').eq('id', groupId).single()
 
-    // Busca o snapshot_started_at da rotina — âncora oficial do ciclo atual
-    // Fallback: início do dia em BRT (meia-noite BRT = 03:00 UTC)
     const { data: routineRow } = await supabase
         .from('routines')
         .select('snapshot_started_at')
         .eq('id', routineId)
         .single()
 
-    const brDateParts = new Intl.DateTimeFormat('en-CA', {
-        timeZone: 'America/Sao_Paulo',
-        year: 'numeric', month: '2-digit', day: '2-digit'
-    }).format(new Date())
-    const startOfDayBR = `${brDateParts}T03:00:00Z`
-
-    // Usa o snapshot como âncora quando disponível — mais correto que "hoje meia-noite"
-    // porque o ciclo pode ter começado às 22h BRT (= 01h UTC do dia seguinte)
-    const cycleStart = routineRow?.snapshot_started_at || startOfDayBR
+    const cycleStart = getCycleAnchorDate(routineRow?.snapshot_started_at)
 
     const { data: existingSession } = await supabase
         .from('count_sessions')
