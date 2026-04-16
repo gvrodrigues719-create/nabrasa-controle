@@ -151,20 +151,26 @@ export default function VendasPage() {
         </button>
         <div>
           <div className="flex items-center gap-2">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Novo Eixo</p>
-            <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full uppercase tracking-wider">
-              Em desenvolvimento
-            </span>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Analytics</p>
+            {isConfigured ? (
+              <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full uppercase tracking-wider">
+                Conectado
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full uppercase tracking-wider">
+                Configuração Pendente
+              </span>
+            )}
           </div>
           <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">Módulo de Vendas</h2>
         </div>
       </div>
 
-      {/* Subtítulo */}
+      {/* Subtítulo Executivo */}
       <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-2xl">
         <p className="text-sm text-indigo-800 font-medium leading-relaxed">
-          Integração em desenvolvimento com a <strong>API da Takeat</strong> para alimentar relatórios,
-          estoque, CMV e análises futuras. Interface e estrutura criadas — {isConfigured ? 'credenciais detectadas, pronto para ativar.' : 'aguardando configuração das credenciais.'}
+          Visão consolidada do faturamento e performance via <strong>Integração Takeat</strong>. 
+          Consulte períodos, acompanhe tickets e prepare o cruzamento com seu estoque real.
         </p>
       </div>
 
@@ -213,107 +219,6 @@ export default function VendasPage() {
         </div>
       </section>
 
-      {/* ── BLOCO B — STATUS DA INTEGRAÇÃO ─────────────────────── */}
-      <section>
-        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1 mb-3">
-          Status da Integração
-        </h3>
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 space-y-2">
-          <StatusBadge label="Autenticação via JWT identificada" ok={true} />
-          <StatusBadge label="Endpoint /table-sessions confirmado" ok={true} />
-          <StatusBadge label="Estrutura do retorno estudada" ok={true} />
-          <StatusBadge label="Endpoints /payment-methods e /products confirmados" ok={true} />
-          <StatusBadge label="Janela máxima por consulta: 3 dias" ok={true} />
-          <StatusBadge label="Timezone da API: UTC-0 (tratamento Brasília pendente)" ok={false} />
-          <StatusBadge 
-            label={loadingConfig ? "Verificando credenciais..." : isConfigured ? "Credenciais detectadas (.env.local)" : "Credenciais ausentes (.env.local)"} 
-            ok={!loadingConfig && isConfigured} 
-          />
-          <StatusBadge 
-            label={isConfigured ? "Pronto para sincronização" : "Sincronização bloqueada — aguardando config"} 
-            ok={!loadingConfig && isConfigured} 
-          />
-        </div>
-        <div className="mt-2 flex items-center gap-2 px-1">
-          <div className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="text-xs text-gray-500">Confirmado</span>
-          </div>
-          <span className="text-gray-300">·</span>
-          <div className="flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-amber-500" />
-            <span className="text-xs text-gray-500">Pendente</span>
-          </div>
-        </div>
-      </section>
-
-      {/* ── BLOCO C — DADOS CONFIRMADOS ────────────────────────── */}
-      <section>
-        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1 mb-3">
-          Dados Confirmados para Ingestão
-        </h3>
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            { icon: Utensils, label: 'Sessões / Comandas' },
-            { icon: FileText, label: 'Contas individuais' },
-            { icon: ShoppingCart, label: 'Cestas de pedido' },
-            { icon: Package, label: 'Pedidos e itens vendidos' },
-            { icon: CreditCard, label: 'Pagamentos' },
-            { icon: Layers, label: 'Métodos de pagamento' },
-            { icon: Package, label: 'Produtos e complementos' },
-            { icon: FileText, label: 'NFC-e quando disponível' },
-            { icon: Wifi, label: 'Canal de origem' },
-            { icon: Truck, label: 'Comprador / cliente' },
-          ].map(({ icon: Icon, label }) => (
-            <div key={label} className="flex items-center gap-2 bg-white border border-gray-100 rounded-xl p-3 shadow-sm">
-              <div className="w-7 h-7 bg-indigo-50 rounded-lg flex items-center justify-center shrink-0">
-                <Icon className="w-3.5 h-3.5 text-indigo-500" />
-              </div>
-              <span className="text-xs font-medium text-gray-700 leading-tight">{label}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── BLOCO D — FLUXO DO MÓDULO ──────────────────────────── */}
-      <section>
-        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1 mb-3">
-          Fluxo do Módulo
-        </h3>
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4">
-          <FlowStep
-            icon={Zap}
-            label="Takeat API"
-            sub="Autenticação JWT · /table-sessions · janela 3 dias · UTC-0"
-          />
-          <FlowStep
-            icon={Layers}
-            label="Ingestão Bruta (raw)"
-            sub="Armazenamento do retorno original sem transformação"
-          />
-          <FlowStep
-            icon={BarChart3}
-            label="Normalização"
-            sub="Mapeamento para modelo interno — sessões, itens, pagamentos"
-          />
-          <FlowStep
-            icon={TrendingUp}
-            label="Relatórios de Vendas"
-            sub="Visão gerencial por período, canal, produto e método"
-          />
-          <FlowStep
-            icon={Package}
-            label="Cruzamento com Estoque / CMV"
-            sub="Consumo teórico × contagem × venda para fechar o ciclo"
-          />
-          <FlowStep
-            icon={Zap}
-            label="Análise por IA"
-            sub="Alertas, tendências e insights automáticos"
-            isLast
-          />
-        </div>
-      </section>
 
       {/* ── BLOCO E — RESUMO DEMONSTRATIVO ─────────────────────── */}
       <section>

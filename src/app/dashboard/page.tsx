@@ -261,21 +261,37 @@ export default function DashboardPage() {
                     <section className="mt-4">
                         <p className="text-[11px] font-bold text-[#8c716c] uppercase tracking-widest mb-3">Gerência & Controle</p>
                         <div className="grid grid-cols-1 gap-3">
-                            <Link
-                                href="/dashboard/admin/cmv"
-                                className="flex items-center justify-between bg-white rounded-2xl p-4 border border-[#e9e8e5] active:scale-[0.98] transition-all"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-xl bg-[#F8F7F4] flex items-center justify-center text-[#B13A2B]">
-                                        <TrendingUp className="w-5 h-5" />
+                                <Link
+                                    href="/dashboard/admin/cmv"
+                                    className="flex items-center justify-between bg-white rounded-2xl p-4 border border-[#e9e8e5] active:scale-[0.98] transition-all"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-xl bg-[#FDF0EF] flex items-center justify-center text-[#B13A2B]">
+                                            <TrendingUp className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-[#1b1c1a] text-sm">CMV & Compras</p>
+                                            <p className="text-[11px] text-[#8c716c]">Financeiro e Custos</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="font-bold text-[#1b1c1a] text-sm">CMV & Compras</p>
-                                        <p className="text-[11px] text-[#8c716c]">Financeiro e Custos</p>
+                                    <ArrowRight className="w-4 h-4 text-[#dfbfba]" />
+                                </Link>
+
+                                <Link
+                                    href="/dashboard/admin/vendas"
+                                    className="flex items-center justify-between bg-gradient-to-r from-indigo-600 to-indigo-500 rounded-2xl p-4 border border-indigo-200 shadow-md active:scale-[0.98] transition-all"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
+                                            <TrendingUp className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-white text-sm">Módulo de Vendas</p>
+                                            <p className="text-[11px] text-indigo-100">Integração Takeat · Novo</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <ArrowRight className="w-4 h-4 text-[#dfbfba]" />
-                            </Link>
+                                    <ArrowRight className="w-4 h-4 text-white/60" />
+                                </Link>
 
                             <div className="grid grid-cols-2 gap-3">
                                 <Link
