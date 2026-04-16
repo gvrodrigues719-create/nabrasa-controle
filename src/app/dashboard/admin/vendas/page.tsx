@@ -2,15 +2,19 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { checkTakeatConfigAction } from '@/app/actions/takeatAction'
+import { 
+  checkTakeatConfigAction, 
+  getTakeatDataAction 
+} from '@/app/actions/takeatAction'
 import {
   ArrowLeft, Zap, CheckCircle2, Clock, AlertCircle,
   ShoppingCart, CreditCard, FileText, Package,
   TrendingUp, ArrowRight, BarChart3, Layers,
   Utensils, Wifi, Truck, ChevronDown, ChevronUp,
-  CalendarSync
+  CalendarSync, Loader2
 } from 'lucide-react'
 import { MOCK_SESSIONS, MOCK_SUMMARY, MOCK_PERIOD } from '@/lib/takeat/takeatMockData'
+import type { TakeatTableSession, TakeatPeriodSummary } from '@/lib/takeat/takeatTypes'
 
 // -------------------------------------------------------------------
 // HELPERS
@@ -101,10 +105,18 @@ export default function VendasPage() {
   const [isConfigured, setIsConfigured] = useState(false)
   const [loadingConfig, setLoadingConfig] = useState(true)
   
-  // Estados para o Seletor de Datas (Inicializados com o Mock)
+  // Estados para o Seletor de Datas
   const [startDate, setStartDate] = useState(MOCK_PERIOD.start.split('T')[0])
   const [endDate, setEndDate] = useState(MOCK_PERIOD.end.split('T')[0])
   const [dateError, setDateError] = useState<string | null>(null)
+
+  // Estados dos Dados Reais
+  const [data, setData] = useState<{ sessions: TakeatTableSession[], summary: TakeatPeriodSummary } | null>(null)
+  const [status, setStatus] = useState<'mock' | 'real' | 'loading' | 'error' | 'missing_config'>('mock')
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  // Memo para saber se estamos exibindo dados reais
+  const isViewingRealData = status === 'real' && data !== null
 
   useEffect(() => {
     async function checkConfig() {
@@ -136,7 +148,42 @@ export default function VendasPage() {
     }
   }, [startDate, endDate])
 
-  const visibleSessions = tableExpanded ? MOCK_SESSIONS : MOCK_SESSIONS.slice(0, 3)
+  // Handler para Atualização Real
+  async function handleUpdateDashboard() {
+    if (!isConfigured) {
+      setStatus('missing_config')
+      return
+    }
+
+    setStatus('loading')
+    setErrorMessage(null)
+
+    try {
+      const result = await getTakeatDataAction(startDate, endDate)
+      
+      if (result.success && result.data) {
+        setData(result.data)
+        setStatus('real')
+      } else {
+        setErrorMessage(result.error || 'Erro desconhecido ao carregar dados.')
+        setStatus(result.code === 'MISSING_CONFIG' ? 'missing_config' : 'error')
+      }
+    } catch (err) {
+      console.error("Erro no dashboard:", err)
+      setErrorMessage("Erro de conexão ou erro inesperado no servidor.")
+      setStatus('error')
+    }
+  }
+
+  // Define quais dados exibir (State Data ou Mock)
+  const currentSummary = data?.summary || MOCK_SUMMARY
+  const currentSessions = data?.sessions || MOCK_SESSIONS
+  const visibleSessions = tableExpanded ? currentSessions : currentSessions.slice(0, 3)
+
+  // CSS para obscurecer dados quando em erro ou carregando para evitar "silent fallback"
+  const dataDisplayClass = (status === 'loading' || status === 'error' || status === 'missing_config') 
+    ? 'opacity-40 pointer-events-none grayscale' 
+    : 'transition-all duration-300'
 
   return (
     <div className="p-4 space-y-5 pb-24">
@@ -212,85 +259,130 @@ export default function VendasPage() {
               <p className="text-xs font-bold text-rose-700">{dateError}</p>
             </div>
           ) : (
-            <button className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold transition-all shadow-md active:scale-95 flex items-center justify-center gap-2">
-              <BarChart3 className="w-4 h-4" /> Atualizar Dashboard (Mock)
+            <button 
+              onClick={handleUpdateDashboard}
+              disabled={status === 'loading'}
+              className={`w-full py-3 rounded-xl text-sm font-bold transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 ${
+                status === 'loading' 
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+              }`}
+            >
+              {status === 'loading' ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Consultando API...</>
+              ) : (
+                <><BarChart3 className="w-4 h-4" /> Atualizar Dashboard</>
+              )}
             </button>
+          )}
+
+          {/* Estado de Erro ou Configuração Pendente */}
+          {status === 'missing_config' && (
+            <div className="flex flex-col items-center gap-2 p-4 bg-amber-50 border border-amber-100 rounded-xl text-center">
+              <AlertCircle className="w-5 h-5 text-amber-500" />
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-amber-800">Possível Configuração Pendente</p>
+                <p className="text-xs text-amber-700">Verifique se as variáveis TAKEAT_EMAIL e PASSWORD estão no seu .env.local.</p>
+              </div>
+            </div>
+          )}
+
+          {status === 'error' && (
+            <div className="flex flex-col items-center gap-2 p-4 bg-rose-50 border border-rose-100 rounded-xl text-center">
+              <AlertCircle className="w-5 h-5 text-rose-500" />
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-rose-800">Falha na Consulta</p>
+                <p className="text-xs text-rose-700">{errorMessage}</p>
+              </div>
+              <button 
+                onClick={() => setStatus('mock')}
+                className="text-[10px] font-bold text-rose-600 underline mt-1"
+              >
+                Voltar para modo visualização (Mock)
+              </button>
+            </div>
           )}
         </div>
       </section>
 
 
       {/* ── BLOCO E — RESUMO DEMONSTRATIVO ─────────────────────── */}
-      <section>
+      <section className={dataDisplayClass}>
         <div className="flex items-center gap-2 pl-1 mb-3">
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">
             Resumo do Período
           </h3>
-          <span className="text-[10px] font-bold px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full uppercase tracking-wider">
-            Mock · {MOCK_PERIOD.label}
-          </span>
+          {isViewingRealData ? (
+            <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full uppercase tracking-wider flex items-center gap-1">
+              <Zap className="w-2.5 h-2.5" /> DADOS REAIS
+            </span>
+          ) : (
+            <span className="text-[10px] font-bold px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full uppercase tracking-wider">
+              {status === 'loading' ? 'Carregando...' : 'Modo Visualização (Mock)'}
+            </span>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <SummaryCard
             label="Sessões / Comandas"
-            value={String(MOCK_SUMMARY.total_sessions)}
+            value={String(currentSummary.total_sessions)}
             sub="no período"
             color="indigo"
           />
           <SummaryCard
             label="Itens vendidos"
-            value={String(MOCK_SUMMARY.total_products_sold)}
-            sub="produtos distintos"
+            value={String(currentSummary.total_products_sold)}
+            sub="unidades totais"
             color="indigo"
           />
           <SummaryCard
             label="Total produtos"
-            value={formatMoney(MOCK_SUMMARY.total_revenue)}
+            value={formatMoney(currentSummary.total_revenue)}
             sub="sem serviço"
             color="emerald"
           />
           <SummaryCard
             label="Total com serviço"
-            value={formatMoney(MOCK_SUMMARY.total_with_service)}
-            sub="inc. 10%"
+            value={formatMoney(currentSummary.total_with_service)}
+            sub="valor final"
             color="emerald"
           />
           <SummaryCard
             label="Pagamentos"
-            value={String(MOCK_SUMMARY.total_payments)}
-            sub="registros"
+            value={String(currentSummary.total_payments)}
+            sub="total registros"
             color="gray"
           />
           <SummaryCard
             label="Canais"
-            value={String(MOCK_SUMMARY.channels_found.length)}
-            sub={MOCK_SUMMARY.channels_found.join(', ')}
+            value={String(currentSummary.channels_found.length)}
+            sub={currentSummary.channels_found.length > 0 ? currentSummary.channels_found.join(', ') : 'Nenhum'}
             color="gray"
           />
           <SummaryCard
             label="Descontos"
-            value={formatMoney(MOCK_SUMMARY.total_discounts)}
-            sub="encontrados"
+            value={formatMoney(currentSummary.total_discounts)}
+            sub="acumulado"
             color="amber"
           />
           <SummaryCard
             label="NFC-e"
-            value={String(MOCK_SUMMARY.nfce_available)}
-            sub="disponíveis"
+            value={String(currentSummary.nfce_available)}
+            sub="emitidas"
             color="gray"
           />
         </div>
       </section>
 
       {/* ── BLOCO F — TABELA DEMONSTRATIVA ─────────────────────── */}
-      <section>
+      <section className={dataDisplayClass}>
         <div className="flex items-center gap-2 pl-1 mb-3">
           <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">
             Sessões do Período
           </h3>
           <span className="text-[10px] font-bold px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full uppercase tracking-wider">
-            Mock
+            {isViewingRealData ? 'API Real' : 'Mock'}
           </span>
         </div>
 
@@ -301,7 +393,12 @@ export default function VendasPage() {
             const totalService = parseFloat(bill?.total_service_price ?? '0')
             const discount = parseFloat(bill?.total_discount ?? '0')
             const paymentNames = s.payments.map(p => p.payment_method.name).join(', ')
-            const itemCount = bill?.order_baskets.flatMap(b => b.orders).reduce((acc, o) => acc + o.order_products.length, 0) ?? 0
+            
+            // Itens: soma das quantidades (amount) para consistência com o resumo
+            const itemCount = bill?.order_baskets
+              .flatMap(b => b.orders)
+              .flatMap(o => o.order_products)
+              .reduce((acc, p) => acc + (p.amount || 0), 0) ?? 0
 
             return (
               <div
@@ -373,14 +470,14 @@ export default function VendasPage() {
           })}
         </div>
 
-        {MOCK_SESSIONS.length > 3 && (
+        {currentSessions.length > 3 && (
           <button
             onClick={() => setTableExpanded(v => !v)}
             className="w-full mt-3 py-3 border border-gray-200 bg-white rounded-xl text-sm font-semibold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 transition active:scale-95"
           >
             {tableExpanded
               ? <><ChevronUp className="w-4 h-4" /> Recolher</>
-              : <><ChevronDown className="w-4 h-4" /> Ver mais {MOCK_SESSIONS.length - 3} sessões</>
+              : <><ChevronDown className="w-4 h-4" /> Ver mais {currentSessions.length - 3} sessões</>
             }
           </button>
         )}
@@ -454,8 +551,11 @@ export default function VendasPage() {
       {/* ── RODAPÉ TÉCNICO ─────────────────────────────────────── */}
       <div className="bg-gray-50 border border-gray-200 rounded-xl p-3">
         <p className="text-xs text-gray-400 text-center leading-relaxed">
-          Módulo de Vendas · Estrutura inicial · Dados mockados para demonstração<br />
-          Integração real: plugar <code className="font-mono bg-gray-100 px-1 rounded">TakeatService</code> com credenciais em <code className="font-mono bg-gray-100 px-1 rounded">.env.local</code>
+          Módulo de Vendas · Integração Takeat v1.0<br />
+          {status === 'real' 
+            ? <span className="text-emerald-600 font-bold uppercase">Conectado à API Real</span>
+            : 'Modo de visualização com dados de demonstração'
+          }
         </p>
       </div>
 

@@ -42,16 +42,18 @@ const MAX_DAYS     = 3  // limite por consulta conforme documentação
 // POST /public/api/sessions
 // -------------------------------------------------------------------
 export async function authenticate(payload: TakeatAuthPayload): Promise<TakeatAuthResponse> {
-  // TODO: substituir por chamada real
-  // const res = await fetch(`${BASE_URL}/public/api/sessions`, {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify(payload),
-  // })
-  // if (!res.ok) throw new Error(`Takeat auth error: ${res.status}`)
-  // return res.json()
+  const res = await fetch(`${BASE_URL}/public/api/sessions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
 
-  throw new Error('[TakeatService] authenticate() — integração real não implementada ainda.')
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}))
+    throw new Error(`Takeat auth error: ${res.status} ${JSON.stringify(errorData)}`)
+  }
+
+  return res.json()
 }
 
 // -------------------------------------------------------------------
@@ -66,23 +68,30 @@ export async function getTableSessions(
   const start = new Date(params.start_date)
   const end   = new Date(params.end_date)
   const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+  
   if (diffDays > MAX_DAYS) {
     throw new Error(`[TakeatService] Intervalo máximo é ${MAX_DAYS} dias por consulta.`)
   }
 
-  // TODO: substituir por chamada real
-  // const url = new URL(`${BASE_API}/table-sessions`)
-  // url.searchParams.set('start_date', params.start_date)
-  // url.searchParams.set('end_date', params.end_date)
-  // const res = await fetch(url.toString(), {
-  //   headers: { Authorization: `Bearer ${token}` }
-  // })
-  // if (!res.ok) throw new Error(`Takeat sessions error: ${res.status}`)
-  // return res.json()
+  const url = new URL(`${BASE_API}/table-sessions`)
+  url.searchParams.set('start_date', params.start_date)
+  url.searchParams.set('end_date', params.end_date)
 
-  // MOCK — retorna dados estruturados para demonstração
-  console.info('[TakeatService] Usando mock data — integração real pendente.')
-  return MOCK_SESSIONS
+  const res = await fetch(url.toString(), {
+    headers: { 
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/json'
+    }
+  })
+
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => 'Unknown error')
+    throw new Error(`Takeat sessions error: ${res.status} - ${errorText}`)
+  }
+
+  const data = await res.json()
+  // A API retorna um array de sessões diretamente
+  return data as TakeatTableSession[]
 }
 
 // -------------------------------------------------------------------
@@ -90,38 +99,81 @@ export async function getTableSessions(
 // GET /payment-methods
 // -------------------------------------------------------------------
 export async function getPaymentMethods(token: string) {
-  // TODO: substituir por chamada real
-  // const res = await fetch(`${BASE_API}/payment-methods`, {
-  //   headers: { Authorization: `Bearer ${token}` }
-  // })
-  // return res.json()
-
-  console.info('[TakeatService] getPaymentMethods() — mock.')
-  return MOCK_PAYMENT_METHODS
+  const res = await fetch(`${BASE_API}/payment-methods`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  })
+  
+  if (!res.ok) throw new Error(`Takeat payment methods error: ${res.status}`)
+  return res.json()
 }
 
 // -------------------------------------------------------------------
 // AGREGAÇÃO — calcula resumo do período a partir das sessões
-// Essa função opera sobre dados locais, não chama a API diretamente
 // -------------------------------------------------------------------
 export function aggregatePeriodSummary(
   sessions: TakeatTableSession[],
   periodStart: string,
   periodEnd: string
 ): TakeatPeriodSummary {
-  // TODO: implementar agregação real quando integração estiver ativa
-  // Por hora retorna o mock summary para demonstração
-  console.info('[TakeatService] aggregatePeriodSummary() — mock.')
-  return MOCK_SUMMARY
+  let totalProductsSold = 0
+  let totalRevenue = 0 // sem serviço
+  let totalWithService = 0
+  let totalPaymentsCount = 0
+  let totalDiscounts = 0
+  const channels = new Set<string>()
+  let nfceCount = 0
+
+  sessions.forEach(session => {
+    if (session.channel?.name) channels.add(session.channel.name)
+    if (session.nfce) nfceCount++
+    if (session.payments) totalPaymentsCount += session.payments.length
+
+    session.bills.forEach(bill => {
+      totalRevenue += parseFloat(bill.total_price || '0')
+      totalWithService += parseFloat(bill.total_service_price || '0')
+      totalDiscounts += parseFloat(bill.total_discount || '0')
+
+      bill.order_baskets.forEach(basket => {
+        basket.orders.forEach(order => {
+          order.order_products.forEach(product => {
+            totalProductsSold += product.amount
+          })
+        })
+      })
+    })
+  })
+
+  return {
+    total_sessions: sessions.length,
+    total_products_sold: totalProductsSold,
+    total_revenue: totalRevenue,
+    total_with_service: totalWithService,
+    total_payments: totalPaymentsCount,
+    total_discounts: totalDiscounts,
+    channels_found: Array.from(channels),
+    nfce_available: nfceCount,
+    period_start: periodStart,
+    period_end: periodEnd
+  }
 }
 
 // -------------------------------------------------------------------
 // HELPER — converte data de Brasília para UTC-0 (para enviar à API)
 // -------------------------------------------------------------------
 export function brasiliaToUTC(dateStr: string): string {
-  // Brasília = UTC-3
-  // TODO: usar biblioteca de timezone (date-fns-tz) para produção
+  // Se a entrada for apenas "YYYY-MM-DD", assume meia-noite em Brasília (UTC-3)
+  // Para converter para UTC-0, adicionamos 3 horas.
   const date = new Date(dateStr)
-  date.setHours(date.getHours() + 3)
-  return date.toISOString()
+  
+  // Garantir que estamos tratando como a data local se for apenas YYYY-MM-DD
+  if (dateStr.length === 10) {
+    // Adiciona o timezone offset ou apenas define as horas explicitamente
+    // Para simplificar: Date(dateStr) em um sistema BR já cria em UTC-3 ou similar.
+    // Mas a API quer UTC-0 puro.
+    // Se hoje é 2024-01-01 00:00 BRT, isso é 2024-01-01 03:00 UTC.
+    date.setHours(date.getHours() + 3)
+  }
+
+  return date.toISOString().split('.')[0] + 'Z' // Garante formato ISO sem milisegundos e com Z
 }
+
