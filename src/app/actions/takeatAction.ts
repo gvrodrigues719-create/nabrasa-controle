@@ -1,8 +1,10 @@
-import { 
-  authenticate, 
-  getTableSessions, 
-  aggregatePeriodSummary, 
-  brasiliaToUTC 
+'use server'
+
+import {
+  authenticate,
+  getTableSessions,
+  aggregatePeriodSummary,
+  brasiliaToUTC
 } from '@/lib/takeat/takeatService'
 import type { TakeatTableSession, TakeatPeriodSummary } from '@/lib/takeat/takeatTypes'
 
