@@ -9,7 +9,6 @@ import {
     updateInvoiceItemReview, 
     deleteSupplierInvoice, 
     deleteSupplierInvoiceItem,
-    deleteSupplierInvoiceItem,
     approveSupplierInvoice,
     processApprovedInvoice,
     getRecentActiveCycles
@@ -223,6 +222,7 @@ export default function InvoiceMappingPage() {
                         </h1>
                     </div>
                 </div>
+
                 <div className="flex items-center gap-2">
                     {!isApproved && (
                         <button 
@@ -231,7 +231,6 @@ export default function InvoiceMappingPage() {
                         >
                             <Trash2 className="w-4 h-4" /> Excluir Nota
                         </button>
-                    )}
                     )}
 
                     {!isProcessed && isApproved && (
@@ -470,4 +469,3 @@ export default function InvoiceMappingPage() {
         </div>
     )
 }
-

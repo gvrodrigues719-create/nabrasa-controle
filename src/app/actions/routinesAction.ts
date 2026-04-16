@@ -19,7 +19,7 @@ export async function getRoutineDetailsAction(routineId: string) {
     const brDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
     const startOfDayBR = `${brDate}T03:00:00Z` // meia-noite BRT = 03:00 UTC
 
-    const { data: routine } = await supabase.from('routines').select('name, snapshot_started_at').eq('id', routineId).single()
+    const { data: routine } = await supabase.from('routines').select('name, snapshot_started_at, routine_type').eq('id', routineId).single()
     if (!routine) return { error: 'Rotina não encontrada' }
 
     let isStartedToday = false

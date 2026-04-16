@@ -11,6 +11,7 @@ type Routine = {
     name: string
     frequency: string
     active: boolean
+    routine_type: 'count' | 'checklist'
 }
 
 type Group = {
@@ -49,6 +50,7 @@ export default function RoutinesPage() {
         setIsEditing(r.id)
         setName(r.name)
         setFrequency(r.frequency || 'daily')
+        // routine_type fallback at read is handled naturally by DB/REST
         const { data } = await supabase.from('routine_groups').select('group_id').eq('routine_id', r.id)
         if (data) {
             setSelectedGroups(data.map(d => d.group_id))
@@ -64,11 +66,11 @@ export default function RoutinesPage() {
         let hasError = false
 
         if (isEditing && isEditing !== 'new') {
-            const { error } = await supabase.from('routines').update({ name, frequency }).eq('id', isEditing)
+            const { error } = await supabase.from('routines').update({ name, frequency, routine_type: 'count' }).eq('id', isEditing)
             if (error) { hasError = true; toast.error(error.message) }
             else inserted = true
         } else {
-            const { data, error } = await supabase.from('routines').insert([{ name, frequency }]).select().single()
+            const { data, error } = await supabase.from('routines').insert([{ name, frequency, routine_type: 'count' }]).select().single()
             if (error) { hasError = true; toast.error(error.message) }
             if (data) {
                 routineId = data.id

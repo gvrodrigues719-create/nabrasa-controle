@@ -11,6 +11,7 @@ type Routine = {
     id: string
     name: string
     frequency: string
+    routine_type: 'count' | 'checklist'
 }
 
 const freqLabel: Record<string, string> = {
