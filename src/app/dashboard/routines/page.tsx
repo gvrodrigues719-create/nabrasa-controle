@@ -144,9 +144,13 @@ export default function ActiveRoutinesPage() {
                             <div className="text-right">
                                 {loading ? (
                                     <div className="w-20 h-6 bg-gray-100 animate-pulse rounded-full" />
-                                ) : (
+                                ) : weeklyPoints && weeklyPoints > 0 ? (
                                     <span className="inline-flex items-center bg-[#1b1c1a] px-3 py-1 rounded-full text-[10px] font-black text-white uppercase tracking-widest shadow-lg">
-                                        # {rankPosition ?? '--'} Ranking
+                                        # {rankPosition ?? '--'} na Posição
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center bg-[#F8F7F4] border border-[#eeedea] px-3 py-1 rounded-full text-[10px] font-bold text-[#8c716c] uppercase tracking-widest shadow-sm">
+                                        Inicie sua jornada
                                     </span>
                                 )}
                             </div>
@@ -161,7 +165,7 @@ export default function ActiveRoutinesPage() {
                                     <span className="text-2xl font-black text-[#1b1c1a]">
                                         {loading ? '--' : weeklyPoints ?? 0}
                                     </span>
-                                    <span className="text-[10px] font-bold text-[#8c716c]">XP</span>
+                                    <span className="text-[10px] font-bold text-[#8c716c]">pontos</span>
                                 </div>
                                 {weeklyPoints === 0 && !loading && (
                                     <p className="text-[9px] font-medium text-[#b13a2b]/60 italic mt-1">Inicie sua jornada</p>
@@ -173,7 +177,7 @@ export default function ActiveRoutinesPage() {
                                     <span className="text-2xl font-black text-[#1b1c1a]">
                                         {loading ? '--' : userPoints ?? 0}
                                     </span>
-                                    <span className="text-[10px] font-bold text-[#8c716c]">XP</span>
+                                    <span className="text-[10px] font-bold text-[#8c716c]">pontos</span>
                                 </div>
                             </div>
                         </div>
@@ -218,7 +222,7 @@ export default function ActiveRoutinesPage() {
                                                     <span className={`text-xs font-black ${isMe ? 'text-[#B13A2B]' : 'text-[#8c716c]'}`}>
                                                         {entry.points}
                                                     </span>
-                                                    <span className={`text-[8px] font-black uppercase ${isMe ? 'text-white/40' : 'text-[#8c716c]/40'}`}>XP</span>
+                                                    <span className={`text-[8px] font-black uppercase ${isMe ? 'text-white/40' : 'text-[#8c716c]/40'}`}>pts</span>
                                                 </div>
                                             </div>
                                         )

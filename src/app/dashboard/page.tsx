@@ -106,9 +106,14 @@ export default function DashboardPage() {
                             <Calendar className="w-3.5 h-3.5" />
                             <span className="text-[10px] font-bold uppercase tracking-widest">{todayDate}</span>
                         </div>
-                        {rankPosition && (
+                        {rankPosition && (weeklyPoints ?? 0) > 0 && (
                             <span className="text-[10px] font-black text-[#b13a2b] uppercase tracking-widest bg-red-50 border border-red-100 px-2 py-0.5 rounded-full">
                                 #{rankPosition} na semana
+                            </span>
+                        )}
+                        {(!rankPosition || (weeklyPoints ?? 0) === 0) && !loading && (
+                             <span className="text-[10px] font-bold text-[#8c716c] uppercase tracking-widest bg-[#F5F4F1] border border-[#e9e8e5] px-2 py-0.5 rounded-full">
+                                Inicie sua jornada
                             </span>
                         )}
                     </div>
@@ -123,39 +128,39 @@ export default function DashboardPage() {
                 </div>
 
                 {/* ── HERO DE PROGRESSO (ESTADO OPERACIONAL) ── */}
-                <div className="bg-[#1b1c1a] rounded-[32px] p-6 shadow-2xl relative overflow-hidden group">
+                <div className="bg-[#1b1c1a] rounded-[32px] p-5 shadow-2xl relative overflow-hidden group">
                     {/* Visual Decor */}
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#B13A2B] to-transparent opacity-10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700" />
                     <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-5 rounded-full -ml-12 -mb-12" />
 
                     <div className="relative z-10">
-                        <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center space-x-2">
-                                <div className="p-2 bg-white/10 rounded-lg">
-                                    <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                                <div className="p-1.5 bg-white/10 rounded-lg">
+                                    <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                                 </div>
-                                <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">Meu Progresso</span>
+                                <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">Minha Operação</span>
                             </div>
-                            <Link href="/dashboard/routines" className="text-[10px] font-black text-[#B13A2B] uppercase tracking-widest bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full transition-colors">
+                            <Link href="/dashboard/routines" className="text-[9px] font-black text-[#B13A2B] uppercase tracking-widest bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-full transition-colors">
                                 Detalhes
                             </Link>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">XP da Semana</p>
+                                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Pontos da semana</p>
                                 <div className="flex items-baseline space-x-1">
                                     <span className="text-3xl font-black text-white tracking-tighter">
                                         {loading ? '--' : weeklyPoints ?? 0}
                                     </span>
-                                    <span className="text-xs font-bold text-[#B13A2B]">XP</span>
+                                    <span className="text-xs font-bold text-[#B13A2B]">PTS</span>
                                 </div>
                                 {weeklyPoints === 0 && !loading && (
                                     <p className="text-[9px] font-medium text-white/30 italic mt-1">Inicie sua jornada</p>
                                 )}
                             </div>
                             <div className="border-l border-white/5 pl-4">
-                                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">XP Total</p>
+                                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Pontos totais</p>
                                 <div className="flex items-baseline space-x-1">
                                     <span className="text-xl font-bold text-white/90 tracking-tight">
                                         {loading ? '--' : userPoints ?? 0}
@@ -165,10 +170,10 @@ export default function DashboardPage() {
                         </div>
 
                         {/* Progress Visual Hint */}
-                        <div className="mt-6">
+                        <div className="mt-5">
                             <div className="flex justify-between items-center mb-1.5">
                                 <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">
-                                    {rankPosition ? `Você é o #${rankPosition} da semana` : 'Participe das rotinas'}
+                                    {rankPosition && (weeklyPoints ?? 0) > 0 ? `Sua posição é #${rankPosition} na semana` : 'Sem pontuação registrada nesta semana'}
                                 </span>
                                 <span className="text-[9px] font-black text-[#B13A2B] uppercase">Meta Semanal</span>
                             </div>
@@ -217,17 +222,17 @@ export default function DashboardPage() {
                         </Link>
 
                         {/* CARD CHECKLIST - PRÓXIMA ROTINA (EM BREVE) */}
-                        <div className="bg-white/40 rounded-[32px] p-6 border border-[#e9e8e5] border-dashed flex items-center justify-between opacity-80 cursor-default">
+                        <div className="bg-white/60 rounded-[32px] p-6 border border-[#e9e8e5] border-dashed flex items-center justify-between group/checklist">
                              <div className="flex items-center space-x-4">
-                                <div className="w-14 h-14 rounded-2xl bg-white/50 border border-[#eeedea] flex items-center justify-center text-gray-400">
+                                <div className="w-14 h-14 rounded-2xl bg-white/50 border border-[#eeedea] flex items-center justify-center text-[#dfbfba] group-hover/checklist:text-[#B13A2B] transition-colors">
                                     <ListChecks className="w-7 h-7" />
                                 </div>
                                 <div>
                                     <div className="flex items-center space-x-2 mb-0.5">
-                                        <h3 className="font-bold text-gray-400 text-lg leading-none">Checklist</h3>
-                                        <span className="text-[9px] font-black text-white bg-gray-300 px-1.5 py-0.5 rounded uppercase tracking-widest">Em breve</span>
+                                        <h3 className="font-bold text-[#a8928f] text-lg leading-none">Checklist</h3>
+                                        <span className="text-[9px] font-black text-white bg-[#dfbfba] px-1.5 py-0.5 rounded uppercase tracking-widest">Em breve</span>
                                     </div>
-                                    <p className="text-xs text-gray-400 font-medium">Controle de abertura e fechamento</p>
+                                    <p className="text-xs text-[#c0b3b1] font-medium">Controle de abertura e fechamento</p>
                                 </div>
                             </div>
                         </div>

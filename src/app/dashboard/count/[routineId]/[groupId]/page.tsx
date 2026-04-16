@@ -31,6 +31,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
     const [operator, setOperator] = useState<{ name: string, role: string } | null>(null)
     const [rankPosition, setRankPosition] = useState<number | null>(null)
+    const [weeklyPoints, setWeeklyPoints] = useState<number>(0)
 
     const LOCAL_KEY = `count_${routineId}_${groupId}`
     const ZEROED_KEY = `zeroed_${routineId}_${groupId}`
@@ -56,8 +57,9 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
 
         // Load Ranking Data for Badge
         getOperatorSummaryAction(userId).then(res => {
-            if (res.success && res.rankPosition) {
-                setRankPosition(res.rankPosition)
+            if (res.success) {
+                setRankPosition(res.rankPosition ?? null)
+                setWeeklyPoints(res.weeklyPoints ?? 0)
             }
         })
 
@@ -264,7 +266,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                             <span className="text-[10px] font-black uppercase text-[#1b1c1a] leading-tight">{operator?.name?.split(' ')[0]}</span>
                             <div className="flex items-center gap-1.5 mt-0.5">
                                 <span className="text-[8px] font-bold uppercase text-[#8c716c] leading-none">{operator?.role}</span>
-                                {rankPosition && (
+                                {rankPosition && weeklyPoints > 0 && (
                                     <span className="text-[8px] font-black text-[#b13a2b] bg-red-50 px-1.5 py-0.5 rounded uppercase tracking-tighter border border-red-100/50">
                                         #{rankPosition} na semana
                                     </span>
