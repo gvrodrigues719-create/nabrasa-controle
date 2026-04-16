@@ -1,13 +1,15 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { LayoutGrid, Package, CalendarSync, History } from 'lucide-react'
+import { LayoutGrid, Package, CalendarSync, History, TrendingUp } from 'lucide-react'
 
 export default function AdminHome() {
     const router = useRouter()
     return (
         <div className="p-4 space-y-2">
-            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest pl-1 mb-4">Módulos</h2>
+
+            {/* ── MÓDULOS DE ESTOQUE / OPERAÇÃO ──────────────────── */}
+            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest pl-1 mb-3">Operação</h2>
 
             <button onClick={() => router.push('/dashboard/admin/groups')} className="w-full bg-white border border-gray-200 p-5 rounded-2xl flex items-center text-left hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm space-x-4 active:scale-95">
                 <div className="bg-blue-100 p-3 rounded-xl">
@@ -48,6 +50,28 @@ export default function AdminHome() {
                     <p className="text-sm text-gray-500">Consultar execuções passadas por período</p>
                 </div>
             </button>
+
+            {/* ── NOVO EIXO — VENDAS ─────────────────────────────── */}
+            <div className="pt-4">
+                <div className="flex items-center gap-2 pl-1 mb-3">
+                    <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Vendas</h2>
+                    <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full uppercase tracking-wider">Novo</span>
+                </div>
+
+                <button
+                    onClick={() => router.push('/dashboard/admin/vendas')}
+                    className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 text-white p-5 rounded-2xl flex items-center text-left hover:from-indigo-700 hover:to-indigo-600 transition-all shadow-md space-x-4 active:scale-95"
+                >
+                    <div className="bg-white/20 p-3 rounded-xl shrink-0">
+                        <TrendingUp className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-white text-lg">Módulo de Vendas</h3>
+                        <p className="text-sm text-indigo-100">Integração Takeat · estrutura inicial</p>
+                    </div>
+                </button>
+            </div>
+
         </div>
     )
 }
