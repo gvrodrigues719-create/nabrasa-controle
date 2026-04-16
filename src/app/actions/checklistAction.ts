@@ -1,6 +1,6 @@
 "use server"
 
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@supabase/supabase-js'
 import { 
     ChecklistTemplate, 
     ChecklistSession, 
@@ -8,6 +8,11 @@ import {
     ChecklistTemplateItem
 } from '@/modules/checklist/types'
 import { revalidatePath } from 'next/cache'
+
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 /**
  * Busca todos os templates de checklist ativos
