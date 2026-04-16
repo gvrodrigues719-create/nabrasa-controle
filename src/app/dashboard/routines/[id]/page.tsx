@@ -91,11 +91,11 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
     if (!data) return <div className="p-4 text-center">Rotina não encontrada</div>
 
     return (
-        <div className="p-4 space-y-6">
+        <div className="min-h-screen bg-[#F8F7F4] pb-10">
             <PinConfirmModal
                 isOpen={showStartConfirm}
                 title="Iniciar Ciclo Oficial?"
-                message="Isso congela o estoque teórico e abre a contagem. Digite seu PIN Gerencial para autorizar esse início."
+                message="Isso congela o estoque teórico e abre a contagem. Digite seu PIN Gerencial para autorizar este início."
                 onClose={() => setShowStartConfirm(false)}
                 onConfirmPin={async (pin) => {
                     await handleStartRoutine(pin);
@@ -103,114 +103,151 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
                 }}
             />
 
-            <div className="flex items-center space-x-3 mb-6 mt-2">
-                <button onClick={() => router.push('/dashboard/routines')} className="p-2 bg-white rounded-lg shadow-sm border border-gray-200 text-gray-600">
-                    <ArrowLeft className="w-5 h-5" />
-                </button>
-                <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Rotina</p>
-                    <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">{data.name}</h2>
+            {/* HEADER */}
+            <div className="bg-white border-b border-[#e9e8e5] px-5 pt-6 pb-5 shadow-sm sticky top-0 z-10">
+                <div className="flex items-center space-x-4">
+                    <button onClick={() => router.push('/dashboard/routines')} className="p-2.5 bg-white rounded-xl shadow-sm border border-[#e9e8e5] text-[#58413e] hover:bg-gray-50 active:scale-95 transition-all">
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <div>
+                        <p className="text-[10px] font-bold text-[#8c716c] uppercase tracking-[0.2em] mb-0.5">Andamento da Rotina</p>
+                        <h2 className="text-xl font-black text-[#1b1c1a] leading-none">{data.name}</h2>
+                    </div>
                 </div>
             </div>
 
-            {!hasSnapshot && (
-                <div className="bg-[#FDF0EF] border border-[#D4564A] p-4 rounded-2xl shadow-sm text-center">
-                    <p className="text-[#8F2E21] font-bold mb-1">Rotina Offline</p>
-                    <p className="text-sm text-[#B13A2B] mb-4">Para iniciar a contagem hoje, precisamos congelar o estoque teórico.</p>
-                    <button disabled={starting} onClick={() => setShowStartConfirm(true)} className="w-full py-3 bg-[#B13A2B] hover:bg-[#8F2E21] text-white rounded-xl font-bold flex justify-center items-center active:scale-95 transition">
-                        {starting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Play className="w-5 h-5 mr-2" /> Iniciar Ciclo Oficial</>}
-                    </button>
-                </div>
-            )}
-
-            <div className={`space-y-4 ${!hasSnapshot ? 'opacity-40 select-none' : ''}`}>
-                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest pl-1">Locais / Grupos</h3>
+            <div className="px-5 py-6 space-y-6">
                 {!hasSnapshot && (
-                    <p className="text-xs text-gray-400 pl-1 italic">Inicie o ciclo oficial para liberar os grupos abaixo.</p>
+                    <div className="bg-white border border-[#D4564A] p-6 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] text-center relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-3">
+                            <Clock className="w-5 h-5 text-[#D4564A] opacity-20" />
+                        </div>
+                        <p className="text-[#8F2E21] text-xs font-black uppercase tracking-widest mb-1">Operação Aguardando</p>
+                        <h3 className="text-lg font-black text-[#1b1c1a] mb-2 px-4">Esta rotina ainda não foi iniciada hoje.</h3>
+                        <p className="text-sm text-[#58413e] mb-6 px-2">É necessário congelar o estoque teórico antes de liberar os grupos de contagem.</p>
+                        <button 
+                            disabled={starting} 
+                            onClick={() => setShowStartConfirm(true)} 
+                            className="w-full py-4 bg-[#B13A2B] hover:bg-[#902216] text-white rounded-2xl font-bold flex justify-center items-center active:scale-95 transition shadow-lg shadow-red-900/10"
+                        >
+                            {starting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Play className="w-5 h-5 mr-2" /> Iniciar Agora</>}
+                        </button>
+                    </div>
                 )}
-                <div className="space-y-3">
-                    {data.groups.map(g => {
-                        const isCompleted = g.status === 'completed'
-                        const isInProgress = g.status === 'in_progress'
 
-                        return (
-                            <button
-                                key={g.id}
-                                onClick={() => handleGroupClick(g)}
-                                className={`w-full p-4 rounded-2xl border text-left flex justify-between items-center transition-all shadow-sm ${isCompleted ? 'bg-gray-50 border-gray-200 opacity-80' :
-                                    isInProgress ? 'bg-orange-50 border-orange-200 hover:bg-orange-100' :
-                                        'bg-white border-[#FDF0EF] hover:border-[#D4564A] hover:shadow-md'
+                <div className={`space-y-4 ${!hasSnapshot ? 'opacity-40 select-none grayscale-[0.5]' : ''}`}>
+                    <div className="flex items-center justify-between px-1">
+                        <h3 className="text-sm font-bold text-[#8c716c] uppercase tracking-[0.15em]">Grupos de Contagem</h3>
+                        {hasSnapshot && (
+                            <span className="text-[10px] font-black bg-green-100 text-green-700 px-2 py-1 rounded-md uppercase">Em Operação</span>
+                        )}
+                    </div>
+                    
+                    {!hasSnapshot && (
+                        <p className="text-xs text-[#8c716c] font-medium pl-1 italic">Libere o ciclo oficial para visualizar os detalhes.</p>
+                    )}
+
+                    <div className="space-y-3">
+                        {data.groups.map(g => {
+                            const isCompleted = g.status === 'completed'
+                            const isInProgress = g.status === 'in_progress'
+
+                            return (
+                                <button
+                                    key={g.id}
+                                    onClick={() => handleGroupClick(g)}
+                                    className={`w-full p-5 rounded-3xl border-2 text-left flex justify-between items-center transition-all bg-white hover:shadow-md ${
+                                        isCompleted ? 'border-gray-100 opacity-70' :
+                                        isInProgress ? 'border-orange-200' :
+                                        'border-white shadow-[0_4px_20px_rgb(0,0,0,0.03)]'
                                     }`}
-                            >
-                                <div>
-                                    <h4 className={`font-bold text-lg ${isCompleted ? 'text-gray-500' : 'text-gray-900'}`}>{g.name}</h4>
-                                    {isInProgress && (
-                                        <div className="flex items-center text-orange-600 text-xs font-semibold mt-1 space-x-1">
-                                            <Clock className="w-3.5 h-3.5" />
-                                            <span>{g.user_name ? `Em andamento por ${g.user_name}` : 'Em andamento'}</span>
+                                >
+                                    <div className="flex-1">
+                                        <h4 className={`font-black text-lg ${isCompleted ? 'text-gray-400' : 'text-[#1b1c1a]'}`}>{g.name}</h4>
+                                        
+                                        <div className="flex items-center mt-2 space-x-2">
+                                            {isCompleted ? (
+                                                <div className="flex items-center bg-green-50 text-green-700 text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-wider border border-green-100">
+                                                    <CheckCircle2 className="w-2.5 h-2.5 mr-1" />
+                                                    <span>Concluído</span>
+                                                </div>
+                                            ) : isInProgress ? (
+                                                <div className="flex items-center bg-orange-50 text-orange-700 text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-wider border border-orange-100">
+                                                    <Clock className="w-2.5 h-2.5 mr-1 animate-pulse" />
+                                                    <span>Em andamento</span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center bg-[#F8F7F4] text-[#8c716c] text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-wider border border-[#eeedea]">
+                                                    <span>Pendente</span>
+                                                </div>
+                                            )}
+                                            
+                                            {g.user_name && (
+                                                <span className="text-[10px] font-bold text-[#8c716c] uppercase">• {g.user_name.split(' ')[0]}</span>
+                                            )}
                                         </div>
-                                    )}
-                                    {isCompleted && (
-                                        <div className="flex items-center text-gray-500 text-xs font-semibold mt-1 space-x-1">
-                                            <CheckCircle2 className="w-3.5 h-3.5" />
-                                            <span>Finalizado{g.user_name ? ` por ${g.user_name}` : ''}</span>
-                                        </div>
-                                    )}
-                                    {!isInProgress && !isCompleted && (
-                                        <p className="text-xs font-semibold text-gray-400 mt-1 uppercase">Toque para iniciar</p>
-                                    )}
-                                </div>
-                                <div>
-                                    {isCompleted ? (
-                                        <CheckCircle2 className="w-8 h-8 text-green-400" />
-                                    ) : isInProgress ? (
-                                        <PlayCircle className="w-8 h-8 text-orange-400" />
-                                    ) : (
-                                        <PlayCircle className="w-8 h-8 text-[#D4564A]" />
-                                    )}
-                                </div>
-                            </button>
-                        )
-                    })}
+                                    </div>
+                                    
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${
+                                        isCompleted ? 'bg-green-50 text-green-400' :
+                                        isInProgress ? 'bg-orange-50 text-orange-400' :
+                                        'bg-[#FDF0EF] text-[#D4564A]'
+                                    }`}>
+                                        {isCompleted ? (
+                                            <CheckCircle2 className="w-7 h-7" />
+                                        ) : isInProgress ? (
+                                            <PlayCircle className="w-7 h-7" />
+                                        ) : (
+                                            <PlayCircle className="w-7 h-7" />
+                                        )}
+                                    </div>
+                                </button>
+                            )
+                        })}
+                    </div>
                 </div>
             </div>
 
             {/* BOTTOM SHEET DE CONFIRMAÇÃO */}
             {selectedGroup && (
                 <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setSelectedGroup(null)}>
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
                     <div
-                        className="relative w-full max-w-md bg-white rounded-t-3xl shadow-2xl p-6 pb-8 animate-in slide-in-from-bottom duration-300"
+                        className="relative w-full max-w-md bg-white rounded-t-[40px] shadow-2xl p-8 pb-10 animate-in slide-in-from-bottom duration-300"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <button onClick={() => setSelectedGroup(null)} className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition">
+                        <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-8" />
+                        
+                        <button onClick={() => setSelectedGroup(null)} className="absolute top-6 right-6 p-2 rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition">
                             <X className="w-5 h-5" />
                         </button>
 
-                        <div className="flex items-center space-x-3 mb-5">
-                            <div className="p-3 bg-[#FDF0EF] rounded-xl">
-                                <ClipboardList className="w-7 h-7 text-[#B13A2B]" />
+                        <div className="flex items-center space-x-4 mb-6">
+                            <div className="p-4 bg-[#FDF0EF] rounded-2xl">
+                                <ClipboardList className="w-8 h-8 text-[#B13A2B]" />
                             </div>
                             <div>
-                                <h3 className="text-xl font-extrabold text-gray-900">{selectedGroup.name}</h3>
-                                <p className="text-sm font-semibold text-gray-400">{selectedGroup.item_count} {selectedGroup.item_count === 1 ? 'item' : 'itens'} para contar</p>
+                                <h3 className="text-2xl font-black text-[#1b1c1a]">{selectedGroup.name}</h3>
+                                <p className="text-sm font-bold text-[#8c716c] uppercase tracking-wider">{selectedGroup.item_count} itens na lista</p>
                             </div>
                         </div>
 
-                        <p className="text-sm text-gray-500 mb-6">Confirme que você está no local correto antes de iniciar a contagem. Após começar, os itens deste grupo ficarão vinculados a você.</p>
+                        <p className="text-base text-[#58413e] font-medium leading-relaxed mb-8">
+                            Certifique-se de estar no local correto. Ao iniciar, os registros deste grupo serão vinculados ao seu usuário.
+                        </p>
 
-                        <div className="space-y-3">
+                        <div className="grid grid-cols-1 gap-3">
                             <button
                                 onClick={confirmNavigation}
-                                className="w-full py-4 bg-[#B13A2B] hover:bg-[#8F2E21] text-white rounded-2xl font-bold text-lg flex justify-center items-center active:scale-95 transition shadow-sm"
+                                className="w-full py-5 bg-[#1b1c1a] text-white rounded-2xl font-black text-lg flex justify-center items-center active:scale-95 transition shadow-xl"
                             >
-                                <Play className="w-5 h-5 mr-2" /> Estou aqui, começar
+                                Iniciar Contagem
                             </button>
                             <button
                                 onClick={() => setSelectedGroup(null)}
-                                className="w-full py-3 bg-gray-100 text-gray-600 rounded-2xl font-bold text-sm active:scale-95 transition"
+                                className="w-full py-4 text-[#8c716c] font-bold text-sm uppercase tracking-widest active:scale-95 transition"
                             >
-                                Voltar
+                                Cancelar
                             </button>
                         </div>
                     </div>

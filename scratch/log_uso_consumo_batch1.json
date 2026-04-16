@@ -1,0 +1,20 @@
+[
+  {
+    "item": "Bobina Picote 30x40 Rolo 1,71kg",
+    "id": "125bc89e-51dc-45da-8f55-52cdb19a14cc",
+    "status": "success",
+    "price": 6.6
+  },
+  {
+    "item": "Bobina Picote 40x60 Rolo 2,36kg",
+    "id": "6e9b81db-e19e-4e0f-aa3a-b3d6ecf1c8f7",
+    "status": "success",
+    "price": 12.31
+  },
+  {
+    "item": "Sachê Sal ITA PCT 100",
+    "id": "23769627-941c-4982-90a8-170e29cc3ae7",
+    "status": "success",
+    "price": 21.48
+  }
+]

@@ -1,0 +1,56 @@
+[
+  {
+    "item": "Embalagem Isopor Carne",
+    "id": "bc213058-a3ac-47f9-a023-6784c3be88a3",
+    "status": "success",
+    "price": 105.15
+  },
+  {
+    "item": "Pote 30 ml (50)",
+    "id": "88f7c373-0acc-4669-a121-50cb36ade646",
+    "status": "success",
+    "price": 13.9
+  },
+  {
+    "item": "Pote 145 ml (25)",
+    "id": "c4d4e486-f8e0-4909-94cb-cd3fb4daf056",
+    "status": "success",
+    "price": 7.8
+  },
+  {
+    "item": "Quentinha 1100ml",
+    "id": "6189df8a-a6a2-4845-9c01-3eb703898a46",
+    "status": "success",
+    "price": 136.8
+  },
+  {
+    "item": "Saco Delivery M",
+    "id": "a91a6cd1-c9c9-4669-acfb-4962d6a8577c",
+    "status": "success",
+    "price": 32.34
+  },
+  {
+    "item": "Saco Delivery G",
+    "id": "beba5fac-8281-48a3-a075-c6b45ba6c395",
+    "status": "success",
+    "price": 44.85
+  },
+  {
+    "item": "Saco Delivery GG",
+    "id": "c522d230-2373-461f-831b-0478d0d3c039",
+    "status": "success",
+    "price": 61.89
+  },
+  {
+    "item": "Saladeira 1000 ml",
+    "id": "abd74641-4e61-4dea-8232-2d36208cbba1",
+    "status": "success",
+    "price": 1.44
+  },
+  {
+    "item": "Saladeira 500 ml",
+    "id": "ef2e1436-b04f-4914-8964-c42414904859",
+    "status": "success",
+    "price": 1.07
+  }
+]

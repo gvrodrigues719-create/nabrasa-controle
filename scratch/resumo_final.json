@@ -1,0 +1,82 @@
+{
+  "total_a_atualizar": 29,
+  "campo_atualizados": [
+    "average_cost",
+    "cost_category",
+    "affects_cmv",
+    "affects_average_cost"
+  ],
+  "categorias_envolvidas": [
+    "cmv",
+    "embalagem",
+    "uso_consumo",
+    "limpeza"
+  ],
+  "itens_exemplo": [
+    {
+      "item_sistema_id": "5dd76ed5-2081-4fb3-95ce-595d1527935f",
+      "item_sistema_nome": "Espeto de Baby Beef",
+      "item_sistema_unidade": "un",
+      "item_csv_nome_sugerido": "ESPETO DE BABY BEEF",
+      "score": "100.0%",
+      "average_cost_sugerido": 12,
+      "cost_category_sugerida": "cmv",
+      "affects_cmv_sugerido": true,
+      "affects_average_cost_sugerido": true,
+      "acao_manual": "",
+      "observacao": "Aguardando revisão manual"
+    },
+    {
+      "item_sistema_id": "659e3a8b-1c43-46cf-9098-6018d7bf7cb3",
+      "item_sistema_nome": "Espeto de Linguiça Mineira",
+      "item_sistema_unidade": "un",
+      "item_csv_nome_sugerido": "ESPETO LINGUIÇA MINEIRA",
+      "score": "93.3%",
+      "average_cost_sugerido": 5.12,
+      "cost_category_sugerida": "cmv",
+      "affects_cmv_sugerido": true,
+      "affects_average_cost_sugerido": true,
+      "acao_manual": "",
+      "observacao": "Aguardando revisão manual"
+    },
+    {
+      "item_sistema_id": "63ef8d5b-bd5c-446e-9e40-2f80f1513afd",
+      "item_sistema_nome": "Espeto Misto",
+      "item_sistema_unidade": "un",
+      "item_csv_nome_sugerido": "ESPETO MISTO",
+      "score": "100.0%",
+      "average_cost_sugerido": 5.62,
+      "cost_category_sugerida": "cmv",
+      "affects_cmv_sugerido": true,
+      "affects_average_cost_sugerido": true,
+      "acao_manual": "",
+      "observacao": "Aguardando revisão manual"
+    },
+    {
+      "item_sistema_id": "d0a05e53-439b-4ecd-9774-83fae83db6c6",
+      "item_sistema_nome": "Espeto de Queijo Coalho",
+      "item_sistema_unidade": "un",
+      "item_csv_nome_sugerido": "ESPETO QUEIJO COALHO",
+      "score": "92.3%",
+      "average_cost_sugerido": 28.95,
+      "cost_category_sugerida": "cmv",
+      "affects_cmv_sugerido": true,
+      "affects_average_cost_sugerido": true,
+      "acao_manual": "",
+      "observacao": "Aguardando revisão manual"
+    },
+    {
+      "item_sistema_id": "1897b038-8d2b-4364-a2d0-b8dd4469a954",
+      "item_sistema_nome": "Espeto Vegetariano",
+      "item_sistema_unidade": "un",
+      "item_csv_nome_sugerido": "ESPETO VEGETARIANO",
+      "score": "100.0%",
+      "average_cost_sugerido": 4.92,
+      "cost_category_sugerida": "cmv",
+      "affects_cmv_sugerido": true,
+      "affects_average_cost_sugerido": true,
+      "acao_manual": "",
+      "observacao": "Aguardando revisão manual"
+    }
+  ]
+}

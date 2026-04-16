@@ -125,68 +125,104 @@ export default function ActiveRoutinesPage() {
             <div className="px-5 py-6 space-y-8">
 
                 {/* ── CARD MINHA OPERAÇÃO & RANKING ── */}
-                <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e9e8e5]">
-                    <div className="flex items-start justify-between mb-6">
-                        <div className="flex items-center space-x-3">
-                            <div className="p-3 bg-red-50 rounded-2xl text-[#b13a2b]">
-                                <Crown className="w-6 h-6" />
+                <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e9e8e5] relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-red-50/50 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-110" />
+                    
+                    <div className="relative z-10">
+                        <div className="flex items-start justify-between mb-6">
+                            <div className="flex items-center space-x-3">
+                                <div className="p-3 bg-red-50 rounded-2xl text-[#b13a2b] shadow-sm">
+                                    <Crown className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-[#1b1c1a]">Minha Operação</h3>
+                                    <p className="text-[10px] font-bold text-[#8c716c] uppercase tracking-widest">Resumo Semanal</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="text-xl font-black text-[#1b1c1a]">Minha Operação</h3>
-                                <p className="text-[10px] font-bold text-[#8c716c] uppercase tracking-widest">Resumo Semanal</p>
+                            <div className="text-right">
+                                {loading ? (
+                                    <div className="w-20 h-6 bg-gray-100 animate-pulse rounded-full" />
+                                ) : (
+                                    <span className="inline-flex items-center bg-[#1b1c1a] px-3 py-1 rounded-full text-[10px] font-black text-white uppercase tracking-widest shadow-lg">
+                                        # {rankPosition ?? '--'} Ranking
+                                    </span>
+                                )}
                             </div>
                         </div>
-                        <div className="text-right">
-                            <span className="inline-flex items-center bg-[#F8F7F4] px-3 py-1 rounded-full border border-[#eeedea] text-[10px] font-black text-[#b13a2b] uppercase tracking-widest">
-                                # {rankPosition ?? '--'} Ranking
-                            </span>
-                        </div>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-4 mb-8">
-                        <div className="bg-[#F8F7F4]/50 rounded-2xl p-4 border border-[#eeedea]">
-                            <p className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest mb-1.5">Semana atual</p>
-                            <div className="flex items-baseline space-x-1">
-                                <span className="text-2xl font-black text-[#1b1c1a]">{weeklyPoints ?? 0}</span>
-                                <span className="text-[10px] font-bold text-[#8c716c]">XP</span>
+                        <div className="grid grid-cols-2 gap-4 mb-8">
+                            <div className="bg-[#F8F7F4] rounded-2xl p-4 border border-[#eeedea] transition-all hover:border-[#b13a2b]/20">
+                                <p className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                                    <Zap className="w-3 h-3 text-[#B13A2B]" /> Semana atual
+                                </p>
+                                <div className="flex items-baseline space-x-1">
+                                    <span className="text-2xl font-black text-[#1b1c1a]">
+                                        {loading ? '--' : weeklyPoints ?? 0}
+                                    </span>
+                                    <span className="text-[10px] font-bold text-[#8c716c]">XP</span>
+                                </div>
+                                {weeklyPoints === 0 && !loading && (
+                                    <p className="text-[9px] font-medium text-[#b13a2b]/60 italic mt-1">Inicie sua jornada</p>
+                                )}
+                            </div>
+                            <div className="bg-[#F8F7F4] rounded-2xl p-4 border border-[#eeedea]">
+                                <p className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest mb-1.5">Total Acumulado</p>
+                                <div className="flex items-baseline space-x-1">
+                                    <span className="text-2xl font-black text-[#1b1c1a]">
+                                        {loading ? '--' : userPoints ?? 0}
+                                    </span>
+                                    <span className="text-[10px] font-bold text-[#8c716c]">XP</span>
+                                </div>
                             </div>
                         </div>
-                        <div className="bg-[#F8F7F4]/50 rounded-2xl p-4 border border-[#eeedea]">
-                            <p className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest mb-1.5">Total Acumulado</p>
-                            <div className="flex items-baseline space-x-1">
-                                <span className="text-2xl font-black text-[#1b1c1a]">{userPoints ?? 0}</span>
-                                <span className="text-[10px] font-bold text-[#8c716c]">XP</span>
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* RANKING TOP 5 DISCRETO */}
-                    <div className="border-t border-[#F8F7F4] pt-6">
-                        <h4 className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest mb-4 px-1">Top 5 da Semana</h4>
-                        <div className="space-y-3">
-                            {top5.map((entry, idx) => {
-                                const isMe = entry.userId === uId
-                                return (
-                                    <div key={entry.userId} className={`flex items-center justify-between p-3 rounded-2xl transition-all ${isMe ? 'bg-[#FDF0EF] border border-[#f3d9d7]' : 'bg-white'}`}>
-                                        <div className="flex items-center space-x-3">
-                                            <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${
-                                                idx === 0 ? 'bg-amber-100 text-amber-600' :
-                                                idx === 1 ? 'bg-slate-100 text-slate-500' :
-                                                idx === 2 ? 'bg-orange-100 text-orange-600' :
-                                                'bg-gray-100 text-gray-400'
-                                            }`}>
-                                                {idx + 1}
-                                            </div>
-                                            <span className={`text-sm font-bold ${isMe ? 'text-[#1b1c1a]' : 'text-gray-600'}`}>
-                                                {entry.name.split(' ')[0]} {isMe && '(Você)'}
-                                            </span>
+                        {/* RANKING TOP 5 DISCRETO */}
+                        <div className="border-t border-[#F8F7F4] pt-6">
+                            <div className="flex items-center justify-between mb-4 px-1">
+                                <h4 className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest">Top 5 da Semana</h4>
+                                <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                            </div>
+                            
+                            {loading ? (
+                                <div className="space-y-3">
+                                    {[1, 2, 3].map(i => (
+                                        <div key={i} className="h-12 bg-gray-50 animate-pulse rounded-2xl" />
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {top5.length === 0 ? (
+                                        <div className="text-center py-4 text-[10px] font-bold text-[#8c716c] uppercase tracking-widest bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                                            Aguardando pontuações
                                         </div>
-                                        <span className={`text-xs font-black ${isMe ? 'text-[#b13a2b]' : 'text-gray-400'}`}>
-                                            {entry.points} XP
-                                        </span>
-                                    </div>
-                                )
-                            })}
+                                    ) : top5.map((entry, idx) => {
+                                        const isMe = entry.userId === uId
+                                        return (
+                                            <div key={entry.userId} className={`flex items-center justify-between p-3.5 rounded-2xl transition-all ${isMe ? 'bg-[#1b1c1a] text-white shadow-xl ring-4 ring-[#1b1c1a]/5' : 'bg-white border border-[#eeedea]'}`}>
+                                                <div className="flex items-center space-x-3">
+                                                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${
+                                                        idx === 0 ? 'bg-amber-100 text-amber-600' :
+                                                        idx === 1 ? 'bg-slate-100 text-slate-500' :
+                                                        idx === 2 ? 'bg-orange-100 text-orange-600' :
+                                                        isMe ? 'bg-white/10 text-white' : 'bg-gray-100 text-gray-400'
+                                                    }`}>
+                                                        {idx + 1}
+                                                    </div>
+                                                    <span className={`text-sm font-bold ${isMe ? 'text-white' : 'text-[#1b1c1a]'}`}>
+                                                        {entry.name.split(' ')[0]} {isMe && '(Você)'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <span className={`text-xs font-black ${isMe ? 'text-[#B13A2B]' : 'text-[#8c716c]'}`}>
+                                                        {entry.points}
+                                                    </span>
+                                                    <span className={`text-[8px] font-black uppercase ${isMe ? 'text-white/40' : 'text-[#8c716c]/40'}`}>XP</span>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

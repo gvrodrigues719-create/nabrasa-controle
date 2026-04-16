@@ -1,0 +1,147 @@
+[
+  {
+    "item": "Espeto de Baby Beef",
+    "status": "success",
+    "price": 12
+  },
+  {
+    "item": "Espeto de Linguiça Mineira",
+    "status": "success",
+    "price": 5.12
+  },
+  {
+    "item": "Espeto Misto",
+    "status": "success",
+    "price": 5.62
+  },
+  {
+    "item": "Espeto de Queijo Coalho",
+    "status": "success",
+    "price": 28.95
+  },
+  {
+    "item": "Espeto Vegetariano",
+    "status": "success",
+    "price": 4.92
+  },
+  {
+    "item": "Queijo Coalho Festival",
+    "status": "success",
+    "price": 2.45
+  },
+  {
+    "item": "Costelinha Suína",
+    "status": "success",
+    "price": 35.98
+  },
+  {
+    "item": "Meio Pão de Alho",
+    "status": "success",
+    "price": 1.22
+  },
+  {
+    "item": "Pão de Alho",
+    "status": "success",
+    "price": 2.92
+  },
+  {
+    "item": "Maionese Temperada",
+    "status": "success",
+    "price": 2.69
+  },
+  {
+    "item": "Farofa 2,5 kg",
+    "status": "success",
+    "price": 31.15
+  },
+  {
+    "item": "Açúcar Refinado",
+    "status": "success",
+    "price": 4.98
+  },
+  {
+    "item": "Alecrim",
+    "status": "success",
+    "price": 2.95
+  },
+  {
+    "item": "Alface Americana",
+    "status": "success",
+    "price": 4.45
+  },
+  {
+    "item": "Alface Crespa",
+    "status": "success",
+    "price": 2.45
+  },
+  {
+    "item": "Batata Asterix",
+    "status": "success",
+    "price": 3.95
+  },
+  {
+    "item": "Batata Calabresa",
+    "status": "success",
+    "price": 3.95
+  },
+  {
+    "item": "Brócolis Comum",
+    "status": "success",
+    "price": 4.95
+  },
+  {
+    "item": "Cebola Roxa",
+    "status": "success",
+    "price": 6.95
+  },
+  {
+    "item": "Salsa Crespa",
+    "status": "success",
+    "price": 3.95
+  },
+  {
+    "item": "Tomate Grape",
+    "status": "success",
+    "price": 7.99
+  },
+  {
+    "item": "Rúcula",
+    "status": "success",
+    "price": 1.99
+  },
+  {
+    "item": "Pimenta Tabasco",
+    "status": "success",
+    "price": 20.97
+  },
+  {
+    "item": "Sal Temperado 200g",
+    "status": "success",
+    "price": 5.47
+  },
+  {
+    "item": "Guardanapo Simples",
+    "status": "success",
+    "price": 1.4
+  },
+  {
+    "item": "Sacola Verde P 110unid",
+    "status": "success",
+    "price": 6.34
+  },
+  {
+    "item": "Bobina Picotada 16x30 Rolo",
+    "status": "success",
+    "price": 5.22
+  },
+  {
+    "item": "Bobina Térmica Amarela 79x30 CX30",
+    "status": "success",
+    "price": 59.4
+  },
+  {
+    "item": "Esponja Fibraco 3M Limpeza Pesada",
+    "status": "success",
+    "price": 5.95
+  }
+]

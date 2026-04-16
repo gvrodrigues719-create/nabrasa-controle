@@ -1,0 +1,1922 @@
+[
+  {
+    "csv_name": "ESPETO CORAÇÃO",
+    "db_name": "Espeto de Coração",
+    "db_id": "a58939f5-0854-4f1e-9a85-e01132ef1859",
+    "price": 5.9,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "89.7%"
+  },
+  {
+    "csv_name": "ESPETO DE BABY BEEF",
+    "db_name": "Espeto de Baby Beef",
+    "db_id": "5dd76ed5-2081-4fb3-95ce-595d1527935f",
+    "price": 12,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "ESPETO FRANGO",
+    "db_name": "Espeto de Frango",
+    "db_id": "fe2bb986-c4c7-41c4-bba1-6b3349befda2",
+    "price": 4.14,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "88.9%"
+  },
+  {
+    "csv_name": "ESPETO KAFTA C/ QUEIJO",
+    "db_name": "Espeto de Queijo Coalho",
+    "db_id": "d0a05e53-439b-4ecd-9774-83fae83db6c6",
+    "price": 8.83,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "63.4%"
+  },
+  {
+    "csv_name": "ESPETO LINGUIÇA MINEIRA",
+    "db_name": "Espeto de Linguiça Mineira",
+    "db_id": "659e3a8b-1c43-46cf-9098-6018d7bf7cb3",
+    "price": 5.12,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "93.3%"
+  },
+  {
+    "csv_name": "ESPETO MISTO",
+    "db_name": "Espeto Misto",
+    "db_id": "63ef8d5b-bd5c-446e-9e40-2f80f1513afd",
+    "price": 5.62,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "ESPETO QUEIJO COALHO",
+    "db_name": "Espeto de Queijo Coalho",
+    "db_id": "d0a05e53-439b-4ecd-9774-83fae83db6c6",
+    "price": 28.95,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "92.3%"
+  },
+  {
+    "csv_name": "ESPETO SALSICHÃO",
+    "db_name": "Espeto de Salsichão",
+    "db_id": "64117870-e3c9-405a-9e5e-fe07073b2ff7",
+    "price": 2.84,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "90.9%"
+  },
+  {
+    "csv_name": "ESPETO SUÍNO",
+    "db_name": "Espeto de Suíno",
+    "db_id": "d6eed06f-834e-4985-ae43-bc62c2910ef1",
+    "price": 5.04,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "88.0%"
+  },
+  {
+    "csv_name": "ESPETO VEGETARIANO",
+    "db_name": "Espeto Vegetariano",
+    "db_id": "1897b038-8d2b-4364-a2d0-b8dd4469a954",
+    "price": 4.92,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "QUEIJO COALHO FESTIVAL",
+    "db_name": "Queijo Coalho Festival",
+    "db_id": "c97bc4b9-7f8c-4d96-b6d3-55918c00f41e",
+    "price": 2.45,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "CHORIZO",
+    "db_name": "Bife de Chorizo",
+    "db_id": "633442b5-4707-4299-91e4-b424323fd4cc",
+    "price": 32.87,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "63.2%"
+  },
+  {
+    "csv_name": "COSTELA",
+    "db_name": "Stella",
+    "db_id": "1c20ddf6-f226-423d-a4f8-0c7d14bb8668",
+    "price": 51.65,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "72.7%"
+  },
+  {
+    "csv_name": "COSTELINHA SUÍNA",
+    "db_name": "Costelinha Suína",
+    "db_id": "1999e69d-e56d-47e3-a632-e2120dc6eaf7",
+    "price": 35.98,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "FILÉ MIGNON EXECUTIVO - 0,18KG",
+    "db_name": "Mignon Executivo",
+    "db_id": "fe129252-fa90-48c4-bd64-b8db3f1706a6",
+    "price": 18.83,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "71.4%"
+  },
+  {
+    "csv_name": "FILÉ MIGNON REFEIÇÃO - 0,55KG 5 uni",
+    "db_name": "Mignon Refeição",
+    "db_id": "1b4bc3f8-2d93-4e6a-aeb5-9c356fb2c867",
+    "price": 51.84,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "60.9%"
+  },
+  {
+    "csv_name": "GALETO +/- 1KG",
+    "db_name": "Galeto",
+    "db_id": "9009e894-8d0d-4d4f-b6b1-2983aad229c8",
+    "price": 15.09,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "66.7%"
+  },
+  {
+    "csv_name": "HAMBÚRGUER BOV150g WESSEL 6,3kg CX42u",
+    "db_name": "Hambúrguer de Costela",
+    "db_id": "3984530e-39bf-43c2-9b34-17e14067e9f8",
+    "price": 5.67,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "44.4%"
+  },
+  {
+    "csv_name": "PICANHA EXECUTIVO - 0,16KG",
+    "db_name": "Picanha Executiva",
+    "db_id": "7a40502c-2bc6-49a3-ae7d-5a57a9f96cd3",
+    "price": 21.58,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "76.9%"
+  },
+  {
+    "csv_name": "PICANHA FATIADA - 0,65KG 5 uni",
+    "db_name": "Picanha Executiva",
+    "db_id": "7a40502c-2bc6-49a3-ae7d-5a57a9f96cd3",
+    "price": 85.78,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "38.1%"
+  },
+  {
+    "csv_name": "TÁBUA CORAÇÃO DE ALCATRA - 0,25KG 3uni",
+    "db_name": "Tábua Coração de Alcatra",
+    "db_id": "c28c3bbc-16c2-4f9d-912c-e4ec4129de24",
+    "price": 18.98,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "79.2%"
+  },
+  {
+    "csv_name": "LINGUIÇA DE PERNIL PEQUENA C/10 UN",
+    "db_name": "Linguiça de Pernil Pequena",
+    "db_id": "2db484a8-42f8-4be5-a0b5-f08481924dca",
+    "price": 21.32,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "88.5%"
+  },
+  {
+    "csv_name": "LINGUIÇA PROVOLONE ROLO",
+    "db_name": "Linguiça Caracol Provolone",
+    "db_id": "9b2c725d-bf41-40d3-952a-748b376c7591",
+    "price": 19.08,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "81.0%"
+  },
+  {
+    "csv_name": "LINGUIÇA TOSCANA NABRASA 160GR- C/7 UN",
+    "db_name": "Linguiça Toscana Grande",
+    "db_id": "7158db5f-5d8f-4512-acdb-416bcd3835f4",
+    "price": 33.33,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "64.0%"
+  },
+  {
+    "csv_name": "MEIO PÃO DE ALHO",
+    "db_name": "Meio Pão de Alho",
+    "db_id": "8934a93f-387a-4df7-b3c2-a45797693815",
+    "price": 1.22,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "PALMITO",
+    "db_name": "Palmito Metade",
+    "db_id": "f99baba4-c708-4319-b61d-895973bb403b",
+    "price": 27.6,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "63.2%"
+  },
+  {
+    "csv_name": "PASTEL GRANDE CAMARÃO - 2UN",
+    "db_name": "Pastel de Camarão",
+    "db_id": "103c8bd6-d7da-4ea6-b08d-cb2073d9a316",
+    "price": 8.87,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "75.0%"
+  },
+  {
+    "csv_name": "PASTEL GRANDE CATUPIRY - 2UN",
+    "db_name": "Pastel de Catupiry",
+    "db_id": "173096ec-4b86-4215-805e-e4ad4732f9b5",
+    "price": 5.1,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "74.4%"
+  },
+  {
+    "csv_name": "PASTEL GRANDE COSTELA - 2UN",
+    "db_name": "Pastel de Costela",
+    "db_id": "bc648ea0-6bb5-4795-8b9d-c1f9a6502d1c",
+    "price": 6.18,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "68.6%"
+  },
+  {
+    "csv_name": "PÃO DE ALHO",
+    "db_name": "Pão de Alho",
+    "db_id": "65c14bbb-bc97-49be-8d53-f7cab5bd6a6d",
+    "price": 2.92,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "BACON DEF TIRAS (HAMBÚRGUER) - 0,25KG",
+    "db_name": "Pão de Hambúrguer",
+    "db_id": "f7ee7c6c-f497-4806-855e-766f0e3e33bc",
+    "price": 13.84,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "50.0%"
+  },
+  {
+    "csv_name": "MAIONESE TEMPERADA",
+    "db_name": "Maionese Temperada",
+    "db_id": "4c7ed1a4-db37-4cc2-b7dc-abcd7a372206",
+    "price": 2.69,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "CEBOLA CARAMELIZADA SPICY",
+    "db_name": "Cebola Caramelizada",
+    "db_id": "41966054-688f-4e31-82b1-ed030c8f0444",
+    "price": 2.87,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "87.8%"
+  },
+  {
+    "csv_name": "PÃO BRIOCHE TRAD HB 48UN GERG. MESCLADO",
+    "db_name": "Pano de Chão Grande",
+    "db_id": "2a184c3f-474d-4a54-a604-6c9c7e92f17a",
+    "price": 1.65,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "27.5%"
+  },
+  {
+    "csv_name": "QUEIJO CHEDDAR VIGOR MOLHO",
+    "db_name": "Molho Cheddar Vigor",
+    "db_id": "93b4b6b5-ef16-453f-bd9b-b1605247bd42",
+    "price": 47.9,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "85.7%"
+  },
+  {
+    "csv_name": "KETCHUP 1,033kg Heinz",
+    "db_name": "Ketchup",
+    "db_id": "d59a5f30-f2ab-4655-9382-39c9802bf2fb",
+    "price": 18.25,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "48.0%"
+  },
+  {
+    "csv_name": "MOLHO AMERICANO ZAFRAN",
+    "db_name": "Molho à Campanha",
+    "db_id": "0865e045-0ec3-46cd-9bb6-9f776cacb3ad",
+    "price": 34.9,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "52.9%"
+  },
+  {
+    "csv_name": "MOSTARDA 1,1KG JUNIOR",
+    "db_name": "Mostarda Junior",
+    "db_id": "39b8df7d-1510-4ae0-bc04-b383f62d1afc",
+    "price": 18.2,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "84.8%"
+  },
+  {
+    "csv_name": "MAIONESE DE BACON 1,1KG JUNIOR",
+    "db_name": "Maionese Temperada",
+    "db_id": "4c7ed1a4-db37-4cc2-b7dc-abcd7a372206",
+    "price": 43.7,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "38.1%"
+  },
+  {
+    "csv_name": "QUEIJO CHEDDAR FATIADO - 2,27KG 150 FATIAS",
+    "db_name": "Cheddar 3 Fatias",
+    "db_id": "5dd3610a-e9e1-47d7-9817-43941422fac4",
+    "price": 2.87,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "54.2%"
+  },
+  {
+    "csv_name": "QUEIJO PROC PRATO 2,24KG VIGOR 160 FATIAS",
+    "db_name": "Queijo Coalho Festival",
+    "db_id": "c97bc4b9-7f8c-4d96-b6d3-55918c00f41e",
+    "price": 0.74,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "29.6%"
+  },
+  {
+    "csv_name": "PICKLES PEPINO RODELAS 440G HANKS",
+    "db_name": "Pickles Pepino Rodelas 440g",
+    "db_id": "134569ff-a8e6-4be9-b215-0526b0358031",
+    "price": 13.98,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "88.9%"
+  },
+  {
+    "csv_name": "PUDIM DE LEITE",
+    "db_name": "Pudim",
+    "db_id": "22d6aa63-e2ea-4645-af0d-2b74cc49ccb5",
+    "price": 2.47,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "47.1%"
+  },
+  {
+    "csv_name": "CONFIT PIMENTA BIQUINHO",
+    "db_name": "Confit de Pimenta Biquinho 500g",
+    "db_id": "87334811-2827-48eb-972a-5e481bd6d0cd",
+    "price": 10.21,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "84.6%"
+  },
+  {
+    "csv_name": "MOLHO A CAMPANHA - 2.3Kg",
+    "db_name": "Molho à Campanha",
+    "db_id": "0865e045-0ec3-46cd-9bb6-9f776cacb3ad",
+    "price": 18.95,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "85.7%"
+  },
+  {
+    "csv_name": "MOLHO GORGONZOLA - POTE 500ML",
+    "db_name": "Molho Gorgonzola 500g",
+    "db_id": "5218055c-960a-41e2-9913-3d8ca33759c3",
+    "price": 11.61,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "79.1%"
+  },
+  {
+    "csv_name": "MOLHO PESTO POTE - 0,5L",
+    "db_name": "Molho Pesto",
+    "db_id": "a38f936d-71d8-4b4f-a95e-f3f699aeeb71",
+    "price": 10.93,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "71.4%"
+  },
+  {
+    "csv_name": "ALHO TRITURADO",
+    "db_name": "Alho Triturado 500g",
+    "db_id": "f5dad3c9-00d7-4031-886c-202fea20a760",
+    "price": 10.88,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "86.7%"
+  },
+  {
+    "csv_name": "CROUTONS",
+    "db_name": "Croutons 500 ml",
+    "db_id": "7132a4a8-dc6e-43ff-a37e-a56c5991339a",
+    "price": 3.5,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "66.7%"
+  },
+  {
+    "csv_name": "FAROFA 2,5 KG",
+    "db_name": "Farofa 2,5 kg",
+    "db_id": "96c71703-cee4-466f-a400-6e5ccb2d4ac5",
+    "price": 31.15,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "FARINHA CRUA 1KG",
+    "db_name": "Farinha de Mandioca Crua",
+    "db_id": "48fae540-acd0-485e-bc60-14454af13d8d",
+    "price": 8.99,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "61.1%"
+  },
+  {
+    "csv_name": "FEIJÃO COZIDO - 3KG",
+    "db_name": "Feijão Cozido",
+    "db_id": "d27c69f9-40eb-4cf8-bd99-ed9bded73eba",
+    "price": 6.96,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "85.7%"
+  },
+  {
+    "csv_name": "ALHO FRITO 1KG",
+    "db_name": "Alho Triturado 500g",
+    "db_id": "f5dad3c9-00d7-4031-886c-202fea20a760",
+    "price": 28,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "41.4%"
+  },
+  {
+    "csv_name": "LEITE INTEGRAL",
+    "db_name": "Leite",
+    "db_id": "6d1a7a14-4e61-46c9-a90a-dae79c04a2e7",
+    "price": 5.43,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "50.0%"
+  },
+  {
+    "csv_name": "Margarina Vegetal 80% 3kg Elogiata",
+    "db_name": "Espeto Vegetariano",
+    "db_id": "1897b038-8d2b-4364-a2d0-b8dd4469a954",
+    "price": 12.17,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "39.1%"
+  },
+  {
+    "csv_name": "OVO BRANCO",
+    "db_name": "Ovos",
+    "db_id": "27834a71-f760-46f0-b1ae-aaf72942fd53",
+    "price": 0.8,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "33.3%"
+  },
+  {
+    "csv_name": "QUEIJO PARMESÃO RALADO - 0,2KG",
+    "db_name": "Queijo Ralado 500g",
+    "db_id": "9fe1e9b4-fb2d-42c2-beff-c890272a5f85",
+    "price": 16.8,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "58.5%"
+  },
+  {
+    "csv_name": "ARROZ AG LF 5kg Máximo",
+    "db_name": "Arroz",
+    "db_id": "2b640463-0d93-44c3-a0a1-52eff2b16be3",
+    "price": 27.5,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "33.3%"
+  },
+  {
+    "csv_name": "AÇÚCAR REFINADO",
+    "db_name": "Açúcar Refinado",
+    "db_id": "98c91c90-e5c1-4031-b23c-9e7ac3ba8d76",
+    "price": 4.98,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "SAL REFINADO",
+    "db_name": "Sal Refinado 1kg",
+    "db_id": "01a9a014-c905-44dc-a5c4-975cc81aea32",
+    "price": 3.46,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "84.6%"
+  },
+  {
+    "csv_name": "OLEO DE ALGODÃO 14kg ELOGIATA",
+    "db_name": "Óleo de Soja 18L",
+    "db_id": "3328c71e-f7dd-4631-8e58-7cc6cf774e49",
+    "price": 178.8,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "38.1%"
+  },
+  {
+    "csv_name": "MATE LEÃO DA CASA 1KG",
+    "db_name": "Pastel de Camarão",
+    "db_id": "103c8bd6-d7da-4ea6-b08d-cb2073d9a316",
+    "price": 47.6,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "45.7%"
+  },
+  {
+    "csv_name": "BATATA CANOA 2,5kg MCCAIN",
+    "db_name": "Batata Canoa",
+    "db_id": "a9852f43-b862-45f3-8ae5-66495da268b4",
+    "price": 46.65,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "64.3%"
+  },
+  {
+    "csv_name": "BATATA PALITO NOBREDO CX7X2KG",
+    "db_name": "Batata Palito",
+    "db_id": "6942610a-ea22-4bad-bf85-0fe98a3b5923",
+    "price": 10.15,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "57.1%"
+  },
+  {
+    "csv_name": "MANDIOCA TOLETE MATHEUS CX4X2,5",
+    "db_name": "Farinha de Mandioca Crua",
+    "db_id": "48fae540-acd0-485e-bc60-14454af13d8d",
+    "price": 15.99,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "44.0%"
+  },
+  {
+    "csv_name": "ALECRIM",
+    "db_name": "Alecrim",
+    "db_id": "ea0776c7-97d1-44c5-8a25-88cd0b8f4a72",
+    "price": 2.95,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "ALFACE AMERICANA",
+    "db_name": "Alface Americana",
+    "db_id": "66759d01-8ea9-4a1e-b547-b4947b76395f",
+    "price": 4.45,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "ALFACE CRESPA",
+    "db_name": "Alface Crespa",
+    "db_id": "cf13d304-1854-4a4b-b0c9-31576e4b63cc",
+    "price": 2.45,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "BATATA ASTERIX",
+    "db_name": "Batata Asterix",
+    "db_id": "0020fc7b-1a43-41f9-b5fc-7230b4d430e4",
+    "price": 3.95,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "BATATA CALABRESA",
+    "db_name": "Batata Calabresa",
+    "db_id": "bdd34e09-27e2-4efe-83ad-4753c73e7f53",
+    "price": 3.95,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "BRÓCOLIS COMUM",
+    "db_name": "Brócolis Comum",
+    "db_id": "92cb8513-1aac-4bd0-a3b0-30591aaffaf7",
+    "price": 4.95,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "CEBOLA ROXA",
+    "db_name": "Cebola Roxa",
+    "db_id": "5a818f55-eab3-4e0d-8104-fb6041f973e8",
+    "price": 6.95,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "LARANJA SELETA",
+    "db_name": "Fanta Laranja",
+    "db_id": "14e15f8c-4429-4f5b-ba13-37ba8436822c",
+    "price": 3.56,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "66.7%"
+  },
+  {
+    "csv_name": "LIMÃO",
+    "db_name": "Mate Limão",
+    "db_id": "3f57d8ca-dca8-4fdb-acb1-54b0e950aa52",
+    "price": 3.45,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "66.7%"
+  },
+  {
+    "csv_name": "LIMÃO SICILIANO",
+    "db_name": "Limão Siciliano Saco 0,8 kg",
+    "db_id": "2cd541a7-04ad-40d5-9ff6-8dc44c2c5554",
+    "price": 12.95,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "76.5%"
+  },
+  {
+    "csv_name": "SALSA CRESPA",
+    "db_name": "Salsa Crespa",
+    "db_id": "6ca63fbf-4363-4c90-9d0f-7b696de92a47",
+    "price": 3.95,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "TOMATE SALADA",
+    "db_name": "Tomate",
+    "db_id": "3f59ffcd-c0fd-430c-8f13-4911c322c46a",
+    "price": 6.95,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "58.8%"
+  },
+  {
+    "csv_name": "TOMATE GRAPE",
+    "db_name": "Tomate Grape",
+    "db_id": "ed60a68e-762c-4d8c-8acd-1bde82693072",
+    "price": 7.99,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "RUCULA",
+    "db_name": "Rúcula",
+    "db_id": "7a93d810-1c42-438f-9c09-9df842091fda",
+    "price": 1.99,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "Azeite Composto 5,02L Lisboa Blend",
+    "db_name": "Azeite de Oliva 60%",
+    "db_id": "ec33d209-8a30-48ea-b335-74c1542b3c8f",
+    "price": 17.31,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "33.3%"
+  },
+  {
+    "csv_name": "Azeitona Fatiada Preta 2kg WWL",
+    "db_name": "Azeitona Preta 500g",
+    "db_id": "46caf6da-e52f-4209-9b1a-a677e5985b37",
+    "price": 33.4,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "59.1%"
+  },
+  {
+    "csv_name": "MELADO - 0,5KG",
+    "db_name": "Melado 500g",
+    "db_id": "4577744a-8e11-450b-b0c2-28d0472292fc",
+    "price": 58,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "57.1%"
+  },
+  {
+    "csv_name": "MILHO TORRADO C/ MOSTARDA E MEL - 0,25KG",
+    "db_name": "Milho Torrado C/ Mostarda e Mel 250g",
+    "db_id": "386dde09-ca07-43aa-b50a-0a7fc029595e",
+    "price": 15.79,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "87.9%"
+  },
+  {
+    "csv_name": "PIMENTA TABASCO",
+    "db_name": "Pimenta Tabasco",
+    "db_id": "815d273e-ef31-43cc-b249-39985a687295",
+    "price": 20.97,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "AZEITE SALÃO",
+    "db_name": "Azeite do Salão",
+    "db_id": "9f1c7e01-c3cc-4fe8-8e2d-2b149249ff52",
+    "price": 23.76,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "88.0%"
+  },
+  {
+    "csv_name": "VINAGRE - 0,75L",
+    "db_name": "Vinagre",
+    "db_id": "772a35c0-8295-41f9-adca-cc78b90cda98",
+    "price": 3.98,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "66.7%"
+  },
+  {
+    "csv_name": "CHIMICHURRI - 0,2KG",
+    "db_name": "Chimichurri 200g",
+    "db_id": "8e1d948d-52ad-4875-ae94-b59a1d1835d1",
+    "price": 14.76,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "69.0%"
+  },
+  {
+    "csv_name": "LEMON PEPPER - 0,4KG",
+    "db_name": "Lemon Pepper 400g",
+    "db_id": "ca7e7bf8-26b1-4741-b69b-81e731772bbe",
+    "price": 25.68,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "71.0%"
+  },
+  {
+    "csv_name": "LOURO - 0,01KG",
+    "db_name": "Louro Saquinho",
+    "db_id": "6b585fbb-3945-47c5-a05e-217ea1d3d948",
+    "price": 3.24,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "41.7%"
+  },
+  {
+    "csv_name": "SAL DE PARRILLA - PORÇÃO",
+    "db_name": "Sal Parrilla 500g",
+    "db_id": "28621149-1cce-4a03-aaef-44671b6d5b31",
+    "price": 6.54,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "64.9%"
+  },
+  {
+    "csv_name": "SAL TEMPERADO 200G",
+    "db_name": "Sal Temperado 200g",
+    "db_id": "6bfd303b-a8df-4285-a2ba-eaf5d65f4675",
+    "price": 5.47,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "Chopp Brahma Claro 50L Barril",
+    "db_name": "Chopp Barril 50L",
+    "db_id": "890f0d52-3bb7-40f9-ab70-276ebede4bd5",
+    "price": 710,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "73.2%"
+  },
+  {
+    "csv_name": "Cerv Heineken Pils 12x473ml",
+    "db_name": "Heineken Zero",
+    "db_id": "f1b984b2-6a84-4841-a4cc-c44f03bb8271",
+    "price": 6.63,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "47.4%"
+  },
+  {
+    "csv_name": "Cerv Heineken 0.0% LN 330ml",
+    "db_name": "Heineken Zero",
+    "db_id": "f1b984b2-6a84-4841-a4cc-c44f03bb8271",
+    "price": 5.94,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "51.4%"
+  },
+  {
+    "csv_name": "Coca-Cola Zero Lata 350ml",
+    "db_name": "Coca Lata Zero",
+    "db_id": "c28c6148-4c28-4fc0-b91e-8f3d322f9e3b",
+    "price": 3.01,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "75.0%"
+  },
+  {
+    "csv_name": "Coca-Cola Lata 350ml",
+    "db_name": "Coca Lata",
+    "db_id": "103c3599-0e0b-4d2b-85ae-b7c72c870fe0",
+    "price": 3.02,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "69.6%"
+  },
+  {
+    "csv_name": "Coca-Cola Original PET 1,5L",
+    "db_name": "Coca 1,5L",
+    "db_id": "636885f0-4ac7-45bf-a4d8-a20bd4a1817a",
+    "price": 7.05,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "46.7%"
+  },
+  {
+    "csv_name": "Coca-Cola zero PET 1,5L",
+    "db_name": "Coca 1,5L Zero",
+    "db_id": "561ebfe5-35ab-4826-b66f-033925b4a5eb",
+    "price": 7.04,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "71.0%"
+  },
+  {
+    "csv_name": "Dell Vale Uva Lata 290ml",
+    "db_name": "Del Valle Uva",
+    "db_id": "5a3e5bb7-bf8f-47f5-86c5-98730442dd3e",
+    "price": 2.75,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "68.8%"
+  },
+  {
+    "csv_name": "Dell Vale Pessego Lata 290ml",
+    "db_name": "Del Valle Pêssego",
+    "db_id": "4e7be33a-b5ce-4e0f-b3d2-3a2793206e94",
+    "price": 2.75,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "74.4%"
+  },
+  {
+    "csv_name": "Sprit Lata 350ml",
+    "db_name": "Coca Lata",
+    "db_id": "103c3599-0e0b-4d2b-85ae-b7c72c870fe0",
+    "price": 2.75,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "43.5%"
+  },
+  {
+    "csv_name": "Fanta Uva Lata 350ml",
+    "db_name": "Fanta Uva",
+    "db_id": "77d994ad-a9be-429b-a86c-1ef0b1729f1b",
+    "price": 2.75,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "66.7%"
+  },
+  {
+    "csv_name": "Fanta Laranja Lata 350ml",
+    "db_name": "Fanta Laranja",
+    "db_id": "14e15f8c-4429-4f5b-ba13-37ba8436822c",
+    "price": 2.75,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "78.6%"
+  },
+  {
+    "csv_name": "Matte Leão Limão WF PET 300ml CX12",
+    "db_name": "Mate Limão",
+    "db_id": "3f57d8ca-dca8-4fdb-acb1-54b0e950aa52",
+    "price": 3.01,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "43.2%"
+  },
+  {
+    "csv_name": "Matte Leão Natural WF PET 300ml CX12",
+    "db_name": "Mate Limão",
+    "db_id": "3f57d8ca-dca8-4fdb-acb1-54b0e950aa52",
+    "price": 2.99,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "29.3%"
+  },
+  {
+    "csv_name": "Matte Leão Natural Zero WF PET 300ml",
+    "db_name": "Mate Zero",
+    "db_id": "7e3ba9b0-9952-4477-ad08-57ab879b7f05",
+    "price": 2.99,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "39.0%"
+  },
+  {
+    "csv_name": "Ice Tea Limão PET 300ml CX12",
+    "db_name": "Ice Tea Limão",
+    "db_id": "5853a9d5-5c06-4e0c-85b6-610d868b51c0",
+    "price": 2.99,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "61.5%"
+  },
+  {
+    "csv_name": "Ice Tea Pêssego PET 300ml CX12",
+    "db_name": "Ice Tea Pêssego",
+    "db_id": "b8f00f65-ab8a-4e54-b4a9-898f6b2f1325",
+    "price": 2.99,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "68.3%"
+  },
+  {
+    "csv_name": "Água c/ gás Cristal",
+    "db_name": "Água com Gás",
+    "db_id": "a26e05bc-74ce-4553-ae79-a58e7f237bc9",
+    "price": 2.17,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "59.3%"
+  },
+  {
+    "csv_name": "Água s/ gas Cristal",
+    "db_name": "Água com Gás",
+    "db_id": "a26e05bc-74ce-4553-ae79-a58e7f237bc9",
+    "price": 1.75,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "59.3%"
+  },
+  {
+    "csv_name": "Guaraná Antarctica Lata 350ml 12 unid",
+    "db_name": "Guaraná Lata",
+    "db_id": "d5b3638a-f75c-470e-9058-83d35200bc81",
+    "price": 2.7,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "52.4%"
+  },
+  {
+    "csv_name": "Guaraná Antarctica zero Lata 350ml 12 unid",
+    "db_name": "Guaraná 1,5L Zero",
+    "db_id": "1b191099-a66f-426c-a8ed-2bf130677d94",
+    "price": 2.7,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "51.0%"
+  },
+  {
+    "csv_name": "Guaraná Antarctica zero 1,5 6 unid",
+    "db_name": "Guaraná 1,5L Zero",
+    "db_id": "1b191099-a66f-426c-a8ed-2bf130677d94",
+    "price": 4.69,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "59.1%"
+  },
+  {
+    "csv_name": "Guaraná Antarctica 1,5L 6 unid",
+    "db_name": "Guaraná 1,5L",
+    "db_id": "82b3bd68-d244-4f83-b183-b6d2dd25508b",
+    "price": 4.68,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "57.1%"
+  },
+  {
+    "csv_name": "H2OH Limoneto C/Gás PET 500ml CX12",
+    "db_name": "H2O Limoneto 1,5L",
+    "db_id": "880e4923-5f91-4487-978b-9b93d2559c7d",
+    "price": 3.29,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "50.0%"
+  },
+  {
+    "csv_name": "H2OH Limão C/Gás PET 500ml CX12",
+    "db_name": "H2O Limoneto 1,5L",
+    "db_id": "880e4923-5f91-4487-978b-9b93d2559c7d",
+    "price": 3.29,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "33.3%"
+  },
+  {
+    "csv_name": "Red Bull Lata 250ml SixPack",
+    "db_name": "Red Bull",
+    "db_id": "64286d5a-e1b0-4495-aa83-6a7fb4c96a2c",
+    "price": 5.54,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "43.8%"
+  },
+  {
+    "csv_name": "Hocus Pocus Orange Sunshine GFA 500ml CX6",
+    "db_name": "Hocus Pocus Orange",
+    "db_id": "2f69064b-7ac0-4428-bc34-3bca3bff3a79",
+    "price": 12.5,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "54.2%"
+  },
+  {
+    "csv_name": "Hocus Pocus Magic 500 ml cx 6",
+    "db_name": "Hocus Pocus Magic",
+    "db_id": "ea7bbcdc-3758-4435-83db-9ef7b7a3f189",
+    "price": 9.38,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "68.6%"
+  },
+  {
+    "csv_name": "Stella Artois Long Neck 330ml SixPack SH4",
+    "db_name": "Linguiça Caracol Provolone",
+    "db_id": "9b2c725d-bf41-40d3-952a-748b376c7591",
+    "price": 5.84,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "26.7%"
+  },
+  {
+    "csv_name": "Stella Artois Pure Gold LN 330ml SP SH4",
+    "db_name": "Stella Pure Gold",
+    "db_id": "6f9cd0c0-1ddd-4dc9-808f-c4300fbbe966",
+    "price": 6.18,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "57.7%"
+  },
+  {
+    "csv_name": "Tônica Antarctica Lata 350ml SH12",
+    "db_name": "Guaraná Lata",
+    "db_id": "d5b3638a-f75c-470e-9058-83d35200bc81",
+    "price": 3.51,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "36.8%"
+  },
+  {
+    "csv_name": "CAPSULA DE CAFÉ",
+    "db_name": "Cápsula de Café Lavazza",
+    "db_id": "98210f79-eb3a-4ca7-9037-41f8677947d9",
+    "price": 6.56,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "81.3%"
+  },
+  {
+    "csv_name": "MALZIBIER BRAHMA lata 350ml c/12",
+    "db_name": "Batata Calabresa",
+    "db_id": "bdd34e09-27e2-4efe-83ad-4753c73e7f53",
+    "price": 4.59,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "34.1%"
+  },
+  {
+    "csv_name": "Absolut Original Garrafa 1L",
+    "db_name": "Master Cloro Garrafa 1L",
+    "db_id": "dc165583-bef4-4e99-8469-63b59b74ef71",
+    "price": 54.78,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "45.8%"
+  },
+  {
+    "csv_name": "Aperol 750ml",
+    "db_name": "Aperitivo Aperol 750ml",
+    "db_id": "7167badb-a529-43b8-b6ed-615ec5597ead",
+    "price": 43.95,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "75.9%"
+  },
+  {
+    "csv_name": "Zanella Merlot Vinho tinto 750ml",
+    "db_name": "Aperitivo Aperol 750ml",
+    "db_id": "7167badb-a529-43b8-b6ed-615ec5597ead",
+    "price": 82.5,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "34.0%"
+  },
+  {
+    "csv_name": "Zanella Chardonnay Vinho branco 750ml",
+    "db_name": "Costela Bovina",
+    "db_id": "03bef5e6-1f06-4fa3-835a-85c00a303884",
+    "price": 89,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "34.0%"
+  },
+  {
+    "csv_name": "Zanella Blanc de Blanc - Espumante 750ml",
+    "db_name": "Stella Pure Gold",
+    "db_id": "6f9cd0c0-1ddd-4dc9-808f-c4300fbbe966",
+    "price": 75,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "32.6%"
+  },
+  {
+    "csv_name": "Da quinta - Cachaça 500ml",
+    "db_name": "Cachaça Da Quinta",
+    "db_id": "9272ed99-bcd4-4fd3-8445-852a223b4df4",
+    "price": 78.72,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "75.0%"
+  },
+  {
+    "csv_name": "Werneck - Cachaça 750ml",
+    "db_name": "Cachaça Werneck",
+    "db_id": "a1615281-16f5-4124-b0fd-a786522d5bf0",
+    "price": 98.9,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "71.0%"
+  },
+  {
+    "csv_name": "Smirnoff - Vodka 600ml",
+    "db_name": "Vodka Smirnoff",
+    "db_id": "c5d55b73-176c-4346-8004-57db558d8ff2",
+    "price": 36.3,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "72.7%"
+  },
+  {
+    "csv_name": "Salinas imburana - Cachaça 1l",
+    "db_name": "Cachaça Salinas",
+    "db_id": "a184d8f7-e6a8-4857-bddd-c43d362cff26",
+    "price": 69.18,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "62.9%"
+  },
+  {
+    "csv_name": "Salinas Cristalina - Cachaça 1l",
+    "db_name": "Cachaça Salinas",
+    "db_id": "a184d8f7-e6a8-4857-bddd-c43d362cff26",
+    "price": 19.9,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "66.7%"
+  },
+  {
+    "csv_name": "Sagatiba - Cachaça 700ml",
+    "db_name": "Cachaça Salinas",
+    "db_id": "a184d8f7-e6a8-4857-bddd-c43d362cff26",
+    "price": 21.9,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "38.7%"
+  },
+  {
+    "csv_name": "Lua Nova - Cachaça 1l",
+    "db_name": "Cachaça Lua Nova",
+    "db_id": "cefde562-fd16-4f9c-be7a-292893f17144",
+    "price": 48.07,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "81.5%"
+  },
+  {
+    "csv_name": "Charmosa de minas - Cachaça 980ml",
+    "db_name": "Cachaça Charmosa de Minas",
+    "db_id": "7c3c7c5f-81a5-43e2-9183-3f2f22a71874",
+    "price": 39.58,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "84.4%"
+  },
+  {
+    "csv_name": "51 - Cachaça 965lm",
+    "db_name": "Cachaça 51",
+    "db_id": "1b942abd-0bcf-485f-8cb9-3e02fb58fa9a",
+    "price": 18,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "57.1%"
+  },
+  {
+    "csv_name": "Seleta - Cachaça 1l",
+    "db_name": "Cachaça Seleta",
+    "db_id": "f53a12e9-d0ee-40cb-a4f8-8b2ea64fb1fc",
+    "price": 49.97,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "80.0%"
+  },
+  {
+    "csv_name": "Licor 43 700ml",
+    "db_name": "Licor 43",
+    "db_id": "3a2ceeea-5bfd-4da6-88f9-f71d66bb53f5",
+    "price": 134.3,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "70.0%"
+  },
+  {
+    "csv_name": "Salton Brut 750ml",
+    "db_name": "Croutons 500 ml",
+    "db_id": "7132a4a8-dc6e-43ff-a37e-a56c5991339a",
+    "price": 24.9,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "33.3%"
+  },
+  {
+    "csv_name": "Surrender Vinho Cabernet Sauvignon/Merlot 3L",
+    "db_name": "Louro Saquinho",
+    "db_id": "6b585fbb-3945-47c5-a05e-217ea1d3d948",
+    "price": 3.76,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "31.4%"
+  },
+  {
+    "csv_name": "CANUDO SHAKE IT´S BIO 3000 - PCT 100",
+    "db_name": "Canudo Biodegradável PCT 100",
+    "db_id": "98106b32-66d9-4b8d-af27-471ea6f593a8",
+    "price": 3,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "56.1%"
+  },
+  {
+    "csv_name": "EMBALAGEM DE ISOPOR CARNE - 100UN",
+    "db_name": "Embalagem Isopor Carne",
+    "db_id": "bc213058-a3ac-47f9-a023-6784c3be88a3",
+    "price": 105.15,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "81.6%"
+  },
+  {
+    "csv_name": "EMBALAGEM DE ISOPOR EXECUTIVO - 100UN",
+    "db_name": "Embalagem Executivo",
+    "db_id": "65e5b2e5-7d9c-4ebd-82e0-0eaa034f8a72",
+    "price": 144.6,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "66.7%"
+  },
+  {
+    "csv_name": "EMBALAGEM TAMPA EXECUTIVO - 100UN",
+    "db_name": "Embalagem Executivo",
+    "db_id": "65e5b2e5-7d9c-4ebd-82e0-0eaa034f8a72",
+    "price": 148.94,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "72.3%"
+  },
+  {
+    "csv_name": "EMBALAGEM DE ISOPOR HAMBURG - 100UN",
+    "db_name": "Embalagem Isopor Hamburgueira",
+    "db_id": "d95ac249-90e8-4a8e-bb7b-4ed6a1742ebd",
+    "price": 32.4,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "73.7%"
+  },
+  {
+    "csv_name": "GUARDANAPO SIMPLES",
+    "db_name": "Guardanapo Simples",
+    "db_id": "a6f2ec2e-3abe-4ea1-95ef-69befdf2f42a",
+    "price": 1.4,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "PAPEL ACOPLADO PERSON PCT1KG",
+    "db_name": "Papel Acoplado 1kg",
+    "db_id": "92a4d545-c4b0-4e60-9b7e-0a1fc66aa5e8",
+    "price": 42.9,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "76.2%"
+  },
+  {
+    "csv_name": "POTE 30ML - 50UN",
+    "db_name": "Pote 30 ml (50)",
+    "db_id": "88f7c373-0acc-4669-a121-50cb36ade646",
+    "price": 13.9,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "76.9%"
+  },
+  {
+    "csv_name": "POTE 60ML - 100UN",
+    "db_name": "Pote 60 ml",
+    "db_id": "f349f208-b891-4199-93b4-25bc7529642a",
+    "price": 30.79,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "58.3%"
+  },
+  {
+    "csv_name": "POTE 145ML - 25UN",
+    "db_name": "Pote 145 ml (25)",
+    "db_id": "c4d4e486-f8e0-4909-94cb-cd3fb4daf056",
+    "price": 7.8,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "78.6%"
+  },
+  {
+    "csv_name": "POTE 250ML - 25UN",
+    "db_name": "Pote 250 ml (25)",
+    "db_id": "a9cc728c-5819-4029-abbd-a080244cdb64",
+    "price": 12.67,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "75.0%"
+  },
+  {
+    "csv_name": "POTE 500ML - 25UN",
+    "db_name": "Pote 500 ml (25)",
+    "db_id": "bbcf2a4f-cf7d-4862-9c82-30c26257b2f5",
+    "price": 17.9,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "78.6%"
+  },
+  {
+    "csv_name": "QUENTINHA 500ML - 100UN",
+    "db_name": "Quentinha 1100ml",
+    "db_id": "6189df8a-a6a2-4845-9c01-3eb703898a46",
+    "price": 63.6,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "80.0%"
+  },
+  {
+    "csv_name": "QUENTINHA 1100ML - 100UN",
+    "db_name": "Quentinha 1100ml",
+    "db_id": "6189df8a-a6a2-4845-9c01-3eb703898a46",
+    "price": 136.8,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "88.2%"
+  },
+  {
+    "csv_name": "QUENTINHA 220ML - 100UN",
+    "db_name": "Quentinha 220ml",
+    "db_id": "26d6a6c8-075d-4ede-ad72-67ef1fc33508",
+    "price": 44.4,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "80.0%"
+  },
+  {
+    "csv_name": "SACO DELIVERY (M) - 50UN",
+    "db_name": "Saco Delivery M",
+    "db_id": "a91a6cd1-c9c9-4669-acfb-4962d6a8577c",
+    "price": 32.34,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "82.4%"
+  },
+  {
+    "csv_name": "SACO DELIVERY (G) - 50UN",
+    "db_name": "Saco Delivery G",
+    "db_id": "beba5fac-8281-48a3-a075-c6b45ba6c395",
+    "price": 44.85,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "82.4%"
+  },
+  {
+    "csv_name": "SACO DELIVERY (GG) - 50UN",
+    "db_name": "Saco Delivery GG",
+    "db_id": "c522d230-2373-461f-831b-0478d0d3c039",
+    "price": 61.89,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "83.3%"
+  },
+  {
+    "csv_name": "SACO EMBALAR TALHER PERSO - PCT 200",
+    "db_name": "Saco Embalar Talher Personalizado",
+    "db_id": "3f26aa15-faf8-4444-b482-618a1603b4ab",
+    "price": 16.69,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "75.0%"
+  },
+  {
+    "csv_name": "SACOLA VERDE P - 110unid",
+    "db_name": "Sacola Verde P 110unid",
+    "db_id": "d7c1eeb3-ca8b-4e11-b070-43092d14eb5c",
+    "price": 6.34,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "97.7%"
+  },
+  {
+    "csv_name": "SACOLA BRANCA 100unid",
+    "db_name": "Sacola Verde P 110unid",
+    "db_id": "d7c1eeb3-ca8b-4e11-b070-43092d14eb5c",
+    "price": 57.6,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "60.0%"
+  },
+  {
+    "csv_name": "SALADEIRA 1000ML",
+    "db_name": "Saladeira 1000 ml",
+    "db_id": "abd74641-4e61-4dea-8232-2d36208cbba1",
+    "price": 1.44,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "89.7%"
+  },
+  {
+    "csv_name": "SALADEIRA 500ML",
+    "db_name": "Saladeira 500 ml",
+    "db_id": "ef2e1436-b04f-4914-8964-c42414904859",
+    "price": 1.07,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "89.7%"
+  },
+  {
+    "csv_name": "FITA KRAFT",
+    "db_name": "Fita Delivery",
+    "db_id": "2518cff3-63f4-4da1-aafd-2a0dddbba6b7",
+    "price": 15.83,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "38.1%"
+  },
+  {
+    "csv_name": "TINTA ETIQUETADORA (PAPEL BRANCO)",
+    "db_name": "Etiqueta NaBrasa Ouro",
+    "db_id": "9e1188c7-e34a-4421-98d3-303d8d8d6666",
+    "price": 1.79,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "41.9%"
+  },
+  {
+    "csv_name": "CANUDO DRINK",
+    "db_name": "Maracujá para Drink",
+    "db_id": "14ccf165-61ab-43f3-96a5-536255304681",
+    "price": 5.63,
+    "category": "embalagem",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "38.5%"
+  },
+  {
+    "csv_name": "BOBINA PICOTADA 16X30 ROLO",
+    "db_name": "Bobina Picotada 16x30 Rolo",
+    "db_id": "9e16e020-49f3-4077-937e-7d9103d1b70a",
+    "price": 5.22,
+    "category": "uso_consumo",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "100.0%"
+  },
+  {
+    "csv_name": "BOBINA PICOTE 30X40 - ROLO MEDIA 1,71KG",
+    "db_name": "Bobina Picote 30x40 Rolo 1,71kg",
+    "db_id": "125bc89e-51dc-45da-8f55-52cdb19a14cc",
+    "price": 6.6,
+    "category": "uso_consumo",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "90.6%"
+  },
+  {
+    "csv_name": "BOBINA PICOTE 40X60 - ROLO MEDIA 2,36KG",
+    "db_name": "Bobina Picote 40x60 Rolo 2,36kg",
+    "db_id": "6e9b81db-e19e-4e0f-aa3a-b3d6ecf1c8f7",
+    "price": 12.31,
+    "category": "uso_consumo",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "90.6%"
+  },
+  {
+    "csv_name": "BOBINA PICOTE 20X35 - ROLO MEDIA 1,71KG",
+    "db_name": "Bobina Picote 30x40 Rolo 1,71kg",
+    "db_id": "125bc89e-51dc-45da-8f55-52cdb19a14cc",
+    "price": 94.18,
+    "category": "uso_consumo",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "75.0%"
+  },
+  {
+    "csv_name": "BOBINA TERMICA AMARELA 79X30 CX30- UNI",
+    "db_name": "Bobina Térmica Amarela 79x30 CX30",
+    "db_id": "7fa70459-d582-485c-87c2-e962ce6751c7",
+    "price": 59.4,
+    "category": "uso_consumo",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "94.9%"
+  },
+  {
+    "csv_name": "SACHE SAL ITA 2000 - PCT 100",
+    "db_name": "Sachê Sal ITA PCT 100",
+    "db_id": "23769627-941c-4982-90a8-170e29cc3ae7",
+    "price": 21.48,
+    "category": "uso_consumo",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "90.5%"
+  },
+  {
+    "csv_name": "CLORIN VERDURAS",
+    "db_name": "Frutas Vermelhas para Drink",
+    "db_id": "f10355ba-7c58-4441-9a53-f637c01fb18a",
+    "price": 1.17,
+    "category": "uso_consumo",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "36.8%"
+  },
+  {
+    "csv_name": "BILHETINHO",
+    "db_name": "Milho",
+    "db_id": "ba46c4b3-e13a-4768-a4fc-a43bf9f41566",
+    "price": 3.47,
+    "category": "uso_consumo",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "46.2%"
+  },
+  {
+    "csv_name": "DESINFETANTE LAVANDA - 5LT",
+    "db_name": "Desinfetante Audax 5L",
+    "db_id": "8ece193d-d026-4d34-b5d5-879ec6c2c374",
+    "price": 5,
+    "category": "limpeza",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "69.8%"
+  },
+  {
+    "csv_name": "Detergente 500ml Neutro CX24",
+    "db_name": "Detergente 500ml Odd Neutro",
+    "db_id": "e99c56f6-1b52-41be-a844-abf09b2282a6",
+    "price": 9.2,
+    "category": "limpeza",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "82.4%"
+  },
+  {
+    "csv_name": "ESPONJA 3M DUPLA FACE UND",
+    "db_name": "Esponja 3M Dupla Face",
+    "db_id": "17c8b28d-cde9-4118-ad91-a81e0113ba41",
+    "price": 11.8,
+    "category": "limpeza",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "90.5%"
+  },
+  {
+    "csv_name": "ESPONJA FIBRACO 3M LIMPEZA PESADA Grande",
+    "db_name": "Esponja Fibraco 3M Limpeza Pesada",
+    "db_id": "c189efbe-61d3-428a-a780-6ddbac3da400",
+    "price": 5.95,
+    "category": "limpeza",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "92.1%"
+  },
+  {
+    "csv_name": "LUVA LIMPEZA UND",
+    "db_name": "Luva de Limpeza",
+    "db_id": "12597aff-9514-4732-8c54-49d38245d0ad",
+    "price": 5.81,
+    "category": "limpeza",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "78.6%"
+  },
+  {
+    "csv_name": "ÁLCOOL LÍQUIDO - 70% 1L",
+    "db_name": "Álcool Líquido 70%",
+    "db_id": "c8e7a139-9259-4421-9c47-bf58a4d63634",
+    "price": 5.98,
+    "category": "limpeza",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "88.9%"
+  },
+  {
+    "csv_name": "SACO DE LIXO 100L",
+    "db_name": "Sachê Palito Dental PCT 100",
+    "db_id": "09c4b0db-d76a-4591-89ad-db1f8897953c",
+    "price": 1,
+    "category": "limpeza",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "51.3%"
+  },
+  {
+    "csv_name": "PAPEL TOALHA",
+    "db_name": "Papel Toalha Rolo Snob PCT2",
+    "db_id": "f5a17810-0877-4457-94b6-a52c35f8fed9",
+    "price": 2.21,
+    "category": "limpeza",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "59.5%"
+  },
+  {
+    "csv_name": "PAPEL FUNCIONARIO",
+    "db_name": "Acém Funcionário",
+    "db_id": "7ba70c27-28e9-446c-8126-e93142b61093",
+    "price": 6.89,
+    "category": "limpeza",
+    "affects_cmv": false,
+    "affects_avg_cost": false,
+    "confidence": "69.0%"
+  },
+  {
+    "csv_name": "CARNE MOIDA",
+    "db_name": "Carne para Hambúrguer",
+    "db_id": "1daefd70-2c09-4b32-a5d9-ef47183f89a3",
+    "price": 60.5,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "34.5%"
+  },
+  {
+    "csv_name": "COXA COM SOBRECOXA",
+    "db_name": "Coxa com Sobrecoxa Funcionário",
+    "db_id": "043cbdae-c5eb-430f-b9c0-36bdeac507bf",
+    "price": 14.76,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "72.2%"
+  },
+  {
+    "csv_name": "FILE FRANGO",
+    "db_name": "Filé Frango Funcionário",
+    "db_id": "31ca5d34-989d-47f1-b664-db4b03c2ecd0",
+    "price": 2.76,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "66.7%"
+  },
+  {
+    "csv_name": "DRUMETE",
+    "db_name": "Drumete Funcionário",
+    "db_id": "ae5af7d3-39d5-4e35-8802-9bbe2736e12b",
+    "price": 5.47,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "52.2%"
+  },
+  {
+    "csv_name": "PEIXE",
+    "db_name": "Leite",
+    "db_id": "6d1a7a14-4e61-46c9-a90a-dae79c04a2e7",
+    "price": 24.72,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "25.0%"
+  },
+  {
+    "csv_name": "LINGUIÇA",
+    "db_name": "Linguiça Toscana Grande",
+    "db_id": "7158db5f-5d8f-4512-acdb-416bcd3835f4",
+    "price": 2.88,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "53.8%"
+  },
+  {
+    "csv_name": "CAFÉ KG",
+    "db_name": "Cápsula de Café Lavazza",
+    "db_id": "98210f79-eb3a-4ca7-9037-41f8677947d9",
+    "price": 29.98,
+    "category": "cmv",
+    "affects_cmv": true,
+    "affects_avg_cost": true,
+    "confidence": "32.0%"
+  }
+]
