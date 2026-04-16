@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { LayoutGrid, Package, CalendarSync, History, TrendingUp } from 'lucide-react'
+import { LayoutGrid, Package, CalendarSync, History, TrendingUp, ClipboardCheck } from 'lucide-react'
 
 export default function AdminHome() {
     const router = useRouter()
@@ -46,6 +46,16 @@ export default function AdminHome() {
                 <div>
                     <h3 className="font-bold text-gray-900 text-lg">Histórico de Ciclos</h3>
                     <p className="text-sm text-gray-500">Consultar execuções passadas por período</p>
+                </div>
+            </button>
+
+            <button onClick={() => router.push('/dashboard/admin/checklists')} className="w-full bg-white border border-gray-200 p-5 rounded-2xl flex items-center text-left hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm space-x-4 active:scale-95">
+                <div className="bg-red-100 p-3 rounded-xl">
+                    <ClipboardCheck className="w-6 h-6 text-[#B13A2B]" />
+                </div>
+                <div>
+                    <h3 className="font-bold text-gray-900 text-lg">Auditoria & Ranking</h3>
+                    <p className="text-sm text-gray-500">Conferir checklists concluídos e fotos de evidência</p>
                 </div>
             </button>
 

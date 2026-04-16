@@ -219,3 +219,75 @@ export async function completeChecklistSessionAction(sessionId: string) {
         return { success: false, error: error.message }
     }
 }
+
+/**
+ * Busca todas as sessões concluídas (Histórico para o Gerente)
+ */
+export async function getAllChecklistSessionsAction() {
+    try {
+        const { data, error } = await supabase
+            .from('checklist_sessions')
+            .select(`
+                *,
+                checklist_templates(name, context),
+                users(name)
+            `)
+            .eq('status', 'completed')
+            .order('completed_at', { ascending: false })
+
+        if (error) throw error
+        return { success: true, data }
+    } catch (error: any) {
+        console.error('Error fetching all checklist sessions:', error)
+        return { success: false, error: error.message }
+    }
+}
+
+/**
+ * Busca detalhes completos de uma sessão específica para auditoria
+ */
+export async function getChecklistSessionDetailsAction(sessionId: string) {
+    try {
+        // 1. Busca dados da sessão
+        const { data: session, error: sError } = await supabase
+            .from('checklist_sessions')
+            .select(`
+                *,
+                checklist_templates(name, description, context),
+                users(name)
+            `)
+            .eq('id', sessionId)
+            .single()
+
+        if (sError) throw sError
+
+        // 2. Busca itens do template
+        const { data: templateItems, error: tiError } = await supabase
+            .from('checklist_template_items')
+            .select('*')
+            .eq('template_id', session.template_id)
+            .order('display_order')
+
+        if (tiError) throw tiError
+
+        // 3. Busca respostas da sessão
+        const { data: responses, error: rError } = await supabase
+            .from('checklist_session_items')
+            .select('*')
+            .eq('session_id', sessionId)
+
+        if (rError) throw rError
+
+        return { 
+            success: true, 
+            data: { 
+                session, 
+                items: templateItems as ChecklistTemplateItem[], 
+                responses 
+            } 
+        }
+    } catch (error: any) {
+        console.error('Error fetching session details for audit:', error)
+        return { success: false, error: error.message }
+    }
+}
