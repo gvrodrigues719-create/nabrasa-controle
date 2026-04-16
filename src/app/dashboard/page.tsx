@@ -106,12 +106,12 @@ export default function DashboardPage() {
                             <Calendar className="w-3.5 h-3.5" />
                             <span className="text-[10px] font-bold uppercase tracking-widest">{todayDate}</span>
                         </div>
-                        {rankPosition && (weeklyPoints ?? 0) > 0 && (
+                        {userRole === 'operator' && rankPosition && (weeklyPoints ?? 0) > 0 && (
                             <span className="text-[10px] font-black text-[#b13a2b] uppercase tracking-widest bg-red-50 border border-red-100 px-2 py-0.5 rounded-full">
                                 #{rankPosition} na semana
                             </span>
                         )}
-                        {(!rankPosition || (weeklyPoints ?? 0) === 0) && !loading && (
+                        {userRole === 'operator' && (!rankPosition || (weeklyPoints ?? 0) === 0) && !loading && (
                              <span className="text-[10px] font-bold text-[#8c716c] uppercase tracking-widest bg-[#F5F4F1] border border-[#e9e8e5] px-2 py-0.5 rounded-full">
                                 Inicie sua jornada
                             </span>
@@ -127,65 +127,67 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                {/* ── HERO DE PROGRESSO (ESTADO OPERACIONAL) ── */}
-                <div className="bg-[#1b1c1a] rounded-[32px] p-5 shadow-2xl relative overflow-hidden group">
-                    {/* Visual Decor */}
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#B13A2B] to-transparent opacity-10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700" />
-                    <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-5 rounded-full -ml-12 -mb-12" />
+                {/* ── HERO DE PROGRESSO (ESTADO OPERACIONAL) ── EXIBIR APENAS PARA OPERADORES */}
+                {userRole === 'operator' && (
+                    <div className="bg-[#1b1c1a] rounded-[32px] p-5 shadow-2xl relative overflow-hidden group">
+                        {/* Visual Decor */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#B13A2B] to-transparent opacity-10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700" />
+                        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-5 rounded-full -ml-12 -mb-12" />
 
-                    <div className="relative z-10">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center space-x-2">
-                                <div className="p-1.5 bg-white/10 rounded-lg">
-                                    <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                        <div className="relative z-10">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center space-x-2">
+                                    <div className="p-1.5 bg-white/10 rounded-lg">
+                                        <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                                    </div>
+                                    <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">Minha Operação</span>
                                 </div>
-                                <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">Minha Operação</span>
+                                <Link href="/dashboard/routines" className="text-[9px] font-black text-[#B13A2B] uppercase tracking-widest bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-full transition-colors">
+                                    Detalhes
+                                </Link>
                             </div>
-                            <Link href="/dashboard/routines" className="text-[9px] font-black text-[#B13A2B] uppercase tracking-widest bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-full transition-colors">
-                                Detalhes
-                            </Link>
-                        </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Pontos da semana</p>
-                                <div className="flex items-baseline space-x-1">
-                                    <span className="text-3xl font-black text-white tracking-tighter">
-                                        {loading ? '--' : weeklyPoints ?? 0}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Pontos da semana</p>
+                                    <div className="flex items-baseline space-x-1">
+                                        <span className="text-3xl font-black text-white tracking-tighter">
+                                            {loading ? '--' : weeklyPoints ?? 0}
+                                        </span>
+                                        <span className="text-xs font-bold text-[#B13A2B]">PTS</span>
+                                    </div>
+                                    {weeklyPoints === 0 && !loading && (
+                                        <p className="text-[9px] font-medium text-white/30 italic mt-1">Inicie sua jornada</p>
+                                    )}
+                                </div>
+                                <div className="border-l border-white/5 pl-4">
+                                    <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Pontos totais</p>
+                                    <div className="flex items-baseline space-x-1">
+                                        <span className="text-xl font-bold text-white/90 tracking-tight">
+                                            {loading ? '--' : userPoints ?? 0}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Progress Visual Hint */}
+                            <div className="mt-5">
+                                <div className="flex justify-between items-center mb-1.5">
+                                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">
+                                        {rankPosition && (weeklyPoints ?? 0) > 0 ? `Sua posição é #${rankPosition} na semana` : 'Sem pontuação registrada nesta semana'}
                                     </span>
-                                    <span className="text-xs font-bold text-[#B13A2B]">PTS</span>
+                                    <span className="text-[9px] font-black text-[#B13A2B] uppercase">Meta Semanal</span>
                                 </div>
-                                {weeklyPoints === 0 && !loading && (
-                                    <p className="text-[9px] font-medium text-white/30 italic mt-1">Inicie sua jornada</p>
-                                )}
-                            </div>
-                            <div className="border-l border-white/5 pl-4">
-                                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Pontos totais</p>
-                                <div className="flex items-baseline space-x-1">
-                                    <span className="text-xl font-bold text-white/90 tracking-tight">
-                                        {loading ? '--' : userPoints ?? 0}
-                                    </span>
+                                <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                    <div 
+                                        className="h-full bg-gradient-to-r from-[#B13A2B] to-[#df3f2d] rounded-full transition-all duration-1000" 
+                                        style={{ width: `${Math.min(((weeklyPoints ?? 0) / 1000) * 100, 100)}%` }}
+                                    />
                                 </div>
-                            </div>
-                        </div>
-
-                        {/* Progress Visual Hint */}
-                        <div className="mt-5">
-                            <div className="flex justify-between items-center mb-1.5">
-                                <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">
-                                    {rankPosition && (weeklyPoints ?? 0) > 0 ? `Sua posição é #${rankPosition} na semana` : 'Sem pontuação registrada nesta semana'}
-                                </span>
-                                <span className="text-[9px] font-black text-[#B13A2B] uppercase">Meta Semanal</span>
-                            </div>
-                            <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                <div 
-                                    className="h-full bg-gradient-to-r from-[#B13A2B] to-[#df3f2d] rounded-full transition-all duration-1000" 
-                                    style={{ width: `${Math.min(((weeklyPoints ?? 0) / 1000) * 100, 100)}%` }}
-                                />
                             </div>
                         </div>
                     </div>
-                </div>
+                )}
 
                 {/* ── CARD OPERACIONAL (MOC HUB) ── */}
                 <section>
