@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { getStartOfOperationalWeek } from '@/lib/dateUtils'
+import { triggerMissionValidationAction } from './missionAction'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -69,7 +70,7 @@ export async function recordPointsAction(
 
 /**
  * Registra um evento de VEDAÇÃO (comportamento que protege a operação).
- * Fire-and-forget seguro: erros aqui nunca interrompem o fluxo operacional.
+ * Na Fase 2, este disparo passa atuar pela engrenagem de Missões Operacionais (que cuida de Pts e Moedas).
  */
 export async function recordSealingEventAction(
     userId: string,
@@ -77,31 +78,10 @@ export async function recordSealingEventAction(
     sourceId: string
 ) {
     try {
-        const points = SEALING_POINTS[type]
-        const reasons: Record<string, string> = {
-            checklist_on_time:    'Checklist concluído no prazo. A operação seguiu o padrão.',
-            session_clean_close:  'Setor conferido sem abandono. Contagem limpa.',
-            routine_zero_rupture: 'Rotina concluída sem ruptura. Estoque protegido.',
-        }
-
-        const { error } = await supabase
-            .from('gamification_events')
-            .insert([{
-                user_id: userId,
-                source_type: type,
-                source_id: sourceId,
-                points,
-                reason: reasons[type]
-            }])
-
-        // Ignora duplicatas (idempotente)
-        if (error && error.code !== '23505') {
-            console.error(`[Sealing] Falha ao registrar evento ${type}:`, error.message)
-        }
-
+        await triggerMissionValidationAction(userId, type, sourceId)
         return { success: true }
     } catch (err: any) {
-        console.error('[Sealing] Erro inesperado:', err.message)
+        console.error('[Sealing->Mission] Erro inesperado:', err.message)
         return { success: false }
     }
 }
