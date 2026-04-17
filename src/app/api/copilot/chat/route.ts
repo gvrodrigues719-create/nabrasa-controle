@@ -11,12 +11,18 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 export async function POST(req: Request) {
+  console.log('[Copilot] ▶ POST /api/copilot/chat recebido')
   try {
-    const { messages, userId, conversationId } = await req.json()
+    const body = await req.json()
+    const { messages, userId, conversationId } = body
+    console.log('[Copilot] payload:', { userId, conversationId, messagesCount: messages?.length, lastRole: messages?.at(-1)?.role })
 
     if (!messages || messages.length === 0) {
+      console.warn('[Copilot] ⚠ mensagens ausentes')
       return NextResponse.json({ error: 'Mensagens não fornecidas' }, { status: 400 })
     }
+
+    console.log('[Copilot] GOOGLE_GENERATIVE_AI_API_KEY presente:', !!process.env.GOOGLE_GENERATIVE_AI_API_KEY)
 
     // 1. Contexto Vivo (Live Data)
     let userContext = `Usuário não autenticado.`
@@ -80,7 +86,7 @@ Regras obrigatórias:
 - Responda de forma curta, prática e operacional.
 - Nunca invente regra, dado ou procedimento.
 - Se a base não for suficiente, diga claramente que não encontrou regra segura e oriente procurar o líder responsável.
-- Priorize respostas sobre contagem, checklist, validade, perdas, organização, execução de rotina e dúvidas operacionais.
+- Priorize respostas sobre contagem, checklist, validade, perdas, organization, execução de rotina e dúvidas operacionais.
 - Quando houver dados reais do usuário, use esses dados para responder de forma contextual.
 - Quando houver fontes internas disponíveis, baseie a resposta nelas.
 - Não responda como professor, consultor, guru ou vendedor.
@@ -109,18 +115,18 @@ ${faqContext}
 ${userContext}
 `
 
-    console.log(`[Copilot] ▶ POST recebido`)
-    console.log(`[Copilot] GOOGLE_GENERATIVE_AI_API_KEY presente: ${!!process.env.GOOGLE_GENERATIVE_AI_API_KEY}`)
-
     // 4. Stream com Gemini
-    const result = await streamText({
-      model: google('gemini-1.5-flash'), // O usuário mencionou gemini flash no resumo
+    console.log('[Copilot] chamando streamText com gemini-2.5-flash...')
+    const result = streamText({
+      model: google('gemini-2.5-flash'),
       system: systemPrompt,
       messages,
-      temperature: 0.2, // Baixa para forçar objetividade e prevenir alucinações (inventar regras)
+      temperature: 0.2,
+      onFinish: ({ text }) => console.log('[Copilot] ✓ resposta gerada, chars:', text.length),
     })
 
-    console.log(`[Copilot] ✓ resposta gerada`)
+    // CORREÇÃO: toUIMessageStreamResponse() — formato esperado pelo DefaultChatTransport no SDK v6
+    // toTextStreamResponse() devolve texto puro; useChat (SDK v6) espera UIMessage stream → resposta sumia
     return result.toUIMessageStreamResponse()
 
   } catch (error: any) {
