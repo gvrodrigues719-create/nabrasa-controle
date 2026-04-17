@@ -38,16 +38,16 @@ export default function EfficiencyReservoir({
     const damageLevel = score < 70 ? 3 : score < 90 ? 2 : hasAnyDamage ? 1 : 0
 
     return (
-        <div className="bg-white rounded-[40px] p-8 shadow-[0_20px_50px_rgba(0,0,0,0.08)] border border-[#e9e8e5] overflow-hidden relative group/card">
+        <div className="bg-white rounded-[40px] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.08)] border border-[#e9e8e5] overflow-hidden relative group/card">
             
             {/* Decoração superior sutil */}
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-transparent via-[#B13A2B]/20 to-transparent opacity-40" />
 
-            <div className="flex items-center gap-12">
+            <div className="flex items-center gap-8">
                 
                 {/* REPRESENTAÇÃO VISUAL: RESERVATÓRIO GIGANTE (Protagonista V6) */}
                 <div className="relative shrink-0 flex items-center justify-center py-2">
-                    <div className="relative w-36 h-64 bg-[#F8F7F4] rounded-b-[48px] rounded-t-2xl border-[6px] border-[#dcdad6] shadow-[inset_0_4px_24px_rgba(0,0,0,0.08),0_12px_32px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col justify-end">
+                    <div className="relative w-32 h-56 bg-[#F8F7F4] rounded-b-[44px] rounded-t-2xl border-[6px] border-[#dcdad6] shadow-[inset_0_4px_24px_rgba(0,0,0,0.08),0_12px_32px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col justify-end">
                         
                         {/* Camada de Vidro: Reflexos High-End */}
                         <div className="absolute top-0 left-4 w-3 h-full bg-white opacity-20 blur-[2px] pointer-events-none z-30" />
@@ -93,8 +93,8 @@ export default function EfficiencyReservoir({
                                         <path
                                             d="M 28 208 L 36 212 L 32 222 M 36 212 L 50 218 L 47 228"
                                             fill="none"
-                                            stroke="rgba(0,0,0,0.55)"
-                                            strokeWidth={damageLevel === 1 ? "0.9" : "1.3"}
+                                            stroke="rgba(0,0,0,0.4)"
+                                            strokeWidth={damageLevel === 1 ? "0.6" : "0.9"}
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
                                         />
@@ -102,15 +102,15 @@ export default function EfficiencyReservoir({
                                         <path
                                             d="M 36 212 L 40 207"
                                             fill="none"
-                                            stroke="rgba(0,0,0,0.3)"
-                                            strokeWidth="0.7"
+                                            stroke="rgba(0,0,0,0.25)"
+                                            strokeWidth="0.5"
                                             strokeLinecap="round"
                                         />
                                         {/* Ponto de impacto: área branca interna simulando ruptura */}
-                                        <circle cx="36" cy="212" r={damageLevel === 1 ? "1.5" : "2.5"}
-                                            fill="rgba(255,255,255,0.6)"
-                                            stroke="rgba(0,0,0,0.4)"
-                                            strokeWidth="0.8"
+                                        <circle cx="36" cy="212" r={damageLevel === 1 ? "1.2" : "2"}
+                                            fill="rgba(255,255,255,0.5)"
+                                            stroke="rgba(0,0,0,0.35)"
+                                            strokeWidth="0.7"
                                         />
                                     </g>
 
@@ -121,8 +121,8 @@ export default function EfficiencyReservoir({
                                             <path
                                                 d="M 126 142 L 110 150 L 118 166 M 110 150 L 92 143 M 110 150 L 106 140"
                                                 fill="none"
-                                                stroke="rgba(0,0,0,0.6)"
-                                                strokeWidth="1.5"
+                                                stroke="rgba(0,0,0,0.5)"
+                                                strokeWidth="1.2"
                                                 strokeLinecap="round"
                                                 strokeLinejoin="round"
                                             />
@@ -130,14 +130,14 @@ export default function EfficiencyReservoir({
                                             <path
                                                 d="M 110 150 L 115 145 M 110 150 L 104 156 M 110 150 L 116 154"
                                                 fill="none"
-                                                stroke="rgba(0,0,0,0.2)"
-                                                strokeWidth="0.6"
+                                                stroke="rgba(0,0,0,0.15)"
+                                                strokeWidth="0.5"
                                                 strokeLinecap="round"
                                             />
-                                            <circle cx="110" cy="150" r="3"
-                                                fill="rgba(255,255,255,0.5)"
-                                                stroke="rgba(0,0,0,0.45)"
-                                                strokeWidth="0.9"
+                                            <circle cx="110" cy="150" r="2.5"
+                                                fill="rgba(255,255,255,0.4)"
+                                                stroke="rgba(0,0,0,0.35)"
+                                                strokeWidth="0.8"
                                             />
                                         </g>
                                     )}
@@ -227,7 +227,7 @@ export default function EfficiencyReservoir({
                                 >
                                     <path
                                         d="M9 0 C9 0 0 10 0 15 C0 19.4 4 22 9 22 C14 22 18 19.4 18 15 C18 10 9 0 9 0Z"
-                                        fill="rgba(30,60,100,0.6)"
+                                        fill="rgba(30,60,100,0.55)"
                                     />
                                     <ellipse cx="6" cy="13" rx="1.5" ry="2.5" fill="rgba(255,255,255,0.18)" />
                                 </svg>
@@ -270,7 +270,7 @@ export default function EfficiencyReservoir({
                             <div>
                                 <h4 className="text-[11px] font-black text-[#8c716c] uppercase tracking-widest mb-3 flex items-center gap-2">
                                     <Package className="w-3.5 h-3.5" />
-                                    Desperdício Acumulado
+                                    Perdas da semana
                                 </h4>
                                 <div className="space-y-2 pl-4 border-l-2 border-[#eeebe7]">
                                     {weeklyLeaks.slice(0, 2).map(leak => (

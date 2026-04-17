@@ -61,9 +61,11 @@ export default function OperatorContributionCard({ weeklyPoints, totalPoints, ra
                         <span className="text-[10px] font-black text-emerald-700">+{lastSealing.points} PTS</span>
                     </div>
                 ) : (
-                    <p className="text-[11px] font-medium text-[#c0b3b1] italic">
-                        Realize vedações para ganhar destaque aqui.
-                    </p>
+                    <div className="bg-[#F8F7F4] p-3 rounded-xl border border-dashed border-[#eeedea]">
+                        <p className="text-[11px] font-medium text-[#c0b3b1] italic">
+                            Sua próxima vedação aparecerá aqui.
+                        </p>
+                    </div>
                 )}
             </div>
         </div>

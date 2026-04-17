@@ -23,7 +23,7 @@ export default function OperationAI({ onClick }: Props) {
                     </div>
                     <div>
                         <h3 className="font-bold text-white text-lg leading-tight">Ajuda da Operação</h3>
-                        <p className="text-sm text-white/50 mt-0.5 font-medium">Tire dúvidas sobre estoque e processos</p>
+                        <p className="text-sm text-white/50 mt-0.5 font-medium">Tire dúvidas sobre estoque, perdas e organização</p>
                     </div>
                 </div>
                 <div className="bg-white/10 p-2 rounded-xl text-white/60 group-hover:text-white transition-colors">
