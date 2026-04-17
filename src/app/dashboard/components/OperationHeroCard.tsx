@@ -48,12 +48,9 @@ export default function OperationHeroCard({
 
     // ═══ MODO RESERVATÓRIO ═══
     const getLevelGradient = () => {
-        if (score === 100) return 'from-[#8c716c] via-[#b69a94] to-[#dcd0ce]'
-        if (score >= 80) return 'from-[#8c716c] via-[#bd948a] to-[#ebbcae]'
-        if (score >= 60) return 'from-[#a24936] via-[#cb654f] to-[#efa18a]'
-        return 'from-[#B13A2B] via-[#d65140] to-[#f87f6e]'
+        return 'from-blue-700 via-blue-500 to-blue-400'
     }
-    const dropColor = score >= 80 ? '#c48f81' : score >= 60 ? '#cb654f' : '#B13A2B'
+    const dropColor = 'rgba(30,60,100,0.72)'
 
     const getStatusInfo = () => {
         if (score === 100) return { label: 'Íntegra', color: 'text-emerald-700', dot: 'bg-emerald-500', pulse: false }
@@ -124,30 +121,39 @@ export default function OperationHeroCard({
                             {damageLevel > 0 && (
                                 <div className="absolute inset-0 z-40 pointer-events-none">
                                     <svg viewBox="0 0 80 160" className="w-full h-full opacity-90">
-                                        {/* Sinais de desgaste iniciais (Level 1+) -> Fissuras capilares, sem vazamento */}
-                                        <path d="M 55 40 Q 60 45 58 55" fill="none" stroke="#ffffff" strokeWidth="0.8" strokeLinecap="round" />
-                                        <path d="M 56 41 Q 61 46 58 54" fill="none" stroke="rgba(0,0,0,0.3)" strokeWidth="0.5" strokeLinecap="round" />
-                                        
-                                        <path d="M 15 110 L 20 115 L 18 122" fill="none" stroke="#ffffff" strokeWidth="0.8" strokeLinejoin="round" />
-                                        <path d="M 16 111 L 20 114 L 18 121" fill="none" stroke="rgba(0,0,0,0.3)" strokeWidth="0.5" strokeLinejoin="round" />
-
-                                        {/* Dano perceptível (Level 2+) -> Fissura estrutural central */}
-                                        {damageLevel >= 2 && (
+                                        {/* 1. Topo (Aparece a partir do Nível 1: 80-99%) */}
+                                        {damageLevel >= 1 && (
                                             <g>
-                                                <path d="M 28 135 L 39 125 L 42 128 L 52 118" fill="none" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                                                <path d="M 29 135 L 39 126 L 42 129 L 52 119" fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                                                <path d="M 39 125 L 44 116" fill="none" stroke="rgba(0,0,0,0.4)" strokeWidth="0.8" strokeLinecap="round" />
-                                                <circle cx="39" cy="125" r="1" fill="rgba(0,0,0,0.5)" />
+                                                <path d="M 20 20 L 30 35 L 28 45" fill="none" stroke="#ffffff" strokeWidth="0.8" strokeLinejoin="round" />
+                                                <path d="M 21 21 L 30 36 L 28 46" fill="none" stroke="rgba(0,0,0,0.3)" strokeWidth="0.5" strokeLinejoin="round" />
                                             </g>
                                         )}
 
-                                        {/* Dano Crítico (Level 3+) -> Fissura profunda e ramificada no topo */}
+                                        {/* O dano no Topo fica mais evidente no Nível 2 */}
+                                        {damageLevel >= 2 && (
+                                            <g>
+                                                <path d="M 30 35 L 42 30" fill="none" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" />
+                                                <path d="M 31 36 L 42 31" fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth="1" strokeLinecap="round" />
+                                                <path d="M 28 45 L 35 55" fill="none" stroke="rgba(0,0,0,0.4)" strokeWidth="0.6" strokeLinecap="round" />
+                                            </g>
+                                        )}
+
+                                        {/* 2. Meio (Aparece no Nível 2: 60-79%) */}
+                                        {damageLevel >= 2 && (
+                                            <g>
+                                                <path d="M 50 65 L 60 75 L 63 85" fill="none" stroke="#ffffff" strokeWidth="1.2" strokeLinejoin="round" />
+                                                <path d="M 50 66 L 59 75 L 62 85" fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth="1" strokeLinejoin="round" />
+                                                <circle cx="50" cy="65" r="1.5" fill="rgba(0,0,0,0.5)" />
+                                            </g>
+                                        )}
+
+                                        {/* 3. Fundo (Aparece no Nível 3: < 60%) */}
                                         {damageLevel >= 3 && (
                                             <g>
-                                                <path d="M 8 35 L 20 45 L 18 55 L 32 62" fill="none" stroke="#ffffff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                                                <path d="M 9 36 L 20 46 L 19 56 L 31 62" fill="none" stroke="rgba(0,0,0,0.7)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                <path d="M 20 45 L 28 36" fill="none" stroke="rgba(0,0,0,0.5)" strokeWidth="1" strokeLinecap="round" />
-                                                <circle cx="20" cy="45" r="1.5" fill="rgba(0,0,0,0.6)" />
+                                                <path d="M 15 110 L 25 125 L 35 120" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeLinejoin="round" />
+                                                <path d="M 16 111 L 26 125 L 34 121" fill="none" stroke="rgba(0,0,0,0.8)" strokeWidth="1.5" strokeLinejoin="round" />
+                                                <path d="M 25 125 L 20 140" fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth="1.2" strokeLinejoin="round" />
+                                                <circle cx="25" cy="125" r="2" fill="rgba(0,0,0,0.7)" />
                                             </g>
                                         )}
                                     </svg>
@@ -160,17 +166,17 @@ export default function OperationHeroCard({
                         {/* VAZAMENTOS EXTATOS NAS FISSURAS */}
                         {damageLevel >= 2 && (
                             <div className="absolute inset-0 z-50 pointer-events-none">
-                                {/* VAZAMENTO 1 (Sai da fissura M 39 125 -> X=39, Y=125) */}
-                                <div className="absolute flex flex-col items-center" style={{ top: '122px', left: '35px' }}>
+                                {/* VAZAMENTO 1 (Sai da fissura média M 50 65 -> X=50, Y=65) */}
+                                <div className="absolute flex flex-col items-center" style={{ top: '62px', left: '46px' }}>
                                     <div className="w-1.5 h-1.5 rounded-full animate-ping opacity-60" style={{ backgroundColor: dropColor, animationDuration: '2s' }} />
                                     <svg className="absolute top-0 animate-[reservoir-drip_2s_infinite]" style={{ width: '8px', height: '12px' }} viewBox="0 0 18 22" fill={dropColor}>
                                         <path d="M9 0 C9 0 0 10 0 15 C0 19.4 4 22 9 22 C14 22 18 19.4 18 15 C18 10 9 0 9 0Z" />
                                     </svg>
                                 </div>
 
-                                {/* VAZAMENTO 2 (Sai da fissura crítica M 20 45 -> X=20, Y=45) */}
+                                {/* VAZAMENTO 2 (Sai da fissura inferior M 25 125 -> X=25, Y=125) */}
                                 {damageLevel >= 3 && (
-                                    <div className="absolute flex flex-col items-center" style={{ top: '42px', left: '15px' }}>
+                                    <div className="absolute flex flex-col items-center" style={{ top: '122px', left: '21px' }}>
                                         <div className="w-2 h-2 rounded-full animate-ping opacity-60" style={{ backgroundColor: dropColor, animationDuration: '1.5s', animationDelay: '0.4s' }} />
                                         <svg className="absolute top-0 animate-[reservoir-drip_1.5s_infinite_0.4s]" style={{ width: '10px', height: '14px' }} viewBox="0 0 18 22" fill={dropColor}>
                                             <path d="M9 0 C9 0 0 10 0 15 C0 19.4 4 22 9 22 C14 22 18 19.4 18 15 C18 10 9 0 9 0Z" />
