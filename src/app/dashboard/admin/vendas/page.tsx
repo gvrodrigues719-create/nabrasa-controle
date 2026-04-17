@@ -402,27 +402,17 @@ export default function VendasPage() {
 
         <div className="space-y-3">
           {visibleSessions.map((s) => {
-            const bill: any = Array.isArray(s.bills) ? s.bills[0] : undefined
+            const bill = s.bills[0]
             const totalProducts = parseFloat(bill?.total_price ?? '0')
             const totalService = parseFloat(bill?.total_service_price ?? '0')
             const discount = parseFloat(bill?.total_discount ?? '0')
-            const paymentNames = Array.isArray(s.payments)
-              ? s.payments.map(p => p?.payment_method?.name).filter(Boolean).join(', ')
-              : ''
-
-            // Itens: percorre defensivamente (bill.order_baskets → orders), ou bill.orders direto,
-            // ou session.order_baskets — estrutura real da API pode variar entre tenants.
-            const ordersForBill: any[] =
-              Array.isArray(bill?.order_baskets)
-                ? bill.order_baskets.flatMap((b: any) => Array.isArray(b?.orders) ? b.orders : [])
-                : Array.isArray(bill?.orders)
-                  ? bill.orders
-                  : Array.isArray((s as any).order_baskets)
-                    ? (s as any).order_baskets.flatMap((b: any) => Array.isArray(b?.orders) ? b.orders : [])
-                    : []
-            const itemCount = ordersForBill
-              .flatMap((o: any) => Array.isArray(o?.order_products) ? o.order_products : [])
-              .reduce((acc: number, p: any) => acc + (Number(p?.amount) || 0), 0)
+            const paymentNames = s.payments.map(p => p.payment_method.name).join(', ')
+            
+            // Itens: soma das quantidades (amount) para consistência com o resumo
+            const itemCount = bill?.order_baskets
+              .flatMap(b => b.orders)
+              .flatMap(o => o.order_products)
+              .reduce((acc, p) => acc + (p.amount || 0), 0) ?? 0
 
             return (
               <div
