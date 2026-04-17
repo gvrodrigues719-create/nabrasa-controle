@@ -254,7 +254,7 @@ function DashboardContent() {
                 )}
 
                 {/* ── META DA CASA E FOCO (NOVO BLOCO MOC) ── */}
-                {userRole === 'operator' && !loading && (
+                {!loading && (userRole === 'operator' || ['admin', 'manager'].includes(userRole || '')) && (
                     <div className="space-y-6">
                         {cmvStatus && (
                             <HouseGoalCard 
