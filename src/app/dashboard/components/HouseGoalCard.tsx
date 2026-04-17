@@ -39,6 +39,8 @@ export default function HouseGoalCard({ current, target, status, message }: Prop
 
     const { icon, bgColor, borderColor, textColor, label } = config[status]
 
+    const hasData = current > 0
+
     return (
         <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e9e8e5]">
             <div className="flex items-center justify-between mb-6">
@@ -55,7 +57,9 @@ export default function HouseGoalCard({ current, target, status, message }: Prop
             <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
                     <p className="text-[10px] font-bold text-[#8c716c] uppercase tracking-widest mb-1">CMV Atual</p>
-                    <span className="text-2xl font-black text-[#1b1c1a] tracking-tight">{formatPerc(current)}</span>
+                    <span className={`text-2xl font-black tracking-tight ${hasData ? 'text-[#1b1c1a]' : 'text-[#c0b3b1] text-lg'}`}>
+                        {hasData ? formatPerc(current) : 'Sem leitura'}
+                    </span>
                 </div>
                 <div className="border-l border-[#eeedea] pl-4">
                     <p className="text-[10px] font-bold text-[#8c716c] uppercase tracking-widest mb-1">Meta Semana</p>

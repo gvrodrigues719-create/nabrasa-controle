@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { ClipboardList, ShieldCheck, Settings, Flame, TrendingUp, Calendar, ArrowRight, ListChecks, Zap, Star } from 'lucide-react'
+import { ClipboardList, ShieldCheck, Settings, Flame, TrendingUp, Calendar, ArrowRight, ListChecks, Zap, Star, LayoutGrid } from 'lucide-react'
 import { getActiveOperator } from '@/app/actions/pinAuth'
 import { getActiveRoutinesAction } from '@/app/actions/routinesAction'
 import { getOperatorSummaryAction, getLastSealingAction } from '@/app/actions/gamificationAction'
@@ -19,7 +20,10 @@ import ActionGrid from './components/ActionGrid'
 import OperationAI from './components/OperationAI'
 import OperationAIDrawer from './components/OperationAIDrawer'
 
-export default function DashboardPage() {
+function DashboardContent() {
+    const searchParams = useSearchParams()
+    const isDemoMode = searchParams.get('demo') === 'true' || searchParams.get('demo') === '1'
+
     // null = ainda não sabe o role (evita flash de conteúdo com role errado)
     const [userRole, setUserRole] = useState<string | null>(null)
     const [userName, setUserName] = useState<string>('')
@@ -39,6 +43,8 @@ export default function DashboardPage() {
     const [cmvStatus, setCmvStatus] = useState<any>(null)
     const [lastSealing, setLastSealing] = useState<any>(null)
     const [isAIDrawerOpen, setIsAIDrawerOpen] = useState(false)
+    const [topRanking, setTopRanking] = useState<{ name: string, points: number, rank: number }[]>([])
+    const [weeklyFocus, setWeeklyFocus] = useState<string | undefined>()
 
     useEffect(() => {
         async function loadData() {
@@ -112,6 +118,50 @@ export default function DashboardPage() {
             if (cmvRes.success) setCmvStatus((cmvRes as any).data)
             if (lastSealRes.success) setLastSealing((lastSealRes as any).data)
 
+            // ── SOBREPOSIÇÃO DE MODO DEMO (Se ativo) ──
+            if (isDemoMode) {
+                setHealthScore(84)
+                setActiveLeaks([
+                    { id: 'fake-1', label: 'Picanha', type: 'reported_loss', severity: 'critical', penalty: 2 },
+                    { id: 'fake-2', label: 'Alcatra', type: 'reported_loss', severity: 'critical', penalty: 2 }
+                ])
+                setWeeklyLeaks([
+                    { id: 'fake-3', label: 'Coca 1.5L', type: 'reported_loss', severity: 'warning', penalty: 1 }
+                ])
+                setCombinedTop3([
+                    { id: 'fake-1', label: 'Picanha', type: 'reported_loss', severity: 'critical', penalty: 2 },
+                    { id: 'fake-2', label: 'Alcatra', type: 'reported_loss', severity: 'critical', penalty: 2 },
+                    { id: 'fake-3', label: 'Coca 1.5L', type: 'reported_loss', severity: 'warning', penalty: 1 }
+                ])
+                setCmvStatus({
+                    current: 0.36,
+                    target: 0.32,
+                    status: 'critical',
+                    message: 'Atenção: Estamos acima da meta da semana.'
+                })
+                setWeeklyPoints(850)
+                setRankPosition(6)
+                setUserPoints(4200)
+                setLastSealing({
+                    reason: 'Checklist de abertura concluído no prazo',
+                    points: 50,
+                    created_at: new Date().toISOString()
+                })
+                setTopRanking([
+                    { name: 'Dalva', points: 1540, rank: 1 },
+                    { name: 'Gisele', points: 1420, rank: 2 },
+                    { name: 'Dayana', points: 1280, rank: 3 },
+                    { name: 'Antonia', points: 1150, rank: 4 },
+                    { name: 'Caio', points: 980, rank: 5 },
+                    { name: 'Rafael', points: 850, rank: 6 },
+                    { name: 'Vinicius', points: 720, rank: 7 },
+                    { name: 'Mayara', points: 610, rank: 8 }
+                ])
+                setWeeklyFocus('Reduzir desperdício em carnes nobres e registrar perdas no momento certo.')
+                setUserRole('operator')
+                if (!userName) setUserName('Rafael')
+            }
+
             setLoading(false)
         }
         loadData()
@@ -143,8 +193,16 @@ export default function DashboardPage() {
                         NaBrasa Controle
                     </span>
                 </div>
+                
+                {isDemoMode && (
+                    <div className="flex items-center gap-1.5 bg-indigo-50 text-indigo-700 border border-indigo-100 px-3 py-1 rounded-full animate-pulse shadow-sm">
+                        <LayoutGrid className="w-3.5 h-3.5" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Cenário Demo</span>
+                    </div>
+                )}
+
                 <div className="w-10 h-10 rounded-2xl bg-white border border-[#e9e8e5] flex items-center justify-center shadow-sm">
-                    <span className="text-sm font-bold text-[#B13A2B]">{userName.charAt(0).toUpperCase()}</span>
+                    <span className="text-sm font-bold text-[#B13A2B]">{userName ? userName.charAt(0).toUpperCase() : 'U'}</span>
                 </div>
             </div>
 
@@ -199,13 +257,14 @@ export default function DashboardPage() {
                                 message={cmvStatus.message}
                             />
                         )}
-                        <WeeklyFocusCard />
-
+                        <WeeklyFocusCard focus={weeklyFocus} />
+                        
                         <OperatorContributionCard 
                             weeklyPoints={weeklyPoints ?? 0}
                             totalPoints={userPoints ?? 0}
                             rankPosition={rankPosition}
                             lastSealing={lastSealing}
+                            topRanking={topRanking}
                         />
                     </div>
                 )}
@@ -355,5 +414,13 @@ export default function DashboardPage() {
                 onClose={() => setIsAIDrawerOpen(false)}
             />
         </div>
+    )
+}
+
+export default function DashboardPage() {
+    return (
+        <Suspense fallback={<div>Carregando...</div>}>
+            <DashboardContent />
+        </Suspense>
     )
 }

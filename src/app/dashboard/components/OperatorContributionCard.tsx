@@ -12,9 +12,10 @@ interface Props {
         points: number
         created_at: string
     } | null
+    topRanking?: { name: string, points: number, rank: number }[]
 }
 
-export default function OperatorContributionCard({ weeklyPoints, totalPoints, rankPosition, lastSealing }: Props) {
+export default function OperatorContributionCard({ weeklyPoints, totalPoints, rankPosition, lastSealing, topRanking }: Props) {
     return (
         <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e9e8e5] relative overflow-hidden">
             <div className="flex items-center justify-between mb-6">
@@ -45,6 +46,34 @@ export default function OperatorContributionCard({ weeklyPoints, totalPoints, ra
                     </div>
                 </div>
             </div>
+
+            {/* RANKING SEMANAL (MOCK / REAL) */}
+            {topRanking && topRanking.length > 0 && (
+                <div className="mb-8 pt-6 border-t border-dashed border-[#eeedea]">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                        <span className="text-[9px] font-black text-[#8c716c] uppercase tracking-widest">Destaques da Semana</span>
+                    </div>
+                    <div className="space-y-2">
+                        {topRanking.slice(0, 3).map((item, idx) => (
+                            <div key={idx} className="flex items-center justify-between text-sm">
+                                <div className="flex items-center gap-3">
+                                    <span className={`w-4 text-[10px] font-black ${idx === 0 ? 'text-amber-500' : 'text-[#c0b3b1]'}`}>
+                                        {item.rank}
+                                    </span>
+                                    <span className="font-bold text-[#1b1c1a]">{item.name}</span>
+                                </div>
+                                <span className="text-[10px] font-black text-[#58413e]">{item.points} PTS</span>
+                            </div>
+                        ))}
+                        {topRanking.length > 3 && (
+                            <div className="pt-1 text-center">
+                                <p className="text-[9px] font-bold text-[#c0b3b1] uppercase tracking-widest">Ver ranking completo</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* ÚLTIMO DESTAQUE / VEDAÇÃO */}
             <div className="pt-6 border-t border-dashed border-[#eeedea]">
