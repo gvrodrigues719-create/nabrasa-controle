@@ -38,7 +38,6 @@ export default function OperationThermometer({
     const MIN_TEMP = 30
     const MAX_TEMP = 95
     const displayTemp = Math.round(MIN_TEMP + ((100 - score) / 100) * (MAX_TEMP - MIN_TEMP))
-    const mercuryFill = (displayTemp - MIN_TEMP) / (MAX_TEMP - MIN_TEMP) // 0..1
 
     const getStatusConfig = () => {
         if (displayTemp <= 35) return {
@@ -104,12 +103,13 @@ export default function OperationThermometer({
     }
 
     // Altura do mercúrio no tubo (140px de altura útil)
+    // Piso visual de 30%: mesmo na operação ideal o mercúrio fica a 30% do tubo
+    // A partir daí sobe conforme a temperatura aumenta
     const TUBE_HEIGHT = 140
-    const mercuryHeight = Math.round(mercuryFill * TUBE_HEIGHT)  // px preenchidos
-    const mercuryY = 16 + TUBE_HEIGHT - mercuryHeight            // y de início do liquid
-
-    // Posição da marca "IDEAL" no tubo (30°C = base = y=156)
-    const IDEAL_Y = 156  // sempre na base (ponto mais frio)
+    const VISUAL_MIN = 0.30  // 30% = nível ideal (piso visual)
+    const mercuryFill = VISUAL_MIN + ((displayTemp - MIN_TEMP) / (MAX_TEMP - MIN_TEMP)) * (1 - VISUAL_MIN)
+    const mercuryHeight = Math.round(mercuryFill * TUBE_HEIGHT)
+    const mercuryY = 16 + TUBE_HEIGHT - mercuryHeight
 
 
     return (
@@ -129,9 +129,9 @@ export default function OperationThermometer({
                 {/* ═══════════ TERMÔMETRO SVG ═══════════ */}
                 <div className="relative shrink-0 flex items-center justify-center py-2">
                     <svg 
-                        width="72" 
+                        width="108" 
                         height="220" 
-                        viewBox="0 0 72 220" 
+                        viewBox="0 0 108 220" 
                         fill="none"
                         className="drop-shadow-lg"
                     >
@@ -177,25 +177,22 @@ export default function OperationThermometer({
                         </defs>
 
                         {/* ─── GLOW DE CALOR (fundo, só quando quente) ─── */}
-                        {mercuryFill > 0.3 && (
-                            <rect x="0" y="0" width="72" height="80" fill="url(#heat-glow)" />
+                        {mercuryFill > 0.55 && (
+                            <rect x="0" y="0" width="108" height="80" fill="url(#heat-glow)" />
                         )}
 
                         {/* ─── MARCAS LATERAIS DA ESCALA ─── */}
-                        {/* Marca IDEAL (30°C) — base do tubo */}
-                        <line x1="48" y1="155" x2="56" y2="155" stroke="#059669" strokeWidth="1.5" strokeLinecap="round" />
-                        <text x="58" y="158" fill="#059669" fontSize="6.5" fontWeight="800" fontFamily="sans-serif">IDEAL</text>
+                        {/* Marca IDEAL — 30% do tubo a partir da base (y=114) */}
+                        <line x1="48" y1="114" x2="58" y2="114" stroke="#059669" strokeWidth="1.5" strokeLinecap="round" />
+                        <text x="61" y="117" fill="#059669" fontSize="7" fontWeight="800" fontFamily="sans-serif">IDEAL</text>
 
-                        {/* Marca intermediária ~50°C (mercúrio a ~30% do tubo) */}
-                        <line x1="48" y1="113" x2="54" y2="113" stroke="#d1d5db" strokeWidth="1" strokeLinecap="round" />
+                        {/* Marca MAX — próximo ao topo do tubo */}
+                        <line x1="48" y1="22" x2="58" y2="22" stroke="#fca5a5" strokeWidth="1.5" strokeLinecap="round" />
+                        <text x="61" y="25" fill="#fca5a5" fontSize="7" fontWeight="800" fontFamily="sans-serif">MAX</text>
 
-                        {/* Marca crítica ~78°C (mercúrio a ~74% do tubo) */}
-                        <line x1="48" y1="52" x2="56" y2="52" stroke="#fca5a5" strokeWidth="1.5" strokeLinecap="round" />
-                        <text x="58" y="55" fill="#fca5a5" fontSize="6.5" fontWeight="800" fontFamily="sans-serif">MAX</text>
-
-                        {/* Marcas de graduação discretas */}
-                        {[75, 95, 135].map(y => (
-                            <line key={y} x1="48" y1={y} x2="52" y2={y} stroke="#e5e7eb" strokeWidth="1" strokeLinecap="round" />
+                        {/* Marcas de graduação intermediárias */}
+                        {[55, 75, 95].map(y => (
+                            <line key={y} x1="48" y1={y} x2="54" y2={y} stroke="#e5e7eb" strokeWidth="1" strokeLinecap="round" />
                         ))}
 
                         {/* ─── TUBO DE VIDRO (corpo do termômetro) ─── */}
