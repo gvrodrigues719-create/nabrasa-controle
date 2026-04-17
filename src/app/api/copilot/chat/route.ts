@@ -109,15 +109,19 @@ ${faqContext}
 ${userContext}
 `
 
+    console.log(`[Copilot] ▶ POST recebido`)
+    console.log(`[Copilot] GOOGLE_GENERATIVE_AI_API_KEY presente: ${!!process.env.GOOGLE_GENERATIVE_AI_API_KEY}`)
+
     // 4. Stream com Gemini
     const result = await streamText({
-      model: google('gemini-2.5-flash'),
+      model: google('gemini-1.5-flash'), // O usuário mencionou gemini flash no resumo
       system: systemPrompt,
       messages,
       temperature: 0.2, // Baixa para forçar objetividade e prevenir alucinações (inventar regras)
     })
 
-    return result.toTextStreamResponse()
+    console.log(`[Copilot] ✓ resposta gerada`)
+    return result.toUIMessageStreamResponse()
 
   } catch (error: any) {
     console.error('Chat API Error:', error)

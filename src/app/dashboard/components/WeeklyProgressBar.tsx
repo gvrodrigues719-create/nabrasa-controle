@@ -62,13 +62,26 @@ export default function WeeklyProgressBar({
                 </div>
             </div>
 
-            {/* Líder da semana */}
+            {/* Destaques da Semana */}
             {top3.length > 0 && (
-                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#F8F7F4] border border-[#eeedea] mb-3">
-                    <Trophy className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                    <span className="text-[10px] font-bold text-[#8c716c]">Líder:</span>
-                    <span className="text-[10px] font-black text-[#1b1c1a]">{top3[0].name}</span>
-                    <span className="text-[10px] font-bold text-[#c0b3b1]">{top3[0].points} pts</span>
+                <div className="space-y-2 mb-3">
+                    <div className="flex items-center gap-2 mb-2 px-1">
+                        <Trophy className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <span className="text-[9px] font-black text-[#8c716c] uppercase tracking-widest">Destaques da Semana</span>
+                    </div>
+                    <div className="bg-[#F8F7F4] rounded-xl border border-[#eeedea] overflow-hidden">
+                        {top3.map((item, idx) => (
+                            <div key={idx} className={`flex items-center justify-between p-2.5 ${idx !== top3.length - 1 ? 'border-b border-[#eeedea]' : ''}`}>
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                    <span className={`text-[10px] font-black w-4 ${idx === 0 ? 'text-amber-500' : 'text-[#c0b3b1]'}`}>
+                                        {item.rank}º
+                                    </span>
+                                    <span className="text-[11px] font-black text-[#1b1c1a] truncate">{item.name}</span>
+                                </div>
+                                <span className="text-[10px] font-bold text-[#8c716c] whitespace-nowrap">{item.points} pts</span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
