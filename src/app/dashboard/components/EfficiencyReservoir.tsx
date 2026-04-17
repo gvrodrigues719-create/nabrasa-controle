@@ -23,9 +23,8 @@ export default function EfficiencyReservoir({
 }: Props) {
     
     const getLevelGradient = () => {
-        if (score >= 90) return 'from-blue-700 via-blue-500 to-blue-400' 
-        if (score >= 70) return 'from-amber-600 via-amber-500 to-amber-400' 
-        return 'from-red-800 via-red-600 to-red-500' 
+        // ÁGUA SEMPRE AZUL (Regra MOC: Eficiência é azul, danos são visuais secundários)
+        return 'from-blue-700 via-blue-500 to-blue-400' 
     }
 
     const getStatusLabel = () => {

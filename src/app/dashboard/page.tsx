@@ -6,11 +6,18 @@ import Link from 'next/link'
 import { ClipboardList, ShieldCheck, Settings, Flame, TrendingUp, Calendar, ArrowRight, ListChecks, Zap, Star } from 'lucide-react'
 import { getActiveOperator } from '@/app/actions/pinAuth'
 import { getActiveRoutinesAction } from '@/app/actions/routinesAction'
-import { getOperatorSummaryAction } from '@/app/actions/gamificationAction'
+import { getOperatorSummaryAction, getLastSealingAction } from '@/app/actions/gamificationAction'
 import { getOperationalHealthAction, Leak } from '@/app/actions/efficiencyAction'
+import { getPublicCMVStatusAction } from '@/app/actions/cmvActions'
 import LossRegistrationDrawer from './components/LossRegistrationDrawer'
 import EfficiencyReservoir from './components/EfficiencyReservoir'
 import HouseHealthDrawer from './components/HouseHealthDrawer'
+import HouseGoalCard from './components/HouseGoalCard'
+import WeeklyFocusCard from './components/WeeklyFocusCard'
+import OperatorContributionCard from './components/OperatorContributionCard'
+import ActionGrid from './components/ActionGrid'
+import OperationAI from './components/OperationAI'
+import OperationAIDrawer from './components/OperationAIDrawer'
 
 export default function DashboardPage() {
     // null = ainda não sabe o role (evita flash de conteúdo com role errado)
@@ -29,12 +36,15 @@ export default function DashboardPage() {
     const [isLossDrawerOpen, setIsLossDrawerOpen] = useState(false)
     const [isHealthDrawerOpen, setIsHealthDrawerOpen] = useState(false)
     const [loading, setLoading] = useState(true)
+    const [cmvStatus, setCmvStatus] = useState<any>(null)
+    const [lastSealing, setLastSealing] = useState<any>(null)
+    const [isAIDrawerOpen, setIsAIDrawerOpen] = useState(false)
 
     useEffect(() => {
         async function loadData() {
             setLoading(true)
 
-            // PASSO 1: Resolver identidade do usuário (serial — cada fallback depende do anterior)
+            // PASSO 1: Resolver identidade do usuário
             const op = await getActiveOperator()
             let currentUserId = ''
             
@@ -62,7 +72,7 @@ export default function DashboardPage() {
             }
 
             // PASSO 2: Carregar dados independentes em paralelo
-            const [healthRes, routinesRes, sessionRes, summaryRes] = await Promise.all([
+            const [healthRes, routinesRes, sessionRes, summaryRes, cmvRes, lastSealRes] = await Promise.all([
                 getOperationalHealthAction(),
                 getActiveRoutinesAction(),
                 currentUserId
@@ -74,10 +84,12 @@ export default function DashboardPage() {
                         .order('updated_at', { ascending: false })
                         .limit(1)
                         .maybeSingle()
-                    : Promise.resolve({ data: null }),
+                    : Promise.resolve({ data: null, error: null }),
                 currentUserId
                     ? getOperatorSummaryAction(currentUserId)
-                    : Promise.resolve({ success: false })
+                    : Promise.resolve({ success: false, totalPoints: 0, weeklyPoints: 0, rankPosition: null }),
+                getPublicCMVStatusAction(),
+                currentUserId ? getLastSealingAction(currentUserId) : Promise.resolve({ success: false, data: null })
             ])
 
             if (healthRes.success) {
@@ -96,6 +108,9 @@ export default function DashboardPage() {
                 setWeeklyPoints((summaryRes as any).weeklyPoints ?? 0)
                 setRankPosition((summaryRes as any).rankPosition ?? null)
             }
+
+            if (cmvRes.success) setCmvStatus((cmvRes as any).data)
+            if (lastSealRes.success) setLastSealing((lastSealRes as any).data)
 
             setLoading(false)
         }
@@ -173,125 +188,93 @@ export default function DashboardPage() {
                     />
                 )}
 
-                {/* ── HERO DE PROGRESSO (só aparece após confirmar role) ── */}
-                {userRole === 'operator' && (
-                    <div className="bg-[#1b1c1a] rounded-[32px] p-5 shadow-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#B13A2B] to-transparent opacity-10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700" />
-                        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-5 rounded-full -ml-12 -mb-12" />
+                {/* ── META DA CASA E FOCO (NOVO BLOCO MOC) ── */}
+                {userRole === 'operator' && !loading && (
+                    <div className="space-y-6">
+                        {cmvStatus && (
+                            <HouseGoalCard 
+                                current={cmvStatus.current} 
+                                target={cmvStatus.target} 
+                                status={cmvStatus.status}
+                                message={cmvStatus.message}
+                            />
+                        )}
+                        <WeeklyFocusCard />
+                        
+                        <ActionGrid 
+                            onReportLoss={() => setIsLossDrawerOpen(true)}
+                            onViewLeaks={() => setIsHealthDrawerOpen(true)}
+                        />
 
-                        <div className="relative z-10">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center space-x-2">
-                                    <div className="p-1.5 bg-white/10 rounded-lg">
-                                        <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                                    </div>
-                                    <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">Minha Operação</span>
-                                </div>
-                                <Link href="/dashboard/routines" className="text-[9px] font-black text-[#B13A2B] uppercase tracking-widest bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-full transition-colors">
-                                    Detalhes
-                                </Link>
-                            </div>
+                        <OperatorContributionCard 
+                            weeklyPoints={weeklyPoints ?? 0}
+                            totalPoints={userPoints ?? 0}
+                            rankPosition={rankPosition}
+                            lastSealing={lastSealing}
+                        />
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Pontos da semana</p>
-                                    <div className="flex items-baseline space-x-1">
-                                        <span className="text-3xl font-black text-white tracking-tighter">
-                                            {loading ? '--' : weeklyPoints ?? 0}
-                                        </span>
-                                        <span className="text-xs font-bold text-[#B13A2B]">PTS</span>
-                                    </div>
-                                </div>
-                                <div className="border-l border-white/5 pl-4">
-                                    <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Pontos totais</p>
-                                    <div className="flex items-baseline space-x-1">
-                                        <span className="text-xl font-bold text-white/90 tracking-tight">
-                                            {loading ? '--' : userPoints ?? 0}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="mt-5">
-                                <div className="flex justify-between items-center mb-1.5">
-                                    <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">
-                                        {rankPosition && (weeklyPoints ?? 0) > 0 ? `Sua posição é #${rankPosition} na semana` : 'Sem pontuação registrada nesta semana'}
-                                    </span>
-                                    <span className="text-[9px] font-black text-[#B13A2B] uppercase">Meta Semanal</span>
-                                </div>
-                                <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                    <div 
-                                        className="h-full bg-gradient-to-r from-[#B13A2B] to-[#df3f2d] rounded-full transition-all duration-1000" 
-                                        style={{ width: `${Math.min(((weeklyPoints ?? 0) / 1000) * 100, 100)}%` }}
-                                    />
-                                </div>
-                            </div>
-                        </div>
+                        <OperationAI onClick={() => setIsAIDrawerOpen(true)} />
                     </div>
                 )}
 
-                <section>
-                    <div className="flex items-center justify-between mb-3 px-1">
-                        <p className="text-[11px] font-bold text-[#8c716c] uppercase tracking-widest">Rotinas Operacionais</p>
-                    </div>
-                    <div className="space-y-4">
-                        <Link
-                            href="/dashboard/routines"
-                            className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e9e8e5] active:scale-[0.98] transition-all block relative overflow-hidden group"
-                        >
-                            <div className="flex items-center justify-between relative z-10">
-                                <div className="flex items-center space-x-4">
-                                    <div className="w-14 h-14 rounded-2xl bg-[#FDF0EF] flex items-center justify-center text-[#B13A2B] group-hover:bg-[#B13A2B] group-hover:text-white transition-colors">
-                                        <ClipboardList className="w-7 h-7" />
+                {/* ── ROTINAS LEGACY (só para manager/admin verem de forma simples) ── */}
+                {userRole !== 'operator' && (
+                    <section>
+                        <div className="flex items-center justify-between mb-3 px-1">
+                            <p className="text-[11px] font-bold text-[#8c716c] uppercase tracking-widest">Rotinas Operacionais</p>
+                        </div>
+                        <div className="space-y-4">
+                            <Link
+                                href="/dashboard/routines"
+                                className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e9e8e5] active:scale-[0.98] transition-all block relative overflow-hidden group"
+                            >
+                                <div className="flex items-center justify-between relative z-10">
+                                    <div className="flex items-center space-x-4">
+                                        <div className="w-14 h-14 rounded-2xl bg-[#FDF0EF] flex items-center justify-center text-[#B13A2B] group-hover:bg-[#B13A2B] group-hover:text-white transition-colors">
+                                            <ClipboardList className="w-7 h-7" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-extrabold text-[#1b1c1a] text-lg leading-tight" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
+                                                Contagem de Estoque
+                                            </h3>
+                                            <p className="text-sm text-[#58413e] mt-0.5">
+                                                {loading ? 'Carregando...' : routinesCount > 0 
+                                                    ? `${routinesCount} ${routinesCount === 1 ? 'rotina pendente' : 'rotinas pendentes'}`
+                                                    : 'MOC em dia'
+                                                }
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 className="font-extrabold text-[#1b1c1a] text-lg leading-tight" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
-                                            Contagem de Estoque
-                                        </h3>
-                                        <p className="text-sm text-[#58413e] mt-0.5">
-                                            {loading ? 'Carregando...' : routinesCount > 0 
-                                                ? `${routinesCount} ${routinesCount === 1 ? 'rotina pendente' : 'rotinas pendentes'}`
-                                                : 'MOC em dia'
-                                            }
-                                        </p>
+                                    <div className="bg-[#F8F7F4] p-2.5 rounded-xl border border-[#eeedea]">
+                                        <ArrowRight className="w-5 h-5 text-[#B13A2B]" />
                                     </div>
                                 </div>
-                                <div className="bg-[#F8F7F4] p-2.5 rounded-xl border border-[#eeedea]">
-                                    <ArrowRight className="w-5 h-5 text-[#B13A2B]" />
-                                </div>
-                            </div>
-                        </Link>
+                            </Link>
 
-                        <Link 
-                            href="/dashboard/checklist"
-                            className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e9e8e5] active:scale-[0.98] transition-all block relative overflow-hidden group/checklist"
-                        >
-                             <div className="flex items-center justify-between relative z-10">
-                                <div className="flex items-center space-x-4">
-                                    <div className="w-14 h-14 rounded-2xl bg-[#F0F4FD] flex items-center justify-center text-[#2b58b1] group-hover/checklist:bg-[#2b58b1] group-hover/checklist:text-white transition-colors">
-                                        <ListChecks className="w-7 h-7" />
+                            <Link 
+                                href="/dashboard/checklist"
+                                className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e9e8e5] active:scale-[0.98] transition-all block relative overflow-hidden group/checklist"
+                            >
+                                <div className="flex items-center justify-between relative z-10">
+                                    <div className="flex items-center space-x-4">
+                                        <div className="w-14 h-14 rounded-2xl bg-[#F0F4FD] flex items-center justify-center text-[#2b58b1] group-hover/checklist:bg-[#2b58b1] group-hover/checklist:text-white transition-colors">
+                                            <ListChecks className="w-7 h-7" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-extrabold text-[#1b1c1a] text-lg leading-tight" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
+                                                Checklist Operacional
+                                            </h3>
+                                            <p className="text-sm text-[#58413e] mt-0.5">Rotinas de abertura e fechamento</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 className="font-extrabold text-[#1b1c1a] text-lg leading-tight" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
-                                            Checklist Operacional
-                                        </h3>
-                                        <p className="text-sm text-[#58413e] mt-0.5">Rotinas de abertura e fechamento</p>
+                                    <div className="bg-[#F8F7F4] p-2.5 rounded-xl border border-[#eeedea]">
+                                        <ArrowRight className="w-5 h-5 text-[#2b58b1]" />
                                     </div>
                                 </div>
-                                <div className="bg-[#F8F7F4] p-2.5 rounded-xl border border-[#eeedea]">
-                                    <ArrowRight className="w-5 h-5 text-[#2b58b1]" />
-                                </div>
-                            </div>
-                        </Link>
-                    </div>
-                    
-                    {/* FUTUROS MÓDULOS (INDICADOR SUTIL) */}
-                    <div className="px-2 mt-4 text-center">
-                        <p className="text-[10px] font-medium text-[#c0b3b1] italic">
-                            Novas rotinas operacionais aparecerão aqui.
-                        </p>
-                    </div>
-                </section>
+                            </Link>
+                        </div>
+                    </section>
+                )}
 
                 {/* ── ATALHOS GERENCIAIS (só aparece após confirmar role) ── */}
                 {userRole !== null && ['admin', 'manager'].includes(userRole) && (
@@ -361,6 +344,10 @@ export default function DashboardPage() {
             <HouseHealthDrawer 
                 isOpen={isHealthDrawerOpen}
                 onClose={() => setIsHealthDrawerOpen(false)}
+            />
+            <OperationAIDrawer 
+                isOpen={isAIDrawerOpen}
+                onClose={() => setIsAIDrawerOpen(false)}
             />
         </div>
     )

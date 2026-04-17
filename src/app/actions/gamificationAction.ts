@@ -260,3 +260,25 @@ export async function getOperatorSummaryAction(userId: string) {
         return { success: false, error: err.message }
     }
 }
+
+/**
+ * Retorna o evento de vedação mais recente de um usuário.
+ */
+export async function getLastSealingAction(userId: string) {
+    try {
+        const { data, error } = await supabase
+            .from('gamification_events')
+            .select('source_type, reason, points, created_at')
+            .eq('user_id', userId)
+            .in('source_type', ['checklist_on_time', 'session_clean_close', 'routine_zero_rupture'])
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+
+        if (error) throw error
+
+        return { success: true, data }
+    } catch (err: any) {
+        return { success: false, error: err.message }
+    }
+}

@@ -419,3 +419,47 @@ export async function getCMVConsolidated(filter: { mode: '4' | '6' | 'month' | '
     }
 }
 
+/**
+ * Retorna o status de CMV de forma pública (para o painel do funcionário)
+ * Sem expor detalhes financeiros sensíveis.
+ */
+export async function getPublicCMVStatusAction() {
+    try {
+        // Busca a última execução concluída
+        const { data: lastExec } = await supabase
+            .from('routine_executions')
+            .select('cmv_percentage, started_at')
+            .not('cmv_percentage', 'is', null)
+            .order('started_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+
+        const target = await getCMVTarget()
+        
+        let status: 'good' | 'warning' | 'critical' = 'good'
+        let message = 'Operação saudável e dentro da meta.'
+
+        if (lastExec?.cmv_percentage) {
+            const perc = lastExec.cmv_percentage
+            if (perc > target + 0.05) {
+                status = 'critical'
+                message = 'Atenção: Estamos acima da meta da semana.'
+            } else if (perc > target) {
+                status = 'warning'
+                message = 'Estamos próximos ao limite da meta.'
+            }
+        }
+
+        return {
+            success: true,
+            data: {
+                current: lastExec?.cmv_percentage || 0,
+                target: target,
+                status: status,
+                message: message
+            }
+        }
+    } catch (err: any) {
+        return { success: false, error: err.message }
+    }
+}
