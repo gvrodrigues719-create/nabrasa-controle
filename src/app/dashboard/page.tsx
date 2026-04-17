@@ -3,24 +3,30 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { ClipboardList, ShieldCheck, Settings, Flame, TrendingUp, Calendar, ArrowRight, ListChecks, Trophy, Zap, Star } from 'lucide-react'
+import { ClipboardList, ShieldCheck, Settings, Flame, TrendingUp, Calendar, ArrowRight, ListChecks, Trophy, Zap, Star, AlertTriangle } from 'lucide-react'
 import { getActiveOperator } from '@/app/actions/pinAuth'
 import { getActiveRoutinesAction } from '@/app/actions/routinesAction'
 import { getOperatorSummaryAction } from '@/app/actions/gamificationAction'
+import { getOperationalHealthAction, Leak } from '@/app/actions/efficiencyAction'
+import LossRegistrationDrawer from './components/LossRegistrationDrawer'
+import EfficiencyReservoir from './components/EfficiencyReservoir'
 
 export default function DashboardPage() {
     const [userRole, setUserRole] = useState<string>('operator')
     const [userName, setUserName] = useState<string>('')
     const [routinesCount, setRoutinesCount] = useState<number>(0)
+    const [userId, setUserId] = useState<string>('')
     const [userPoints, setUserPoints] = useState<number | null>(null)
     const [weeklyPoints, setWeeklyPoints] = useState<number | null>(null)
     const [rankPosition, setRankPosition] = useState<number | null>(null)
+    const [healthScore, setHealthScore] = useState<number>(100)
+    const [leaks, setLeaks] = useState<Leak[]>([])
+    const [isLossDrawerOpen, setIsLossDrawerOpen] = useState(false)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         async function loadData() {
             setLoading(true)
-            // Load User Data
             const op = await getActiveOperator()
             let currentUserId = ''
             
@@ -28,10 +34,12 @@ export default function DashboardPage() {
                 setUserName(op.name.split(' ')[0])
                 setUserRole(op.role || 'operator')
                 currentUserId = op.userId
+                setUserId(op.userId)
             } else {
                 const { data: { user } } = await supabase.auth.getUser()
                 if (user) {
                     currentUserId = user.id
+                    setUserId(user.id)
                     const { data: profile } = await supabase
                         .from('users')
                         .select('role, name')
@@ -45,11 +53,15 @@ export default function DashboardPage() {
                 }
             }
 
-            // Load Real Stats (Routines for today)
+            const healthRes = await getOperationalHealthAction()
+            if (healthRes.success) {
+                setHealthScore(healthRes.score)
+                setLeaks(healthRes.leaks)
+            }
+
             const routinesRes = await getActiveRoutinesAction()
             setRoutinesCount(routinesRes.data?.length || 0)
 
-            // Load Gamification Data
             if (currentUserId) {
                 const summary = await getOperatorSummaryAction(currentUserId)
                 if (summary.success) {
@@ -81,8 +93,6 @@ export default function DashboardPage() {
 
     return (
         <div className="min-h-screen bg-[#F8F7F4] pb-10" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
-
-            {/* ── HEADER ── */}
             <div className="flex items-center justify-between px-5 pt-6 pb-4">
                 <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 bg-white rounded-xl shadow-sm border border-[#e9e8e5] flex items-center justify-center">
@@ -98,8 +108,6 @@ export default function DashboardPage() {
             </div>
 
             <div className="px-5 space-y-6">
-
-                {/* ── CONTEXTO DO DIA ── */}
                 <div className="pt-2">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5 text-[#8c716c] mb-1">
@@ -127,10 +135,18 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                {/* ── HERO DE PROGRESSO (ESTADO OPERACIONAL) ── EXIBIR APENAS PARA OPERADORES */}
+                {/* ── RESERVATÓRIO DE EFICIÊNCIA (JOB 3) ── */}
+                {userRole === 'operator' && !loading && (
+                    <EfficiencyReservoir 
+                        score={healthScore}
+                        leaks={leaks}
+                        onActionClick={() => setIsLossDrawerOpen(true)}
+                    />
+                )}
+
+                {/* ── HERO DE PROGRESSO ── */}
                 {userRole === 'operator' && (
                     <div className="bg-[#1b1c1a] rounded-[32px] p-5 shadow-2xl relative overflow-hidden group">
-                        {/* Visual Decor */}
                         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#B13A2B] to-transparent opacity-10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700" />
                         <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-5 rounded-full -ml-12 -mb-12" />
 
@@ -156,9 +172,6 @@ export default function DashboardPage() {
                                         </span>
                                         <span className="text-xs font-bold text-[#B13A2B]">PTS</span>
                                     </div>
-                                    {weeklyPoints === 0 && !loading && (
-                                        <p className="text-[9px] font-medium text-white/30 italic mt-1">Inicie sua jornada</p>
-                                    )}
                                 </div>
                                 <div className="border-l border-white/5 pl-4">
                                     <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Pontos totais</p>
@@ -170,7 +183,6 @@ export default function DashboardPage() {
                                 </div>
                             </div>
 
-                            {/* Progress Visual Hint */}
                             <div className="mt-5">
                                 <div className="flex justify-between items-center mb-1.5">
                                     <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">
@@ -189,13 +201,11 @@ export default function DashboardPage() {
                     </div>
                 )}
 
-                {/* ── CARD OPERACIONAL (MOC HUB) ── */}
                 <section>
                     <div className="flex items-center justify-between mb-3 px-1">
                         <p className="text-[11px] font-bold text-[#8c716c] uppercase tracking-widest">Rotinas Operacionais</p>
                     </div>
                     <div className="space-y-4">
-                        {/* CARD CONTAGEM - ROTINA PRINCIPAL */}
                         <Link
                             href="/dashboard/routines"
                             className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e9e8e5] active:scale-[0.98] transition-all block relative overflow-hidden group"
@@ -223,7 +233,6 @@ export default function DashboardPage() {
                             </div>
                         </Link>
 
-                        {/* CARD CHECKLIST - SEGUNDA ROTINA REAL */}
                         <Link 
                             href="/dashboard/checklist"
                             className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e9e8e5] active:scale-[0.98] transition-all block relative overflow-hidden group/checklist"
@@ -245,76 +254,35 @@ export default function DashboardPage() {
                                 </div>
                             </div>
                         </Link>
-
-                    </div>
-                    
-                    {/* FUTUROS MÓDULOS (INDICADOR SUTIL) */}
-                    <div className="px-2 mt-4 text-center">
-                        <p className="text-[10px] font-medium text-[#c0b3b1] italic">
-                            Novas rotinas operacionais aparecerão aqui.
-                        </p>
                     </div>
                 </section>
 
-                {/* ── ATALHOS GERENCIAIS (SÓ ADMIN/MANAGER) ── */}
                 {['admin', 'manager'].includes(userRole) && (
                     <section className="mt-4">
                         <p className="text-[11px] font-bold text-[#8c716c] uppercase tracking-widest mb-3">Gerência & Controle</p>
                         <div className="grid grid-cols-1 gap-3">
-                                <Link
-                                    href="/dashboard/admin/cmv"
-                                    className="flex items-center justify-between bg-white rounded-2xl p-4 border border-[#e9e8e5] active:scale-[0.98] transition-all"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-xl bg-[#FDF0EF] flex items-center justify-center text-[#B13A2B]">
-                                            <TrendingUp className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-[#1b1c1a] text-sm">CMV & Compras</p>
-                                            <p className="text-[11px] text-[#8c716c]">Financeiro e Custos</p>
-                                        </div>
+                            <Link href="/dashboard/admin/cmv" className="flex items-center justify-between bg-white rounded-2xl p-4 border border-[#e9e8e5] active:scale-[0.98] transition-all">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-xl bg-[#FDF0EF] flex items-center justify-center text-[#B13A2B]">
+                                        <TrendingUp className="w-5 h-5" />
                                     </div>
-                                    <ArrowRight className="w-4 h-4 text-[#dfbfba]" />
-                                </Link>
-
-                                <Link
-                                    href="/dashboard/admin/vendas"
-                                    className="flex items-center justify-between bg-gradient-to-r from-indigo-600 to-indigo-500 rounded-2xl p-4 border border-indigo-200 shadow-md active:scale-[0.98] transition-all"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
-                                            <TrendingUp className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-white text-sm">Módulo de Vendas</p>
-                                            <p className="text-[11px] text-indigo-100">Integração Takeat · Novo</p>
-                                        </div>
+                                    <div>
+                                        <p className="font-bold text-[#1b1c1a] text-sm">CMV & Compras</p>
+                                        <p className="text-[11px] text-[#8c716c]">Financeiro e Custos</p>
                                     </div>
-                                    <ArrowRight className="w-4 h-4 text-white/60" />
-                                </Link>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                <Link
-                                    href="/dashboard/admin/reports"
-                                    className="bg-white rounded-2xl p-4 flex items-center gap-3 border border-[#e9e8e5] active:scale-[0.98] transition-all"
-                                >
-                                    <ShieldCheck className="w-4 h-4 text-[#B13A2B]" />
-                                    <span className="font-bold text-[#1b1c1a] text-xs">Auditoria</span>
-                                </Link>
-                                <Link
-                                    href="/dashboard/admin"
-                                    className="bg-white rounded-2xl p-4 flex items-center gap-3 border border-[#e9e8e5] active:scale-[0.98] transition-all"
-                                >
-                                    <Settings className="w-4 h-4 text-[#58413e]" />
-                                    <span className="font-bold text-[#1b1c1a] text-xs">Ajustes</span>
-                                </Link>
-                            </div>
+                                </div>
+                                <ArrowRight className="w-4 h-4 text-[#dfbfba]" />
+                            </Link>
                         </div>
                     </section>
                 )}
-
             </div>
+
+            <LossRegistrationDrawer 
+                isOpen={isLossDrawerOpen}
+                onClose={() => setIsLossDrawerOpen(false)}
+                userId={userId}
+            />
         </div>
     )
 }
-
