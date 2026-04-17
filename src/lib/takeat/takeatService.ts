@@ -90,8 +90,23 @@ export async function getTableSessions(
   }
 
   const data = await res.json()
-  // A API retorna um array de sessões diretamente
-  return data as TakeatTableSession[]
+
+  // Log defensivo: Takeat pode retornar array puro ou wrapper { data: [...] } / { sessions: [...] }
+  console.info('[TakeatService] Retorno bruto:', {
+    type: Array.isArray(data) ? 'array' : typeof data,
+    topKeys: data && typeof data === 'object' && !Array.isArray(data) ? Object.keys(data) : null,
+    count: Array.isArray(data) ? data.length : (Array.isArray(data?.data) ? data.data.length : null),
+  })
+
+  // Normaliza para array — cobre array puro, { data: [...] }, { sessions: [...] } e { table_sessions: [...] }
+  const sessions: TakeatTableSession[] =
+    Array.isArray(data) ? data :
+    Array.isArray(data?.data) ? data.data :
+    Array.isArray(data?.sessions) ? data.sessions :
+    Array.isArray(data?.table_sessions) ? data.table_sessions :
+    []
+
+  return sessions
 }
 
 // -------------------------------------------------------------------
@@ -123,28 +138,54 @@ export function aggregatePeriodSummary(
   const channels = new Set<string>()
   let nfceCount = 0
 
-  sessions.forEach(session => {
+  const safeSessions = Array.isArray(sessions) ? sessions : []
+
+  safeSessions.forEach(session => {
+    if (!session) return
+
     if (session.channel?.name) channels.add(session.channel.name)
     if (session.nfce) nfceCount++
-    if (session.payments) totalPaymentsCount += session.payments.length
+    if (Array.isArray(session.payments)) totalPaymentsCount += session.payments.length
 
-    session.bills.forEach(bill => {
-      totalRevenue += parseFloat(bill.total_price || '0')
-      totalWithService += parseFloat(bill.total_service_price || '0')
-      totalDiscounts += parseFloat(bill.total_discount || '0')
+    // Coleta pedidos por 3 caminhos possíveis (estrutura real pode variar):
+    // 1) bill.order_baskets → orders
+    // 2) session.order_baskets → orders (legado / algumas rotas)
+    // 3) bill.orders direto (alguns tenants retornam assim)
+    const collectOrders = (): any[] => {
+      const fromBills = (Array.isArray(session.bills) ? session.bills : []).flatMap((bill: any) => {
+        if (!bill) return []
+        if (Array.isArray(bill.order_baskets)) {
+          return bill.order_baskets.flatMap((b: any) => Array.isArray(b?.orders) ? b.orders : [])
+        }
+        if (Array.isArray(bill.orders)) return bill.orders
+        return []
+      })
+      if (fromBills.length > 0) return fromBills
 
-      bill.order_baskets.forEach(basket => {
-        basket.orders.forEach(order => {
-          order.order_products.forEach(product => {
-            totalProductsSold += product.amount
-          })
-        })
+      const fromSession = Array.isArray((session as any).order_baskets)
+        ? (session as any).order_baskets.flatMap((b: any) => Array.isArray(b?.orders) ? b.orders : [])
+        : []
+      return fromSession
+    }
+
+    ;(Array.isArray(session.bills) ? session.bills : []).forEach((bill: any) => {
+      if (!bill) return
+      totalRevenue += parseFloat(bill.total_price ?? '0')
+      totalWithService += parseFloat(bill.total_service_price ?? '0')
+      totalDiscounts += parseFloat(bill.total_discount ?? '0')
+    })
+
+    collectOrders().forEach((order: any) => {
+      const products = Array.isArray(order?.order_products) ? order.order_products : []
+      products.forEach((p: any) => {
+        const amount = Number(p?.amount ?? 0)
+        if (!Number.isNaN(amount)) totalProductsSold += amount
       })
     })
   })
 
   return {
-    total_sessions: sessions.length,
+    total_sessions: safeSessions.length,
     total_products_sold: totalProductsSold,
     total_revenue: totalRevenue,
     total_with_service: totalWithService,
