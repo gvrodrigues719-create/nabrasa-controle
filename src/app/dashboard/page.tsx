@@ -125,16 +125,16 @@ function DashboardContent() {
             if (isDemoMode) {
                 setHealthScore(84)
                 setActiveLeaks([
-                    { id: 'fake-1', label: 'Picanha', type: 'reported_loss', severity: 'critical', penalty: 2 },
-                    { id: 'fake-2', label: 'Alcatra', type: 'reported_loss', severity: 'critical', penalty: 2 }
+                    { id: 'fake-1', label: 'Ruptura: Picanha', type: 'rupture', severity: 'critical', penalty: 2 },
+                    { id: 'fake-2', label: 'Atraso: Checklist Abertura', type: 'checklist', severity: 'critical', penalty: 2 }
                 ])
                 setWeeklyLeaks([
-                    { id: 'fake-3', label: 'Coca 1.5L', type: 'reported_loss', severity: 'warning', penalty: 1 }
+                    { id: 'fake-3', label: 'Perda Custo Alto: Alcatra', type: 'reported_loss', severity: 'warning', penalty: 1 }
                 ])
                 setCombinedTop3([
-                    { id: 'fake-1', label: 'Picanha', type: 'reported_loss', severity: 'critical', penalty: 2 },
-                    { id: 'fake-2', label: 'Alcatra', type: 'reported_loss', severity: 'critical', penalty: 2 },
-                    { id: 'fake-3', label: 'Coca 1.5L', type: 'reported_loss', severity: 'warning', penalty: 1 }
+                    { id: 'fake-1', label: 'Ruptura: Picanha', type: 'rupture', severity: 'critical', penalty: 2 },
+                    { id: 'fake-2', label: 'Atraso: Checklist Abertura', type: 'checklist', severity: 'critical', penalty: 2 },
+                    { id: 'fake-3', label: 'Perda Custo Alto: Alcatra', type: 'reported_loss', severity: 'warning', penalty: 1 }
                 ])
                 setCmvStatus({
                     current: 0.36,
