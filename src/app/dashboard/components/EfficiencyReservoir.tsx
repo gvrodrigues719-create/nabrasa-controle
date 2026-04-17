@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Droplet, Zap, Eye, Activity, Package } from 'lucide-react'
+import { Zap, Eye, Activity, Package } from 'lucide-react'
 import { Leak } from '@/app/actions/efficiencyAction'
 
 interface Props {
@@ -74,47 +74,109 @@ export default function EfficiencyReservoir({
                             )}
                         </div>
 
-                        {/* FISSURAS REAIS: Dano no Vidro (SVG Integrado) */}
+                        {/* FISSURAS NO VIDRO: Integradas ao material */}
                         {damageLevel > 0 && (
                             <div className="absolute inset-0 z-40 pointer-events-none">
-                                <svg viewBox="0 0 144 256" className="w-full h-full drop-shadow-md">
-                                    {/* Fissura 1: Trinca de Base (Impacto) */}
-                                    <g className="opacity-95">
-                                        <path 
-                                            d="M 25 205 L 42 215 L 38 230 M 42 215 L 60 220 L 58 235" 
-                                            fill="none" stroke="#2D0F0B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" 
+                                <svg viewBox="0 0 144 256" className="w-full h-full">
+                                    <defs>
+                                        {/* Textura de profundidade: a fissura escurece o vidro de dentro */}
+                                        <filter id="crack-depth">
+                                            <feGaussianBlur in="SourceAlpha" stdDeviation="0.8" result="blur" />
+                                            <feOffset dx="0.5" dy="1" in="blur" result="shadow" />
+                                            <feComposite in="SourceGraphic" in2="shadow" />
+                                        </filter>
+                                    </defs>
+
+                                    {/* FISSURA 1 — Elegante, base lateral esquerda */}
+                                    {/* Ponto de impacto: x=38, y=212 */}
+                                    <g filter="url(#crack-depth)">
+                                        {/* Linha principal — hairline, como trinca de vidro temperado */}
+                                        <path
+                                            d="M 28 208 L 36 212 L 32 222 M 36 212 L 50 218 L 47 228"
+                                            fill="none"
+                                            stroke="rgba(0,0,0,0.55)"
+                                            strokeWidth={damageLevel === 1 ? "0.9" : "1.3"}
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
                                         />
-                                        <path 
-                                            d="M 42 215 L 46 210" 
-                                            fill="none" stroke="#B13A2B" strokeWidth="1.5" strokeLinecap="round" 
+                                        {/* Fio secundário — ramificação fina */}
+                                        <path
+                                            d="M 36 212 L 40 207"
+                                            fill="none"
+                                            stroke="rgba(0,0,0,0.3)"
+                                            strokeWidth="0.7"
+                                            strokeLinecap="round"
                                         />
-                                        <circle cx="42" cy="215" r="3.5" fill="#1b0a08" />
+                                        {/* Ponto de impacto: área branca interna simulando ruptura */}
+                                        <circle cx="36" cy="212" r={damageLevel === 1 ? "1.5" : "2.5"}
+                                            fill="rgba(255,255,255,0.6)"
+                                            stroke="rgba(0,0,0,0.4)"
+                                            strokeWidth="0.8"
+                                        />
                                     </g>
-                                    
+
                                     {damageLevel >= 2 && (
-                                        <>
-                                            {/* Fissura 2: Rachadura Lateral de Tensão */}
-                                            <g className="opacity-95">
-                                                <path 
-                                                    d="M 125 140 L 105 152 L 115 170 M 105 152 L 85 145" 
-                                                    fill="none" stroke="#2D0F0B" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" 
-                                                />
-                                                <circle cx="105" cy="152" r="3.5" fill="#1b0a08" />
-                                            </g>
-                                        </>
+                                        /* FISSURA 2 — Lateral direita, rachadura de tensão estrutural */
+                                        /* Ponto de impacto: x=108, y=148 */
+                                        <g filter="url(#crack-depth)">
+                                            <path
+                                                d="M 126 142 L 110 150 L 118 166 M 110 150 L 92 143 M 110 150 L 106 140"
+                                                fill="none"
+                                                stroke="rgba(0,0,0,0.6)"
+                                                strokeWidth="1.5"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            />
+                                            {/* Halo de impacto: estilhaço radial fino */}
+                                            <path
+                                                d="M 110 150 L 115 145 M 110 150 L 104 156 M 110 150 L 116 154"
+                                                fill="none"
+                                                stroke="rgba(0,0,0,0.2)"
+                                                strokeWidth="0.6"
+                                                strokeLinecap="round"
+                                            />
+                                            <circle cx="110" cy="150" r="3"
+                                                fill="rgba(255,255,255,0.5)"
+                                                stroke="rgba(0,0,0,0.45)"
+                                                strokeWidth="0.9"
+                                            />
+                                        </g>
                                     )}
 
                                     {damageLevel >= 3 && (
-                                        <>
-                                            {/* Fissura 3: Estilhaço Superior Crítico */}
-                                            <g className="opacity-100">
-                                                <path 
-                                                    d="M 20 60 L 45 72 L 35 90 M 45 72 L 70 68 L 75 82" 
-                                                    fill="none" stroke="#2D0F0B" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" 
-                                                />
-                                                <circle cx="45" cy="72" r="4" fill="#1b0a08" />
-                                            </g>
-                                        </>
+                                        /* FISSURA 3 — Superior esquerda: estilhaço crítico */
+                                        /* Ponto de impacto: x=44, y=70 */
+                                        <g filter="url(#crack-depth)">
+                                            {/* Polígono de vidro estilhaçado — faz parecer quebrado de dentro */}
+                                            <polygon
+                                                points="44,70 52,62 62,68 58,80 46,82"
+                                                fill="rgba(255,255,255,0.15)"
+                                                stroke="rgba(0,0,0,0.5)"
+                                                strokeWidth="1"
+                                                strokeLinejoin="round"
+                                            />
+                                            {/* Raios de fratura irradiando do impacto */}
+                                            <path
+                                                d="M 44 70 L 22 56 M 44 70 L 30 86 M 44 70 L 68 65 M 44 70 L 66 82"
+                                                fill="none"
+                                                stroke="rgba(0,0,0,0.55)"
+                                                strokeWidth="1.2"
+                                                strokeLinecap="round"
+                                            />
+                                            {/* Fragmentos secundários */}
+                                            <path
+                                                d="M 44 70 L 38 58 M 44 70 L 55 88"
+                                                fill="none"
+                                                stroke="rgba(0,0,0,0.25)"
+                                                strokeWidth="0.7"
+                                                strokeLinecap="round"
+                                            />
+                                            <circle cx="44" cy="70" r="3.5"
+                                                fill="rgba(255,255,255,0.7)"
+                                                stroke="rgba(0,0,0,0.5)"
+                                                strokeWidth="1"
+                                            />
+                                        </g>
                                     )}
                                 </svg>
                             </div>
@@ -123,27 +185,53 @@ export default function EfficiencyReservoir({
                         <div className="absolute bottom-0 left-0 w-full h-5 bg-black/10 blur-[3px] z-20" />
                     </div>
 
-                    {/* VAZAMENTO LOCALIZADO: Gotejamento fixo na rachadura */}
+                    {/* GOTAS: Agua orgânica saindo do ponto exato da fissura */}
                     {damageLevel > 0 && (
                         <div className="absolute inset-0 z-50 pointer-events-none">
-                            {/* Gota 1: Vinda da Fissura 1 */}
-                            <Droplet 
-                                className="absolute w-6 h-6 text-red-700 fill-current animate-bounce shadow-xl" 
-                                style={{ bottom: '34px', left: '34px', animationDuration: '1.8s' }} 
-                            />
-                            
+                            {/* Gota 1 — nasce da fissura de base (x=36, y=212 no viewBox 144×256 → ~25%, ~83%) */}
+                            <svg
+                                className="absolute animate-bounce"
+                                style={{ bottom: '28px', left: '28px', width: '18px', height: '22px', animationDuration: '2s' }}
+                                viewBox="0 0 18 22"
+                                fill="none"
+                            >
+                                <path
+                                    d="M9 0 C9 0 0 10 0 15 C0 19.4 4 22 9 22 C14 22 18 19.4 18 15 C18 10 9 0 9 0Z"
+                                    fill="rgba(30,60,100,0.72)"
+                                />
+                                <ellipse cx="6" cy="13" rx="2" ry="3.5" fill="rgba(255,255,255,0.25)" />
+                            </svg>
+
                             {damageLevel >= 2 && (
-                                <Droplet 
-                                    className="absolute w-5 h-5 text-red-800 fill-current animate-bounce" 
-                                    style={{ top: '154px', right: '32px', animationDuration: '1.4s' }} 
-                                />
+                                /* Gota 2 — nasce da fissura lateral direita (x=110,y=150 → ~76%, ~59%) */
+                                <svg
+                                    className="absolute animate-bounce"
+                                    style={{ top: '144px', right: '24px', width: '15px', height: '19px', animationDuration: '1.5s' }}
+                                    viewBox="0 0 18 22"
+                                    fill="none"
+                                >
+                                    <path
+                                        d="M9 0 C9 0 0 10 0 15 C0 19.4 4 22 9 22 C14 22 18 19.4 18 15 C18 10 9 0 9 0Z"
+                                        fill="rgba(30,60,100,0.65)"
+                                    />
+                                    <ellipse cx="6" cy="13" rx="2" ry="3" fill="rgba(255,255,255,0.2)" />
+                                </svg>
                             )}
-                            
+
                             {damageLevel >= 3 && (
-                                <Droplet 
-                                    className="absolute w-5 h-5 text-red-600 fill-current animate-bounce" 
-                                    style={{ top: '78px', left: '38px', animationDuration: '2.5s' }} 
-                                />
+                                /* Gota 3 — nasce do estilhaço superior (x=44,y=70 → ~31%, ~27%) */
+                                <svg
+                                    className="absolute animate-bounce"
+                                    style={{ top: '72px', left: '32px', width: '14px', height: '17px', animationDuration: '2.8s' }}
+                                    viewBox="0 0 18 22"
+                                    fill="none"
+                                >
+                                    <path
+                                        d="M9 0 C9 0 0 10 0 15 C0 19.4 4 22 9 22 C14 22 18 19.4 18 15 C18 10 9 0 9 0Z"
+                                        fill="rgba(30,60,100,0.6)"
+                                    />
+                                    <ellipse cx="6" cy="13" rx="1.5" ry="2.5" fill="rgba(255,255,255,0.18)" />
+                                </svg>
                             )}
                         </div>
                     )}
