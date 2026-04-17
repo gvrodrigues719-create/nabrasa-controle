@@ -148,8 +148,8 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                {/* ── RESERVATÓRIO DE EFICIÊNCIA (JOB 1 & 3) ── */}
-                {userRole === 'operator' && !loading && (
+                {/* ── RESERVATÓRIO DE EFICIÊNCIA (HUB CENTRAL GAMIFICADO) ── */}
+                {!loading && (
                     <EfficiencyReservoir 
                         score={healthScore}
                         leaks={leaks}
