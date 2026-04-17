@@ -200,11 +200,6 @@ export default function DashboardPage() {
                             />
                         )}
                         <WeeklyFocusCard />
-                        
-                        <ActionGrid 
-                            onReportLoss={() => setIsLossDrawerOpen(true)}
-                            onViewLeaks={() => setIsHealthDrawerOpen(true)}
-                        />
 
                         <OperatorContributionCard 
                             weeklyPoints={weeklyPoints ?? 0}
@@ -212,13 +207,11 @@ export default function DashboardPage() {
                             rankPosition={rankPosition}
                             lastSealing={lastSealing}
                         />
-
-                        <OperationAI onClick={() => setIsAIDrawerOpen(true)} />
                     </div>
                 )}
 
-                {/* ── ROTINAS LEGACY (só para manager/admin verem de forma simples) ── */}
-                {userRole !== 'operator' && (
+                {/* ── ROTINAS OPERACIONAIS (CENTRO DE EXECUÇÃO) ── */}
+                {!loading && (userRole === 'operator' || ['admin', 'manager'].includes(userRole!)) && (
                     <section>
                         <div className="flex items-center justify-between mb-3 px-1">
                             <p className="text-[11px] font-bold text-[#8c716c] uppercase tracking-widest">Rotinas Operacionais</p>
@@ -274,6 +267,18 @@ export default function DashboardPage() {
                             </Link>
                         </div>
                     </section>
+                )}
+
+                {/* ── SUPORTE E APOIO ── */}
+                {userRole === 'operator' && !loading && (
+                    <div className="space-y-6">
+                        <ActionGrid 
+                            onReportLoss={() => setIsLossDrawerOpen(true)}
+                            onViewLeaks={() => setIsHealthDrawerOpen(true)}
+                        />
+
+                        <OperationAI onClick={() => setIsAIDrawerOpen(true)} />
+                    </div>
                 )}
 
                 {/* ── ATALHOS GERENCIAIS (só aparece após confirmar role) ── */}
