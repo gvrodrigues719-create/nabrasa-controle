@@ -11,7 +11,7 @@ import { getOperatorSummaryAction, getLastSealingAction } from '@/app/actions/ga
 import { getOperationalHealthAction, Leak } from '@/app/actions/efficiencyAction'
 import { getPublicCMVStatusAction } from '@/app/actions/cmvActions'
 import LossRegistrationDrawer from './components/LossRegistrationDrawer'
-import EfficiencyReservoir from './components/EfficiencyReservoir'
+import OperationThermometer from './components/OperationThermometer'
 import HouseHealthDrawer from './components/HouseHealthDrawer'
 import HouseGoalCard from './components/HouseGoalCard'
 import WeeklyFocusCard from './components/WeeklyFocusCard'
@@ -234,9 +234,9 @@ function DashboardContent() {
                     </div>
                 </div>
 
-                {/* ── RESERVATÓRIO DE EFICIÊNCIA (HUB CENTRAL GAMIFICADO) ── */}
+                {/* ── TERMÔMETRO DA OPERAÇÃO (BLOCO PRINCIPAL) ── */}
                 {!loading && (
-                    <EfficiencyReservoir 
+                    <OperationThermometer 
                         score={healthScore}
                         activeLeaks={activeLeaks}
                         weeklyLeaks={weeklyLeaks}
