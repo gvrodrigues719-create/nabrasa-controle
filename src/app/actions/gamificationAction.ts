@@ -9,11 +9,36 @@ const supabase = createClient(
 )
 
 /**
+ * Tipos de evento de gamificação.
+ * 
+ * EXISTENTES (contagem):
+ *   count_group_completion    — Setor de contagem concluído (+50 pts)
+ *   count_routine_completion  — Rotina completa concluída (+100 pts)
+ *
+ * VEDAÇÃO — Fase 1:
+ *   checklist_on_time         — VD-02: Checklist crítico concluído no prazo (+50 pts)
+ *   session_clean_close       — VD-03: Sessão de contagem fechada sem abandono (+25 pts)
+ *   routine_zero_rupture      — VD-04: Rotina concluída sem nenhum item zerado (+75 pts bônus)
+ */
+export type GamificationEventType =
+    | 'count_group_completion'
+    | 'count_routine_completion'
+    | 'checklist_on_time'
+    | 'session_clean_close'
+    | 'routine_zero_rupture'
+
+const SEALING_POINTS: Record<string, number> = {
+    checklist_on_time:    50,
+    session_clean_close:  25,
+    routine_zero_rupture: 75,
+}
+
+/**
  * Registra um evento de pontuação de forma idempotente.
  */
 export async function recordPointsAction(
     userId: string,
-    type: 'count_group_completion' | 'count_routine_completion',
+    type: GamificationEventType,
     sourceId: string,
     points: number,
     reason: string
@@ -39,6 +64,45 @@ export async function recordPointsAction(
         return { success: true }
     } catch (err: any) {
         return { success: false, error: err.message }
+    }
+}
+
+/**
+ * Registra um evento de VEDAÇÃO (comportamento que protege a operação).
+ * Fire-and-forget seguro: erros aqui nunca interrompem o fluxo operacional.
+ */
+export async function recordSealingEventAction(
+    userId: string,
+    type: 'checklist_on_time' | 'session_clean_close' | 'routine_zero_rupture',
+    sourceId: string
+) {
+    try {
+        const points = SEALING_POINTS[type]
+        const reasons: Record<string, string> = {
+            checklist_on_time:    'Checklist concluído no prazo. A operação seguiu o padrão.',
+            session_clean_close:  'Setor conferido sem abandono. Contagem limpa.',
+            routine_zero_rupture: 'Rotina concluída sem ruptura. Estoque protegido.',
+        }
+
+        const { error } = await supabase
+            .from('gamification_events')
+            .insert([{
+                user_id: userId,
+                source_type: type,
+                source_id: sourceId,
+                points,
+                reason: reasons[type]
+            }])
+
+        // Ignora duplicatas (idempotente)
+        if (error && error.code !== '23505') {
+            console.error(`[Sealing] Falha ao registrar evento ${type}:`, error.message)
+        }
+
+        return { success: true }
+    } catch (err: any) {
+        console.error('[Sealing] Erro inesperado:', err.message)
+        return { success: false }
     }
 }
 

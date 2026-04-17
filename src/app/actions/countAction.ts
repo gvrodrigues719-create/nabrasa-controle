@@ -119,9 +119,14 @@ export async function syncCountSessionAction(sessionId: string, currentCounts: R
         // Rodamos a gamificação de forma "fire and forget" controlada ou apenas com catch isolado
         // para garantir que falhas aqui NÃO afetem o retorno de sucesso da contagem.
         try {
-            const { data: sess } = await supabase.from('count_sessions').select('user_id').eq('id', sessionId).single()
+            const { data: sess } = await supabase
+                .from('count_sessions')
+                .select('user_id, routine_id')
+                .eq('id', sessionId)
+                .single()
+
             if (sess?.user_id) {
-                const { recordPointsAction, checkAndRewardRoutineCompletionAction } = await import('./gamificationAction')
+                const { recordPointsAction, recordSealingEventAction, checkAndRewardRoutineCompletionAction } = await import('./gamificationAction')
                 
                 // 1. Pontua conclusão de grupo (+50)
                 await recordPointsAction(
@@ -132,8 +137,33 @@ export async function syncCountSessionAction(sessionId: string, currentCounts: R
                     'Setor conferido com sucesso.'
                 )
 
-                // 2. Verifica e pontua conclusão de rotina (+100)
+                // 2. VD-03: Sessão fechada sem abandono (sempre que chega ao complete)
+                await recordSealingEventAction(sess.user_id, 'session_clean_close', sessionId)
+
+                // 3. Verifica e pontua conclusão de rotina (+100)
                 await checkAndRewardRoutineCompletionAction(sessionId)
+
+                // 4. VD-04: Rotina concluída sem nenhum item zerado
+                // Verificar se existem itens zerados na rotina inteira desta semana
+                if (sess.routine_id) {
+                    const { data: zeroedInRoutine } = await supabase
+                        .from('count_session_items')
+                        .select('id')
+                        .eq('is_zeroed', true)
+                        .in('session_id', (
+                            await supabase
+                                .from('count_sessions')
+                                .select('id')
+                                .eq('routine_id', sess.routine_id)
+                                .eq('status', 'completed')
+                                .then(r => r.data?.map(s => s.id) || [])
+                        ))
+                        .limit(1)
+
+                    if (!zeroedInRoutine || zeroedInRoutine.length === 0) {
+                        await recordSealingEventAction(sess.user_id, 'routine_zero_rupture', sess.routine_id)
+                    }
+                }
             }
         } catch (gamErr) {
             // Logamos o erro mas não interrompemos o fluxo

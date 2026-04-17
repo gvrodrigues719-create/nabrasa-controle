@@ -148,7 +148,7 @@ export async function completeChecklistSessionAction(sessionId: string) {
         // Buscamos o template_id da sessão
         const { data: session } = await supabase
             .from('checklist_sessions')
-            .select('template_id')
+            .select('template_id, user_id')
             .eq('id', sessionId)
             .single()
 
@@ -211,6 +211,31 @@ export async function completeChecklistSessionAction(sessionId: string) {
             .eq('id', sessionId)
 
         if (updateError) throw updateError
+
+        // 3. VEDAÇÃO VD-02: Premiar se concluído no prazo (fire-and-forget)
+        try {
+            if (session.user_id) {
+                const { data: template } = await supabase
+                    .from('checklist_templates')
+                    .select('context')
+                    .eq('id', session.template_id)
+                    .single()
+
+                const now = new Date()
+                const currentHour = now.getHours()
+                const isCritical = template?.context === 'opening' || template?.context === 'closing'
+                const isOnTime = 
+                    (template?.context === 'opening' && currentHour < 11) ||
+                    (template?.context === 'closing' && currentHour < 23)
+
+                if (isCritical && isOnTime) {
+                    const { recordSealingEventAction } = await import('./gamificationAction')
+                    await recordSealingEventAction(session.user_id, 'checklist_on_time', sessionId)
+                }
+            }
+        } catch {
+            // Silencioso — gamificação nunca interrompe a operação
+        }
 
         revalidatePath('/dashboard/checklist')
         return { success: true }
