@@ -107,7 +107,7 @@ export default function OperationHeroCard({
                             <div className="absolute bottom-6 right-2 w-1 h-20 bg-white opacity-5 blur-[1px] pointer-events-none z-30" />
                             
                             {/* Líquido Deep (A Integridade) */}
-                            <div className={\`w-full transition-all duration-1000 ease-out relative z-10 bg-gradient-to-t \${getLevelGradient()}\`} style={{ height: \`\${score}%\` }}>
+                            <div className={`w-full transition-all duration-1000 ease-out relative z-10 bg-gradient-to-t ${getLevelGradient()}`} style={{ height: `${score}%` }}>
                                 {score > 0 && <div className="absolute top-0 left-0 w-full h-[3px] bg-white/40 shadow-[0_-2px_12px_rgba(255,255,255,0.6)]" />}
                                 
                                 {/* Turbulência sutil */}
@@ -184,8 +184,8 @@ export default function OperationHeroCard({
                     {/* Métricas */}
                     <div className="flex-1 min-w-0 pt-1">
                         <div className="flex items-center gap-2 mb-1">
-                            <div className={\`w-2 h-2 rounded-full \${status.dot} \${status.pulse ? 'animate-pulse' : ''}\`} />
-                            <span className={\`text-[11px] font-black uppercase tracking-[0.12em] \${status.color}\`}>{status.label}</span>
+                            <div className={`w-2 h-2 rounded-full ${status.dot} ${status.pulse ? 'animate-pulse' : ''}`} />
+                            <span className={`text-[11px] font-black uppercase tracking-[0.12em] ${status.color}`}>{status.label}</span>
                         </div>
 
                         <div className="flex items-baseline gap-1 mb-4">
@@ -245,7 +245,7 @@ export default function OperationHeroCard({
                             <span className="text-base font-black text-[#58413e] tracking-tight">{cmvCurrent && cmvCurrent > 0 ? formatPerc(cmvCurrent) : '—'}</span>
                         </div>
                     </div>
-                    <div className={\`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-tight \${cmvConf.bg} \${cmvConf.color}\`}>
+                    <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-tight ${cmvConf.bg} ${cmvConf.color}`}>
                         {cmvConf.icon}
                         {cmvConf.label}
                     </div>
