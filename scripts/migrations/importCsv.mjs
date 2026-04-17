@@ -74,7 +74,7 @@ async function run() {
     }
 
     // 2. CSV Parse
-    const csvFile = fs.readFileSync('mapeamento_final_itens_nabrasa.csv', 'utf8')
+    const csvFile = fs.readFileSync('data/mapeamento_final_itens_nabrasa.csv', 'utf8')
     const results = Papa.parse(csvFile, { header: true, skipEmptyLines: true })
 
     // 3. Upsert Logic 
