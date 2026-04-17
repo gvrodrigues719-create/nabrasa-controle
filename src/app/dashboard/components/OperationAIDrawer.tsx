@@ -1,41 +1,53 @@
 'use client'
 
-import React, { useState } from 'react'
-import { X, Send, Sparkles, MessageSquare, Info, History } from 'lucide-react'
+import React, { useRef, useEffect } from 'react'
+import { X, Send, Sparkles, Loader2, ThumbsUp, ThumbsDown } from 'lucide-react'
+import { useChat } from 'ai/react'
+import { toast } from 'react-hot-toast'
+import { supabase } from '@/lib/supabase/client'
 
 interface Props {
     isOpen: boolean
     onClose: () => void
+    userId?: string
+    userName?: string
 }
 
-export default function OperationAIDrawer({ isOpen, onClose }: Props) {
-    const [query, setQuery] = useState('')
-    const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string}[]>([
-        { role: 'assistant', content: 'Olá! Sou seu assistente de operação. Como posso te ajudar hoje? Posso tirar dúvidas sobre CMV, organização de estoque, validade ou contagem.' }
-    ])
+export default function OperationAIDrawer({ isOpen, onClose, userId, userName }: Props) {
+    const endOfMessagesRef = useRef<HTMLDivElement>(null)
+
+    const { messages, input, handleInputChange, handleSubmit, setMessages, isLoading, append } = useChat({
+        api: '/api/copilot/chat',
+        body: {
+            userId: userId
+        },
+        initialMessages: [
+            { id: '1', role: 'assistant', content: `Olá${userName ? ' ' + userName : ''}! Sou seu assistente de operação. Como posso te ajudar hoje? Posso tirar dúvidas sobre seu CMV, organização de estoque, validade ou checar suas listas de hoje.` }
+        ]
+    })
 
     const suggestedQuestions = [
+        "O que falta para mim hoje?",
+        "Qual a regra de contagem para itens fracionados?",
         "Como organizar a geladeira de bebidas?",
-        "O que fazer se um item está próximo da validade?",
-        "Como o registro de perda ajuda no CMV?",
-        "Qual a regra de contagem para itens fracionados?"
+        "Tenho checklist pendente hoje?"
     ]
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!query.trim()) return
+    useEffect(() => {
+        if (isOpen) {
+            endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }
+    }, [messages, isOpen])
 
-        const userMsg = query
-        setMessages(prev => [...prev, { role: 'user', content: userMsg }])
-        setQuery('')
-
-        // Simulação de resposta prática e curta
-        setTimeout(() => {
-            setMessages(prev => [...prev, { 
-                role: 'assistant', 
-                content: 'Entendi. Na operação NaBrasa, seguimos o padrão de segurança alimentar e eficiência. Para essa dúvida específica, recomendo verificar o manual na sessão de "Padrões Operacionais" ou perguntar ao gerente sobre o fluxo de descarte.' 
-            }])
-        }, 800)
+    const handleFeedback = async (messageId: string, isHelpful: boolean) => {
+        if (!userId) return
+        toast.success(isHelpful ? "Obrigado pelo feedback!" : "Registrado. Vamos melhorar.")
+        // MVP: Registra no banco de forma silenciosa para auditoria
+        await supabase.from('copilot_feedback').insert([{
+            message_id: messageId,
+            user_id: userId,
+            is_helpful: isHelpful
+        }])
     }
 
     if (!isOpen) return null
@@ -44,7 +56,7 @@ export default function OperationAIDrawer({ isOpen, onClose }: Props) {
         <div className="fixed inset-0 z-[100] flex flex-col justify-end">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
             
-            <div className="relative bg-white w-full max-h-[85vh] rounded-t-[40px] flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300">
+            <div className="relative bg-white w-full max-h-[85vh] h-[85vh] rounded-t-[40px] flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-300">
                 {/* Header */}
                 <div className="px-8 pt-8 pb-4 flex items-center justify-between border-b border-[#eeedea]">
                     <div className="flex items-center gap-3">
@@ -63,27 +75,52 @@ export default function OperationAIDrawer({ isOpen, onClose }: Props) {
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-8 space-y-6">
-                    {messages.map((msg, i) => (
-                        <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[85%] p-4 rounded-2xl text-sm ${
-                                msg.role === 'user' 
-                                ? 'bg-[#1b1c1a] text-white rounded-tr-none' 
-                                : 'bg-[#F8F7F4] text-[#1b1c1a] border border-[#eeedea] rounded-tl-none'
-                            }`}>
-                                {msg.content}
+                    {messages.map((msg, i) => {
+                        const isAssistant = msg.role === 'assistant'
+                        const isFirstAssistantObj = isAssistant && i === 0
+
+                        return (
+                            <div key={msg.id || i} className={`flex ${!isAssistant ? 'justify-end' : 'justify-start'}`}>
+                                <div className="flex flex-col gap-1 max-w-[85%]">
+                                    <div className={`p-4 rounded-2xl text-sm ${
+                                        !isAssistant 
+                                        ? 'bg-[#1b1c1a] text-white rounded-tr-none' 
+                                        : 'bg-[#F8F7F4] text-[#1b1c1a] border border-[#eeedea] rounded-tl-none whitespace-pre-wrap'
+                                    }`}>
+                                        {msg.content}
+                                    </div>
+                                    
+                                    {/* Feedback de resposta (só pro assistente e se não for a do topo) */}
+                                    {isAssistant && !isFirstAssistantObj && !isLoading && (
+                                        <div className="flex items-center gap-2 pl-2 mt-1">
+                                            <span className="text-[10px] font-bold text-[#c0b3b1] uppercase tracking-wider">Ajudou?</span>
+                                            <button onClick={() => handleFeedback(msg.id, true)} className="hover:text-amber-600 text-[#c0b3b1] transition-colors"><ThumbsUp className="w-3 h-3" /></button>
+                                            <button onClick={() => handleFeedback(msg.id, false)} className="hover:text-red-600 text-[#c0b3b1] transition-colors"><ThumbsDown className="w-3 h-3" /></button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )
+                    })}
+
+                    {isLoading && (
+                        <div className="flex justify-start">
+                            <div className="bg-[#F8F7F4] p-4 rounded-2xl rounded-tl-none border border-[#eeedea] text-[#c0b3b1] flex items-center gap-2">
+                                <Loader2 className="w-4 h-4 animate-spin text-[#8c716c]" /> 
+                                <span className="text-sm font-medium">Buscando contexto...</span>
                             </div>
                         </div>
-                    ))}
+                    )}
 
                     {messages.length === 1 && (
                         <div className="space-y-3 pt-4">
-                            <p className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest px-1">Sugestões</p>
+                            <p className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest px-1">Sugestões vivas</p>
                             <div className="flex flex-wrap gap-2">
                                 {suggestedQuestions.map((q, i) => (
                                     <button 
                                         key={i} 
-                                        onClick={() => setQuery(q)}
-                                        className="text-xs font-bold text-[#58413e] bg-white border border-[#e9e8e5] px-4 py-2 rounded-xl hover:border-[#1b1c1a] transition-all"
+                                        onClick={() => append({ role: 'user', content: q })}
+                                        className="text-xs font-bold text-[#58413e] bg-white border border-[#e9e8e5] px-4 py-2 rounded-xl hover:border-[#1b1c1a] transition-all cursor-pointer"
                                     >
                                         {q}
                                     </button>
@@ -91,6 +128,8 @@ export default function OperationAIDrawer({ isOpen, onClose }: Props) {
                             </div>
                         </div>
                     )}
+                    
+                    <div ref={endOfMessagesRef} />
                 </div>
 
                 {/* Input */}
@@ -98,20 +137,23 @@ export default function OperationAIDrawer({ isOpen, onClose }: Props) {
                     <form onSubmit={handleSubmit} className="relative">
                         <input 
                             type="text" 
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
+                            name="prompt"
+                            value={input}
+                            onChange={handleInputChange}
+                            disabled={isLoading}
                             placeholder="Tire sua dúvida operacional..."
-                            className="w-full bg-white border border-[#e9e8e5] rounded-2xl py-4 px-6 pr-14 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#1b1c1a]/5 transition-all"
+                            className="w-full bg-white border border-[#e9e8e5] rounded-2xl py-4 px-6 pr-14 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#1b1c1a]/5 transition-all disabled:opacity-50"
                         />
                         <button 
                             type="submit"
-                            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-[#1b1c1a] text-white rounded-xl flex items-center justify-center hover:bg-black transition-colors"
+                            disabled={isLoading || !input.trim()}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-[#1b1c1a] text-white rounded-xl flex items-center justify-center hover:bg-black transition-colors disabled:opacity-50 cursor-pointer"
                         >
-                            <Send className="w-4 h-4" />
+                            <Send className="w-4 h-4 cursor-pointer" />
                         </button>
                     </form>
                     <p className="text-[9px] text-center text-[#c0b3b1] mt-4 uppercase tracking-[0.2em] font-medium">
-                        Respostas baseadas nos manuais técnicos NaBrasa
+                        O Copiloto acessa seus checklists e manuais do NaBrasa
                     </p>
                 </div>
             </div>
