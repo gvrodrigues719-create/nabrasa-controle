@@ -81,6 +81,7 @@ export async function getOperationalHealthAction() {
 
         // 2. DETECÇÃO DE SESSÕES TRAVADAS (Vazamento de Fluxo)
         const fourHoursAgo = new Date(now.getTime() - LIMITS.STUCK_SESSION_HOURS * 60 * 60 * 1000).toISOString()
+        const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
         
         const { data: stuckSessions } = await supabase
             .from('count_sessions')
