@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useState } from 'react'
 import { X, Send, Sparkles, Loader2, ThumbsUp, ThumbsDown } from 'lucide-react'
-import { useChat } from 'ai/react'
+import { useChat } from '@ai-sdk/react'
+import { DefaultChatTransport } from 'ai'
 import { toast } from 'react-hot-toast'
 import { supabase } from '@/lib/supabase/client'
 
@@ -15,16 +16,24 @@ interface Props {
 
 export default function OperationAIDrawer({ isOpen, onClose, userId, userName }: Props) {
     const endOfMessagesRef = useRef<HTMLDivElement>(null)
+    const [input, setInput] = useState('')
 
-    const { messages, input, handleInputChange, handleSubmit, setMessages, isLoading, append } = useChat({
-        api: '/api/copilot/chat',
-        body: {
-            userId: userId
-        },
-        initialMessages: [
-            { id: '1', role: 'assistant', content: `Olá${userName ? ' ' + userName : ''}! Sou seu assistente de operação. Como posso te ajudar hoje? Posso tirar dúvidas sobre seu CMV, organização de estoque, validade ou checar suas listas de hoje.` }
+    // No SDK 6.x, useChat é mais modular e o transporte é explícito.
+    // UIMessage agora usa 'parts' em vez de 'content'.
+    const { messages, sendMessage, status } = useChat({
+        transport: new DefaultChatTransport({ 
+            api: '/api/copilot/chat',
+        }),
+        messages: [
+            { 
+                id: '1', 
+                role: 'assistant', 
+                parts: [{ type: 'text', text: `Olá${userName ? ' ' + userName : ''}! Sou seu assistente de operação. Como posso te ajudar hoje? Posso tirar dúvidas sobre seu CMV, organização de estoque, validade ou checar suas listas de hoje.` }]
+            }
         ]
     })
+
+    const isLoading = status !== 'ready' && status !== 'error'
 
     const suggestedQuestions = [
         "O que falta para mim hoje?",
@@ -48,6 +57,23 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName }:
             user_id: userId,
             is_helpful: isHelpful
         }])
+    }
+
+    const onSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!input.trim() || isLoading) return
+        
+        // No SDK 6, sendMessage pode aceitar um objeto com 'text'
+        sendMessage({ 
+            text: input 
+        }, {
+            body: { userId }
+        })
+        setInput('')
+    }
+
+    const handleSuggestedClick = (q: string) => {
+        sendMessage({ text: q }, { body: { userId } })
     }
 
     if (!isOpen) return null
@@ -79,6 +105,12 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName }:
                         const isAssistant = msg.role === 'assistant'
                         const isFirstAssistantObj = isAssistant && i === 0
 
+                        // No SDK 6, iteramos pelas partes da mensagem
+                        const messageText = msg.parts
+                            .filter(part => part.type === 'text')
+                            .map(part => (part as any).text)
+                            .join('')
+
                         return (
                             <div key={msg.id || i} className={`flex ${!isAssistant ? 'justify-end' : 'justify-start'}`}>
                                 <div className="flex flex-col gap-1 max-w-[85%]">
@@ -87,7 +119,7 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName }:
                                         ? 'bg-[#1b1c1a] text-white rounded-tr-none' 
                                         : 'bg-[#F8F7F4] text-[#1b1c1a] border border-[#eeedea] rounded-tl-none whitespace-pre-wrap'
                                     }`}>
-                                        {msg.content}
+                                        {messageText}
                                     </div>
                                     
                                     {/* Feedback de resposta (só pro assistente e se não for a do topo) */}
@@ -119,7 +151,7 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName }:
                                 {suggestedQuestions.map((q, i) => (
                                     <button 
                                         key={i} 
-                                        onClick={() => append({ role: 'user', content: q })}
+                                        onClick={() => handleSuggestedClick(q)}
                                         className="text-xs font-bold text-[#58413e] bg-white border border-[#e9e8e5] px-4 py-2 rounded-xl hover:border-[#1b1c1a] transition-all cursor-pointer"
                                     >
                                         {q}
@@ -134,12 +166,12 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName }:
 
                 {/* Input */}
                 <div className="p-6 bg-[#F8F7F4] border-t border-[#eeedea]">
-                    <form onSubmit={handleSubmit} className="relative">
+                    <form onSubmit={onSubmit} className="relative">
                         <input 
                             type="text" 
                             name="prompt"
                             value={input}
-                            onChange={handleInputChange}
+                            onChange={(e) => setInput(e.target.value)}
                             disabled={isLoading}
                             placeholder="Tire sua dúvida operacional..."
                             className="w-full bg-white border border-[#e9e8e5] rounded-2xl py-4 px-6 pr-14 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#1b1c1a]/5 transition-all disabled:opacity-50"

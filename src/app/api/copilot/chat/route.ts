@@ -117,7 +117,7 @@ ${userContext}
       temperature: 0.2, // Baixa para forçar objetividade e prevenir alucinações (inventar regras)
     })
 
-    return result.toDataStreamResponse()
+    return result.toTextStreamResponse()
 
   } catch (error: any) {
     console.error('Chat API Error:', error)
