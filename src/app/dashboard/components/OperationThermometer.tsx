@@ -22,37 +22,47 @@ export default function OperationThermometer({
     onViewGlobalClick 
 }: Props) {
     
-    // Temperatura = inversão do score — o eixo visual e o número agora compartilham o mesmo sentido
-    // score 100 = temp 0 (frio = bom)
-    // score  84 = temp 16 (levemente aquecida)
-    // score  60 = temp 40 (atenção)
-    // score  30 = temp 70 (crítico)
-    const temperature = 100 - score
+    // ═══════════════════════════════════════════════════
+    // ESCALA DE TEMPERATURA REAL
+    // Ponto ideal  = 30°C (operação perfeita, score 100)
+    // Ponto máximo = 95°C (situação crítica, score 0)
+    //
+    // score 100 →  30°C   No ponto / Sob controle
+    // score  90 →  37°C   Levemente aquecendo
+    // score  84 →  41°C   Esquentando   ← demo
+    // score  75 →  47°C   Atenção operacional
+    // score  60 →  56°C   Fora do ponto
+    // score  40 →  69°C   Crítico
+    // score   0 →  95°C   Crítico máximo
+    // ═══════════════════════════════════════════════════
+    const MIN_TEMP = 30
+    const MAX_TEMP = 95
+    const displayTemp = Math.round(MIN_TEMP + ((100 - score) / 100) * (MAX_TEMP - MIN_TEMP))
+    const mercuryFill = (displayTemp - MIN_TEMP) / (MAX_TEMP - MIN_TEMP) // 0..1
 
     const getStatusConfig = () => {
-        // Baseado em TEMPERATURE (mercúrio sobe = alarme cresce — coerente com o visual)
-        if (temperature <= 10) return {
-            label: 'Sob controle',
+        if (displayTemp <= 35) return {
+            label: 'No ponto',
             sublabel: 'Operação estável',
             color: 'text-emerald-700',
             dotColor: 'bg-emerald-500',
             pulse: false
         }
-        if (temperature <= 25) return {
+        if (displayTemp <= 45) return {
             label: 'Esquentando',
-            sublabel: 'Atenção nos sinais',
+            sublabel: 'Acima do ponto ideal',
             color: 'text-amber-700',
             dotColor: 'bg-amber-500',
             pulse: false
         }
-        if (temperature <= 45) return {
+        if (displayTemp <= 60) return {
             label: 'Atenção operacional',
             sublabel: 'Temperatura acima do normal',
             color: 'text-orange-700',
             dotColor: 'bg-orange-500',
             pulse: true
         }
-        if (temperature <= 65) return {
+        if (displayTemp <= 78) return {
             label: 'Fora do ponto',
             sublabel: 'Operação comprometida',
             color: 'text-red-600',
@@ -71,29 +81,36 @@ export default function OperationThermometer({
     const status = getStatusConfig()
     const hasAnyIssue = activeLeaks.length > 0 || weeklyLeaks.length > 0
 
-    // Cor do mercúrio baseada em TEMPERATURE
+    // Cor baseada em displayTemp (mesma lógica dos status)
     const getMercuryGradient = () => {
-        if (temperature <= 10) return '#059669' // emerald-600
-        if (temperature <= 25) return '#d97706' // amber-600
-        if (temperature <= 45) return '#ea580c' // orange-600
-        return '#dc2626' // red-600
+        if (displayTemp <= 35) return '#059669'
+        if (displayTemp <= 45) return '#d97706'
+        if (displayTemp <= 60) return '#ea580c'
+        return '#dc2626'
     }
 
-    // Cor do bulbo
     const getBulbColor = () => {
-        if (temperature <= 10) return '#047857' // emerald-700
-        if (temperature <= 25) return '#b45309' // amber-700
-        if (temperature <= 45) return '#c2410c' // orange-700
-        return '#b91c1c' // red-700
+        if (displayTemp <= 35) return '#047857'
+        if (displayTemp <= 45) return '#b45309'
+        if (displayTemp <= 60) return '#c2410c'
+        return '#b91c1c'
     }
 
-    // Glow quente (só aparece quando o mercúrio está de fato alto)
     const getGlowIntensity = () => {
-        if (temperature <= 10) return 0
-        if (temperature <= 25) return 0.1
-        if (temperature <= 45) return 0.28
+        if (displayTemp <= 35) return 0
+        if (displayTemp <= 45) return 0.1
+        if (displayTemp <= 60) return 0.28
         return 0.5
     }
+
+    // Altura do mercúrio no tubo (140px de altura útil)
+    const TUBE_HEIGHT = 140
+    const mercuryHeight = Math.round(mercuryFill * TUBE_HEIGHT)  // px preenchidos
+    const mercuryY = 16 + TUBE_HEIGHT - mercuryHeight            // y de início do liquid
+
+    // Posição da marca "IDEAL" no tubo (30°C = base = y=156)
+    const IDEAL_Y = 156  // sempre na base (ponto mais frio)
+
 
     return (
         <div className="bg-white rounded-[40px] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.08)] border border-[#e9e8e5] overflow-hidden relative">
@@ -103,7 +120,7 @@ export default function OperationThermometer({
                 className="absolute top-0 left-0 w-full h-1.5 transition-all duration-700"
                 style={{ 
                     background: `linear-gradient(to right, transparent, ${getMercuryGradient()}33, transparent)`,
-                    opacity: temperature > 10 ? 1 : 0.3
+                    opacity: mercuryFill > 0.05 ? 1 : 0.3
                 }}
             />
 
@@ -160,24 +177,25 @@ export default function OperationThermometer({
                         </defs>
 
                         {/* ─── GLOW DE CALOR (fundo, só quando quente) ─── */}
-                        {temperature > 15 && (
+                        {mercuryFill > 0.3 && (
                             <rect x="0" y="0" width="72" height="80" fill="url(#heat-glow)" />
                         )}
 
-                        {/* ─── MARCAS LATERAIS DAS ZONAS ─── */}
-                        {/* Zona Controlada */}
-                        <line x1="50" y1="140" x2="56" y2="140" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" />
-                        <text x="58" y="143" fill="#c0b3b1" fontSize="7" fontWeight="700" fontFamily="sans-serif">OK</text>
-                        
-                        {/* Zona Atenção */}
-                        <line x1="50" y1="90" x2="56" y2="90" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" />
-                        
-                        {/* Zona Crítica */}
-                        <line x1="50" y1="40" x2="56" y2="40" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" />
+                        {/* ─── MARCAS LATERAIS DA ESCALA ─── */}
+                        {/* Marca IDEAL (30°C) — base do tubo */}
+                        <line x1="48" y1="155" x2="56" y2="155" stroke="#059669" strokeWidth="1.5" strokeLinecap="round" />
+                        <text x="58" y="158" fill="#059669" fontSize="6.5" fontWeight="800" fontFamily="sans-serif">IDEAL</text>
 
-                        {/* Marcas intermediárias discretas */}
-                        {[60, 75, 105, 120].map(y => (
-                            <line key={y} x1="50" y1={y} x2="54" y2={y} stroke="#e5e7eb" strokeWidth="1" strokeLinecap="round" />
+                        {/* Marca intermediária ~50°C (mercúrio a ~30% do tubo) */}
+                        <line x1="48" y1="113" x2="54" y2="113" stroke="#d1d5db" strokeWidth="1" strokeLinecap="round" />
+
+                        {/* Marca crítica ~78°C (mercúrio a ~74% do tubo) */}
+                        <line x1="48" y1="52" x2="56" y2="52" stroke="#fca5a5" strokeWidth="1.5" strokeLinecap="round" />
+                        <text x="58" y="55" fill="#fca5a5" fontSize="6.5" fontWeight="800" fontFamily="sans-serif">MAX</text>
+
+                        {/* Marcas de graduação discretas */}
+                        {[75, 95, 135].map(y => (
+                            <line key={y} x1="48" y1={y} x2="52" y2={y} stroke="#e5e7eb" strokeWidth="1" strokeLinecap="round" />
                         ))}
 
                         {/* ─── TUBO DE VIDRO (corpo do termômetro) ─── */}
@@ -202,18 +220,18 @@ export default function OperationThermometer({
                         <g clipPath="url(#tube-clip)">
                             <rect 
                                 x="28" 
-                                y={156 - (temperature / 100) * 140}
+                                y={mercuryY}
                                 width="16" 
-                                height={(temperature / 100) * 140}
+                                height={mercuryHeight}
                                 fill="url(#mercury-grad)"
                                 className="transition-all duration-1000 ease-out"
                             />
 
                             {/* Menisco (curvatura no topo do mercúrio) */}
-                            {temperature > 5 && (
+                            {mercuryHeight > 4 && (
                                 <ellipse 
                                     cx="36" 
-                                    cy={156 - (temperature / 100) * 140}
+                                    cy={mercuryY}
                                     rx="8" 
                                     ry="3"
                                     fill={getMercuryGradient()}
@@ -225,9 +243,9 @@ export default function OperationThermometer({
                             {/* Reflexo no mercúrio */}
                             <rect 
                                 x="30" 
-                                y={156 - (temperature / 100) * 140 + 4}
+                                y={mercuryY + 4}
                                 width="3" 
-                                height={Math.max(0, (temperature / 100) * 140 - 8)}
+                                height={Math.max(0, mercuryHeight - 8)}
                                 rx="1.5"
                                 fill="white"
                                 opacity="0.2"
@@ -264,8 +282,8 @@ export default function OperationThermometer({
                             opacity="0.15" 
                         />
 
-                        {/* ─── PULSAÇÃO DE CALOR (só quando quente) ─── */}
-                        {temperature > 30 && (
+                        {/* ─── PULSAÇÃO DE CALOR (só quando crítico) ─── */}
+                        {displayTemp > 65 && (
                             <circle 
                                 cx="36" cy="176" r="22" 
                                 fill="none"
@@ -304,18 +322,18 @@ export default function OperationThermometer({
                         </span>
                     </div>
                     
-                    {/* Temperatura como número principal — alinhado ao termômetro visual */}
-                    <div className="flex items-baseline gap-2 mb-1">
+                    {/* Temperatura como número principal — escala real (30° a 95°) */}
+                    <div className="flex items-baseline gap-1 mb-1">
                         <span 
                             className="text-6xl font-black text-[#1b1c1a] tracking-tighter leading-none" 
                             style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
                         >
-                            {temperature}<span className="text-3xl opacity-15 ml-0.5">°</span>
+                            {displayTemp}
                         </span>
+                        <span className="text-2xl font-black text-[#1b1c1a] opacity-50 self-start mt-2">°C</span>
                     </div>
-                    {/* Sublabel discreto com saúde da operação */}
                     <p className="text-[10px] font-bold text-[#c0b3b1] uppercase tracking-widest mb-5">
-                        {status.sublabel}
+                        {status.sublabel} · ideal: 30°C
                     </p>
 
                     <div className="space-y-5">
