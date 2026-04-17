@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Droplet, AlertTriangle, CheckCircle2, Zap } from 'lucide-react'
+import { Droplet, AlertTriangle, Zap } from 'lucide-react'
 import { Leak } from '@/app/actions/efficiencyAction'
 
 interface Props {
@@ -11,98 +11,112 @@ interface Props {
 }
 
 export default function EfficiencyReservoir({ score, leaks, onActionClick }: Props) {
-    // Definir cor baseada no score
-    const getLevelColor = () => {
-        if (score >= 90) return 'bg-[#2b58b1]' // Azul Profundo (Saudável)
-        if (score >= 70) return 'bg-amber-500' // Alerta
-        return 'bg-[#B13A2B]' // Crítico
+    // Definir cor baseada no score com gradientes premium
+    const getLevelGradient = () => {
+        if (score >= 90) return 'from-blue-600 to-blue-400' // Saudável (Água Limpa)
+        if (score >= 70) return 'from-amber-600 to-amber-400' // Alerta
+        return 'from-red-700 to-red-500' // Crítico
     }
 
     const getStatusLabel = () => {
         if (score >= 90) return 'Operação Estanque'
         if (score >= 70) return 'Atenção Operacional'
-        return 'Furo Crítico'
+        return 'Vazamento Crítico'
     }
 
-    // Limitar vazamentos visíveis para o card não ficar gigante
     const visibleLeaks = leaks.slice(0, 3)
     const extraLeaks = leaks.length - 3
 
     return (
-        <div className="bg-white rounded-[32px] p-6 shadow-sm border border-[#e9e8e5]">
-            <div className="flex items-start gap-6 mb-6">
+        <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e9e8e5]">
+            <div className="flex items-center gap-8 mb-8">
                 
-                {/* REPRESENTAÇÃO VISUAL: O RESERVATÓRIO */}
-                <div className="relative w-16 h-32 bg-[#F8F7F4] rounded-2xl border-2 border-[#eeedea] overflow-hidden flex flex-col justify-end">
-                    {/* O Nível de Eficiência */}
-                    <div 
-                        className={`w-full transition-all duration-1000 ease-out ${getLevelColor()}`}
-                        style={{ height: `${score}%` }}
-                    />
-                    
-                    {/* Gotas de Vazamento (Side Indicators) */}
+                {/* REPRESENTAÇÃO VISUAL: O RESERVATÓRIO (Peça Central) */}
+                <div className="relative group">
+                    {/* Borda do Copo (Realismo Sóbrio) */}
+                    <div className="relative w-24 h-40 bg-[#F8F7F4]/50 rounded-b-3xl rounded-t-lg border-[3px] border-[#e2e1de] shadow-inner overflow-hidden flex flex-col justify-end">
+                        
+                        {/* Efeito de Reflexo de Vidro */}
+                        <div className="absolute top-0 left-2 w-1.5 h-full bg-white/20 blur-[1px] pointer-events-none z-20" />
+                        
+                        {/* O Nível de Líquido (A Água) */}
+                        <div 
+                            className={`w-full bg-gradient-to-t transition-all duration-1000 ease-out relative z-10 ${getLevelGradient()}`}
+                            style={{ height: `${score}%` }}
+                        >
+                            {/* Superfície da Água (Linha de Tensão) */}
+                            {score > 0 && (
+                                <div className="absolute top-0 left-0 w-full h-[3px] bg-white/40 shadow-[0_-2px_10px_rgba(255,255,255,0.5)]" />
+                            )}
+                            
+                            {/* Efeito de Ondulação Suave (Opacidade) */}
+                            <div className="absolute inset-0 bg-white/5 opacity-20" />
+                        </div>
+
+                        {/* Fundo do Reservatório (Depth) */}
+                        <div className="absolute bottom-0 left-0 w-full h-2 bg-black/5 blur-[2px] z-20" />
+                    </div>
+
+                    {/* Vazamentos (Gotas Laterais que saltam aos olhos) */}
                     {leaks.length > 0 && (
-                        <div className="absolute inset-0 flex flex-col justify-center items-end pr-1 gap-2">
-                             {[...Array(Math.min(leaks.length, 4))].map((_, i) => (
-                                <Droplet key={i} className="w-3 h-3 text-red-500/40 animate-bounce" />
+                        <div className="absolute -right-6 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-30">
+                             {[...Array(Math.min(leaks.length, 3))].map((_, i) => (
+                                <Droplet 
+                                    key={i} 
+                                    className={`w-5 h-5 drop-shadow-md animate-bounce`} 
+                                    style={{ 
+                                        animationDelay: `${i * 0.2}s`,
+                                        color: score < 70 ? '#ef4444' : '#f59e0b'
+                                    }} 
+                                    fill="currentColor"
+                                />
                              ))}
                         </div>
                     )}
-
-                    {/* Glass Shine Effect */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent pointer-events-none" />
                 </div>
 
-                {/* INFORMAÇÕES DE SAÚDE */}
-                <div className="flex-1 pt-1">
-                    <div className="flex items-center gap-2 mb-1">
-                         <div className={`w-2 h-2 rounded-full ${score >= 90 ? 'bg-green-500' : score >= 70 ? 'bg-amber-500' : 'bg-red-500'}`} />
-                         <span className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest">{getStatusLabel()}</span>
+                {/* INFORMAÇÕES DE SAÚDE (Hierarquia Secundária) */}
+                <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1.5">
+                         <div className={`w-2 h-2 rounded-full animate-pulse ${score >= 90 ? 'bg-blue-500' : score >= 70 ? 'bg-amber-500' : 'bg-red-500'}`} />
+                         <span className="text-[10px] font-black text-[#8c716c] uppercase tracking-[0.15em]">{getStatusLabel()}</span>
                     </div>
                     
-                    <div className="flex items-baseline gap-1 mb-3">
-                        <span className="text-4xl font-black text-[#1b1c1a] tracking-tighter" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>{score}%</span>
-                        <span className="text-xs font-bold text-[#8c716c] uppercase">Eficiência</span>
+                    <div className="flex items-baseline gap-2 mb-4">
+                        <span className="text-5xl font-black text-[#1b1c1a] tracking-tight" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
+                            {score}<span className="text-2xl opacity-30">%</span>
+                        </span>
                     </div>
 
-                    <p className="text-[11px] text-[#58413e] font-medium leading-relaxed">
-                        {leaks.length === 0 
-                            ? 'Sua operação está sólida e sem desvios detectados. Mantenha as rotinas em dia.' 
-                            : `Detectamos ${leaks.length} ponto${leaks.length > 1 ? 's' : ''} de vazamento que estão drenando o resultado da casa.`
-                        }
-                    </p>
+                    <div className="space-y-3">
+                        {visibleLeaks.length > 0 ? (
+                            <div className="space-y-1.5">
+                                {visibleLeaks.map(leak => (
+                                    <div key={leak.id} className="flex items-center gap-2">
+                                        <AlertTriangle className={`w-3 h-3 ${leak.severity === 'critical' ? 'text-red-500' : 'text-amber-500'}`} />
+                                        <span className="text-[10px] font-bold text-[#58413e] truncate">{leak.label}</span>
+                                    </div>
+                                ))}
+                                {extraLeaks > 0 && (
+                                    <p className="text-[9px] font-black text-[#c0b3b1] uppercase tracking-widest pl-5">+ {extraLeaks} vazamentos</p>
+                                )}
+                            </div>
+                        ) : (
+                            <p className="text-[11px] text-[#8c716c] font-medium leading-relaxed italic">
+                                Sua operação está sólida. Nenhum vazamento detectado no momento.
+                            </p>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            {/* LISTA DE VAZAMENTOS (Resumida) */}
-            {leaks.length > 0 && (
-                <div className="space-y-2 mb-4">
-                    {visibleLeaks.map(leak => (
-                        <div key={leak.id} className="flex items-center justify-between bg-[#F8F7F4] p-3 rounded-2xl border border-[#eeedea]">
-                            <div className="flex items-center gap-3">
-                                <div className={`p-1.5 rounded-lg ${leak.severity === 'critical' ? 'bg-red-50' : 'bg-amber-50'}`}>
-                                    <AlertTriangle className={`w-3.5 h-3.5 ${leak.severity === 'critical' ? 'text-red-500' : 'text-amber-500'}`} />
-                                </div>
-                                <span className="text-xs font-bold text-[#1b1c1a]">{leak.label}</span>
-                            </div>
-                            <span className="text-[10px] font-black text-red-500/60 uppercase tracking-tighter">-{leak.penalty}%</span>
-                        </div>
-                    ))}
-                    {extraLeaks > 0 && (
-                        <div className="px-4 py-1">
-                             <p className="text-[10px] font-bold text-[#c0b3b1] uppercase tracking-widest">+ {extraLeaks} outros vazamentos</p>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* BOTÃO DE AÇÃO PROATIVA */}
+            {/* BOTÃO DE AÇÃO (Sóbrio, sem roubar a cena) */}
             <button 
                 onClick={onActionClick}
-                className="w-full bg-[#1b1c1a] hover:bg-black text-white font-black text-[10px] uppercase tracking-[0.2em] py-4 rounded-2xl shadow-xl shadow-black/5 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                className="w-full bg-[#1b1c1a] hover:bg-black text-white font-black text-[10px] uppercase tracking-[0.25em] py-4 rounded-2xl shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-3 border border-white/10"
             >
                 <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                Relatar Perda e Vedar Vazamento
+                Relatar Perda / Vedar Vazamento
             </button>
         </div>
     )
