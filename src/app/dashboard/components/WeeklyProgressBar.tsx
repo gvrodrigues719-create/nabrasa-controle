@@ -62,19 +62,13 @@ export default function WeeklyProgressBar({
                 </div>
             </div>
 
-            {/* Top 3 compacto */}
+            {/* Líder da semana */}
             {top3.length > 0 && (
-                <div className="flex items-center gap-3 p-2.5 rounded-xl bg-[#F8F7F4] border border-[#eeedea] mb-3">
+                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#F8F7F4] border border-[#eeedea] mb-3">
                     <Trophy className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                    <div className="flex-1 flex items-center gap-3 text-[10px] overflow-hidden">
-                        {top3.map((item, i) => (
-                            <span key={i} className="flex items-center gap-1 whitespace-nowrap">
-                                <span className={`font-black ${i === 0 ? 'text-amber-600' : 'text-[#c0b3b1]'}`}>{item.rank}.</span>
-                                <span className="font-bold text-[#1b1c1a]">{item.name}</span>
-                                <span className="font-bold text-[#c0b3b1]">{item.points}</span>
-                            </span>
-                        ))}
-                    </div>
+                    <span className="text-[10px] font-bold text-[#8c716c]">Líder:</span>
+                    <span className="text-[10px] font-black text-[#1b1c1a]">{top3[0].name}</span>
+                    <span className="text-[10px] font-bold text-[#c0b3b1]">{top3[0].points} pts</span>
                 </div>
             )}
 

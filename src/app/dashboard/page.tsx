@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { ShieldCheck, Settings, Flame, TrendingUp, Calendar, ArrowRight, Sparkles, LayoutGrid } from 'lucide-react'
+import { ShieldCheck, Settings, Flame, TrendingUp, ArrowRight, Sparkles, LayoutGrid } from 'lucide-react'
 import { getActiveOperator } from '@/app/actions/pinAuth'
 import { getActiveRoutinesAction } from '@/app/actions/routinesAction'
 import { getOperatorSummaryAction, getLastSealingAction } from '@/app/actions/gamificationAction'
@@ -180,19 +180,16 @@ function DashboardContent() {
             {/* ═══════════════════════════════════════════════
                  BLOCO 1: HEADER COMPACTO
                  ═══════════════════════════════════════════════ */}
-            <div className="flex items-center justify-between px-5 pt-5 pb-3">
-                <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 bg-white rounded-xl shadow-sm border border-[#e9e8e5] flex items-center justify-center">
+            <div className="flex items-center justify-between px-5 pt-7 pb-5">
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-white rounded-xl shadow-sm border border-[#e9e8e5] flex items-center justify-center">
                         <Flame className="w-4 h-4 text-[#B13A2B]" strokeWidth={2} fill="currentColor" />
                     </div>
                     <div>
-                        <h1 className="text-base font-extrabold text-[#1b1c1a] tracking-tight leading-tight" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
+                        <h1 className="text-lg font-extrabold text-[#1b1c1a] tracking-tight leading-tight" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
                             {getGreeting()}{userName ? `, ${userName}` : ''}
                         </h1>
-                        <div className="flex items-center gap-1.5">
-                            <Calendar className="w-3 h-3 text-[#c0b3b1]" />
-                            <span className="text-[9px] font-bold text-[#c0b3b1] uppercase tracking-widest">{todayDate}</span>
-                        </div>
+                        <span className="text-[10px] font-bold text-[#c0b3b1] uppercase tracking-widest">{todayDate}</span>
                     </div>
                 </div>
 

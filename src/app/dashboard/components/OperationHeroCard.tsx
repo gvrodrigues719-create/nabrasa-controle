@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Thermometer, Activity, Package, Eye, Target, AlertCircle, CheckCircle2, Flame, Edit2, Check, X, Loader2, ArrowUpRight } from 'lucide-react'
+import { Thermometer, Activity, Package, Eye, Target, AlertCircle, CheckCircle2, Flame, Edit2, Check, X, Loader2 } from 'lucide-react'
 import { Leak } from '@/app/actions/efficiencyAction'
 import type { WeeklyFocus } from '@/app/actions/weeklyFocusAction'
 
@@ -100,10 +100,10 @@ export default function OperationHeroCard({
                     <span className="text-[10px] font-black text-[#8c716c] uppercase tracking-[0.15em]">Saúde da Operação</span>
                 </div>
 
-                <div className="flex items-start gap-5">
-                    {/* SVG Termômetro (compacto) */}
+                <div className="flex items-start gap-4">
+                    {/* SVG Termômetro */}
                     <div className="shrink-0">
-                        <svg width="56" height="180" viewBox="0 0 56 180" fill="none">
+                        <svg width="76" height="180" viewBox="0 0 76 180" fill="none">
                             <defs>
                                 <linearGradient id="hg" x1="0" y1="1" x2="0" y2="0">
                                     <stop offset="0%" stopColor={getBulbColor()} />
@@ -112,29 +112,29 @@ export default function OperationHeroCard({
                                 <linearGradient id="tg" x1="0" y1="0" x2="1" y2="0">
                                     <stop offset="0%" stopColor="#e8e6e1" /><stop offset="50%" stopColor="#f5f4f1" /><stop offset="100%" stopColor="#dcdad6" />
                                 </linearGradient>
-                                <clipPath id="tc"><rect x="20" y="14" width="14" height={TUBE_H} rx="7" /></clipPath>
+                                <clipPath id="tc"><rect x="14" y="14" width="14" height={TUBE_H} rx="7" /></clipPath>
                             </defs>
 
-                            {/* Escala */}
-                            <line x1="38" y1="96" x2="46" y2="96" stroke="#059669" strokeWidth="1.5" strokeLinecap="round" />
-                            <text x="47" y="99" fill="#059669" fontSize="6" fontWeight="800" fontFamily="sans-serif">IDEAL</text>
-                            <line x1="38" y1="18" x2="46" y2="18" stroke="#fca5a5" strokeWidth="1.5" strokeLinecap="round" />
-                            <text x="47" y="21" fill="#fca5a5" fontSize="6" fontWeight="800" fontFamily="sans-serif">MÁX</text>
-                            {[42, 62, 78].map(y => <line key={y} x1="38" y1={y} x2="42" y2={y} stroke="#e5e7eb" strokeWidth="1" strokeLinecap="round" />)}
+                            {/* Marcas de escala */}
+                            <line x1="32" y1="96" x2="38" y2="96" stroke="#059669" strokeWidth="1.5" strokeLinecap="round" />
+                            <text x="40" y="99" fill="#059669" fontSize="7" fontWeight="800" fontFamily="sans-serif">IDEAL</text>
+                            <line x1="32" y1="18" x2="38" y2="18" stroke="#fca5a5" strokeWidth="1.5" strokeLinecap="round" />
+                            <text x="40" y="21" fill="#fca5a5" fontSize="7" fontWeight="800" fontFamily="sans-serif">MÁX</text>
+                            {[42, 62, 78].map(y => <line key={y} x1="32" y1={y} x2="36" y2={y} stroke="#e5e7eb" strokeWidth="1" strokeLinecap="round" />)}
 
                             {/* Tubo */}
-                            <rect x="20" y="14" width="14" height={TUBE_H} rx="7" fill="url(#tg)" stroke="#d4d0cb" strokeWidth="1.5" />
+                            <rect x="14" y="14" width="14" height={TUBE_H} rx="7" fill="url(#tg)" stroke="#d4d0cb" strokeWidth="1.5" />
 
                             {/* Mercúrio */}
                             <g clipPath="url(#tc)">
-                                <rect x="20" y={mercuryY} width="14" height={mercuryH} fill="url(#hg)" className="transition-all duration-1000 ease-out" />
-                                {mercuryH > 4 && <ellipse cx="27" cy={mercuryY} rx="7" ry="2.5" fill={getMercuryColor()} opacity="0.7" className="transition-all duration-1000 ease-out" />}
+                                <rect x="14" y={mercuryY} width="14" height={mercuryH} fill="url(#hg)" className="transition-all duration-1000 ease-out" />
+                                {mercuryH > 4 && <ellipse cx="21" cy={mercuryY} rx="7" ry="2.5" fill={getMercuryColor()} opacity="0.7" className="transition-all duration-1000 ease-out" />}
                             </g>
 
                             {/* Bulbo */}
-                            <circle cx="27" cy="150" r="18" fill="url(#tg)" stroke="#d4d0cb" strokeWidth="1.5" />
-                            <circle cx="27" cy="150" r="14" fill={getBulbColor()} />
-                            <ellipse cx="23" cy="145" rx="4" ry="5" fill="white" opacity="0.15" />
+                            <circle cx="21" cy="150" r="18" fill="url(#tg)" stroke="#d4d0cb" strokeWidth="1.5" />
+                            <circle cx="21" cy="150" r="14" fill={getBulbColor()} />
+                            <ellipse cx="17" cy="145" rx="4" ry="5" fill="white" opacity="0.15" />
                         </svg>
                     </div>
 
@@ -210,18 +210,14 @@ export default function OperationHeroCard({
                 </div>
             )}
 
-            {/* ═══ PARTE 3: FOCO DA SEMANA (footer escuro) ═══ */}
-            <div className="bg-[#1b1c1a] px-5 py-4 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-[#B13A2B] to-transparent opacity-10 rounded-full -mr-12 -mt-12" />
-
-                <div className="relative z-10">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-1.5 text-white/40">
-                            <Flame className="w-3.5 h-3.5 text-[#B13A2B] fill-[#B13A2B]" />
-                            <span className="text-[9px] font-black uppercase tracking-widest">Foco da Semana</span>
-                        </div>
+            {/* ═══ PARTE 3: FOCO DA SEMANA (clean strip) ═══ */}
+            <div className="mx-5 mb-4 flex items-start gap-3 p-3.5 rounded-2xl border border-[#eeedea] bg-[#F8F7F4]">
+                <Flame className="w-4 h-4 text-[#B13A2B] fill-[#B13A2B] shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                        <span className="text-[9px] font-black text-[#8c716c] uppercase tracking-widest">Foco da Semana</span>
                         {canEdit && !isEditing && (
-                            <button onClick={handleEdit} className="text-white/20 hover:text-white transition-colors cursor-pointer">
+                            <button onClick={handleEdit} className="text-[#c0b3b1] hover:text-[#58413e] transition-colors cursor-pointer">
                                 <Edit2 className="w-3 h-3" />
                             </button>
                         )}
@@ -231,30 +227,20 @@ export default function OperationHeroCard({
                         <div className="space-y-2">
                             <textarea
                                 value={draft} onChange={e => setDraft(e.target.value)} disabled={isSaving} autoFocus
-                                className="w-full bg-white/5 border border-white/10 rounded-xl p-2.5 text-white text-sm focus:outline-none focus:border-[#B13A2B] resize-none h-16 placeholder:text-white/20"
+                                className="w-full bg-white border border-[#e9e8e5] rounded-xl p-2.5 text-[#1b1c1a] text-sm focus:outline-none focus:border-[#B13A2B] resize-none h-16 placeholder:text-[#c0b3b1]"
                                 placeholder="Digite o foco da semana..."
                             />
                             <div className="flex justify-end gap-2">
-                                <button onClick={handleCancel} disabled={isSaving} className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/5 text-white/50 hover:bg-white/10 hover:text-white transition-all disabled:opacity-50 cursor-pointer"><X className="w-3.5 h-3.5" /></button>
+                                <button onClick={handleCancel} disabled={isSaving} className="w-7 h-7 flex items-center justify-center rounded-lg bg-[#eeedea] text-[#8c716c] hover:bg-[#e9e8e5] transition-all disabled:opacity-50 cursor-pointer"><X className="w-3.5 h-3.5" /></button>
                                 <button onClick={handleSave} disabled={isSaving || !draft.trim()} className="w-7 h-7 flex items-center justify-center rounded-lg bg-[#B13A2B] text-white hover:bg-red-600 transition-all disabled:opacity-50 cursor-pointer">
                                     {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                                 </button>
                             </div>
                         </div>
                     ) : (
-                        <>
-                            <p className="text-[15px] font-bold text-white leading-snug pr-4">
-                                {focus?.title || 'Manter a operação dentro da meta e padrões de qualidade.'}
-                            </p>
-                            <div className="mt-2 flex items-center gap-2">
-                                <span className="text-[8px] font-black text-[#B13A2B] uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                    Prioridade <ArrowUpRight className="w-2.5 h-2.5" />
-                                </span>
-                                <span className="text-[8px] font-bold text-white/25 uppercase tracking-widest">
-                                    {focus?.source === 'manual' ? 'Manual' : 'Sugestão'}
-                                </span>
-                            </div>
-                        </>
+                        <p className="text-[13px] font-semibold text-[#1b1c1a] leading-snug">
+                            {focus?.title || 'Manter a operação dentro da meta e padrões de qualidade.'}
+                        </p>
                     )}
                 </div>
             </div>
