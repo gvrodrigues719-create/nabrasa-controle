@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { ClipboardList, ShieldCheck, Settings, Flame, TrendingUp, Calendar, ArrowRight, ListChecks, Trophy, Zap, Star, AlertTriangle } from 'lucide-react'
+import { ClipboardList, ShieldCheck, Settings, Flame, TrendingUp, Calendar, ArrowRight, ListChecks, Zap, Star } from 'lucide-react'
 import { getActiveOperator } from '@/app/actions/pinAuth'
 import { getActiveRoutinesAction } from '@/app/actions/routinesAction'
 import { getOperatorSummaryAction } from '@/app/actions/gamificationAction'
@@ -13,7 +13,8 @@ import EfficiencyReservoir from './components/EfficiencyReservoir'
 import HouseHealthDrawer from './components/HouseHealthDrawer'
 
 export default function DashboardPage() {
-    const [userRole, setUserRole] = useState<string>('operator')
+    // null = ainda não sabe o role (evita flash de conteúdo com role errado)
+    const [userRole, setUserRole] = useState<string | null>(null)
     const [userName, setUserName] = useState<string>('')
     const [routinesCount, setRoutinesCount] = useState<number>(0)
     const [userId, setUserId] = useState<string>('')
@@ -21,9 +22,9 @@ export default function DashboardPage() {
     const [weeklyPoints, setWeeklyPoints] = useState<number | null>(null)
     const [rankPosition, setRankPosition] = useState<number | null>(null)
     const [healthScore, setHealthScore] = useState<number>(100)
-    const [activeLeaks, setActiveLeaks] = useState<any[]>([])
-    const [weeklyLeaks, setWeeklyLeaks] = useState<any[]>([])
-    const [combinedTop3, setCombinedTop3] = useState<any[]>([])
+    const [activeLeaks, setActiveLeaks] = useState<Leak[]>([])
+    const [weeklyLeaks, setWeeklyLeaks] = useState<Leak[]>([])
+    const [combinedTop3, setCombinedTop3] = useState<Leak[]>([])
     const [currentGroupId, setCurrentGroupId] = useState<string | undefined>()
     const [isLossDrawerOpen, setIsLossDrawerOpen] = useState(false)
     const [isHealthDrawerOpen, setIsHealthDrawerOpen] = useState(false)
@@ -32,6 +33,8 @@ export default function DashboardPage() {
     useEffect(() => {
         async function loadData() {
             setLoading(true)
+
+            // PASSO 1: Resolver identidade do usuário (serial — cada fallback depende do anterior)
             const op = await getActiveOperator()
             let currentUserId = ''
             
@@ -58,7 +61,25 @@ export default function DashboardPage() {
                 }
             }
 
-            const healthRes = await getOperationalHealthAction()
+            // PASSO 2: Carregar dados independentes em paralelo
+            const [healthRes, routinesRes, sessionRes, summaryRes] = await Promise.all([
+                getOperationalHealthAction(),
+                getActiveRoutinesAction(),
+                currentUserId
+                    ? supabase
+                        .from('count_sessions')
+                        .select('group_id')
+                        .eq('status', 'in_progress')
+                        .eq('user_id', currentUserId)
+                        .order('updated_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle()
+                    : Promise.resolve({ data: null }),
+                currentUserId
+                    ? getOperatorSummaryAction(currentUserId)
+                    : Promise.resolve({ success: false })
+            ])
+
             if (healthRes.success) {
                 setHealthScore(healthRes.score)
                 setActiveLeaks(healthRes.activeLeaks || [])
@@ -66,30 +87,16 @@ export default function DashboardPage() {
                 setCombinedTop3(healthRes.combinedTop3 || [])
             }
 
-            const routinesRes = await getActiveRoutinesAction()
             setRoutinesCount(routinesRes.data?.length || 0)
 
-            if (currentUserId) {
-                // Determine Current Group Context (if user has an active session)
-                const { data: session } = await supabase
-                    .from('count_sessions')
-                    .select('group_id')
-                    .eq('status', 'in_progress')
-                    .eq('user_id', currentUserId)
-                    .order('updated_at', { ascending: false })
-                    .limit(1)
-                    .single()
-                
-                if (session) setCurrentGroupId(session.group_id)
+            if (sessionRes.data) setCurrentGroupId(sessionRes.data.group_id)
 
-                const summary = await getOperatorSummaryAction(currentUserId)
-                if (summary.success) {
-                    setUserPoints(summary.totalPoints ?? 0)
-                    setWeeklyPoints(summary.weeklyPoints ?? 0)
-                    setRankPosition(summary.rankPosition ?? null)
-                }
+            if (summaryRes.success) {
+                setUserPoints((summaryRes as any).totalPoints ?? 0)
+                setWeeklyPoints((summaryRes as any).weeklyPoints ?? 0)
+                setRankPosition((summaryRes as any).rankPosition ?? null)
             }
-            
+
             setLoading(false)
         }
         loadData()
@@ -108,7 +115,7 @@ export default function DashboardPage() {
         month: 'long' 
     }).format(new Date())
 
-    const roleLabel = userRole === 'operator' ? 'Operador' : userRole === 'manager' ? 'Gerente' : 'Administrador'
+    const roleLabel = !userRole ? '' : userRole === 'operator' ? 'Operador' : userRole === 'manager' ? 'Gerente' : 'Administrador'
 
     return (
         <div className="min-h-screen bg-[#F8F7F4] pb-10" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
@@ -166,7 +173,7 @@ export default function DashboardPage() {
                     />
                 )}
 
-                {/* ── HERO DE PROGRESSO ── */}
+                {/* ── HERO DE PROGRESSO (só aparece após confirmar role) ── */}
                 {userRole === 'operator' && (
                     <div className="bg-[#1b1c1a] rounded-[32px] p-5 shadow-2xl relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#B13A2B] to-transparent opacity-10 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700" />
@@ -286,8 +293,8 @@ export default function DashboardPage() {
                     </div>
                 </section>
 
-                {/* ── ATALHOS GERENCIAIS (SÓ ADMIN/MANAGER) ── */}
-                {['admin', 'manager'].includes(userRole) && (
+                {/* ── ATALHOS GERENCIAIS (só aparece após confirmar role) ── */}
+                {userRole !== null && ['admin', 'manager'].includes(userRole) && (
                     <section className="mt-4">
                         <p className="text-[11px] font-bold text-[#8c716c] uppercase tracking-widest mb-3">Gerência & Controle</p>
                         <div className="grid grid-cols-1 gap-3">

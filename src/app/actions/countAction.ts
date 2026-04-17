@@ -140,28 +140,31 @@ export async function syncCountSessionAction(sessionId: string, currentCounts: R
                 // 2. VD-03: Sessão fechada sem abandono (sempre que chega ao complete)
                 await recordSealingEventAction(sess.user_id, 'session_clean_close', sessionId)
 
-                // 3. Verifica e pontua conclusão de rotina (+100)
-                await checkAndRewardRoutineCompletionAction(sessionId)
+                // 3. Verifica completude da rotina e pontua (+100) — retorna {duplicated: true} se já foi pontuado
+                const routineReward = await checkAndRewardRoutineCompletionAction(sessionId)
 
-                // 4. VD-04: Rotina concluída sem nenhum item zerado
-                // Verificar se existem itens zerados na rotina inteira desta semana
-                if (sess.routine_id) {
-                    const { data: zeroedInRoutine } = await supabase
-                        .from('count_session_items')
+                // 4. VD-04: Rotina sem ruptura — só dispara quando a rotina acabou de ser completada
+                // Garante: não duplica (amarrado ao momento único de conclusão da rotina)
+                if (routineReward.success && !routineReward.duplicated && sess.routine_id) {
+                    const { data: completedSessionIds } = await supabase
+                        .from('count_sessions')
                         .select('id')
-                        .eq('is_zeroed', true)
-                        .in('session_id', (
-                            await supabase
-                                .from('count_sessions')
-                                .select('id')
-                                .eq('routine_id', sess.routine_id)
-                                .eq('status', 'completed')
-                                .then(r => r.data?.map(s => s.id) || [])
-                        ))
-                        .limit(1)
+                        .eq('routine_id', sess.routine_id)
+                        .eq('status', 'completed')
 
-                    if (!zeroedInRoutine || zeroedInRoutine.length === 0) {
-                        await recordSealingEventAction(sess.user_id, 'routine_zero_rupture', sess.routine_id)
+                    const ids = completedSessionIds?.map(s => s.id) || []
+
+                    if (ids.length > 0) {
+                        const { data: zeroedInRoutine } = await supabase
+                            .from('count_session_items')
+                            .select('id')
+                            .eq('is_zeroed', true)
+                            .in('session_id', ids)
+                            .limit(1)
+
+                        if (!zeroedInRoutine || zeroedInRoutine.length === 0) {
+                            await recordSealingEventAction(sess.user_id, 'routine_zero_rupture', sess.routine_id)
+                        }
                     }
                 }
             }
