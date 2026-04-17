@@ -22,66 +22,76 @@ export default function OperationThermometer({
     onViewGlobalClick 
 }: Props) {
     
-    // Temperatura = inversão do score (score alto = frio, score baixo = quente)
+    // Temperatura = inversão do score — o eixo visual e o número agora compartilham o mesmo sentido
+    // score 100 = temp 0 (frio = bom)
+    // score  84 = temp 16 (levemente aquecida)
+    // score  60 = temp 40 (atenção)
+    // score  30 = temp 70 (crítico)
     const temperature = 100 - score
 
     const getStatusConfig = () => {
-        if (score >= 90) return {
+        // Baseado em TEMPERATURE (mercúrio sobe = alarme cresce — coerente com o visual)
+        if (temperature <= 10) return {
             label: 'Sob controle',
+            sublabel: 'Operação estável',
             color: 'text-emerald-700',
             dotColor: 'bg-emerald-500',
-            zone: 'controlled'
+            pulse: false
         }
-        if (score >= 75) return {
+        if (temperature <= 25) return {
             label: 'Esquentando',
+            sublabel: 'Atenção nos sinais',
             color: 'text-amber-700',
             dotColor: 'bg-amber-500',
-            zone: 'warming'
+            pulse: false
         }
-        if (score >= 60) return {
+        if (temperature <= 45) return {
             label: 'Atenção operacional',
+            sublabel: 'Temperatura acima do normal',
             color: 'text-orange-700',
             dotColor: 'bg-orange-500',
-            zone: 'attention'
+            pulse: true
         }
-        if (score >= 40) return {
+        if (temperature <= 65) return {
             label: 'Fora do ponto',
+            sublabel: 'Operação comprometida',
             color: 'text-red-600',
             dotColor: 'bg-red-500',
-            zone: 'hot'
+            pulse: true
         }
         return {
             label: 'Crítico',
+            sublabel: 'Ação imediata necessária',
             color: 'text-red-700',
             dotColor: 'bg-red-600',
-            zone: 'critical'
+            pulse: true
         }
     }
 
     const status = getStatusConfig()
     const hasAnyIssue = activeLeaks.length > 0 || weeklyLeaks.length > 0
 
-    // Gradiente do mercúrio: de base neutra para topo quente
+    // Cor do mercúrio baseada em TEMPERATURE
     const getMercuryGradient = () => {
-        if (score >= 90) return '#059669' // emerald-600
-        if (score >= 75) return '#d97706' // amber-600
-        if (score >= 60) return '#ea580c' // orange-600
+        if (temperature <= 10) return '#059669' // emerald-600
+        if (temperature <= 25) return '#d97706' // amber-600
+        if (temperature <= 45) return '#ea580c' // orange-600
         return '#dc2626' // red-600
     }
 
-    // Cor do bulbo (sempre a cor mais intensa)
+    // Cor do bulbo
     const getBulbColor = () => {
-        if (score >= 90) return '#047857' // emerald-700
-        if (score >= 75) return '#b45309' // amber-700
-        if (score >= 60) return '#c2410c' // orange-700
+        if (temperature <= 10) return '#047857' // emerald-700
+        if (temperature <= 25) return '#b45309' // amber-700
+        if (temperature <= 45) return '#c2410c' // orange-700
         return '#b91c1c' // red-700
     }
 
-    // Opacidade do glow no topo (mais quente = mais visível)
+    // Glow quente (só aparece quando o mercúrio está de fato alto)
     const getGlowIntensity = () => {
-        if (score >= 90) return 0
-        if (score >= 75) return 0.15
-        if (score >= 60) return 0.3
+        if (temperature <= 10) return 0
+        if (temperature <= 25) return 0.1
+        if (temperature <= 45) return 0.28
         return 0.5
     }
 
@@ -288,21 +298,25 @@ export default function OperationThermometer({
 
                     {/* Status principal */}
                     <div className="flex items-center gap-3 mb-2">
-                        <div className={`w-2.5 h-2.5 rounded-full ${status.dotColor} ${temperature > 15 ? 'animate-pulse' : ''}`} />
+                        <div className={`w-2.5 h-2.5 rounded-full ${status.dotColor} ${status.pulse ? 'animate-pulse' : ''}`} />
                         <span className={`text-[13px] font-black uppercase tracking-[0.15em] ${status.color}`}>
                             {status.label}
                         </span>
                     </div>
                     
-                    {/* Score numérico grande */}
-                    <div className="flex items-baseline gap-2 mb-6">
+                    {/* Temperatura como número principal — alinhado ao termômetro visual */}
+                    <div className="flex items-baseline gap-2 mb-1">
                         <span 
                             className="text-6xl font-black text-[#1b1c1a] tracking-tighter leading-none" 
                             style={{ fontFamily: 'var(--font-manrope), sans-serif' }}
                         >
-                            {score}<span className="text-3xl opacity-15 ml-0.5">%</span>
+                            {temperature}<span className="text-3xl opacity-15 ml-0.5">°</span>
                         </span>
                     </div>
+                    {/* Sublabel discreto com saúde da operação */}
+                    <p className="text-[10px] font-bold text-[#c0b3b1] uppercase tracking-widest mb-5">
+                        {status.sublabel}
+                    </p>
 
                     <div className="space-y-5">
                         {/* SINAIS ATIVOS */}
