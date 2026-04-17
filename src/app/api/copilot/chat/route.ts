@@ -117,10 +117,20 @@ ${userContext}
 
     // 4. Stream com Gemini
     console.log('[Copilot] chamando streamText com gemini-2.5-flash...')
+    
+    // Converte UIMessage do cliente (parts) para CoreMessage do servidor (content)
+    const coreMessages = messages.map((m: any) => ({
+      role: m.role,
+      content: m.parts.map((p: any) => {
+        if (p.type === 'text') return { type: 'text', text: p.text };
+        return p;
+      })
+    }))
+
     const result = streamText({
       model: google('gemini-2.5-flash'),
       system: systemPrompt,
-      messages,
+      messages: coreMessages,
       temperature: 0.2,
       onFinish: ({ text }) => console.log('[Copilot] ✓ resposta gerada, chars:', text.length),
     })
