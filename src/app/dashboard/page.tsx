@@ -20,6 +20,8 @@ import OperatorContributionCard from './components/OperatorContributionCard'
 import ActionGrid from './components/ActionGrid'
 import OperationAI from './components/OperationAI'
 import OperationAIDrawer from './components/OperationAIDrawer'
+import RewardsWidget from './components/RewardsWidget'
+import RewardsDrawer from './components/RewardsDrawer'
 
 function DashboardContent() {
     const searchParams = useSearchParams()
@@ -44,6 +46,7 @@ function DashboardContent() {
     const [cmvStatus, setCmvStatus] = useState<any>(null)
     const [lastSealing, setLastSealing] = useState<any>(null)
     const [isAIDrawerOpen, setIsAIDrawerOpen] = useState(false)
+    const [isRewardsDrawerOpen, setIsRewardsDrawerOpen] = useState(false)
     const [topRanking, setTopRanking] = useState<{ name: string, points: number, rank: number }[]>([])
     const [weeklyFocus, setWeeklyFocus] = useState<WeeklyFocus | null>(null)
 
@@ -282,6 +285,12 @@ function DashboardContent() {
                             lastSealing={lastSealing}
                             topRanking={topRanking}
                         />
+
+                        {/* WIDGET DA LOJA DE RECOMPENSAS */}
+                        <RewardsWidget 
+                            balance={isDemoMode ? 120 : 0} 
+                            onClick={() => setIsRewardsDrawerOpen(true)} 
+                        />
                     </div>
                 )}
 
@@ -428,6 +437,11 @@ function DashboardContent() {
             <OperationAIDrawer 
                 isOpen={isAIDrawerOpen}
                 onClose={() => setIsAIDrawerOpen(false)}
+            />
+            <RewardsDrawer
+                isOpen={isRewardsDrawerOpen}
+                onClose={() => setIsRewardsDrawerOpen(false)}
+                initialBalance={isDemoMode ? 120 : 0}
             />
         </div>
     )
