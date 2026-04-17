@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { getStartOfOperationalWeek } from '@/lib/dateUtils'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,18 +29,9 @@ export type Leak = {
     penalty: number
 }
 
-function getStartOfOperationalWeek(): string {
-    const now = new Date()
-    const day = now.getUTCDay()
-    const diff = now.getUTCDate() - day + (day === 0 ? -6 : 1)
-    const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), diff, 3, 0, 0, 0))
-    if (now < start) start.setUTCDate(start.getUTCDate() - 7)
-    return start.toISOString()
-}
-
 /**
- * Calcula a Saúde da Operação (V2.2 - Weekly Refined)
- * Separa vazamentos ativos (checklist/sessão) de perdas acumuladas.
+ * Calcula a Saúde da Operação (V3 - Final Weekly)
+ * Separa vazamentos ativos dos acumulados da semana.
  */
 export async function getOperationalHealthAction() {
     try {
@@ -52,7 +44,7 @@ export async function getOperationalHealthAction() {
         const weeklyLeaks: Leak[] = []
         let currentScore = 100
 
-        // 1. VAZAMENTOS ATIVOS: CHECKLISTS PENDENTES (Hoje)
+        // 1. SINAIS ATIVOS: CHECKLISTS PENDENTES (Hoje)
         const { data: templates } = await supabase
             .from('checklist_templates')
             .select('id, name, context')
@@ -86,7 +78,7 @@ export async function getOperationalHealthAction() {
             }
         }
 
-        // 2. VAZAMENTOS ATIVOS: SESSÕES TRAVADAS (Hoje)
+        // 2. SINAIS ATIVOS: SESSÕES TRAVADAS (Hoje)
         const fourHoursAgo = new Date(now.getTime() - LIMITS.STUCK_SESSION_HOURS * 60 * 60 * 1000).toISOString()
         const { data: stuckSessions } = await supabase
             .from('count_sessions')
@@ -146,20 +138,16 @@ export async function getOperationalHealthAction() {
             })
         }
 
-        // Home Top 3: Prioriza Ativos, depois Semanais
-        const combinedLeaksForHome = [...activeLeaks, ...weeklyLeaks].slice(0, 3)
-
         return {
             success: true,
             score: Math.max(0, Math.min(100, currentScore)),
-            penalidade_total: 100 - currentScore,
-            activeLeaks,
-            weeklyLeaks,
-            combinedLeaks: combinedLeaksForHome
+            activeLeaks, // Sinais Ativos (Checklists/Sessões)
+            weeklyLeaks, // Perdas Acumuladas
+            combinedTop3: [...activeLeaks, ...weeklyLeaks].slice(0, 3)
         }
     } catch (err: any) {
         console.error('[Efficiency] Erro no motor de saúde:', err.message)
-        return { success: false, error: err.message, score: 100, activeLeaks: [], weeklyLeaks: [], combinedLeaks: [] }
+        return { success: false, error: err.message, score: 100, activeLeaks: [], weeklyLeaks: [], combinedTop3: [] }
     }
 }
 
@@ -173,7 +161,12 @@ export async function getGlobalHouseHealthAction() {
             .order('created_at', { ascending: false })
         if (error) throw error
         const healthRes = await getOperationalHealthAction()
-        return { success: true, losses: losses || [], activeLeaks: healthRes.activeLeaks, weeklyLeaks: healthRes.weeklyLeaks }
+        return { 
+            success: true, 
+            losses: losses || [], 
+            activeLeaks: healthRes.activeLeaks, 
+            weeklyLeaks: healthRes.weeklyLeaks 
+        }
     } catch (err: any) {
         return { success: false, error: err.message, losses: [], activeLeaks: [], weeklyLeaks: [] }
     }

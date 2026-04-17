@@ -1,17 +1,27 @@
 'use client'
 
 import React from 'react'
-import { Droplet, AlertTriangle, Zap, Eye, Package, Activity } from 'lucide-react'
+import { Droplet, AlertTriangle, Zap, Eye, Activity, Package } from 'lucide-react'
 import { Leak } from '@/app/actions/efficiencyAction'
 
 interface Props {
     score: number
-    leaks: Leak[]
+    activeLeaks: Leak[]
+    weeklyLeaks: Leak[]
+    combinedTop3: Leak[]
     onActionClick: () => void
     onViewGlobalClick?: () => void
 }
 
-export default function EfficiencyReservoir({ score, leaks, onActionClick, onViewGlobalClick }: Props) {
+export default function EfficiencyReservoir({ 
+    score, 
+    activeLeaks, 
+    weeklyLeaks, 
+    combinedTop3,
+    onActionClick, 
+    onViewGlobalClick 
+}: Props) {
+    
     const getLevelGradient = () => {
         if (score >= 90) return 'from-blue-600 to-blue-400' 
         if (score >= 70) return 'from-amber-600 to-amber-400' 
@@ -24,19 +34,21 @@ export default function EfficiencyReservoir({ score, leaks, onActionClick, onVie
         return 'Vazamento Crítico'
     }
 
-    // Progressão de Fissuras baseada no score operacional
+    // Progressão de Fissuras Integradas (SVG)
     const damageLevel = score < 70 ? 3 : score < 90 ? 1 : 0
 
     return (
         <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e9e8e5]">
             <div className="flex items-center gap-8 mb-6">
                 
-                {/* REPRESENTAÇÃO VISUAL: RESERVATÓRIO COM FISSURAS REAIS */}
+                {/* REPRESENTAÇÃO VISUAL: RESERVATÓRIO COM DANO REAL */}
                 <div className="relative group shrink-0">
                     <div className="relative w-24 h-40 bg-[#F8F7F4]/40 rounded-b-3xl rounded-t-lg border-[3px] border-[#e2e1de] shadow-inner overflow-hidden flex flex-col justify-end">
                         
+                        {/* Brilho do Vidro */}
                         <div className="absolute top-0 left-2 w-1.5 h-full bg-white/20 blur-[1px] pointer-events-none z-20" />
                         
+                        {/* Líquido (A Eficiência) */}
                         <div 
                             className={`w-full bg-gradient-to-t transition-all duration-1000 ease-out relative z-10 ${getLevelGradient()}`}
                             style={{ height: `${score}%` }}
@@ -46,22 +58,26 @@ export default function EfficiencyReservoir({ score, leaks, onActionClick, onVie
                             )}
                         </div>
 
+                        {/* FISSURAS NO CORPO (SVG Integrado) */}
                         {damageLevel > 0 && (
                             <div className="absolute inset-0 z-30 pointer-events-none">
                                 <svg viewBox="0 0 100 160" className="w-full h-full">
+                                    {/* Fissura 1 (Base Esquerda) */}
                                     <g className="opacity-80">
-                                        <path d="M 15 135 L 25 140 L 22 148 M 25 140 L 35 142" fill="none" stroke="#B13A2B" strokeWidth="1.5" strokeLinecap="round" />
-                                        <circle cx="25" cy="140" r="1.5" fill="#B13A2B" />
+                                        <path d="M 15 130 L 25 135 L 22 143 M 25 135 L 35 137" fill="none" stroke="#B13A2B" strokeWidth="1.5" strokeLinecap="round" />
+                                        <circle cx="25" cy="135" r="1.5" fill="#B13A2B" />
                                     </g>
                                     
                                     {damageLevel >= 3 && (
                                         <>
+                                            {/* Fissura 2 (Meio Direita) */}
                                             <g className="opacity-80">
                                                 <path d="M 85 80 L 75 85 L 82 92 M 75 85 L 68 82" fill="none" stroke="#B13A2B" strokeWidth="1.5" strokeLinecap="round" />
                                                 <circle cx="75" cy="85" r="1.5" fill="#B13A2B" />
                                             </g>
+                                            {/* Fissura 3 (Top Esquerda) */}
                                             <g className="opacity-80">
-                                                <path d="M 10 40 L 22 45 L 18 55 M 22 45 L 30 42" fill="none" stroke="#B13A2B" strokeWidth="1.5" strokeLinecap="round" />
+                                                <path d="M 12 40 L 22 45 L 18 55 M 22 45 L 30 42" fill="none" stroke="#B13A2B" strokeWidth="1.5" strokeLinecap="round" />
                                                 <circle cx="22" cy="45" r="1.5" fill="#B13A2B" />
                                             </g>
                                         </>
@@ -73,18 +89,19 @@ export default function EfficiencyReservoir({ score, leaks, onActionClick, onVie
                         <div className="absolute bottom-0 left-0 w-full h-1.5 bg-black/5 blur-[1px] z-20" />
                     </div>
 
+                    {/* GOTEJAMENTO REALISTA (Saindo dos Furos) */}
                     {damageLevel > 0 && (
                         <div className="absolute inset-0 z-40 pointer-events-none">
                             <Droplet 
                                 className="absolute w-3.5 h-3.5 text-red-500 fill-current animate-bounce shadow-sm" 
-                                style={{ bottom: '15px', left: '20px', animationDuration: '2.5s' }} 
+                                style={{ bottom: '20px', left: '21px', animationDuration: '2.5s' }} 
                             />
                             
                             {damageLevel >= 3 && (
                                 <>
                                     <Droplet 
                                         className="absolute w-3 h-3 text-red-600 fill-current animate-bounce shadow-sm" 
-                                        style={{ top: '80px', right: '18px', animationDuration: '1.8s' }} 
+                                        style={{ top: '82px', right: '18px', animationDuration: '1.8s' }} 
                                     />
                                     <Droplet 
                                         className="absolute w-3 h-3 text-red-400 fill-current animate-bounce shadow-sm" 
@@ -109,26 +126,23 @@ export default function EfficiencyReservoir({ score, leaks, onActionClick, onVie
                         </span>
                     </div>
 
-                    {/* LISTA RESUMIDA (SEPARADA PO TIPO) */}
+                    {/* TOP 3 (SINAIS ATIVOS E PERDAS) */}
                     <div className="space-y-3">
-                        {leaks.length > 0 ? (
-                            <div className="space-y-2">
-                                {leaks.map(leak => {
-                                    const isActiveSignal = leak.type === 'checklist' || leak.type === 'session'
+                        {combinedTop3.length > 0 ? (
+                            <div className="space-y-1.5">
+                                {combinedTop3.map(leak => {
+                                    const isActive = leak.type === 'checklist' || leak.type === 'session'
                                     return (
-                                        <div key={leak.id} className="flex items-start gap-2 group/leak">
-                                            {isActiveSignal ? (
+                                        <div key={leak.id} className="flex items-start gap-2">
+                                            {isActive ? (
                                                 <Activity className="w-3 h-3 mt-0.5 shrink-0 text-red-500" />
                                             ) : (
-                                                <Package className="w-3 h-3 mt-0.5 shrink-0 text-[#B13A2B]/60" />
+                                                <Package className="w-3 h-3 mt-0.5 shrink-0 text-[#8c716c]" />
                                             )}
                                             <div className="flex flex-col">
-                                                <span className={`text-[10px] font-bold line-clamp-1 ${isActiveSignal ? 'text-[#1b1c1a]' : 'text-[#8c716c]'}`}>
+                                                <span className={`text-[10px] font-bold line-clamp-1 ${isActive ? 'text-[#1b1c1a]' : 'text-[#8c716c]'}`}>
                                                     {leak.label}
                                                 </span>
-                                                {isActiveSignal && (
-                                                    <span className="text-[8px] font-black text-red-500/80 uppercase tracking-wider -mt-0.5">Sinal Ativo</span>
-                                                )}
                                             </div>
                                         </div>
                                     )
@@ -151,6 +165,7 @@ export default function EfficiencyReservoir({ score, leaks, onActionClick, onVie
                 </div>
             </div>
 
+            {/* AÇÃO PROATIVA */}
             <button 
                 onClick={onActionClick}
                 className="w-full bg-[#1b1c1a] hover:bg-black text-white font-black text-[10px] uppercase tracking-[0.25em] py-4 rounded-2xl shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-3 border border-white/10"

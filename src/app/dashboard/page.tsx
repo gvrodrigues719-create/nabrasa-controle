@@ -21,7 +21,9 @@ export default function DashboardPage() {
     const [weeklyPoints, setWeeklyPoints] = useState<number | null>(null)
     const [rankPosition, setRankPosition] = useState<number | null>(null)
     const [healthScore, setHealthScore] = useState<number>(100)
-    const [leaks, setLeaks] = useState<Leak[]>([])
+    const [activeLeaks, setActiveLeaks] = useState<any[]>([])
+    const [weeklyLeaks, setWeeklyLeaks] = useState<any[]>([])
+    const [combinedTop3, setCombinedTop3] = useState<any[]>([])
     const [currentGroupId, setCurrentGroupId] = useState<string | undefined>()
     const [isLossDrawerOpen, setIsLossDrawerOpen] = useState(false)
     const [isHealthDrawerOpen, setIsHealthDrawerOpen] = useState(false)
@@ -59,7 +61,9 @@ export default function DashboardPage() {
             const healthRes = await getOperationalHealthAction()
             if (healthRes.success) {
                 setHealthScore(healthRes.score)
-                setLeaks(healthRes.combinedLeaks || [])
+                setActiveLeaks(healthRes.activeLeaks || [])
+                setWeeklyLeaks(healthRes.weeklyLeaks || [])
+                setCombinedTop3(healthRes.combinedTop3 || [])
             }
 
             const routinesRes = await getActiveRoutinesAction()
@@ -154,7 +158,9 @@ export default function DashboardPage() {
                 {!loading && (
                     <EfficiencyReservoir 
                         score={healthScore}
-                        leaks={leaks}
+                        activeLeaks={activeLeaks}
+                        weeklyLeaks={weeklyLeaks}
+                        combinedTop3={combinedTop3}
                         onActionClick={() => setIsLossDrawerOpen(true)}
                         onViewGlobalClick={() => setIsHealthDrawerOpen(true)}
                     />

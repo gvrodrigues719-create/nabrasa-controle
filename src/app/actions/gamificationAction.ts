@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { getStartOfOperationalWeek } from '@/lib/dateUtils'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,7 +10,6 @@ const supabase = createClient(
 
 /**
  * Registra um evento de pontuação de forma idempotente.
- * Se o par (user_id, source_type, source_id) já existir, não faz nada.
  */
 export async function recordPointsAction(
     userId: string,
@@ -30,18 +30,14 @@ export async function recordPointsAction(
             }])
 
         if (error) {
-            // Se o erro for de violação de UNIQUE (23505 no Postgres), tratamos de forma silenciosa
             if (error.code === '23505') {
-                console.log(`[Gamification] Evento duplicado ignorado: ${type} para source ${sourceId}`)
                 return { success: true, duplicated: true }
             }
-            console.error('[Gamification] Erro ao registrar pontos:', error.message)
             return { success: false, error: error.message }
         }
 
         return { success: true }
     } catch (err: any) {
-        console.error('[Gamification] Exceção ao registrar pontos:', err.message)
         return { success: false, error: err.message }
     }
 }
@@ -67,12 +63,9 @@ export async function getUserTotalPointsAction(userId: string) {
 
 /**
  * Verifica se todos os grupos de uma rotina foram concluídos hoje.
- * Se sim, atribui o bônus de rotina completa.
- * Deve ser chamado APÓS a conclusão de um grupo.
  */
 export async function checkAndRewardRoutineCompletionAction(sessionId: string) {
     try {
-        // 1. Busca dados da sessão atual
         const { data: currentSession, error: sErr } = await supabase
             .from('count_sessions')
             .select('routine_id, user_id, started_at')
@@ -82,12 +75,9 @@ export async function checkAndRewardRoutineCompletionAction(sessionId: string) {
         if (sErr || !currentSession) return { success: false, error: 'Sessão não encontrada' }
 
         const { routine_id, user_id, started_at } = currentSession
-
-        // Usa a data de início da sessão como âncora para o dia (ou 03:00 UTC se não houver)
         const dayAnchor = started_at ? started_at.split('T')[0] : new Date().toISOString().split('T')[0]
-        const startTime = `${dayAnchor}T03:00:00Z` // Meia-noite BRT
+        const startTime = `${dayAnchor}T03:00:00Z` 
 
-        // 2. Busca todos os grupos que pertencem a esta rotina
         const { data: routineGroups, error: rgErr } = await supabase
             .from('routine_groups')
             .select('group_id')
@@ -98,9 +88,6 @@ export async function checkAndRewardRoutineCompletionAction(sessionId: string) {
         const totalGroupsCount = routineGroups.length
         if (totalGroupsCount === 0) return { success: true }
 
-        const groupIds = routineGroups.map(rg => rg.group_id)
-
-        // 3. Busca sessões concluídas hoje para esses grupos
         const { data: completedSessions, error: csErr } = await supabase
             .from('count_sessions')
             .select('group_id')
@@ -110,53 +97,22 @@ export async function checkAndRewardRoutineCompletionAction(sessionId: string) {
 
         if (csErr || !completedSessions) return { success: false, error: 'Erro ao validar sessões concluídas' }
 
-        // Mapeia grupos únicos concluídos
         const completedGroupIds = new Set(completedSessions.map(s => s.group_id))
 
-        // 4. Se a quantidade de grupos únicos concluídos for igual ao total da rotina, pontua!
         if (completedGroupIds.size >= totalGroupsCount) {
-            // O source_id para rotina completa será uma combinação determinística: routine_id:dayAnchor
-            // para que a UNIQUE constraint do banco impeça bônus duplo no mesmo dia
-            const routineDayId = `${routine_id}:${dayAnchor}`
-            
-            // Como source_id precisa ser UUID, e não queremos criar tabela de 'routine_completions' agora,
-            // vamos usar o ID da própria rotina como source_id, mas a UNIQUE composta será:
-            // (user_id, 'count_routine_completion', routine_id) 
-            // NOTA: Se o usuário fizer a mesma rotina duas vezes no mesmo dia (raro), o UNIQUE impedirá o bônus duplo.
-            
             return await recordPointsAction(
                 user_id,
                 'count_routine_completion',
-                routine_id, // Usamos o ID da rotina como gatilho
+                routine_id, 
                 100,
                 'Parabéns! Você concluiu todos os setores desta rotina hoje.'
             )
         }
 
-        return { success: true, message: 'Rotina ainda incompleta' }
+        return { success: true }
     } catch (err: any) {
-        console.error('[Gamification] Erro na verificação de rotina:', err.message)
         return { success: false, error: err.message }
     }
-}
-
-/**
- * Retorna o início da semana operacional (Segunda-feira 03:00 UTC / 00:00 BRT)
- */
-function getStartOfOperationalWeek(): string {
-    const now = new Date()
-    // h = 3 (03:00 UTC)
-    const day = now.getUTCDay() // 0 (Sun), 1 (Mon), ..., 6 (Sat)
-    const diff = now.getUTCDate() - day + (day === 0 ? -6 : 1) // ajusta para Segunda
-    
-    const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), diff, 3, 0, 0, 0))
-    
-    // Se hoje for segunda antes das 03:00 UTC, a semana operacional começou na segunda anterior
-    if (now < start) {
-        start.setUTCDate(start.getUTCDate() - 7)
-    }
-    
-    return start.toISOString()
 }
 
 export type RankingEntry = {
@@ -172,7 +128,6 @@ export async function getWeeklyRankingAction(userId: string) {
     try {
         const startOfWeek = getStartOfOperationalWeek()
 
-        // 1. Busca todos os eventos da semana
         const { data: events, error: eErr } = await supabase
             .from('gamification_events')
             .select('user_id, points')
@@ -180,7 +135,6 @@ export async function getWeeklyRankingAction(userId: string) {
 
         if (eErr) throw eErr
 
-        // 2. Busca apenas os operadores (colaboradores) para o ranking
         const { data: users, error: uErr } = await supabase
             .from('users')
             .select('id, name')
@@ -188,26 +142,22 @@ export async function getWeeklyRankingAction(userId: string) {
 
         if (uErr) throw uErr
 
-        // 3. Agrupa pontos por usuário
         const userPointsMap: Record<string, number> = {}
         events.forEach(ev => {
             userPointsMap[ev.user_id] = (userPointsMap[ev.user_id] || 0) + ev.points
         })
 
-        // 4. Cria a lista ordenada
         const ranking: RankingEntry[] = users.map(u => ({
             userId: u.id,
             name: u.name,
             points: userPointsMap[u.id] || 0
         }))
 
-        // Ordena por pontos desc, e nome como desempate
         ranking.sort((a, b) => {
             if (b.points !== a.points) return b.points - a.points
             return a.name.localeCompare(b.name)
         })
 
-        // 5. Encontra a posição do usuário e o Top 5
         const userPosition = ranking.findIndex(r => r.userId === userId) + 1
         const top5 = ranking.slice(0, 5)
 
@@ -219,7 +169,6 @@ export async function getWeeklyRankingAction(userId: string) {
             startOfWeek
         }
     } catch (err: any) {
-        console.error('[Gamification] Erro ao obter ranking:', err.message)
         return { success: false, error: err.message }
     }
 }

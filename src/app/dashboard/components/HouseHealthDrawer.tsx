@@ -10,7 +10,8 @@ import {
     History, 
     User, 
     Clock, 
-    Package 
+    Package,
+    Activity
 } from 'lucide-react'
 import { getGlobalHouseHealthAction } from '@/app/actions/efficiencyAction'
 import { format } from 'date-fns'
@@ -31,7 +32,7 @@ type GroupedLoss = {
 export default function HouseHealthDrawer({ isOpen, onClose }: Props) {
     const [loading, setLoading] = useState(true)
     const [losses, setLosses] = useState<any[]>([])
-    const [leaks, setLeaks] = useState<any[]>([])
+    const [activeLeaks, setActiveLeaks] = useState<any[]>([])
     const [expandedItem, setExpandedItem] = useState<string | null>(null)
 
     useEffect(() => {
@@ -45,12 +46,12 @@ export default function HouseHealthDrawer({ isOpen, onClose }: Props) {
         const res = await getGlobalHouseHealthAction()
         if (res.success) {
             setLosses(res.losses)
-            setLeaks(res.activeLeaks)
+            setActiveLeaks(res.activeLeaks)
         }
         setLoading(false)
     }
 
-    // Agrupamento por item
+    // Agrupamento Semanal por Item
     const groupedLosses: GroupedLoss[] = losses.reduce((acc: any[], loss: any) => {
         const itemName = loss.items?.name || 'Item Desconhecido'
         const unit = loss.items?.unit || 'un'
@@ -81,7 +82,7 @@ export default function HouseHealthDrawer({ isOpen, onClose }: Props) {
                 <div className="p-6 border-b border-[#e9e8e5] bg-white flex items-center justify-between">
                     <div>
                         <h2 className="text-xl font-black text-[#1b1c1a] tracking-tight">Saúde Global da Casa</h2>
-                        <p className="text-[10px] font-bold text-[#8c716c] uppercase tracking-widest mt-1">Acumulado da Semana Operacional</p>
+                        <p className="text-[10px] font-bold text-[#8c716c] uppercase tracking-widest mt-1">Status Acumulado da Semana</p>
                     </div>
                     <button onClick={onClose} className="p-2 bg-[#F8F7F4] rounded-full text-[#8c716c]">
                         <X className="w-5 h-5" />
@@ -90,17 +91,17 @@ export default function HouseHealthDrawer({ isOpen, onClose }: Props) {
 
                 <div className="flex-1 overflow-y-auto p-5 space-y-8">
                     
-                    {/* SEÇÃO 1: VAZAMENTOS ATIVOS NA SEMANA */}
+                    {/* SEÇÃO 1: SINAIS ATIVOS AGORA */}
                     <section>
                         <div className="flex items-center gap-2 mb-4">
-                            <Droplet className="w-4 h-4 text-red-500" />
-                            <h3 className="text-sm font-black text-[#1b1c1a] uppercase tracking-wider">Vazamentos Ativos na Semana</h3>
+                            <Activity className="w-4 h-4 text-red-500" />
+                            <h3 className="text-sm font-black text-[#1b1c1a] uppercase tracking-wider">Sinais Ativos Agora</h3>
                         </div>
                         
-                        {leaks.length > 0 ? (
+                        {activeLeaks.length > 0 ? (
                             <div className="space-y-3">
-                                {leaks.map((leak, idx) => (
-                                    <div key={idx} className="bg-white p-4 rounded-2xl border border-[#e9e8e5] flex items-center justify-between">
+                                {activeLeaks.map((leak, idx) => (
+                                    <div key={idx} className="bg-white p-4 rounded-2xl border border-[#e9e8e5] flex items-center justify-between shadow-sm">
                                         <div className="flex items-center gap-3">
                                             <div className={`p-2 rounded-xl ${leak.severity === 'critical' ? 'bg-red-50 text-red-500' : 'bg-amber-50 text-amber-500'}`}>
                                                 <AlertTriangle className="w-4 h-4" />
@@ -116,20 +117,20 @@ export default function HouseHealthDrawer({ isOpen, onClose }: Props) {
                             </div>
                         ) : (
                             <div className="bg-green-50/50 border border-green-100 p-6 rounded-[32px] text-center">
-                                <p className="text-sm font-bold text-green-700">Operação estanque nesta semana.</p>
-                                <p className="text-[11px] text-green-600/70 mt-1">Continue mantendo os padrões de eficiência.</p>
+                                <p className="text-sm font-bold text-green-700">MOC em dia. Nenhum sinal ativo.</p>
+                                <p className="text-[11px] text-green-600/70 mt-1">Todos os checklists e contagens estão regulares.</p>
                             </div>
                         )}
                     </section>
 
-                    {/* SEÇÃO 2: PERDAS REGISTRADAS NA SEMANA */}
+                    {/* SEÇÃO 2: PERDAS ACUMULADAS NA SEMANA */}
                     <section>
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
-                                <History className="w-4 h-4 text-[#B13A2B]" />
-                                <h3 className="text-sm font-black text-[#1b1c1a] uppercase tracking-wider">Perdas Registradas na Semana</h3>
+                                <Package className="w-4 h-4 text-[#B13A2B]" />
+                                <h3 className="text-sm font-black text-[#1b1c1a] uppercase tracking-wider">Perdas da Semana</h3>
                             </div>
-                            <span className="text-[10px] font-bold text-[#8c716c] bg-white px-2 py-1 rounded-full border border-[#e9e8e5]">Resumo Mensurável</span>
+                            <span className="text-[10px] font-bold text-[#8c716c] bg-white px-2 py-1 rounded-full border border-[#e9e8e5]">Agrupado por Item</span>
                         </div>
 
                         {loading ? (
@@ -141,9 +142,8 @@ export default function HouseHealthDrawer({ isOpen, onClose }: Props) {
                                 {groupedLosses.map((item) => (
                                     <div 
                                         key={item.itemName} 
-                                        className="bg-white rounded-2xl border border-[#e9e8e5] overflow-hidden"
+                                        className="bg-white rounded-2xl border border-[#e9e8e5] overflow-hidden shadow-sm"
                                     >
-                                        {/* Row Agrupada com Total Semanal */}
                                         <button 
                                             onClick={() => setExpandedItem(expandedItem === item.itemName ? null : item.itemName)}
                                             className="w-full p-4 flex items-center justify-between active:bg-[#F8F7F4] transition-colors"
@@ -160,7 +160,6 @@ export default function HouseHealthDrawer({ isOpen, onClose }: Props) {
                                             {expandedItem === item.itemName ? <ChevronUp className="w-4 h-4 text-[#8c716c]" /> : <ChevronDown className="w-4 h-4 text-[#8c716c]" />}
                                         </button>
 
-                                        {/* Detalhes Individuais Chronológicos */}
                                         {expandedItem === item.itemName && (
                                             <div className="bg-[#F8F7F4] border-t border-[#e9e8e5] p-2 space-y-1">
                                                 {item.records.map((record: any) => (
@@ -191,16 +190,15 @@ export default function HouseHealthDrawer({ isOpen, onClose }: Props) {
                             </div>
                         ) : (
                             <div className="bg-white border border-[#e9e8e5] p-8 rounded-[32px] text-center">
-                                <p className="text-sm font-bold text-[#8c716c]">Nenhuma perda na semana.</p>
-                                <p className="text-[11px] text-[#c0b3b1] mt-1 italic">Estoque 100% conforme planejado.</p>
+                                <p className="text-sm font-bold text-[#8c716c]">Nenhuma perda registrada na semana.</p>
+                                <p className="text-[11px] text-[#c0b3b1] mt-1 italic">Operação sólida e sem desperdício.</p>
                             </div>
                         )}
                     </section>
                 </div>
 
-                {/* Footer Transparência */}
                 <div className="p-6 bg-white border-t border-[#e9e8e5] text-center">
-                    <p className="text-[9px] font-bold text-[#c0b3b1] uppercase tracking-[0.2em]">NaBrasa Controle · Eficiência Semanal</p>
+                    <p className="text-[9px] font-bold text-[#c0b3b1] uppercase tracking-[0.2em]">NaBrasa Controle · Transparência Semanal</p>
                 </div>
             </div>
         </div>
