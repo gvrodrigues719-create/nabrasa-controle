@@ -49,7 +49,7 @@ export default function OperationThermometer({
         }
         if (displayTemp <= 45) return {
             label: 'Esquentando',
-            sublabel: 'Acima do ponto ideal',
+            sublabel: 'Acima da faixa ideal',
             color: 'text-amber-700',
             dotColor: 'bg-amber-500',
             pulse: false
@@ -330,7 +330,7 @@ export default function OperationThermometer({
                         <span className="text-2xl font-black text-[#1b1c1a] opacity-50 self-start mt-2">°C</span>
                     </div>
                     <p className="text-[10px] font-bold text-[#c0b3b1] uppercase tracking-widest mb-5">
-                        {status.sublabel} · ideal: 30°C
+                        {status.sublabel} · meta: 30°C
                     </p>
 
                     <div className="space-y-5">
@@ -339,7 +339,7 @@ export default function OperationThermometer({
                             <div>
                                 <h4 className="text-[11px] font-black text-[#B13A2B] uppercase tracking-widest mb-2.5 flex items-center gap-2">
                                     <Activity className="w-3.5 h-3.5" />
-                                    Prioridade Agora
+                                    O que está esquentando
                                 </h4>
                                 <div className="space-y-1.5 pl-4 border-l-2 border-red-200">
                                     {activeLeaks.slice(0, 2).map(leak => (
@@ -378,7 +378,7 @@ export default function OperationThermometer({
                                 className="inline-flex items-center gap-2 text-[11px] font-black text-[#B13A2B] uppercase tracking-[0.2em] border-b-2 border-transparent hover:border-[#B13A2B] transition-all pb-0.5"
                             >
                                 <Eye className="w-4 h-4" />
-                                <span>Auditar sinais</span>
+                                <span>Ver detalhes da semana</span>
                             </button>
                         )}
                     </div>
