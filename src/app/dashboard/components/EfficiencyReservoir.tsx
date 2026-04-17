@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Droplet, AlertTriangle, Zap, Eye } from 'lucide-react'
+import { Droplet, AlertTriangle, Zap, Eye, Package, Activity } from 'lucide-react'
 import { Leak } from '@/app/actions/efficiencyAction'
 
 interface Props {
@@ -12,11 +12,10 @@ interface Props {
 }
 
 export default function EfficiencyReservoir({ score, leaks, onActionClick, onViewGlobalClick }: Props) {
-    // Definir cor baseada no score com gradientes premium
     const getLevelGradient = () => {
-        if (score >= 90) return 'from-blue-600 to-blue-400' // Saudável (Água Limpa)
-        if (score >= 70) return 'from-amber-600 to-amber-400' // Alerta
-        return 'from-red-700 to-red-500' // Crítico
+        if (score >= 90) return 'from-blue-600 to-blue-400' 
+        if (score >= 70) return 'from-amber-600 to-amber-400' 
+        return 'from-red-700 to-red-500' 
     }
 
     const getStatusLabel = () => {
@@ -25,79 +24,79 @@ export default function EfficiencyReservoir({ score, leaks, onActionClick, onVie
         return 'Vazamento Crítico'
     }
 
-    const visibleLeaks = leaks.slice(0, 3)
-    const extraLeaks = leaks.length - 3
-
-    // Lógica de Furos/Fissuras
+    // Progressão de Fissuras baseada no score operacional
     const damageLevel = score < 70 ? 3 : score < 90 ? 1 : 0
 
     return (
         <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e9e8e5]">
             <div className="flex items-center gap-8 mb-6">
                 
-                {/* REPRESENTAÇÃO VISUAL: O RESERVATÓRIO (Peça Central) */}
-                <div className="relative group">
-                    {/* Borda do Copo (Realismo Sóbrio) */}
-                    <div className="relative w-24 h-40 bg-[#F8F7F4]/50 rounded-b-3xl rounded-t-lg border-[3px] border-[#e2e1de] shadow-inner overflow-hidden flex flex-col justify-end">
+                {/* REPRESENTAÇÃO VISUAL: RESERVATÓRIO COM FISSURAS REAIS */}
+                <div className="relative group shrink-0">
+                    <div className="relative w-24 h-40 bg-[#F8F7F4]/40 rounded-b-3xl rounded-t-lg border-[3px] border-[#e2e1de] shadow-inner overflow-hidden flex flex-col justify-end">
                         
-                        {/* Efeito de Reflexo de Vidro */}
                         <div className="absolute top-0 left-2 w-1.5 h-full bg-white/20 blur-[1px] pointer-events-none z-20" />
                         
-                        {/* O Nível de Líquido (A Água) */}
                         <div 
                             className={`w-full bg-gradient-to-t transition-all duration-1000 ease-out relative z-10 ${getLevelGradient()}`}
                             style={{ height: `${score}%` }}
                         >
-                            {/* Superfície da Água (Linha de Tensão) */}
                             {score > 0 && (
-                                <div className="absolute top-0 left-0 w-full h-[3px] bg-white/40 shadow-[0_-2px_10px_rgba(255,255,255,0.5)]" />
+                                <div className="absolute top-0 left-0 w-full h-[2px] bg-white/40 shadow-[0_-2px_8px_rgba(255,255,255,0.4)]" />
                             )}
-                            
-                            {/* Efeito de Ondulação Suave (Opacidade) */}
-                            <div className="absolute inset-0 bg-white/5 opacity-20" />
                         </div>
 
-                        {/* Fissuras/Furos Visuais (SVG Overlay) */}
                         {damageLevel > 0 && (
-                            <div className="absolute inset-0 z-30 pointer-events-none opacity-60">
+                            <div className="absolute inset-0 z-30 pointer-events-none">
                                 <svg viewBox="0 0 100 160" className="w-full h-full">
-                                    {/* Fissura 1: Base Esquerda (Score < 90) */}
-                                    <path d="M 20 130 L 35 140 L 30 150" fill="none" stroke="#B13A2B" strokeWidth="1.5" strokeLinecap="round" />
+                                    <g className="opacity-80">
+                                        <path d="M 15 135 L 25 140 L 22 148 M 25 140 L 35 142" fill="none" stroke="#B13A2B" strokeWidth="1.5" strokeLinecap="round" />
+                                        <circle cx="25" cy="140" r="1.5" fill="#B13A2B" />
+                                    </g>
                                     
-                                    {/* Fissuras Adicionais: Score < 70 */}
                                     {damageLevel >= 3 && (
                                         <>
-                                            <path d="M 80 80 L 70 95 L 85 110" fill="none" stroke="#B13A2B" strokeWidth="1.5" strokeLinecap="round" />
-                                            <path d="M 10 40 L 25 55 L 15 75" fill="none" stroke="#B13A2B" strokeWidth="1.5" strokeLinecap="round" />
+                                            <g className="opacity-80">
+                                                <path d="M 85 80 L 75 85 L 82 92 M 75 85 L 68 82" fill="none" stroke="#B13A2B" strokeWidth="1.5" strokeLinecap="round" />
+                                                <circle cx="75" cy="85" r="1.5" fill="#B13A2B" />
+                                            </g>
+                                            <g className="opacity-80">
+                                                <path d="M 10 40 L 22 45 L 18 55 M 22 45 L 30 42" fill="none" stroke="#B13A2B" strokeWidth="1.5" strokeLinecap="round" />
+                                                <circle cx="22" cy="45" r="1.5" fill="#B13A2B" />
+                                            </g>
                                         </>
                                     )}
                                 </svg>
                             </div>
                         )}
 
-                        {/* Fundo do Reservatório (Depth) */}
-                        <div className="absolute bottom-0 left-0 w-full h-2 bg-black/5 blur-[2px] z-20" />
+                        <div className="absolute bottom-0 left-0 w-full h-1.5 bg-black/5 blur-[1px] z-20" />
                     </div>
 
-                    {/* Vazamentos (Gotas Laterais de Alerta) */}
-                    {leaks.length > 0 && (
-                        <div className="absolute -right-6 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-40">
-                             {[...Array(Math.min(leaks.length, 3))].map((_, i) => (
-                                <Droplet 
-                                    key={i} 
-                                    className={`w-5 h-5 drop-shadow-md animate-bounce`} 
-                                    style={{ 
-                                        animationDelay: `${i * 0.2}s`,
-                                        color: score < 70 ? '#ef4444' : '#f59e0b'
-                                    }} 
-                                    fill="currentColor"
-                                />
-                             ))}
+                    {damageLevel > 0 && (
+                        <div className="absolute inset-0 z-40 pointer-events-none">
+                            <Droplet 
+                                className="absolute w-3.5 h-3.5 text-red-500 fill-current animate-bounce shadow-sm" 
+                                style={{ bottom: '15px', left: '20px', animationDuration: '2.5s' }} 
+                            />
+                            
+                            {damageLevel >= 3 && (
+                                <>
+                                    <Droplet 
+                                        className="absolute w-3 h-3 text-red-600 fill-current animate-bounce shadow-sm" 
+                                        style={{ top: '80px', right: '18px', animationDuration: '1.8s' }} 
+                                    />
+                                    <Droplet 
+                                        className="absolute w-3 h-3 text-red-400 fill-current animate-bounce shadow-sm" 
+                                        style={{ top: '42px', left: '18px', animationDuration: '3.2s' }} 
+                                    />
+                                </>
+                            )}
                         </div>
                     )}
                 </div>
 
-                {/* INFORMAÇÕES DE SAÚDE (Hierarquia Secundária) */}
+                {/* INFO DE SAÚDE SEMANAL */}
                 <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1.5">
                          <div className={`w-2 h-2 rounded-full animate-pulse ${score >= 90 ? 'bg-blue-500' : score >= 70 ? 'bg-amber-500' : 'bg-red-500'}`} />
@@ -110,35 +109,48 @@ export default function EfficiencyReservoir({ score, leaks, onActionClick, onVie
                         </span>
                     </div>
 
+                    {/* LISTA RESUMIDA (SEPARADA PO TIPO) */}
                     <div className="space-y-3">
-                        {visibleLeaks.length > 0 ? (
-                            <div className="space-y-1.5">
-                                {visibleLeaks.map(leak => (
-                                    <div key={leak.id} className="flex items-start gap-2">
-                                        <AlertTriangle className={`w-3 h-3 mt-0.5 shrink-0 ${leak.severity === 'critical' ? 'text-red-500' : 'text-amber-500'}`} />
-                                        <span className="text-[10px] font-bold text-[#58413e] line-clamp-1">{leak.label}</span>
-                                    </div>
-                                ))}
+                        {leaks.length > 0 ? (
+                            <div className="space-y-2">
+                                {leaks.map(leak => {
+                                    const isActiveSignal = leak.type === 'checklist' || leak.type === 'session'
+                                    return (
+                                        <div key={leak.id} className="flex items-start gap-2 group/leak">
+                                            {isActiveSignal ? (
+                                                <Activity className="w-3 h-3 mt-0.5 shrink-0 text-red-500" />
+                                            ) : (
+                                                <Package className="w-3 h-3 mt-0.5 shrink-0 text-[#B13A2B]/60" />
+                                            )}
+                                            <div className="flex flex-col">
+                                                <span className={`text-[10px] font-bold line-clamp-1 ${isActiveSignal ? 'text-[#1b1c1a]' : 'text-[#8c716c]'}`}>
+                                                    {leak.label}
+                                                </span>
+                                                {isActiveSignal && (
+                                                    <span className="text-[8px] font-black text-red-500/80 uppercase tracking-wider -mt-0.5">Sinal Ativo</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )
+                                })}
                                 
-                                {/* Link para Visão Global */}
                                 <button 
                                     onClick={onViewGlobalClick}
                                     className="flex items-center gap-1.5 text-[9px] font-black text-[#B13A2B] uppercase tracking-widest mt-2 hover:opacity-70 transition-opacity"
                                 >
                                     <Eye className="w-3 h-3" />
-                                    <span>Ver todos os vazamentos da casa</span>
+                                    <span>Ver vazamentos da semana</span>
                                 </button>
                             </div>
                         ) : (
                             <p className="text-[11px] text-[#8c716c] font-medium leading-relaxed italic">
-                                Sua operação está sólida. Nenhum vazamento detectado no momento.
+                                Sua operação está sólida nesta semana. Nenhum furo detectado.
                             </p>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* BOTÃO DE AÇÃO (Sóbrio, sem roubar a cena) */}
             <button 
                 onClick={onActionClick}
                 className="w-full bg-[#1b1c1a] hover:bg-black text-white font-black text-[10px] uppercase tracking-[0.25em] py-4 rounded-2xl shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-3 border border-white/10"

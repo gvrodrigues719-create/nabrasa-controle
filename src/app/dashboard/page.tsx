@@ -59,7 +59,7 @@ export default function DashboardPage() {
             const healthRes = await getOperationalHealthAction()
             if (healthRes.success) {
                 setHealthScore(healthRes.score)
-                setLeaks(healthRes.leaks)
+                setLeaks(healthRes.combinedLeaks || [])
             }
 
             const routinesRes = await getActiveRoutinesAction()

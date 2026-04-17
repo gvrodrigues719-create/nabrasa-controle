@@ -81,7 +81,7 @@ export default function HouseHealthDrawer({ isOpen, onClose }: Props) {
                 <div className="p-6 border-b border-[#e9e8e5] bg-white flex items-center justify-between">
                     <div>
                         <h2 className="text-xl font-black text-[#1b1c1a] tracking-tight">Saúde Global da Casa</h2>
-                        <p className="text-[10px] font-bold text-[#8c716c] uppercase tracking-widest mt-1">Visão unificada de perdas e vazamentos</p>
+                        <p className="text-[10px] font-bold text-[#8c716c] uppercase tracking-widest mt-1">Acumulado da Semana Operacional</p>
                     </div>
                     <button onClick={onClose} className="p-2 bg-[#F8F7F4] rounded-full text-[#8c716c]">
                         <X className="w-5 h-5" />
@@ -90,11 +90,11 @@ export default function HouseHealthDrawer({ isOpen, onClose }: Props) {
 
                 <div className="flex-1 overflow-y-auto p-5 space-y-8">
                     
-                    {/* SEÇÃO 1: VAZAMENTOS ATIVOS (OPERAÇÃO) */}
+                    {/* SEÇÃO 1: VAZAMENTOS ATIVOS NA SEMANA */}
                     <section>
                         <div className="flex items-center gap-2 mb-4">
                             <Droplet className="w-4 h-4 text-red-500" />
-                            <h3 className="text-sm font-black text-[#1b1c1a] uppercase tracking-wider">Vazamentos Ativos Hoje</h3>
+                            <h3 className="text-sm font-black text-[#1b1c1a] uppercase tracking-wider">Vazamentos Ativos na Semana</h3>
                         </div>
                         
                         {leaks.length > 0 ? (
@@ -116,20 +116,20 @@ export default function HouseHealthDrawer({ isOpen, onClose }: Props) {
                             </div>
                         ) : (
                             <div className="bg-green-50/50 border border-green-100 p-6 rounded-[32px] text-center">
-                                <p className="text-sm font-bold text-green-700">Nenhum vazamento operacional ativo.</p>
-                                <p className="text-[11px] text-green-600/70 mt-1">Sua operação está sólida e eficiente.</p>
+                                <p className="text-sm font-bold text-green-700">Operação estanque nesta semana.</p>
+                                <p className="text-[11px] text-green-600/70 mt-1">Continue mantendo os padrões de eficiência.</p>
                             </div>
                         )}
                     </section>
 
-                    {/* SEÇÃO 2: PERDAS REGISTRADAS (ESTOQUE) */}
+                    {/* SEÇÃO 2: PERDAS REGISTRADAS NA SEMANA */}
                     <section>
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
                                 <History className="w-4 h-4 text-[#B13A2B]" />
-                                <h3 className="text-sm font-black text-[#1b1c1a] uppercase tracking-wider">Perdas Registradas</h3>
+                                <h3 className="text-sm font-black text-[#1b1c1a] uppercase tracking-wider">Perdas Registradas na Semana</h3>
                             </div>
-                            <span className="text-[10px] font-bold text-[#8c716c] bg-white px-2 py-1 rounded-full border border-[#e9e8e5]">Últimas 24h</span>
+                            <span className="text-[10px] font-bold text-[#8c716c] bg-white px-2 py-1 rounded-full border border-[#e9e8e5]">Resumo Mensurável</span>
                         </div>
 
                         {loading ? (
@@ -143,7 +143,7 @@ export default function HouseHealthDrawer({ isOpen, onClose }: Props) {
                                         key={item.itemName} 
                                         className="bg-white rounded-2xl border border-[#e9e8e5] overflow-hidden"
                                     >
-                                        {/* Row Agrupada */}
+                                        {/* Row Agrupada com Total Semanal */}
                                         <button 
                                             onClick={() => setExpandedItem(expandedItem === item.itemName ? null : item.itemName)}
                                             className="w-full p-4 flex items-center justify-between active:bg-[#F8F7F4] transition-colors"
@@ -154,13 +154,13 @@ export default function HouseHealthDrawer({ isOpen, onClose }: Props) {
                                                 </div>
                                                 <div className="text-left">
                                                     <p className="font-bold text-[#1b1c1a] text-sm">{item.itemName}</p>
-                                                    <p className="text-xs font-black text-[#B13A2B]">{item.total} {item.unit} <span className="text-[10px] text-[#8c716c] font-medium uppercase ml-1">total hoje</span></p>
+                                                    <p className="text-xs font-black text-[#B13A2B]">{item.total} {item.unit} <span className="text-[10px] text-[#8c716c] font-medium uppercase ml-1">total na semana</span></p>
                                                 </div>
                                             </div>
                                             {expandedItem === item.itemName ? <ChevronUp className="w-4 h-4 text-[#8c716c]" /> : <ChevronDown className="w-4 h-4 text-[#8c716c]" />}
                                         </button>
 
-                                        {/* Detalhes Individuais (Expandido) */}
+                                        {/* Detalhes Individuais Chronológicos */}
                                         {expandedItem === item.itemName && (
                                             <div className="bg-[#F8F7F4] border-t border-[#e9e8e5] p-2 space-y-1">
                                                 {item.records.map((record: any) => (
@@ -168,7 +168,7 @@ export default function HouseHealthDrawer({ isOpen, onClose }: Props) {
                                                         <div className="flex items-center justify-between">
                                                             <div className="flex items-center gap-1.5 text-[#8c716c]">
                                                                 <Clock className="w-3 h-3" />
-                                                                <span className="text-[10px] font-bold">{format(new Date(record.created_at), "HH:mm 'de' dd/MM", { locale: ptBR })}</span>
+                                                                <span className="text-[10px] font-bold">{format(new Date(record.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}</span>
                                                             </div>
                                                             <span className="text-[10px] font-black uppercase text-[#B13A2B] bg-red-50 px-1.5 py-0.5 rounded-md">{record.category}</span>
                                                         </div>
@@ -191,16 +191,16 @@ export default function HouseHealthDrawer({ isOpen, onClose }: Props) {
                             </div>
                         ) : (
                             <div className="bg-white border border-[#e9e8e5] p-8 rounded-[32px] text-center">
-                                <p className="text-sm font-bold text-[#8c716c]">Nenhuma perda registrada.</p>
-                                <p className="text-[11px] text-[#c0b3b1] mt-1 italic">Tudo conforme o planejado no estoque.</p>
+                                <p className="text-sm font-bold text-[#8c716c]">Nenhuma perda na semana.</p>
+                                <p className="text-[11px] text-[#c0b3b1] mt-1 italic">Estoque 100% conforme planejado.</p>
                             </div>
                         )}
                     </section>
                 </div>
 
-                {/* Footer Info */}
+                {/* Footer Transparência */}
                 <div className="p-6 bg-white border-t border-[#e9e8e5] text-center">
-                    <p className="text-[9px] font-bold text-[#c0b3b1] uppercase tracking-[0.2em]">NaBrasa Controle · Transparência de Eficiência</p>
+                    <p className="text-[9px] font-bold text-[#c0b3b1] uppercase tracking-[0.2em]">NaBrasa Controle · Eficiência Semanal</p>
                 </div>
             </div>
         </div>
