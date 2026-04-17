@@ -21,6 +21,7 @@ export default function DashboardPage() {
     const [rankPosition, setRankPosition] = useState<number | null>(null)
     const [healthScore, setHealthScore] = useState<number>(100)
     const [leaks, setLeaks] = useState<Leak[]>([])
+    const [currentGroupId, setCurrentGroupId] = useState<string | undefined>()
     const [isLossDrawerOpen, setIsLossDrawerOpen] = useState(false)
     const [loading, setLoading] = useState(true)
 
@@ -63,6 +64,18 @@ export default function DashboardPage() {
             setRoutinesCount(routinesRes.data?.length || 0)
 
             if (currentUserId) {
+                // Determine Current Group Context (if user has an active session)
+                const { data: session } = await supabase
+                    .from('count_sessions')
+                    .select('group_id')
+                    .eq('status', 'in_progress')
+                    .eq('user_id', currentUserId)
+                    .order('updated_at', { ascending: false })
+                    .limit(1)
+                    .single()
+                
+                if (session) setCurrentGroupId(session.group_id)
+
                 const summary = await getOperatorSummaryAction(currentUserId)
                 if (summary.success) {
                     setUserPoints(summary.totalPoints ?? 0)
@@ -135,7 +148,7 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                {/* ── RESERVATÓRIO DE EFICIÊNCIA (JOB 3) ── */}
+                {/* ── RESERVATÓRIO DE EFICIÊNCIA (JOB 1 & 3) ── */}
                 {userRole === 'operator' && !loading && (
                     <EfficiencyReservoir 
                         score={healthScore}
@@ -257,22 +270,59 @@ export default function DashboardPage() {
                     </div>
                 </section>
 
+                {/* ── ATALHOS GERENCIAIS (SÓ ADMIN/MANAGER) ── */}
                 {['admin', 'manager'].includes(userRole) && (
                     <section className="mt-4">
                         <p className="text-[11px] font-bold text-[#8c716c] uppercase tracking-widest mb-3">Gerência & Controle</p>
                         <div className="grid grid-cols-1 gap-3">
-                            <Link href="/dashboard/admin/cmv" className="flex items-center justify-between bg-white rounded-2xl p-4 border border-[#e9e8e5] active:scale-[0.98] transition-all">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-xl bg-[#FDF0EF] flex items-center justify-center text-[#B13A2B]">
-                                        <TrendingUp className="w-5 h-5" />
+                                <Link
+                                    href="/dashboard/admin/cmv"
+                                    className="flex items-center justify-between bg-white rounded-2xl p-4 border border-[#e9e8e5] active:scale-[0.98] transition-all"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-xl bg-[#FDF0EF] flex items-center justify-center text-[#B13A2B]">
+                                            <TrendingUp className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-[#1b1c1a] text-sm">CMV & Compras</p>
+                                            <p className="text-[11px] text-[#8c716c]">Financeiro e Custos</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="font-bold text-[#1b1c1a] text-sm">CMV & Compras</p>
-                                        <p className="text-[11px] text-[#8c716c]">Financeiro e Custos</p>
+                                    <ArrowRight className="w-4 h-4 text-[#dfbfba]" />
+                                </Link>
+
+                                <Link
+                                    href="/dashboard/admin/vendas"
+                                    className="flex items-center justify-between bg-gradient-to-r from-indigo-600 to-indigo-500 rounded-2xl p-4 border border-indigo-200 shadow-md active:scale-[0.98] transition-all"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-white">
+                                            <TrendingUp className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-white text-sm">Módulo de Vendas</p>
+                                            <p className="text-[11px] text-indigo-100">Integração Takeat · Novo</p>
+                                        </div>
                                     </div>
-                                </div>
-                                <ArrowRight className="w-4 h-4 text-[#dfbfba]" />
-                            </Link>
+                                    <ArrowRight className="w-4 h-4 text-white/60" />
+                                </Link>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <Link
+                                    href="/dashboard/admin/reports"
+                                    className="bg-white rounded-2xl p-4 flex items-center gap-3 border border-[#e9e8e5] active:scale-[0.98] transition-all"
+                                >
+                                    <ShieldCheck className="w-4 h-4 text-[#B13A2B]" />
+                                    <span className="font-bold text-[#1b1c1a] text-xs">Auditoria</span>
+                                </Link>
+                                <Link
+                                    href="/dashboard/admin"
+                                    className="bg-white rounded-2xl p-4 flex items-center gap-3 border border-[#e9e8e5] active:scale-[0.98] transition-all"
+                                >
+                                    <Settings className="w-4 h-4 text-[#58413e]" />
+                                    <span className="font-bold text-[#1b1c1a] text-xs">Ajustes</span>
+                                </Link>
+                            </div>
                         </div>
                     </section>
                 )}
@@ -282,6 +332,7 @@ export default function DashboardPage() {
                 isOpen={isLossDrawerOpen}
                 onClose={() => setIsLossDrawerOpen(false)}
                 userId={userId}
+                currentGroupId={currentGroupId}
             />
         </div>
     )
