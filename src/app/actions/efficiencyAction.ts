@@ -173,3 +173,45 @@ export async function getOperationalHealthAction() {
         }
     }
 }
+
+/**
+ * Retorna a Visão Global da Casa (Job 3.5)
+ * Agrega todas as perdas do dia agrupadas por item e lista todos os vazamentos operacionais.
+ */
+export async function getGlobalHouseHealthAction() {
+    try {
+        const now = new Date()
+        const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
+        
+        // 1. Buscar TODAS as perdas registradas na casa
+        const { data: allLosses, error: lossError } = await supabase
+            .from('inventory_losses')
+            .select(`
+                id,
+                item_id,
+                quantity,
+                category,
+                observation,
+                created_at,
+                items (name, unit),
+                users (name)
+            `)
+            .gte('created_at', yesterday)
+            .order('created_at', { ascending: false })
+
+        if (lossError) throw lossError
+
+        // 2. Buscar TODOS os vazamentos operacionais (Checklist, Sessões, etc)
+        const healthRes = await getOperationalHealthAction()
+        
+        return {
+            success: true,
+            losses: allLosses || [],
+            activeLeaks: healthRes.leaks || [],
+            timestamp: now.toISOString()
+        }
+    } catch (err: any) {
+        console.error('[Efficiency] Erro ao buscar visão global:', err.message)
+        return { success: false, error: err.message, losses: [], activeLeaks: [] }
+    }
+}

@@ -10,6 +10,7 @@ import { getOperatorSummaryAction } from '@/app/actions/gamificationAction'
 import { getOperationalHealthAction, Leak } from '@/app/actions/efficiencyAction'
 import LossRegistrationDrawer from './components/LossRegistrationDrawer'
 import EfficiencyReservoir from './components/EfficiencyReservoir'
+import HouseHealthDrawer from './components/HouseHealthDrawer'
 
 export default function DashboardPage() {
     const [userRole, setUserRole] = useState<string>('operator')
@@ -23,6 +24,7 @@ export default function DashboardPage() {
     const [leaks, setLeaks] = useState<Leak[]>([])
     const [currentGroupId, setCurrentGroupId] = useState<string | undefined>()
     const [isLossDrawerOpen, setIsLossDrawerOpen] = useState(false)
+    const [isHealthDrawerOpen, setIsHealthDrawerOpen] = useState(false)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -154,6 +156,7 @@ export default function DashboardPage() {
                         score={healthScore}
                         leaks={leaks}
                         onActionClick={() => setIsLossDrawerOpen(true)}
+                        onViewGlobalClick={() => setIsHealthDrawerOpen(true)}
                     />
                 )}
 
@@ -268,6 +271,13 @@ export default function DashboardPage() {
                             </div>
                         </Link>
                     </div>
+                    
+                    {/* FUTUROS MÓDULOS (INDICADOR SUTIL) */}
+                    <div className="px-2 mt-4 text-center">
+                        <p className="text-[10px] font-medium text-[#c0b3b1] italic">
+                            Novas rotinas operacionais aparecerão aqui.
+                        </p>
+                    </div>
                 </section>
 
                 {/* ── ATALHOS GERENCIAIS (SÓ ADMIN/MANAGER) ── */}
@@ -333,6 +343,11 @@ export default function DashboardPage() {
                 onClose={() => setIsLossDrawerOpen(false)}
                 userId={userId}
                 currentGroupId={currentGroupId}
+            />
+
+            <HouseHealthDrawer 
+                isOpen={isHealthDrawerOpen}
+                onClose={() => setIsHealthDrawerOpen(false)}
             />
         </div>
     )

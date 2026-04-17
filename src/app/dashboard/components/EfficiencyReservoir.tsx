@@ -1,16 +1,17 @@
 'use client'
 
 import React from 'react'
-import { Droplet, AlertTriangle, Zap } from 'lucide-react'
+import { Droplet, AlertTriangle, Zap, Eye } from 'lucide-react'
 import { Leak } from '@/app/actions/efficiencyAction'
 
 interface Props {
     score: number
     leaks: Leak[]
     onActionClick: () => void
+    onViewGlobalClick?: () => void
 }
 
-export default function EfficiencyReservoir({ score, leaks, onActionClick }: Props) {
+export default function EfficiencyReservoir({ score, leaks, onActionClick, onViewGlobalClick }: Props) {
     // Definir cor baseada no score com gradientes premium
     const getLevelGradient = () => {
         if (score >= 90) return 'from-blue-600 to-blue-400' // Saudável (Água Limpa)
@@ -27,9 +28,12 @@ export default function EfficiencyReservoir({ score, leaks, onActionClick }: Pro
     const visibleLeaks = leaks.slice(0, 3)
     const extraLeaks = leaks.length - 3
 
+    // Lógica de Furos/Fissuras
+    const damageLevel = score < 70 ? 3 : score < 90 ? 1 : 0
+
     return (
         <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e9e8e5]">
-            <div className="flex items-center gap-8 mb-8">
+            <div className="flex items-center gap-8 mb-6">
                 
                 {/* REPRESENTAÇÃO VISUAL: O RESERVATÓRIO (Peça Central) */}
                 <div className="relative group">
@@ -53,13 +57,31 @@ export default function EfficiencyReservoir({ score, leaks, onActionClick }: Pro
                             <div className="absolute inset-0 bg-white/5 opacity-20" />
                         </div>
 
+                        {/* Fissuras/Furos Visuais (SVG Overlay) */}
+                        {damageLevel > 0 && (
+                            <div className="absolute inset-0 z-30 pointer-events-none opacity-60">
+                                <svg viewBox="0 0 100 160" className="w-full h-full">
+                                    {/* Fissura 1: Base Esquerda (Score < 90) */}
+                                    <path d="M 20 130 L 35 140 L 30 150" fill="none" stroke="#B13A2B" strokeWidth="1.5" strokeLinecap="round" />
+                                    
+                                    {/* Fissuras Adicionais: Score < 70 */}
+                                    {damageLevel >= 3 && (
+                                        <>
+                                            <path d="M 80 80 L 70 95 L 85 110" fill="none" stroke="#B13A2B" strokeWidth="1.5" strokeLinecap="round" />
+                                            <path d="M 10 40 L 25 55 L 15 75" fill="none" stroke="#B13A2B" strokeWidth="1.5" strokeLinecap="round" />
+                                        </>
+                                    )}
+                                </svg>
+                            </div>
+                        )}
+
                         {/* Fundo do Reservatório (Depth) */}
                         <div className="absolute bottom-0 left-0 w-full h-2 bg-black/5 blur-[2px] z-20" />
                     </div>
 
-                    {/* Vazamentos (Gotas Laterais que saltam aos olhos) */}
+                    {/* Vazamentos (Gotas Laterais de Alerta) */}
                     {leaks.length > 0 && (
-                        <div className="absolute -right-6 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-30">
+                        <div className="absolute -right-6 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-40">
                              {[...Array(Math.min(leaks.length, 3))].map((_, i) => (
                                 <Droplet 
                                     key={i} 
@@ -92,14 +114,20 @@ export default function EfficiencyReservoir({ score, leaks, onActionClick }: Pro
                         {visibleLeaks.length > 0 ? (
                             <div className="space-y-1.5">
                                 {visibleLeaks.map(leak => (
-                                    <div key={leak.id} className="flex items-center gap-2">
-                                        <AlertTriangle className={`w-3 h-3 ${leak.severity === 'critical' ? 'text-red-500' : 'text-amber-500'}`} />
-                                        <span className="text-[10px] font-bold text-[#58413e] truncate">{leak.label}</span>
+                                    <div key={leak.id} className="flex items-start gap-2">
+                                        <AlertTriangle className={`w-3 h-3 mt-0.5 shrink-0 ${leak.severity === 'critical' ? 'text-red-500' : 'text-amber-500'}`} />
+                                        <span className="text-[10px] font-bold text-[#58413e] line-clamp-1">{leak.label}</span>
                                     </div>
                                 ))}
-                                {extraLeaks > 0 && (
-                                    <p className="text-[9px] font-black text-[#c0b3b1] uppercase tracking-widest pl-5">+ {extraLeaks} vazamentos</p>
-                                )}
+                                
+                                {/* Link para Visão Global */}
+                                <button 
+                                    onClick={onViewGlobalClick}
+                                    className="flex items-center gap-1.5 text-[9px] font-black text-[#B13A2B] uppercase tracking-widest mt-2 hover:opacity-70 transition-opacity"
+                                >
+                                    <Eye className="w-3 h-3" />
+                                    <span>Ver todos os vazamentos da casa</span>
+                                </button>
                             </div>
                         ) : (
                             <p className="text-[11px] text-[#8c716c] font-medium leading-relaxed italic">
