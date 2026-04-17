@@ -90,8 +90,12 @@ export async function getTableSessions(
   }
 
   const data = await res.json()
-  // A API retorna um array de sessões diretamente
-  return data as TakeatTableSession[]
+  // API pode retornar array puro ou wrapper { data: [...] } / { sessions: [...] } / { table_sessions: [...] }
+  if (Array.isArray(data)) return data as TakeatTableSession[]
+  if (Array.isArray(data?.data)) return data.data as TakeatTableSession[]
+  if (Array.isArray(data?.sessions)) return data.sessions as TakeatTableSession[]
+  if (Array.isArray(data?.table_sessions)) return data.table_sessions as TakeatTableSession[]
+  return []
 }
 
 // -------------------------------------------------------------------
@@ -123,20 +127,24 @@ export function aggregatePeriodSummary(
   const channels = new Set<string>()
   let nfceCount = 0
 
-  sessions.forEach(session => {
+  const list = Array.isArray(sessions) ? sessions : []
+
+  list.forEach((session: any) => {
+    if (!session) return
     if (session.channel?.name) channels.add(session.channel.name)
     if (session.nfce) nfceCount++
-    if (session.payments) totalPaymentsCount += session.payments.length
+    if (Array.isArray(session.payments)) totalPaymentsCount += session.payments.length
 
-    session.bills.forEach(bill => {
+    ;(Array.isArray(session.bills) ? session.bills : []).forEach((bill: any) => {
+      if (!bill) return
       totalRevenue += parseFloat(bill.total_price || '0')
       totalWithService += parseFloat(bill.total_service_price || '0')
       totalDiscounts += parseFloat(bill.total_discount || '0')
 
-      bill.order_baskets.forEach(basket => {
-        basket.orders.forEach(order => {
-          order.order_products.forEach(product => {
-            totalProductsSold += product.amount
+      ;(Array.isArray(bill.order_baskets) ? bill.order_baskets : []).forEach((basket: any) => {
+        ;(Array.isArray(basket?.orders) ? basket.orders : []).forEach((order: any) => {
+          ;(Array.isArray(order?.order_products) ? order.order_products : []).forEach((product: any) => {
+            totalProductsSold += Number(product?.amount) || 0
           })
         })
       })
@@ -144,7 +152,7 @@ export function aggregatePeriodSummary(
   })
 
   return {
-    total_sessions: sessions.length,
+    total_sessions: list.length,
     total_products_sold: totalProductsSold,
     total_revenue: totalRevenue,
     total_with_service: totalWithService,
