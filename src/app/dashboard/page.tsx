@@ -10,6 +10,7 @@ import { getActiveRoutinesAction } from '@/app/actions/routinesAction'
 import { getOperatorSummaryAction, getLastSealingAction } from '@/app/actions/gamificationAction'
 import { getOperationalHealthAction, Leak } from '@/app/actions/efficiencyAction'
 import { getPublicCMVStatusAction } from '@/app/actions/cmvActions'
+import { getWeeklyFocusAction, updateWeeklyFocusAction, type WeeklyFocus } from '@/app/actions/weeklyFocusAction'
 import LossRegistrationDrawer from './components/LossRegistrationDrawer'
 import OperationThermometer from './components/OperationThermometer'
 import HouseHealthDrawer from './components/HouseHealthDrawer'
@@ -44,7 +45,7 @@ function DashboardContent() {
     const [lastSealing, setLastSealing] = useState<any>(null)
     const [isAIDrawerOpen, setIsAIDrawerOpen] = useState(false)
     const [topRanking, setTopRanking] = useState<{ name: string, points: number, rank: number }[]>([])
-    const [weeklyFocus, setWeeklyFocus] = useState<string | undefined>()
+    const [weeklyFocus, setWeeklyFocus] = useState<WeeklyFocus | null>(null)
 
     useEffect(() => {
         async function loadData() {
@@ -78,7 +79,7 @@ function DashboardContent() {
             }
 
             // PASSO 2: Carregar dados independentes em paralelo
-            const [healthRes, routinesRes, sessionRes, summaryRes, cmvRes, lastSealRes] = await Promise.all([
+            const [healthRes, routinesRes, sessionRes, summaryRes, cmvRes, lastSealRes, focusRes] = await Promise.all([
                 getOperationalHealthAction(),
                 getActiveRoutinesAction(),
                 currentUserId
@@ -95,7 +96,8 @@ function DashboardContent() {
                     ? getOperatorSummaryAction(currentUserId)
                     : Promise.resolve({ success: false, totalPoints: 0, weeklyPoints: 0, rankPosition: null }),
                 getPublicCMVStatusAction(),
-                currentUserId ? getLastSealingAction(currentUserId) : Promise.resolve({ success: false, data: null })
+                currentUserId ? getLastSealingAction(currentUserId) : Promise.resolve({ success: false, data: null }),
+                getWeeklyFocusAction()
             ])
 
             if (healthRes.success) {
@@ -117,6 +119,7 @@ function DashboardContent() {
 
             if (cmvRes.success) setCmvStatus((cmvRes as any).data)
             if (lastSealRes.success) setLastSealing((lastSealRes as any).data)
+            if (focusRes.success) setWeeklyFocus((focusRes as any).data as WeeklyFocus)
 
             // ── SOBREPOSIÇÃO DE MODO DEMO (Se ativo) ──
             if (isDemoMode) {
@@ -157,7 +160,11 @@ function DashboardContent() {
                     { name: 'Vinicius', points: 720, rank: 7 },
                     { name: 'Mayara', points: 610, rank: 8 }
                 ])
-                setWeeklyFocus('Reduzir desperdício em carnes nobres e registrar perdas no momento certo.')
+                setWeeklyFocus({
+                    week_start: new Date().toISOString(),
+                    title: 'Reduzir desperdício em carnes nobres e registrar perdas no momento certo.',
+                    source: 'suggested'
+                })
                 setUserRole('operator')
                 if (!userName) setUserName('Rafael')
             }
@@ -257,7 +264,16 @@ function DashboardContent() {
                                 message={cmvStatus.message}
                             />
                         )}
-                        <WeeklyFocusCard focus={weeklyFocus} />
+                        <WeeklyFocusCard 
+                            focus={weeklyFocus} 
+                            userRole={userRole}
+                            onUpdateFocus={async (newTitle) => {
+                                const res = await updateWeeklyFocusAction(newTitle)
+                                if (res.success) {
+                                    setWeeklyFocus(prev => prev ? { ...prev, title: newTitle, source: 'manual' } : null)
+                                }
+                            }}
+                        />
                         
                         <OperatorContributionCard 
                             weeklyPoints={weeklyPoints ?? 0}
