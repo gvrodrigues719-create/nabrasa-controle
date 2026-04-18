@@ -8,7 +8,7 @@ import CollaboratorTracker from './CollaboratorTracker'
 import ExceptionCenter from './ExceptionCenter'
 import ManagerQuickActions from './ManagerQuickActions'
 import SystemArchitectureHub from './SystemArchitectureHub'
-import { RefreshCw, Clock } from 'lucide-react'
+import { RefreshCw, Clock, ShieldCheck } from 'lucide-react'
 
 export default function ManagerHome() {
     const [data, setData] = useState<any>(null)
@@ -29,8 +29,8 @@ export default function ManagerHome() {
 
     if (loading) return (
         <div className="flex flex-col items-center justify-center py-20">
-            <div className="w-8 h-8 border-4 border-[#B13A2B] border-t-transparent rounded-full animate-spin" />
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-4">Montando Torre de Controle...</p>
+            <div className="w-8 h-8 border-4 border-gray-900 border-t-transparent rounded-full animate-spin" />
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-4">Sincronizando Torre de Controle...</p>
         </div>
     )
 
@@ -41,56 +41,63 @@ export default function ManagerHome() {
             {/* 1. CABEÇALHO DO ESPELHO */}
             <div className="flex justify-between items-end">
                 <div>
-                    <h2 className="text-xl font-black text-gray-900 leading-tight">Espelho do Turno</h2>
-                    <div className="flex items-center gap-1.5 mt-1 text-[10px] font-black text-gray-400 uppercase tracking-widest text-[#B13A2B]/60">
+                    <div className="flex items-center gap-2 mb-1">
+                        <h2 className="text-xl font-black text-gray-900 leading-tight">Espelho do Turno</h2>
+                        {data?.overview?.late === 0 && data?.overview?.critical === 0 && (
+                            <ShieldCheck className="w-4 h-4 text-green-500" />
+                        )}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">
                         <Clock className="w-3.5 h-3.5" />
-                        Live • {lastUpdated}
+                        Tempo Real • {lastUpdated}
                     </div>
                 </div>
                 <button 
                     onClick={fetchData}
                     disabled={isRefreshing}
-                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-2xl font-black text-[10px] uppercase tracking-widest text-[#B13A2B] hover:border-[#B13A2B]/40 active:scale-95 transition-all shadow-sm"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-100 rounded-2xl font-black text-[10px] uppercase tracking-widest text-gray-900 hover:border-gray-900/10 active:scale-95 transition-all shadow-sm"
                 >
                     <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
-                    Refresh
+                    Atualizar
                 </button>
             </div>
 
-            {/* 2. EXCEÇÕES (DYNAMIC) */}
+            {/* 2. EXCEÇÕES (DINÂMICO) */}
             {data?.exceptions?.length > 0 && <ExceptionCenter exceptions={data.exceptions} />}
 
             {/* 3. MÉTRICAS E SETORES */}
-            <div className="space-y-8">
+            <div className="space-y-10">
                 <section>
-                    <div className="flex items-center gap-2 mb-4">
-                        <span className="w-1.5 h-6 bg-[#B13A2B] rounded-full" />
-                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Leitura do Turno</h3>
+                    <div className="flex items-center gap-2 mb-5">
+                        <span className="w-1.5 h-6 bg-gray-900 rounded-full" />
+                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Status de Execução</h3>
                     </div>
                     {data && <ShiftMetrics overview={data.overview} />}
                 </section>
 
                 <section>
-                    <div className="flex items-center gap-2 mb-4">
-                        <span className="w-1.5 h-6 bg-[#B13A2B] rounded-full" />
-                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Monitoramento por Área</h3>
+                    <div className="flex items-center gap-2 mb-5">
+                        <span className="w-1.5 h-6 bg-gray-900 rounded-full" />
+                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Monitoramento Departamental</h3>
                     </div>
                     {data && <SectorGrid bySector={data.bySector} />}
                 </section>
 
                 <section>
-                    <div className="flex items-center gap-2 mb-4">
-                        <span className="w-1.5 h-6 bg-[#B13A2B] rounded-full" />
-                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Monitoramento de Equipe</h3>
+                    <div className="flex items-center gap-2 mb-5">
+                        <span className="w-1.5 h-6 bg-gray-900 rounded-full" />
+                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Performance Individual</h3>
                     </div>
                     {data && <CollaboratorTracker collaborators={data.collaborators} />}
                 </section>
             </div>
 
-            {/* 4. AÇÕES DE INTERVENÇÃO */}
-            <ManagerQuickActions />
+            {/* 4. INTERVENÇÃO OPERACIONAL */}
+            <div className="pt-8 border-t border-gray-100">
+                <ManagerQuickActions />
+            </div>
 
-            {/* 5. ARQUITETURA SISTÊMICA (NaBrasa OS) */}
+            {/* 5. ARQUITETURA SISTÊMICA (Hub Administrativo) */}
             <div className="pt-8 border-t border-gray-100">
                 <SystemArchitectureHub />
             </div>
