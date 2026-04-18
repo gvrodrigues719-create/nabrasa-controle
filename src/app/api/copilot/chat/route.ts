@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { generateText, streamText } from 'ai'
+import { streamText, convertToModelMessages } from 'ai'
 import { google } from '@ai-sdk/google'
 import { createClient } from '@supabase/supabase-js'
 
@@ -116,11 +116,12 @@ ${userContext}
 `
 
     // 4. Stream com Gemini
+    // SDK v6: messages chegam como UIMessage[] (com `parts`), mas streamText espera ModelMessage[] (com `content`)
     console.log('[Copilot] chamando streamText com gemini-2.5-flash...')
     const result = streamText({
       model: google('gemini-2.5-flash'),
       system: systemPrompt,
-      messages,
+      messages: await convertToModelMessages(messages),
       temperature: 0.2,
       onFinish: ({ text }) => console.log('[Copilot] ✓ resposta gerada, chars:', text.length),
     })
