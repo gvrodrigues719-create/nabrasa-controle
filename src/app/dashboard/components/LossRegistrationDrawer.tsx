@@ -268,6 +268,13 @@ export default function LossRegistrationDrawer({ isOpen, onClose, userId, curren
                             </div>
 
                             {/* Observação Opcional */}
+                            <div>
+                                <label className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest mb-2 block">Observação (Opcional)</label>
+                                <textarea 
+                                    className="w-full bg-[#F8F7F4] border-none rounded-2xl p-4 text-sm text-[#1b1c1a] font-medium placeholder:text-[#c0b3b1] focus:ring-2 focus:ring-[#B13A2B]/20 transition-all h-20 resize-none"
+                                    placeholder="Ex: Caiu no chão durante o serviço..."
+                                    value={observation}
+                                    onChange={(e) => setObservation(e.target.value)}
                                 />
                             </div>
 
