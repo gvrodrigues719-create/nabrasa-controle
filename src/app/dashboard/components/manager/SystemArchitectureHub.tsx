@@ -128,7 +128,8 @@ export default function SystemArchitectureHub() {
                     accentColor="text-amber-500"
                     mainModules={[
                         { label: 'Ranking', href: '/dashboard/admin/checklists?tab=ranking', status: 'ativo' },
-                        { label: 'Equipe', href: '/dashboard/admin/users', status: 'ativo' }
+                        { label: 'Equipe', href: '/dashboard/admin/users', status: 'ativo' },
+                        { label: 'Mural', href: '/dashboard/admin/communication', status: 'ativo' }
                     ]}
                     extraModule={{ label: 'Onboarding', status: 'em desenvolvimento' }}
                 />
