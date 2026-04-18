@@ -25,7 +25,7 @@ import {
     Activity
 } from 'lucide-react'
 import AdminChecklistManager from './AdminChecklistManager'
-import OperationalDashboard from './components/OperationalDashboard'
+import OperationalDashboard from '@/app/dashboard/components/manager/OperationalDashboard'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
