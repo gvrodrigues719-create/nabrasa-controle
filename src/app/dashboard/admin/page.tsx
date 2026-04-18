@@ -61,6 +61,17 @@ export default function AdminHome() {
                 </div>
             </button>
 
+            {/* --- NOVO: MURAL --- */}
+            <button onClick={() => router.push('/dashboard/admin/communication')} className="w-full bg-white border border-gray-200 p-5 rounded-2xl flex items-center text-left hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm space-x-4 active:scale-95">
+                <div className="bg-amber-100 p-3 rounded-xl">
+                    <Bell className="w-6 h-6 text-amber-600" />
+                </div>
+                <div>
+                    <h3 className="font-bold text-gray-900 text-lg">Mural & Comunicados</h3>
+                    <p className="text-sm text-gray-500">Postar avisos e gerenciar o mural da casa</p>
+                </div>
+            </button>
+
             <button onClick={() => router.push('/dashboard/admin/cmv')} className="w-full bg-[#B13A2B] border border-[#8F2E21] p-5 rounded-2xl flex items-center text-left hover:bg-[#8F2E21] transition-all shadow-sm space-x-4 active:scale-95">
                 <div className="bg-white/20 p-3 rounded-xl">
                     <TrendingUp className="w-6 h-6 text-white" />

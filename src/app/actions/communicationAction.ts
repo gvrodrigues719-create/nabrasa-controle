@@ -179,3 +179,62 @@ export async function getWeeklyBirthdaysAction() {
         return { success: false, error: err.message }
     }
 }
+
+/**
+ * Cria um novo aviso operacional
+ */
+export async function createNoticeAction(params: {
+    title: string,
+    message: string,
+    type: 'operacional' | 'item_em_falta' | 'promocao' | 'mudanca_de_turno' | 'comunicado_geral',
+    priority: 'normal' | 'importante' | 'urgente',
+    validUntil?: string | null
+}) {
+    try {
+        const authId = await getAuthenticatedUserId()
+        if (!authId) throw new Error('Não autenticado')
+
+        const supabase = getServiceSupabase()
+        if (!supabase) throw new Error('Database indisponível')
+
+        const { error } = await supabase
+            .from('operational_notices')
+            .insert([{
+                title: params.title,
+                message: params.message,
+                type: params.type,
+                priority: params.priority,
+                valid_until: params.validUntil || null,
+                created_by: authId
+            }])
+
+        if (error) throw error
+
+        revalidatePath('/dashboard')
+        return { success: true }
+    } catch (err: any) {
+        return { success: false, error: err.message }
+    }
+}
+
+/**
+ * Remove um aviso operacional
+ */
+export async function deleteNoticeAction(id: string) {
+    try {
+        const supabase = getServiceSupabase()
+        if (!supabase) throw new Error('Database indisponível')
+
+        const { error } = await supabase
+            .from('operational_notices')
+            .delete()
+            .eq('id', id)
+
+        if (error) throw error
+
+        revalidatePath('/dashboard')
+        return { success: true }
+    } catch (err: any) {
+        return { success: false, error: err.message }
+    }
+}
