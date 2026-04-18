@@ -17,9 +17,9 @@ interface Notice {
 }
 
 interface Birthday {
-    id: string
     name: string
     date: string
+    avatarUrl?: string
 }
 
 interface Props {
@@ -48,41 +48,64 @@ export default function OperationalNoticeCard({ notices, birthdays = [] }: Props
                     <p className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest">Mural da Casa</p>
                 </div>
 
-                <div className="relative overflow-hidden rounded-[2rem] border border-[#e9e8e5] shadow-sm transition-all duration-300 bg-gradient-to-br from-indigo-50 to-white text-[#1b1c1a]">
-                    <div className="p-5 flex gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shrink-0 shadow-sm border border-indigo-100">
-                            <Cake className="w-5 h-5 text-indigo-500 animate-pulse" />
+                <div className="relative overflow-hidden rounded-[2.5rem] border border-[#e9e8e5] shadow-sm transition-all duration-300 bg-white text-[#1b1c1a]">
+                    <div className="p-6 flex items-center gap-5">
+                        {/* CALENDAR BADGE - DESTAQUE NO DIA */}
+                        <div className="flex flex-col items-center justify-center w-14 h-16 bg-[#B13A2B] rounded-2xl shadow-lg shadow-red-100 shrink-0">
+                            <span className="text-[8px] font-black text-white/70 uppercase leading-none mb-1">MES {birthdays[0].date.split('/')[1]}</span>
+                            <span className="text-2xl font-black text-white leading-none">{birthdays[0].date.split('/')[0]}</span>
                         </div>
 
                         <div className="flex-1 space-y-1">
                             <div className="flex items-center gap-2">
-                                 <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700">
-                                    CELEBRAÇÃO • ANIVERSARIANTES
+                                 <span className="text-[8px] font-black uppercase tracking-widest px-2 py-1 rounded-lg bg-indigo-50 text-indigo-600 flex items-center gap-1">
+                                    <Sparkles className="w-3 h-3" />
+                                    ANIVERSARIANTES DA SEMANA
                                 </span>
                             </div>
-                            <h4 className="text-sm font-black leading-tight">Aniversariantes da Semana</h4>
-                            <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1">
-                                {birthdays.map(b => (
-                                    <div key={b.id} className="flex items-center gap-1.5">
-                                        <Gift className="w-3 h-3 text-indigo-400" />
-                                        <span className="text-xs font-bold text-gray-700">{b.name.split(' ')[0]}</span>
-                                        <span className="text-[10px] font-black text-gray-300 tracking-tighter">{b.date}</span>
-                                    </div>
-                                ))}
+                            
+                            <div className="flex items-center gap-3 pt-1">
+                                {/* AVATAR DO ANIVERSARIANTE */}
+                                <div className="w-10 h-10 rounded-full bg-indigo-50 border-2 border-white shadow-sm overflow-hidden flex items-center justify-center shrink-0">
+                                    {birthdays[0].avatarUrl ? (
+                                        <img src={birthdays[0].avatarUrl} className="w-full h-full object-cover" alt="Avatar" />
+                                    ) : (
+                                        <Cake className="w-5 h-5 text-indigo-200" />
+                                    )}
+                                </div>
+                                <div className="leading-tight">
+                                    <h4 className="text-base font-black tracking-tight">{birthdays[0].name}</h4>
+                                    <p className="text-[10px] text-[#8c716c] font-bold">Parabéns pela dedicação!</p>
+                                </div>
                             </div>
+
+                            {birthdays.length > 1 && (
+                                <div className="mt-2 flex -space-x-2">
+                                    {birthdays.slice(1).map(b => (
+                                        <div key={b.id} className="w-6 h-6 rounded-full border-2 border-white bg-indigo-100 flex items-center justify-center overflow-hidden">
+                                            {b.avatarUrl ? (
+                                                <img src={b.avatarUrl} className="w-full h-full object-cover" alt="Other" />
+                                            ) : (
+                                                <span className="text-[8px] font-black text-indigo-400">{b.name.charAt(0)}</span>
+                                            )}
+                                        </div>
+                                    ))}
+                                    <span className="pl-4 text-[9px] font-bold text-indigo-400 flex items-center">+{birthdays.length - 1} outros na semana</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
                     {hasMultiple && (
-                        <div className="flex items-center justify-between border-t border-indigo-100/50 px-3 py-2 bg-indigo-50/30">
-                            <button onClick={prevNotice} className="p-1 hover:bg-indigo-100 rounded-lg transition-colors">
-                                <ChevronLeft className="w-4 h-4 text-indigo-400" />
+                        <div className="flex items-center justify-between border-t border-gray-50 px-3 py-2 bg-gray-50/50">
+                            <button onClick={prevNotice} className="p-1 hover:bg-white rounded-lg transition-colors">
+                                <ChevronLeft className="w-4 h-4 text-gray-400" />
                             </button>
-                            <span className="text-[10px] font-black uppercase tracking-widest opacity-60 text-indigo-400">
-                                Slide {currentIndex + 1} de {totalSlides}
+                            <span className="text-[8px] font-black uppercase tracking-widest opacity-60 text-gray-400">
+                                Mural {currentIndex + 1} de {totalSlides}
                             </span>
-                            <button onClick={nextNotice} className="p-1 hover:bg-indigo-100 rounded-lg transition-colors">
-                                <ChevronRight className="w-4 h-4 text-indigo-400" />
+                            <button onClick={nextNotice} className="p-1 hover:bg-white rounded-lg transition-colors">
+                                <ChevronRight className="w-4 h-4 text-gray-400" />
                             </button>
                         </div>
                     )}

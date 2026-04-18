@@ -133,7 +133,7 @@ export async function getWeeklyBirthdaysAction() {
         // Buscamos todos os usuários ativos
         const { data: users, error } = await supabase
             .from('users')
-            .select('id, name, birth_day, birth_month')
+            .select('id, name, birth_day, birth_month, avatar_url')
             .eq('active', true)
             .not('birth_day', 'is', null)
             .not('birth_month', 'is', null)
@@ -155,10 +155,12 @@ export async function getWeeklyBirthdaysAction() {
                 return u.birth_day >= currentDay && u.birth_day <= currentDay + 7
             }
             
-            // Caso virada de mês (ex: 30/04 e hoje é 28/04)
-            if (u.birth_month === currentMonth + 1) {
-                const daysToEnd = 30 - currentDay // estimativa
-                return (u.birth_day + daysToEnd) <= 7
+            // Caso virada de mês (ex: final de Abril para Maio)
+            const isNextMonth = (u.birth_month === currentMonth + 1) || (currentMonth === 12 && u.birth_month === 1)
+            if (isNextMonth) {
+                const daysInMonth = new Date(now.getFullYear(), currentMonth, 0).getDate()
+                const daysLeft = daysInMonth - currentDay
+                return (u.birth_day + daysLeft) <= 7
             }
 
             return false
@@ -169,7 +171,8 @@ export async function getWeeklyBirthdaysAction() {
             data: weekly.map(u => ({
                 id: u.id,
                 name: u.name,
-                date: `${String(u.birth_day).padStart(2, '0')}/${String(u.birth_month).padStart(2, '0')}`
+                date: `${String(u.birth_day).padStart(2, '0')}/${String(u.birth_month).padStart(2, '0')}`,
+                avatarUrl: u.avatar_url
             }))
         }
     } catch (err: any) {
