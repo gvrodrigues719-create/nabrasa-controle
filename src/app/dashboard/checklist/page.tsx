@@ -59,7 +59,7 @@ export default async function ChecklistSelectionPage() {
                         {sessions.map(s => {
                             const t = s.checklist_templates!;
                             return (
-                                <Link 
+                                    <Link 
                                     key={s.id}
                                     href={`/dashboard/checklist/execute/${s.id}`}
                                     className="group bg-white rounded-[32px] p-6 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-[#e9e8e5] hover:border-[#b13a2b]/30 transition-all active:scale-[0.98] block relative overflow-hidden"

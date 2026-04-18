@@ -41,7 +41,7 @@ export default function ShiftMetrics({ overview }: ShiftMetricsProps) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Bloco 1: Fluxo de Execução */}
-            <div className="bg-white border border-gray-100 p-4 rounded-[2rem] shadow-sm grid grid-cols-3 gap-2">
+            <div className="bg-white border border-gray-100 p-4 rounded-[2rem] shadow-sm grid grid-cols-2 xs:grid-cols-3 gap-2">
                 <MetricItem 
                     label="Previstos" 
                     value={overview.total} 
@@ -56,17 +56,19 @@ export default function ShiftMetrics({ overview }: ShiftMetricsProps) {
                     color={overview.completed === overview.total && overview.total > 0 ? 'text-green-600' : 'text-gray-900'} 
                     bg="bg-gray-50" 
                 />
-                <MetricItem 
-                    label="Pendentes" 
-                    value={overview.pending} 
-                    icon={Clock} 
-                    color="text-gray-900" 
-                    bg="bg-gray-50" 
-                />
+                <div className="col-span-2 xs:col-span-1">
+                    <MetricItem 
+                        label="Pendentes" 
+                        value={overview.pending} 
+                        icon={Clock} 
+                        color="text-gray-900" 
+                        bg="bg-gray-50" 
+                    />
+                </div>
             </div>
 
             {/* Bloco 2: Foco de Intervenção */}
-            <div className={`bg-white border p-4 rounded-[2rem] shadow-sm grid grid-cols-3 gap-2 transition-colors ${isClean ? 'border-gray-100' : 'border-red-50 shadow-red-50/20'}`}>
+            <div className={`bg-white border p-4 rounded-[2rem] shadow-sm grid grid-cols-2 xs:grid-cols-3 gap-2 transition-colors ${isClean ? 'border-gray-100' : 'border-red-50 shadow-red-50/20'}`}>
                 <MetricItem 
                     label="Atrasados" 
                     value={overview.late} 
@@ -83,13 +85,15 @@ export default function ShiftMetrics({ overview }: ShiftMetricsProps) {
                     bg={overview.critical > 0 ? 'bg-purple-50' : 'bg-gray-50/50'} 
                     isCritical
                 />
-                <MetricItem 
-                    label="Perdas 24h" 
-                    value={overview.lossesCount} 
-                    icon={TrendingDown} 
-                    color={overview.lossesCount > 0 ? 'text-orange-600' : 'text-gray-900/20'} 
-                    bg={overview.lossesCount > 0 ? 'bg-orange-50' : 'bg-gray-50/50'} 
-                />
+                <div className="col-span-2 xs:col-span-1">
+                    <MetricItem 
+                        label="Perdas 24h" 
+                        value={overview.lossesCount} 
+                        icon={TrendingDown} 
+                        color={overview.lossesCount > 0 ? 'text-orange-600' : 'text-gray-900/20'} 
+                        bg={overview.lossesCount > 0 ? 'bg-orange-50' : 'bg-gray-50/50'} 
+                    />
+                </div>
             </div>
         </div>
     )

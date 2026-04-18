@@ -1,6 +1,8 @@
 "use client"
 
-import { AlertCircle, Clock, CheckCircle2, User } from 'lucide-react'
+import { AlertCircle, Clock, CheckCircle2, User, MessageSquare } from 'lucide-react'
+import { useState } from 'react'
+import ContextualCommentsDrawer from '../ContextualCommentsDrawer'
 
 interface Collaborator {
     name: string;
@@ -9,6 +11,7 @@ interface Collaborator {
     total: number;
     completed: number;
     late: number;
+    latest_session_id: string | null;
 }
 
 interface AttentionListProps {
@@ -16,6 +19,7 @@ interface AttentionListProps {
 }
 
 export default function AttentionList({ collaborators }: AttentionListProps) {
+    const [chargingTarget, setChargingTarget] = useState<Collaborator | null>(null)
     // Lógica de Hierarquia:
     // 1. Atrasados (late > 0)
     // 2. Em Atenção (total - completed > 0)
@@ -73,23 +77,47 @@ export default function AttentionList({ collaborators }: AttentionListProps) {
                                     <p className="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">{c.sector || 'Geral'}</p>
                                 </div>
                             </div>
-                            <div className="text-right">
-                                {isLate ? (
-                                    <div className="flex items-center gap-1 text-red-600">
-                                        <AlertCircle className="w-3 h-3" />
-                                        <span className="text-[10px] font-black">{c.late} Atraso</span>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-1 text-amber-600">
-                                        <Clock className="w-3 h-3" />
-                                        <span className="text-[10px] font-black">{pending} Pend.</span>
-                                    </div>
+                            <div className="flex flex-col items-end gap-1">
+                                <div className="text-right">
+                                    {isLate ? (
+                                        <div className="flex items-center gap-1 text-red-600">
+                                            <AlertCircle className="w-3 h-3" />
+                                            <span className="text-[10px] font-black">{c.late} Atraso</span>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-1 text-amber-600">
+                                            <Clock className="w-3 h-3" />
+                                            <span className="text-[10px] font-black">{pending} Pend.</span>
+                                        </div>
+                                    )}
+                                </div>
+                                {c.latest_session_id && (
+                                    <button 
+                                        onClick={() => setChargingTarget(c)}
+                                        className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-tighter transition-all active:scale-95 ${
+                                            isLate ? 'bg-red-600 text-white' : 'bg-gray-900 text-white'
+                                        }`}
+                                    >
+                                        <MessageSquare className="w-2.5 h-2.5" />
+                                        Cobrar
+                                    </button>
                                 )}
                             </div>
                         </div>
                     )
                 })}
             </div>
+
+            {/* DRAWER DE COBRANÇA */}
+            {chargingTarget && (
+                <ContextualCommentsDrawer 
+                    isOpen={!!chargingTarget}
+                    onClose={() => setChargingTarget(null)}
+                    referenceId={chargingTarget.latest_session_id!}
+                    referenceType="session"
+                    title={`Cobrança: ${chargingTarget.name}`}
+                />
+            )}
         </div>
     )
 }

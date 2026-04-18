@@ -36,19 +36,23 @@ export default function ManagerHome() {
 
     const lastUpdated = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     const overview = data?.overview || { total: 0, completed: 0, pending: 0, late: 0, critical: 0, lossesCount: 0, deadRulesCount: 0 }
-    const isClean = overview.late === 0 && overview.critical === 0
+    const status = overview.late > 0 
+        ? { label: 'Atrasos no turno', color: 'bg-red-50 text-red-600 border-red-100' }
+        : overview.critical > 0
+        ? { label: 'Em atenção', color: 'bg-purple-50 text-purple-600 border-purple-100' }
+        : overview.pending > 0
+        ? { label: 'Operação sob controle', color: 'bg-emerald-50 text-emerald-600 border-emerald-100' }
+        : { label: 'Sem alertas no momento', color: 'bg-gray-50 text-gray-500 border-gray-100' }
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-20">
             {/* CABEÇALHO LIVE */}
             <div className="flex justify-between items-center mb-2 px-1">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                     <h2 className="text-lg font-black text-gray-900 leading-none">Espelho do Turno</h2>
-                    {isClean ? (
-                        <ShieldCheck className="w-4 h-4 text-green-500" />
-                    ) : (
-                        <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                    )}
+                    <span className={`px-2.5 py-1 rounded-full border text-[9px] font-black uppercase tracking-wider ${status.color}`}>
+                        {status.label}
+                    </span>
                 </div>
                 <button 
                     onClick={fetchData}

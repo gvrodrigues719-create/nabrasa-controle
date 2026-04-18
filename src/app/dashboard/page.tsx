@@ -1,15 +1,15 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase/client'
-import { Flame, LayoutGrid, Eye, User, Settings as SettingsIcon } from 'lucide-react'
-import { getActiveOperator } from '@/app/actions/pinAuth'
-import { getActiveRoutinesAction } from '@/app/actions/routinesAction'
-import { getOperatorSummaryAction, getLastSealingAction } from '@/app/actions/gamificationAction'
-import { getOperationalHealthAction, Leak } from '@/app/actions/efficiencyAction'
-import { getPublicCMVStatusAction } from '@/app/actions/cmvActions'
-import { getWeeklyFocusAction, updateWeeklyFocusAction, type WeeklyFocus } from '@/app/actions/weeklyFocusAction'
+import { getActiveNoticesAction, getWeeklyBirthdaysAction } from '@/app/actions/communicationAction'
+import { Flame, Eye, Settings as SettingsIcon } from 'lucide-react'
+
+// Hooks
+import { useDashboardIdentity } from './hooks/useDashboardIdentity'
+import { useDashboardData } from './hooks/useDashboardData'
+import { useDashboardUI } from './hooks/useDashboardUI'
+import { RewardProvider } from './context/RewardContext'
 
 // Drawers
 import LossRegistrationDrawer from './components/LossRegistrationDrawer'
@@ -24,109 +24,57 @@ import OperatorHome from './components/operator/OperatorHome'
 function DashboardContent() {
     const searchParams = useSearchParams()
     const isDemoMode = searchParams.get('demo') === 'true' || searchParams.get('demo') === '1'
+    
+    const [notices, setNotices] = useState<any[]>([])
+    const [birthdays, setBirthdays] = useState<any[]>([])
 
-    // Identidade e Fluxo
-    const [userRole, setUserRole] = useState<string | null>(null)
-    const [userName, setUserName] = useState<string>('')
-    const [userId, setUserId] = useState<string>('')
-    const [viewMode, setViewMode] = useState<'manager' | 'operator'>('manager')
+    // 1. Identidade
+    const { userRole, userName, userId, loadingIdentity } = useDashboardIdentity()
 
-    // Dados Compartilhados / Operador
-    const [routinesCount, setRoutinesCount] = useState<number>(0)
-    const [userPoints, setUserPoints] = useState<number | null>(null)
-    const [weeklyPoints, setWeeklyPoints] = useState<number | null>(null)
-    const [rankPosition, setRankPosition] = useState<number | null>(null)
-    const [healthScore, setHealthScore] = useState<number>(100)
-    const [activeLeaks, setActiveLeaks] = useState<Leak[]>([])
-    const [weeklyLeaks, setWeeklyLeaks] = useState<Leak[]>([])
-    const [cmvStatus, setCmvStatus] = useState<any>(null)
-    const [lastSealing, setLastSealing] = useState<any>(null)
-    const [topRanking, setTopRanking] = useState<{ name: string, points: number, rank: number }[]>([])
-    const [weeklyFocus, setWeeklyFocus] = useState<WeeklyFocus | null>(null)
-    const [currentGroupId, setCurrentGroupId] = useState<string | undefined>()
-
-    // UI State
-    const [isLossDrawerOpen, setIsLossDrawerOpen] = useState(false)
-    const [isHealthDrawerOpen, setIsHealthDrawerOpen] = useState(false)
-    const [isAIDrawerOpen, setIsAIDrawerOpen] = useState(false)
-    const [isRewardsDrawerOpen, setIsRewardsDrawerOpen] = useState(false)
-    const [loading, setLoading] = useState(true)
+    // 2. Dados
+    const {
+        routinesCount,
+        userPoints,
+        weeklyPoints,
+        rankPosition,
+        healthScore,
+        activeLeaks,
+        weeklyLeaks,
+        cmvStatus,
+        lastSealing,
+        topRanking,
+        weeklyFocus,
+        currentGroupId,
+        lateCount,
+        loadingData,
+        setWeeklyFocus
+    } = useDashboardData(userId, isDemoMode)
 
     useEffect(() => {
-        async function loadData() {
-            setLoading(true)
-
-            // 1. Identidade
-            const op = await getActiveOperator()
-            let currentUserId = ''
-            let role = 'operator'
-            
-            if (op?.name) {
-                setUserName(op.name.split(' ')[0])
-                role = op.role || 'operator'
-                setUserRole(role)
-                currentUserId = op.userId
-                setUserId(op.userId)
-            } else {
-                const { data: { user } } = await supabase.auth.getUser()
-                if (user) {
-                    currentUserId = user.id
-                    setUserId(user.id)
-                    const { data: profile } = await supabase.from('users').select('role, name').eq('id', user.id).single()
-                    if (profile) {
-                        role = profile.role || 'operator'
-                        setUserRole(role)
-                        setUserName(profile.name?.split(' ')[0] || 'você')
-                    }
-                }
-            }
-
-            // Define modo inicial baseado no role
-            if (role === 'operator') {
-                setViewMode('operator')
-            } else {
-                setViewMode('manager')
-            }
-
-            // 2. Carregar Dados
-            const [healthRes, routinesRes, sessionRes, summaryRes, cmvRes, lastSealRes, focusRes] = await Promise.all([
-                getOperationalHealthAction(),
-                getActiveRoutinesAction(),
-                currentUserId
-                    ? supabase.from('count_sessions').select('group_id').eq('status', 'in_progress').eq('user_id', currentUserId).order('updated_at', { ascending: false }).limit(1).maybeSingle()
-                    : Promise.resolve({ data: null, error: null }),
-                currentUserId ? getOperatorSummaryAction(currentUserId) : Promise.resolve({ success: false }),
-                getPublicCMVStatusAction(),
-                currentUserId ? getLastSealingAction(currentUserId) : Promise.resolve({ success: false }),
-                getWeeklyFocusAction()
+        async function fetchData() {
+            const [noticesRes, birthdaysRes] = await Promise.all([
+                getActiveNoticesAction(),
+                getWeeklyBirthdaysAction()
             ])
-
-            if (healthRes.success) {
-                setHealthScore(healthRes.score)
-                setActiveLeaks(healthRes.activeLeaks || [])
-                setWeeklyLeaks(healthRes.weeklyLeaks || [])
-            }
-            setRoutinesCount(routinesRes.data?.length || 0)
-            if (sessionRes.data) setCurrentGroupId(sessionRes.data.group_id)
-            if (summaryRes.success) {
-                setUserPoints((summaryRes as any).totalPoints ?? 0)
-                setWeeklyPoints((summaryRes as any).weeklyPoints ?? 0)
-                setRankPosition((summaryRes as any).rankPosition ?? null)
-            }
-            if (cmvRes.success) setCmvStatus((cmvRes as any).data)
-            if (lastSealRes.success) setLastSealing((lastSealRes as any).data)
-            if (focusRes.success) setWeeklyFocus((focusRes as any).data as WeeklyFocus)
-
-            if (isDemoMode) {
-                // Simulação Demo se necessário...
-                setHealthScore(84)
-                setRoutinesCount(2)
-            }
-
-            setLoading(false)
+            if (noticesRes.success) setNotices(noticesRes.data || [])
+            if (birthdaysRes.success) setBirthdays(birthdaysRes.data || [])
         }
-        loadData()
-    }, [isDemoMode])
+        fetchData()
+    }, [])
+
+    // 3. UI State
+    const {
+        viewMode,
+        setViewMode,
+        isLossDrawerOpen,
+        setIsLossDrawerOpen,
+        isHealthDrawerOpen,
+        setIsHealthDrawerOpen,
+        isAIDrawerOpen,
+        setIsAIDrawerOpen,
+        isRewardsDrawerOpen,
+        setIsRewardsDrawerOpen
+    } = useDashboardUI(userRole)
 
     function getGreeting() {
         const h = new Date().getHours()
@@ -135,15 +83,14 @@ function DashboardContent() {
         return 'Bom turno'
     }
 
-    const todayDate = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date())
     const isManager = userRole === 'admin' || userRole === 'manager'
+    const loading = loadingIdentity || loadingData
 
     return (
-        <div className="min-h-screen bg-[#F8F7F4] pb-10" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
+        <RewardProvider userId={userId}>
+            <div className="min-h-screen bg-[#F8F7F4] pb-10" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
 
-            {/* ═══════════════════════════════════════════════
-                 HEADER UNIFICADO (COM CHAVE DE VISÃO)
-                 ═══════════════════════════════════════════════ */}
+            {/* HEADER UNIFICADO */}
             <header className="px-5 pt-8 pb-3 bg-white border-b border-gray-100 mb-6 flex flex-col gap-5 shadow-sm sticky top-0 z-30">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -165,7 +112,7 @@ function DashboardContent() {
                             </div>
                         )}
                         <div className="w-10 h-10 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center font-black text-[#B13A2B] text-sm">
-                            {userName.charAt(0).toUpperCase()}
+                            {(userName || 'v').charAt(0).toUpperCase()}
                         </div>
                     </div>
                 </div>
@@ -222,13 +169,16 @@ function DashboardContent() {
                         lastSealing={lastSealing}
                         topRanking={topRanking}
                         isDemoMode={isDemoMode}
+                        notices={notices}
+                        birthdays={birthdays}
+                        lateCount={lateCount}
                         onViewGlobalClick={() => setIsHealthDrawerOpen(true)}
                         onReportLoss={() => setIsLossDrawerOpen(true)}
                         onOpenRewards={() => setIsRewardsDrawerOpen(true)}
                         onOpenAI={() => setIsAIDrawerOpen(true)}
                         onUpdateFocus={async (title) => {
-                            const res = await updateWeeklyFocusAction(title)
-                            if (res.success) setWeeklyFocus(prev => prev ? { ...prev, title, source: 'manual' } : null)
+                            // Placeholder for update logic
+                            setWeeklyFocus(prev => prev ? { ...prev, title, source: 'manual' } : null)
                         }}
                     />
                 )}
@@ -239,7 +189,8 @@ function DashboardContent() {
             <HouseHealthDrawer isOpen={isHealthDrawerOpen} onClose={() => setIsHealthDrawerOpen(false)} />
             <OperationAIDrawer isOpen={isAIDrawerOpen} onClose={() => setIsAIDrawerOpen(false)} userId={userId} userName={userName} />
             <RewardsDrawer isOpen={isRewardsDrawerOpen} onClose={() => setIsRewardsDrawerOpen(false)} initialBalance={isDemoMode ? 120 : 0} />
-        </div>
+            </div>
+        </RewardProvider>
     )
 }
 

@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { getActiveOperator } from './pinAuth'
 import { mapRoutineGroupsToStatus } from '@/modules/count/mappers'
+import { requireManagerOrAdmin } from '@/lib/auth-utils'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -62,28 +63,21 @@ export async function getRoutineDetailsAction(routineId: string) {
     }
 }
 
-export async function verifyAndStartRoutineAction(routineId: string, pin: string, clientManagerId?: string | null) {
-    let userId = clientManagerId;
-    let authSource = 'manager';
+export async function verifyAndStartRoutineAction(routineId: string, pin: string) {
+    try {
+        // SEGURANÇA: Exige permissão adm/gestor para iniciar snapshot oficial
+        const authId = await requireManagerOrAdmin()
 
-    const op = await getActiveOperator()
+        // Valida PIN (Segunda camada de proteção para ação crítica)
+        const { data: isValid } = await supabase.rpc('verify_user_pin', { p_user_id: authId, p_pin: pin })
+        if (!isValid) return { error: `PIN Incorreto ou não cadastrado.` }
 
-    if (!userId) {
-        userId = op?.userId
-        authSource = 'operator'
+        // Efetiva inicio da rotina (usando a master key que já temos instanciada aqui)
+        const { data: executionId, error } = await supabase.rpc('start_routine_snapshot', { p_routine_id: routineId })
+        if (error) return { error: error.message || 'Erro ao congelar estoque teórico.' }
+
+        return { success: true, executionId }
+    } catch (e: any) {
+        return { error: e.message }
     }
-
-    if (!userId) {
-        return { error: `Usuário não autenticado. op is: ${op ? JSON.stringify(op) : 'null'}` }
-    }
-
-    // Valida PIN
-    const { data: isValid } = await supabase.rpc('verify_user_pin', { p_user_id: userId, p_pin: pin })
-    if (!isValid) return { error: `PIN Incorreto ou não cadastrado (Source: ${authSource}, ID: ${userId}).` }
-
-    // Efetiva inicio da rotina (usando a master key que já temos instanciada aqui)
-    const { data: executionId, error } = await supabase.rpc('start_routine_snapshot', { p_routine_id: routineId })
-    if (error) return { error: error.message || 'Erro ao congelar estoque teórico.' }
-
-    return { success: true, executionId }
 }

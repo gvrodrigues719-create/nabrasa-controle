@@ -36,10 +36,16 @@ export default function SectorGrid({ bySector }: SectorGridProps) {
                 const isComplete = percent === 100 && sectorData.total > 0
                 const hasLosses = sectorData.losses > 0
 
-                return (
-                    <div key={sector.id} className="bg-white border border-gray-100 p-4 rounded-[2rem] shadow-sm hover:shadow-md transition-all flex flex-col group">
+        return (
+                    <div key={sector.id} className={`p-4 rounded-[2rem] transition-all flex flex-col group border shadow-sm hover:shadow-md ${
+                        hasLosses && sectorData.losses > 5
+                            ? 'bg-red-50/50 border-red-200 shadow-red-100/20'
+                            : hasLosses
+                            ? 'bg-orange-50/50 border-orange-100'
+                            : 'bg-gray-50/50 border-gray-100'
+                    }`}>
                         <div className="flex items-center justify-between mb-4">
-                            <div className={`w-10 h-10 rounded-xl ${sector.bg} ${sector.accent} flex items-center justify-center transition-transform group-hover:scale-110 shadow-sm border border-white`}>
+                            <div className={`w-10 h-10 rounded-xl ${hasLosses ? 'bg-white shadow-sm' : sector.bg} ${sector.accent} flex items-center justify-center transition-transform group-hover:scale-110 border border-white`}>
                                 <sector.icon className="w-5 h-5" />
                             </div>
                             <div className="text-right">
@@ -49,7 +55,7 @@ export default function SectorGrid({ bySector }: SectorGridProps) {
                         </div>
 
                         {/* Progress Bar (Compacta) */}
-                        <div className="w-full h-1 bg-gray-50 rounded-full mb-3 overflow-hidden">
+                        <div className="w-full h-1 bg-gray-200/50 rounded-full mb-3 overflow-hidden">
                             <div 
                                 className={`h-full transition-all duration-1000 ${isComplete ? 'bg-green-500' : 'bg-gray-900'}`}
                                 style={{ width: `${percent}%` }}
@@ -62,7 +68,7 @@ export default function SectorGrid({ bySector }: SectorGridProps) {
                                 {isComplete && <CheckCircle2 className="w-3 h-3 text-green-500" />}
                             </div>
                             {hasLosses && (
-                                <div className="flex items-center gap-1 text-red-600">
+                                <div className={`flex items-center gap-1 ${sectorData.losses > 5 ? 'text-red-600' : 'text-orange-600'}`}>
                                     <AlertCircle className="w-3 h-3 animate-pulse" />
                                     <span className="text-[10px] font-black">{sectorData.losses}</span>
                                 </div>

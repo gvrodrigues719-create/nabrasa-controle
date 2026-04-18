@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   checkTakeatConfigAction, 
-  getTakeatDataAction 
+  getTakeatDataAction,
+  testTakeatConnectivityAction
 } from '@/app/actions/takeatAction'
+import { toast } from 'react-hot-toast'
 import {
   ArrowLeft, Zap, CheckCircle2, Clock, AlertCircle,
   ShoppingCart, CreditCard, FileText, Package,
@@ -109,6 +111,7 @@ export default function VendasPage() {
   const [startDate, setStartDate] = useState(MOCK_PERIOD.start.split('T')[0])
   const [endDate, setEndDate] = useState(MOCK_PERIOD.end.split('T')[0])
   const [dateError, setDateError] = useState<string | null>(null)
+  const [testingConnection, setTestingConnection] = useState(false)
 
   // Estados dos Dados Reais
   const [data, setData] = useState<{ sessions: TakeatTableSession[], summary: TakeatPeriodSummary } | null>(null)
@@ -154,13 +157,12 @@ export default function VendasPage() {
     setErrorMessage(null)
 
     try {
-      // Chama a action diretamente. Ela já faz a validação de config internamente.
       const result = await getTakeatDataAction(startDate, endDate)
       
       if (result.success && result.data) {
         setData(result.data)
         setStatus('real')
-        setIsConfigured(true) // Sincroniza o estado de config
+        setIsConfigured(true)
       } else {
         setErrorMessage(result.error || 'Erro desconhecido ao carregar dados.')
         
@@ -175,6 +177,23 @@ export default function VendasPage() {
       console.error("Erro no dashboard:", err)
       setErrorMessage("Erro de conexão ou erro inesperado no servidor.")
       setStatus('error')
+    }
+  }
+
+  async function handleTestConnection() {
+    setTestingConnection(true)
+    try {
+      const res = await testTakeatConnectivityAction()
+      if (res.success) {
+        toast.success(res.message || 'Conexão OK!')
+        setIsConfigured(true)
+      } else {
+        toast.error(res.error || 'Falha na conexão')
+      }
+    } catch (err) {
+      toast.error('Erro ao testar conexão')
+    } finally {
+      setTestingConnection(false)
     }
   }
 
@@ -292,12 +311,23 @@ export default function VendasPage() {
                   Se você acabou de configurar o Vercel, tente recarregar a página (F5) ou aguarde o deploy finalizar.
                 </p>
               </div>
-              <button 
-                onClick={handleUpdateDashboard}
-                className="mt-2 text-xs font-bold text-amber-700 underline"
-              >
-                Tentar novamente
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={handleUpdateDashboard}
+                  className="mt-2 text-xs font-bold text-amber-700 underline"
+                >
+                  Tentar novamente
+                </button>
+                <span className="mt-2 text-gray-300">•</span>
+                <button 
+                  onClick={handleTestConnection}
+                  disabled={testingConnection}
+                  className="mt-2 text-xs font-bold text-amber-700 underline flex items-center gap-1"
+                >
+                  {testingConnection ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Zap className="w-2.5 h-2.5" />}
+                  Testar Credenciais
+                </button>
+              </div>
             </div>
           )}
 

@@ -3,6 +3,8 @@ import { generateText, streamText } from 'ai'
 import { google } from '@ai-sdk/google'
 import { createClient } from '@supabase/supabase-js'
 
+import { getAuthenticatedUserContext } from '@/lib/auth-utils'
+
 export const maxDuration = 30; // max vercel timeout
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
@@ -11,15 +13,28 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 
 export async function POST(req: Request) {
   const requestId = Math.random().toString(36).substring(7)
-  console.log(`[Copilot][${requestId}] ▶ POST recebido (Fase 2)`)
   
   try {
     if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
       return NextResponse.json({ error: 'Falta GOOGLE_GENERATIVE_AI_API_KEY no Vercel.' }, { status: 500 })
     }
 
+    // SEGURANÇA: Validar Autenticação no Servidor
+    const context = await getAuthenticatedUserContext()
+    if (!context) {
+        return NextResponse.json({ error: 'Acesso negado: Sessão inválida ou expirada.' }, { status: 401 })
+    }
+
     const body = await req.json()
-    const { messages, userId } = body
+    const { messages, userId: clientUserId } = body
+
+    // SEGURANÇA: Anti-Spoofing (Cross-user block)
+    // Se o cliente passar um userId diferente do autenticado, bloqueia ou força o autenticado.
+    if (clientUserId && clientUserId !== context.userId) {
+        return NextResponse.json({ error: 'Acesso negado: Tentativa de acesso a contexto de outro usuário.' }, { status: 403 })
+    }
+
+    const userId = context.userId // Forçar ID do servidor
     const today = new Date().toISOString().split('T')[0]
 
     // 1. CONTEXTO VIVO: Busca de dados reais da operação

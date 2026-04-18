@@ -9,61 +9,96 @@ function getServiceSupabase() {
     return createClient(url, key)
 }
 
-export async function requireManagerOrAdmin() {
+/**
+ * Resolve o contexto do usuário autenticado a partir de múltiplas fontes:
+ * 1. Supabase Auth (Cookie nativo)
+ * 2. Operador PIN (Cookie operacional encrypted)
+ * 3. DEV Bypass (se ativo)
+ */
+export async function getAuthenticatedUserContext() {
     // 0. Bypass de DEV (Apenas se configurado explicitamente)
     if (process.env.DEV_AUTH_BYPASS === 'true') {
-        console.warn("⚠️ MODO DE BYPASS DE AUTENTICAÇÃO ATIVO (DEV_AUTH_BYPASS)")
-        return "b4ac5ffd-40c3-46b1-9508-a1219cb925b6" 
+        const isProd = process.env.NODE_ENV === 'production'
+        if (!isProd) {
+            console.warn("⚠️ MODO DE BYPASS DE AUTENTICAÇÃO ATIVO (DEV_AUTH_BYPASS)")
+            return {
+                userId: "b4ac5ffd-40c3-46b1-9508-a1219cb925b6",
+                name: "Admin (Bypass)",
+                role: "admin",
+                source: "bypass"
+            }
+        } else {
+            console.error("❌ DEV_AUTH_BYPASS proibido em produção!")
+        }
     }
-
-    let userId: string | null = null
 
     // 1. Tenta Auth nativo do Supabase primeiro
     try {
         const supabaseServer = await createServerClient()
         const { data: { user } } = await supabaseServer.auth.getUser()
         if (user) {
-            userId = user.id
+            // Busca perfil estendido
+            const supabaseAdmin = getServiceSupabase()
+            if (supabaseAdmin) {
+                const { data: profile } = await supabaseAdmin
+                    .from('users')
+                    .select('name, role, position, sector')
+                    .eq('id', user.id)
+                    .single()
+                
+                return {
+                    userId: user.id,
+                    name: profile?.name || user.email,
+                    role: profile?.role || 'operator',
+                    position: profile?.position,
+                    sector: profile?.sector,
+                    source: 'supabase'
+                }
+            }
         }
     } catch (e) {
         console.error("Falha ao consultar usuário via cookie Supabase:", e)
     }
 
     // 2. Fallback: Tenta Cookie PIN operacional caso Auth nativo falhe
-    if (!userId) {
-        try {
-            const op = await getActiveOperator()
-            if (op) userId = op.userId
-        } catch (e) {
-            console.error("Falha ao consultar operador via cookie PIN:", e)
+    try {
+        const op = await getActiveOperator()
+        if (op) {
+            return {
+                userId: op.userId,
+                name: op.name,
+                role: op.role,
+                source: 'pin'
+            }
         }
+    } catch (e) {
+        console.error("Falha ao consultar operador via cookie PIN:", e)
     }
 
-    if (!userId) {
+    return null
+}
+
+/**
+ * Helper rápido para pegar apenas o ID do usuário autenticado
+ */
+export async function getAuthenticatedUserId() {
+    const context = await getAuthenticatedUserContext()
+    return context?.userId || null
+}
+
+/**
+ * Middleware para Server Actions que exige perfil administrativo
+ */
+export async function requireManagerOrAdmin() {
+    const context = await getAuthenticatedUserContext()
+    
+    if (!context) {
         throw new Error("Usuário não autenticado no servidor. Por favor, faça login ou informe seu PIN.")
     }
-    
-    // 3. Valida no perfil real do usuário
-    // Usamos o supabaseAdmin para garantir que podemos ler o perfil mesmo com RLS restrito
-    const supabaseAdmin = getServiceSupabase()
-    if (!supabaseAdmin) {
-        throw new Error("Ambiente do servidor incompleto ou em processo de build. Supabase Service Role Key faltando.")
-    }
-    
-    const { data: usr, error } = await supabaseAdmin
-        .from('users')
-        .select('role')
-        .eq('id', userId)
-        .single()
-    
-    if (error || !usr) {
-        console.error("Erro ao validar credenciais no banco:", error)
-        throw new Error("Erro ao validar permissões do usuário.")
-    }
 
-    if (usr.role !== 'admin' && usr.role !== 'manager') {
+    if (context.role !== 'admin' && context.role !== 'manager') {
         throw new Error("Acesso negado: Este módulo exige perfil de Gerente ou Administrador.")
     }
     
-    return userId
+    return context.userId
 }

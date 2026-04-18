@@ -2,10 +2,15 @@
 
 import OperationHeroCard from '../OperationHeroCard'
 import ExecutionBlock from '../ExecutionBlock'
+import OperationalAlertBanner from './OperationalAlertBanner'
 import WeeklyProgressBar from '../WeeklyProgressBar'
+import OperationalNoticeCard from './OperationalNoticeCard'
 import { Sparkles, ArrowRight } from 'lucide-react'
 import { WeeklyFocus } from '@/app/actions/weeklyFocusAction'
 import { Leak } from '@/app/actions/efficiencyAction'
+import RaffleCard from './RaffleCard'
+import RaffleDrawer from '../RaffleDrawer'
+import { useState } from 'react'
 
 interface OperatorHomeProps {
     healthScore: number;
@@ -21,6 +26,9 @@ interface OperatorHomeProps {
     lastSealing: any;
     topRanking: any[];
     isDemoMode: boolean;
+    notices?: any[];
+    birthdays?: any[];
+    lateCount?: number;
     onViewGlobalClick: () => void;
     onReportLoss: () => void;
     onOpenRewards: () => void;
@@ -42,14 +50,37 @@ export default function OperatorHome({
     lastSealing,
     topRanking,
     isDemoMode,
+    notices = [],
+    birthdays = [],
+    lateCount = 0,
     onViewGlobalClick,
     onReportLoss,
     onOpenRewards,
     onOpenAI,
     onUpdateFocus
 }: OperatorHomeProps) {
+    const [isRaffleOpen, setIsRaffleOpen] = useState(false)
+
     return (
-        <div className="space-y-5">
+        <div className="space-y-6">
+            {/* MURAL — AVISOS DA CASA + ANIVERSARIANTES */}
+            <OperationalNoticeCard notices={notices} birthdays={birthdays} />
+
+            {/* ALERTAS — ATRASOS CRÍTICOS */}
+            <OperationalAlertBanner lateCount={lateCount} />
+
+            <ExecutionBlock
+                routinesCount={routinesCount}
+                onReportLoss={onReportLoss}
+            />
+
+            {/* SORTEIO DO MÊS — INCENTIVO (NOVO) */}
+            <RaffleCard 
+                ticketCount={isDemoMode ? 12 : 0} 
+                prizeName="Jantar Especial" 
+                onClick={() => setIsRaffleOpen(true)} 
+            />
+
             {/* HERO — SAÚDE DA OPERAÇÃO */}
             <OperationHeroCard
                 score={healthScore}
@@ -62,12 +93,6 @@ export default function OperatorHome({
                 userRole={userRole}
                 onViewGlobalClick={onViewGlobalClick}
                 onUpdateFocus={onUpdateFocus}
-            />
-
-            {/* EXECUÇÃO — O QUE FAZER AGORA */}
-            <ExecutionBlock
-                routinesCount={routinesCount}
-                onReportLoss={onReportLoss}
             />
 
             {/* PROGRESSO — MINHA SEMANA */}
@@ -95,6 +120,12 @@ export default function OperatorHome({
                 </div>
                 <ArrowRight className="w-4 h-4 text-[#e9e8e5] group-hover:text-[#8c716c] transition-colors" />
             </button>
+
+            <RaffleDrawer 
+                isOpen={isRaffleOpen} 
+                onClose={() => setIsRaffleOpen(false)} 
+                ticketCount={isDemoMode ? 12 : 0} 
+            />
         </div>
     )
 }

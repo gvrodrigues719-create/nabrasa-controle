@@ -15,7 +15,7 @@ import {
 interface ModuleItem {
     label: string;
     href?: string;
-    status: 'active' | 'dev' | 'soon';
+    status: 'ativo' | 'ativo parcial' | 'em desenvolvimento' | 'demo' | 'em breve';
 }
 
 interface AreaProps {
@@ -43,10 +43,10 @@ function AreaCard({ title, icon: Icon, accentColor, mainModules, extraModule, cl
                 <div className="flex flex-wrap gap-x-3 gap-y-2">
                     {mainModules.map((m, idx) => (
                         <div key={idx} className="flex items-center gap-1.5">
-                            {m.status === 'active' && m.href ? (
+                            {(m.status === 'ativo' || m.status === 'ativo parcial') && m.href ? (
                                 <Link 
                                     href={m.href}
-                                    className="text-xs font-black text-gray-900 hover:text-indigo-600 flex items-center gap-1 transition-colors border-b border-gray-100 pb-0.5"
+                                    className="text-xs font-black text-gray-900 hover:text-[#B13A2B] flex items-center gap-1 transition-colors border-b border-gray-100 pb-0.5"
                                 >
                                     {m.label}
                                 </Link>
@@ -60,10 +60,10 @@ function AreaCard({ title, icon: Icon, accentColor, mainModules, extraModule, cl
 
                 {extraModule && (
                     <div className="pt-2 border-t border-gray-50">
-                        <span className={`text-[10px] font-bold ${extraModule.status === 'dev' ? 'text-gray-400 italic' : 'text-gray-300'}`}>
+                        <span className={`text-[10px] font-bold ${extraModule.status === 'em desenvolvimento' ? 'text-gray-400 italic' : 'text-gray-300'}`}>
                             {extraModule.label}
                             <span className="ml-2 text-[7px] px-1.5 py-0.5 rounded-md uppercase not-italic font-black bg-gray-50 text-gray-400 border border-gray-100">
-                                {extraModule.status === 'dev' ? 'Em desenvolvimento' : 'Em breve'}
+                                {extraModule.status === 'em desenvolvimento' ? 'Em desenvolvimento' : 'Em breve'}
                             </span>
                         </span>
                     </div>
@@ -89,12 +89,12 @@ export default function SystemArchitectureHub() {
                 <AreaCard 
                     title="Rotinas Operacionais"
                     icon={ClipboardList}
-                    accentColor="text-red-500"
+                    accentColor="text-[#B13A2B]"
                     mainModules={[
-                        { label: 'Checklist', href: '/dashboard/admin/checklists', status: 'active' },
-                        { label: 'Contagem', href: '/dashboard/admin/checklists?tab=management', status: 'active' }
+                        { label: 'Checklist', href: '/dashboard/admin/checklists', status: 'ativo' },
+                        { label: 'Contagem', href: '/dashboard/admin/routines', status: 'ativo parcial' }
                     ]}
-                    extraModule={{ label: 'Abertura & Fechamento', status: 'dev' }}
+                    extraModule={{ label: 'Abertura & Fechamento', status: 'em desenvolvimento' }}
                 />
 
                 {/* 2. Estoque, CMV e Produção */}
@@ -103,10 +103,10 @@ export default function SystemArchitectureHub() {
                     icon={Package}
                     accentColor="text-emerald-500"
                     mainModules={[
-                        { label: 'CMV & Compras', href: '/dashboard/admin/cmv', status: 'active' },
-                        { label: 'Perdas', href: '/dashboard/admin/cmv', status: 'active' }
+                        { label: 'CMV & Compras', href: '/dashboard/admin/cmv', status: 'ativo parcial' },
+                        { label: 'Perdas', href: '/dashboard/admin/cmv?tab=losses', status: 'ativo parcial' }
                     ]}
-                    extraModule={{ label: 'Ficha Técnica', status: 'dev' }}
+                    extraModule={{ label: 'Ficha Técnica', status: 'em desenvolvimento' }}
                 />
 
                 {/* 3. Vendas, Delivery e Atendimento */}
@@ -115,10 +115,10 @@ export default function SystemArchitectureHub() {
                     icon={ShoppingCart}
                     accentColor="text-indigo-500"
                     mainModules={[
-                        { label: 'Vendas', href: '/dashboard/admin/vendas', status: 'active' },
-                        { label: 'Delivery', status: 'active', href: '#' }
+                        { label: 'Vendas', href: '/dashboard/admin/vendas', status: 'ativo parcial' },
+                        { label: 'Delivery', status: 'em breve' }
                     ]}
-                    extraModule={{ label: 'Atendimento', status: 'dev' }}
+                    extraModule={{ label: 'Atendimento', status: 'em desenvolvimento' }}
                 />
 
                 {/* 4. Equipe & Performance */}
@@ -127,10 +127,10 @@ export default function SystemArchitectureHub() {
                     icon={Users}
                     accentColor="text-amber-500"
                     mainModules={[
-                        { label: 'Ranking', href: '/dashboard/admin/checklists?tab=ranking', status: 'active' },
-                        { label: 'Equipe', href: '/dashboard/admin/users', status: 'active' }
+                        { label: 'Ranking', href: '/dashboard/admin/checklists?tab=ranking', status: 'ativo' },
+                        { label: 'Equipe', href: '/dashboard/admin/users', status: 'ativo' }
                     ]}
-                    extraModule={{ label: 'Onboarding', status: 'dev' }}
+                    extraModule={{ label: 'Onboarding', status: 'em desenvolvimento' }}
                 />
 
                 {/* 5. Equipamentos & Manutenção */}
@@ -139,9 +139,9 @@ export default function SystemArchitectureHub() {
                     icon={Container}
                     accentColor="text-slate-500"
                     mainModules={[
-                        { label: 'Ativos', status: 'dev' }
+                        { label: 'Ativos', status: 'em desenvolvimento' }
                     ]}
-                    extraModule={{ label: 'Manutenção', status: 'soon' }}
+                    extraModule={{ label: 'Manutenção', status: 'em breve' }}
                 />
 
                 {/* 6. Processos e Regras */}
@@ -150,10 +150,10 @@ export default function SystemArchitectureHub() {
                     icon={Sliders}
                     accentColor="text-gray-600"
                     mainModules={[
-                        { label: 'Templates', href: '/dashboard/admin/checklists?tab=management', status: 'active' },
-                        { label: 'Regras', href: '/dashboard/admin/checklists', status: 'active' }
+                        { label: 'Templates', href: '/dashboard/admin/checklists?tab=management', status: 'ativo' },
+                        { label: 'Regras', href: '/dashboard/admin/checklists', status: 'ativo' }
                     ]}
-                    extraModule={{ label: 'Configuração', status: 'dev' }}
+                    extraModule={{ label: 'Configuração', status: 'em desenvolvimento' }}
                 />
 
                 {/* 7. Indicadores & Análises */}
@@ -163,9 +163,9 @@ export default function SystemArchitectureHub() {
                     accentColor="text-blue-500"
                     className="lg:col-span-3 lg:h-auto"
                     mainModules={[
-                        { label: 'Relatórios', href: '/dashboard/admin/reports', status: 'active' }
+                        { label: 'Relatórios', href: '/dashboard/admin/reports', status: 'ativo parcial' }
                     ]}
-                    extraModule={{ label: 'Painéis', status: 'dev' }}
+                    extraModule={{ label: 'Painéis', status: 'em desenvolvimento' }}
                 />
             </div>
         </section>

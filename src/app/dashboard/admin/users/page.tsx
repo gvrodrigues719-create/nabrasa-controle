@@ -15,6 +15,8 @@ type UserProfile = {
     role: string
     active: boolean
     has_pin?: boolean
+    birth_day?: number
+    birth_month?: number
 }
 
 export default function UsersPage() {
@@ -45,7 +47,7 @@ export default function UsersPage() {
     }
 
     const openCreate = () => {
-        setEditingUser({ name: '', email: '', role: 'operator', active: true })
+        setEditingUser({ name: '', email: '', role: 'operator', active: true, birth_day: undefined, birth_month: undefined })
         setNewPin('')
     }
 
@@ -67,7 +69,9 @@ export default function UsersPage() {
                 email: editingUser.email || '',
                 role: editingUser.role || 'operator',
                 active: editingUser.active === undefined ? true : editingUser.active,
-                newPin: newPin || undefined
+                newPin: newPin || undefined,
+                birth_day: editingUser.birth_day,
+                birth_month: editingUser.birth_month
             })
 
             toast.success("Usuário salvo com sucesso!")
@@ -163,6 +167,37 @@ export default function UsersPage() {
                             <option value="false">Inativado</option>
                         </select>
                     </div>
+                </div>
+
+                {/* Aniversário */}
+                <div className="pt-2">
+                    <label className="block text-sm font-semibold text-gray-600 mb-2 underline decoration-indigo-200 underline-offset-4">Dados de Incentivo (MOC)</label>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-[10px] font-black text-gray-400 mb-1 uppercase tracking-widest">Dia do Aniversário</label>
+                            <input
+                                type="number" min={1} max={31}
+                                value={editingUser.birth_day || ''}
+                                onChange={e => setEditingUser({ ...editingUser, birth_day: parseInt(e.target.value) || undefined })}
+                                className="w-full bg-gray-50 border-gray-200 border p-3 rounded-xl focus:bg-white outline-none"
+                                placeholder="ex: 14"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[10px] font-black text-gray-400 mb-1 uppercase tracking-widest">Mês do Aniversário</label>
+                            <select
+                                value={editingUser.birth_month || ''}
+                                onChange={e => setEditingUser({ ...editingUser, birth_month: parseInt(e.target.value) || undefined })}
+                                className="w-full bg-gray-50 border-gray-200 border p-3 rounded-xl focus:bg-white outline-none"
+                            >
+                                <option value="">Não informado</option>
+                                {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((m, i) => (
+                                    <option key={i+1} value={i+1}>{m}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                    <p className="text-[9px] text-gray-400 mt-2 italic font-medium">Usado para o prêmio de aniversário e murais automáticos.</p>
                 </div>
 
                 <div className="pt-4">

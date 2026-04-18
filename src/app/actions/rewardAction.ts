@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { getAuthenticatedUserId } from '@/lib/auth-utils'
 
 function getServiceSupabase() {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -12,8 +13,13 @@ function getServiceSupabase() {
 /**
  * Retorna o saldo em NB Coins e o extrato do usuário.
  */
-export async function getWalletBalanceAction(userId: string) {
+export async function getWalletBalanceAction(userId?: string) {
     try {
+        const authId = await getAuthenticatedUserId()
+        const targetId = userId || authId
+        
+        if (!targetId) throw new Error('Identidade não resolvida')
+
         const supabase = getServiceSupabase()
         if (!supabase) throw new Error('Database indisponível')
 
@@ -21,7 +27,7 @@ export async function getWalletBalanceAction(userId: string) {
         const { data: balanceData, error: bErr } = await supabase
             .from('user_wallet_balances')
             .select('balance')
-            .eq('user_id', userId)
+            .eq('user_id', targetId)
             .maybeSingle()
 
         if (bErr) throw bErr
@@ -60,13 +66,16 @@ export async function getRewardsCatalogAction() {
 /**
  * Transação atômica que permite resgatar uma recompensa usando moedas da carteira.
  */
-export async function redeemRewardAction(userId: string, rewardId: string) {
+export async function redeemRewardAction(rewardId: string) {
     try {
+        const authId = await getAuthenticatedUserId()
+        if (!authId) throw new Error('Não autenticado')
+
         const supabase = getServiceSupabase()
         if (!supabase) throw new Error('Service Role indisponível')
 
         // 1. Checar saldo do usuário
-        const { balance } = await getWalletBalanceAction(userId)
+        const { balance } = await getWalletBalanceAction(authId)
         
         // 2. Trazer recompensa
         const { data: reward, error: rErr } = await supabase
@@ -85,7 +94,7 @@ export async function redeemRewardAction(userId: string, rewardId: string) {
         const { data: redemption, error: redErr } = await supabase
             .from('reward_redemptions')
             .insert([{
-                user_id: userId,
+                user_id: authId,
                 reward_id: rewardId,
                 coins_spent: reward.cost_coins,
                 status: 'requested'
@@ -99,7 +108,7 @@ export async function redeemRewardAction(userId: string, rewardId: string) {
         const { error: wErr } = await supabase
             .from('wallet_transactions')
             .insert([{
-                user_id: userId,
+                user_id: authId,
                 type: 'spent',
                 amount: reward.cost_coins,
                 reference_id: redemption.id
@@ -117,8 +126,10 @@ export async function redeemRewardAction(userId: string, rewardId: string) {
             if (rpcErr) console.error("Warning: Falha RPC diminuição de estoque, mas checkout foi efetuado.")
         }
 
+        console.log(`[ACTION] Reward redeemed | RewardID: ${rewardId} | User: ${authId} | Cost: ${reward.cost_coins}`)
         return { success: true }
     } catch (e: any) {
+        console.error(`[AUTH_FAIL] redeemRewardAction | RewardID: ${rewardId} | Error: ${e.message}`)
         return { success: false, error: e.message }
     }
 }

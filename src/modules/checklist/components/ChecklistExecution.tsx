@@ -19,7 +19,8 @@ import {
     TextInput 
 } from './ChecklistInputs'
 import { EvidenceUploader } from './EvidenceUploader'
-import { Loader2, CheckCircle2, AlertCircle, Info, Camera } from 'lucide-react'
+import ContextualCommentsDrawer from '@/app/dashboard/components/ContextualCommentsDrawer'
+import { Loader2, CheckCircle2, AlertCircle, Info, Camera, MessageSquare } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Props {
@@ -35,6 +36,7 @@ export default function ChecklistExecution({ template, sessionId, userId }: Prop
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState<string | null>(null) // itemId sendo salvo
     const [completing, setCompleting] = useState(false)
+    const [isCommentsOpen, setIsCommentsOpen] = useState(false)
 
     // Carregar respostas existentes se houver
     useEffect(() => {
@@ -118,7 +120,16 @@ export default function ChecklistExecution({ template, sessionId, userId }: Prop
                 <div className="max-w-md mx-auto">
                     <div className="flex justify-between items-end mb-1.5">
                         <span className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest">Progresso Auditoria</span>
-                        <span className="text-xs font-black text-[#2b58b1]">{totalFilled} / {totalMandatory}</span>
+                        <div className="flex items-center gap-3">
+                            <button 
+                                onClick={() => setIsCommentsOpen(true)}
+                                className="flex items-center gap-1.5 px-2.5 py-1 bg-white border border-[#e9e8e5] rounded-lg shadow-sm text-[#8c716c] hover:text-[#1b1c1a] active:scale-95 transition-all"
+                            >
+                                <MessageSquare className="w-3 h-3" />
+                                <span className="text-[10px] font-black uppercase">Dúvidas</span>
+                            </button>
+                            <span className="text-xs font-black text-[#2b58b1]">{totalFilled} / {totalMandatory}</span>
+                        </div>
                     </div>
                     <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                         <div 
@@ -229,6 +240,15 @@ export default function ChecklistExecution({ template, sessionId, userId }: Prop
                     </button>
                 </div>
             </div>
+
+            {/* DRAWER DE COMENTÁRIOS */}
+            <ContextualCommentsDrawer 
+                isOpen={isCommentsOpen}
+                onClose={() => setIsCommentsOpen(false)}
+                referenceId={sessionId}
+                referenceType="session"
+                title={template.name}
+            />
         </div>
     )
 }

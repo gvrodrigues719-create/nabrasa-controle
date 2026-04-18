@@ -45,9 +45,7 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
     const handleStartRoutine = async (pin: string) => {
         setStarting(true)
         try {
-            const { data: { user } } = await supabase.auth.getUser()
-
-            const res = await verifyAndStartRoutineAction(routineId, pin, user?.id)
+            const res = await verifyAndStartRoutineAction(routineId, pin)
 
             if (res.error) {
                 // Se o erro menciona PIN, relança para o modal mostrar no campo
