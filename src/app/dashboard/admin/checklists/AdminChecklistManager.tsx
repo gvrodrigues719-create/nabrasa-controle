@@ -30,10 +30,19 @@ export default function AdminChecklistManager() {
     const [rules, setRules] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [isProcessing, setIsProcessing] = useState(false)
+    const [lastStats, setLastStats] = useState<any | null>(null)
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
     useEffect(() => {
         fetchTemplates()
+        fetchUser()
     }, [])
+
+    const fetchUser = async () => {
+        const { getActiveOperator } = await import('@/app/actions/pinAuth')
+        const usr = await getActiveOperator()
+        if (usr) setCurrentUserId(usr.userId)
+    }
 
     const fetchTemplates = async () => {
         setLoading(true)
@@ -50,9 +59,10 @@ export default function AdminChecklistManager() {
 
     const runDistribution = async () => {
         setIsProcessing(true)
-        const res = await runChecklistDistributionAction()
+        setLastStats(null)
+        const res = await runChecklistDistributionAction(currentUserId || undefined)
         if (res.success) {
-            alert(`Sucesso! ${res.count} checklists distribuídos para os colaboradores.`)
+            setLastStats(res.stats)
         }
         setIsProcessing(false)
     }
@@ -127,21 +137,27 @@ export default function AdminChecklistManager() {
                                         <span className="text-[10px] font-black uppercase tracking-widest">Público Alvo</span>
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Função / Cargo</label>
-                                        <select className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-700">
-                                            <option>Todos</option>
-                                            <option>Estoquista</option>
-                                            <option>Cozinheiro</option>
-                                            <option>Atendente</option>
+                                        <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Cargo / Função</label>
+                                        <select 
+                                            className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-700"
+                                            defaultValue={rules.find(r => r.is_active)?.target_position || ''}
+                                        >
+                                            <option value="">Todos</option>
+                                            <option value="estoquista">Estoquista</option>
+                                            <option value="cozinheiro">Cozinheiro</option>
+                                            <option value="atendente">Atendente</option>
                                         </select>
                                     </div>
                                     <div>
                                         <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Turno</label>
-                                        <select className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-700">
-                                            <option>Qualquer Turno</option>
-                                            <option>Manhã</option>
-                                            <option>Tarde</option>
-                                            <option>Noite</option>
+                                        <select 
+                                            className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-700"
+                                            defaultValue={rules.find(r => r.is_active)?.target_shift || ''}
+                                        >
+                                            <option value="">Qualquer Turno</option>
+                                            <option value="manha">Manhã</option>
+                                            <option value="tarde">Tarde</option>
+                                            <option value="noite">Noite</option>
                                         </select>
                                     </div>
                                 </div>
@@ -171,16 +187,48 @@ export default function AdminChecklistManager() {
                             </div>
                         </div>
 
-                        <div className="bg-amber-50 rounded-3xl p-6 border border-amber-100 flex gap-4">
-                            <div className="bg-amber-100 p-3 rounded-2xl h-fit">
-                                <AlertCircle className="w-6 h-6 text-amber-600" />
-                            </div>
-                            <div>
-                                <h4 className="font-black text-amber-900 text-sm mb-1 uppercase tracking-tight">Regras de Atribuição Ativas</h4>
-                                <p className="text-xs text-amber-700 leading-relaxed font-medium">
-                                    Este template será gerado automaticamente todos os dias para os colaboradores que se encaixarem nos critérios acima. 
-                                    A reatribuição manual pode ser feita a qualquer momento pelo painel de monitoramento.
-                                </p>
+                        <div className="space-y-4">
+                            {lastStats && (
+                                <div className="bg-[#1b1c1a] rounded-3xl p-6 border border-gray-800 shadow-xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                    <h4 className="text-white font-black text-xs uppercase tracking-widest mb-4 flex items-center gap-2">
+                                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                        Relatório de Distribuição
+                                    </h4>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+                                            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Criados</p>
+                                            <p className="text-2xl font-black text-white">{lastStats.sessionsCreated}</p>
+                                        </div>
+                                        <div className="bg-white/5 rounded-2xl p-4 border border-white/10">
+                                            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mb-1">Ignorados</p>
+                                            <p className="text-2xl font-black text-white/60">{lastStats.sessionsSkipped}</p>
+                                        </div>
+                                    </div>
+                                    {lastStats.deadRules.length > 0 && (
+                                        <div className="mt-4 flex items-start gap-3 bg-red-500/10 border border-red-500/20 p-4 rounded-2xl">
+                                            <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+                                            <div>
+                                                <p className="text-[10px] font-black text-red-400 uppercase tracking-widest">Regras Vazias</p>
+                                                <p className="text-[10px] text-red-200/60 leading-tight mt-1">
+                                                    Há {lastStats.deadRules.length} regra(s) ativa(s) sem nenhum colaborador correspondente no sistema.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="bg-amber-50 rounded-3xl p-6 border border-amber-100 flex gap-4">
+                                <div className="bg-amber-100 p-3 rounded-2xl h-fit">
+                                    <AlertCircle className="w-6 h-6 text-amber-600" />
+                                </div>
+                                <div>
+                                    <h4 className="font-black text-amber-900 text-sm mb-1 uppercase tracking-tight">Regras de Atribuição Ativas</h4>
+                                    <p className="text-xs text-amber-700 leading-relaxed font-medium">
+                                        Este template será gerado automaticamente todos os dias para os colaboradores que se encaixarem nos critérios acima. 
+                                        A reatribuição manual pode ser feita a qualquer momento pelo painel de monitoramento.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </>

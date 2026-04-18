@@ -49,13 +49,10 @@ export interface ChecklistTemplate {
     items?: ChecklistTemplateItem[];
 }
 
-/**
- * Regra de Atribuição de Checklist (O "Cérebro" da distribuição)
- */
 export interface ChecklistAttributionRule {
     id: string;
     template_id: string;
-    target_role?: string;
+    target_position?: string;
     target_shift?: string;
     target_sector?: string;
     target_unit_id?: string;
@@ -79,6 +76,8 @@ export interface ChecklistSession {
     user_id: string;
     group_id?: string;   
     attribution_rule_id?: string;
+    attribution_source: 'manual' | 'automatic';
+    created_by?: string;
     status: ChecklistSessionStatus;
     scheduled_for?: string; // Data YYYY-MM-DD
     started_at: string;
@@ -90,7 +89,7 @@ export interface ChecklistSession {
 
     // Relacionais (opcionais para listagem)
     checklist_templates?: Partial<ChecklistTemplate>;
-    users?: { name: string };
+    users?: { name: string; position?: string; shift?: string };
 }
 
 /**

@@ -255,7 +255,7 @@ export async function getAllChecklistSessionsAction(status?: ChecklistSessionSta
             .select(`
                 *,
                 checklist_templates(name, context, priority),
-                users(id, name, role, sector, shift)
+                users(id, name, role, position, sector, shift)
             `)
         
         if (status) {
@@ -346,38 +346,46 @@ export async function saveAttributionRuleAction(rule: any) {
 }
 
 /**
- * ENGINE: GERAR SESSÕES BASEADO EM REGRAS
- * Pode ser chamado manualmente pelo gerente ou via cron.
+ * ENGINE: GERAR SESSÕES BASEADO EM REGRAS (HARDENED)
  */
-export async function runChecklistDistributionAction() {
+export async function runChecklistDistributionAction(triggeringUserId?: string) {
     try {
+        const source = triggeringUserId ? 'manual' : 'automatic'
+        const today = new Date().toISOString().split('T')[0]
+        
         // 1. Buscar todas as regras ativas
         const { data: rules } = await supabase
             .from('checklist_attribution_rules')
             .select('*')
             .eq('is_active', true)
 
-        if (!rules || rules.length === 0) return { success: true, count: 0 }
+        if (!rules || rules.length === 0) return { success: true, count: 0, report: [] }
 
-        let totalGenerated = 0
+        let stats = {
+            totalRules: rules.length,
+            sessionsCreated: 0,
+            sessionsSkipped: 0,
+            deadRules: [] as string[]
+        }
 
         for (const rule of rules) {
-            // 2. Buscar usuários que batem com a regra
+            // 2. Buscar usuários que batem com a regra (usando POSITION agora)
             let userQuery = supabase.from('users').select('id').eq('active', true)
             
-            if (rule.target_role) userQuery = userQuery.eq('role', rule.target_role)
+            if (rule.target_position) userQuery = userQuery.eq('position', rule.target_position)
             if (rule.target_shift) userQuery = userQuery.eq('shift', rule.target_shift)
             if (rule.target_sector) userQuery = userQuery.eq('sector', rule.target_sector)
             if (rule.target_unit_id) userQuery = userQuery.eq('unit_id', rule.target_unit_id)
 
             const { data: targetUsers } = await userQuery
 
-            if (!targetUsers) continue
-
-            const today = new Date().toISOString().split('T')[0]
+            if (!targetUsers || targetUsers.length === 0) {
+                stats.deadRules.push(rule.id)
+                continue
+            }
 
             for (const user of targetUsers) {
-                // 3. Verificar se já existe sessão para este template/usuário hoje
+                // 3. BLINDAGEM DE IDEMPOTÊNCIA: Verificar se já existe sessão hoje
                 const { data: existing } = await supabase
                     .from('checklist_sessions')
                     .select('id')
@@ -387,21 +395,27 @@ export async function runChecklistDistributionAction() {
                     .maybeSingle()
 
                 if (!existing) {
-                    // 4. Gerar nova sessão
-                    await supabase.from('checklist_sessions').insert({
+                    // 4. Gerar nova sessão com AUDITORIA
+                    const { error: insError } = await supabase.from('checklist_sessions').insert({
                         template_id: rule.template_id,
                         user_id: user.id,
                         attribution_rule_id: rule.id,
+                        attribution_source: source,
+                        created_by: triggeringUserId,
                         scheduled_for: today,
                         status: 'in_progress'
                     })
-                    totalGenerated++
+                    
+                    if (!insError) stats.sessionsCreated++
+                } else {
+                    stats.sessionsSkipped++
                 }
             }
         }
 
         revalidatePath('/dashboard/checklist')
-        return { success: true, count: totalGenerated }
+        revalidatePath('/dashboard/admin/checklists')
+        return { success: true, count: stats.sessionsCreated, stats }
     } catch (error: any) {
         console.error('Distribution error:', error)
         return { success: false, error: error.message }
