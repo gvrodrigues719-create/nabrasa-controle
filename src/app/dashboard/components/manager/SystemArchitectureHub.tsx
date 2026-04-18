@@ -23,11 +23,12 @@ interface AreaProps {
     icon: any;
     accentColor: string;
     modules: ModuleItem[];
+    className?: string;
 }
 
-function AreaCard({ title, icon: Icon, accentColor, modules }: AreaProps) {
+function AreaCard({ title, icon: Icon, accentColor, modules, className = "" }: AreaProps) {
     return (
-        <div className="bg-white rounded-[2.5rem] p-7 border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col h-full group">
+        <div className={`bg-white rounded-[2.5rem] p-7 border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col h-full group ${className}`}>
             <div className="flex items-center justify-between mb-6">
                 <div className={`w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center group-hover:bg-white group-hover:shadow-sm transition-all`}>
                     <Icon className={`w-5 h-5 ${accentColor} transition-colors`} />
@@ -71,9 +72,9 @@ export default function SystemArchitectureHub() {
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                     <span className="w-1.5 h-6 bg-gray-900 rounded-full" />
-                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Arquitetura do Sistema</h3>
+                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Áreas do Sistema</h3>
                 </div>
-                <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">v2.4.0 Executive</span>
+                <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest leading-none">Management Hub</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -81,9 +82,10 @@ export default function SystemArchitectureHub() {
                 <AreaCard 
                     title="Rotinas Operacionais"
                     icon={ClipboardList}
-                    accentColor="text-red-500" // Acento sutil
+                    accentColor="text-red-500"
                     modules={[
-                        { label: 'Checklist & Rituais', href: '/dashboard/admin/checklists', status: 'active' },
+                        { label: 'Checklist', href: '/dashboard/admin/checklists', status: 'active' },
+                        { label: 'Contagem', href: '/dashboard/admin/checklists?tab=management', status: 'active' },
                         { label: 'Auditoria Operacional', href: '/dashboard/admin/reports', status: 'active' },
                         { label: 'Abertura & Fechamento', status: 'dev' }
                     ]}
@@ -97,7 +99,7 @@ export default function SystemArchitectureHub() {
                     modules={[
                         { label: 'CMV & Compras', href: '/dashboard/admin/cmv', status: 'active' },
                         { label: 'Registro de Perdas', href: '/dashboard/admin/cmv', status: 'active' },
-                        { label: 'Estoque Real', status: 'dev' }
+                        { label: 'Ficha Técnica', status: 'dev' }
                     ]}
                 />
 
@@ -108,7 +110,8 @@ export default function SystemArchitectureHub() {
                     accentColor="text-indigo-500"
                     modules={[
                         { label: 'Módulo de Vendas', href: '/dashboard/admin/vendas', status: 'active' },
-                        { label: 'Canais de Atendimento', status: 'dev' }
+                        { label: 'Delivery & iFood', status: 'soon' },
+                        { label: 'IA Atendimento', status: 'dev' }
                     ]}
                 />
 
@@ -131,7 +134,8 @@ export default function SystemArchitectureHub() {
                     accentColor="text-slate-500"
                     modules={[
                         { label: 'Cadastro de Ativos', status: 'dev' },
-                        { label: 'Plano de Manutenção', status: 'soon' }
+                        { label: 'Plano de Manutenção', status: 'soon' },
+                        { label: 'Chamados Técnicos', status: 'soon' }
                     ]}
                 />
 
@@ -147,11 +151,12 @@ export default function SystemArchitectureHub() {
                     ]}
                 />
 
-                {/* 7. Indicadores & Análises */}
+                {/* 7. Indicadores & Análises - Composição de Grade */}
                 <AreaCard 
                     title="Indicadores & Análises"
                     icon={BarChart3}
                     accentColor="text-blue-500"
+                    className="lg:col-span-3" // Resolvendo o isolamento visual
                     modules={[
                         { label: 'Relatórios Operacionais', href: '/dashboard/admin/reports', status: 'active' },
                         { label: 'Painéis de Performance', status: 'dev' }

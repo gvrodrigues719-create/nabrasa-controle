@@ -510,7 +510,9 @@ export async function getOperationalMirrorAction() {
                 completed: sessions?.filter(s => s.status === 'completed').length || 0,
                 pending: sessions?.filter(s => s.status === 'in_progress').length || 0,
                 late: sessions?.filter(s => s.scheduled_for < today && s.status === 'in_progress').length || 0,
-                critical: sessions?.filter(s => s.checklist_templates?.priority === 'critical' && s.status === 'in_progress').length || 0
+                critical: sessions?.filter(s => s.checklist_templates?.priority === 'critical' && s.status === 'in_progress').length || 0,
+                lossesCount: losses?.length || 0,
+                deadRulesCount: 0 // Será calculado abaixo
             },
             bySector: {
                 cozinha: { total: 0, completed: 0, losses: 0 },
@@ -570,6 +572,7 @@ export async function getOperationalMirrorAction() {
                 })
             }
         })
+        stats.overview.deadRulesCount = stats.exceptions.filter(e => e.type === 'dead_rule').length
 
         return { success: true, data: stats, lastUpdated: new Date().toISOString() }
     } catch (error: any) {
