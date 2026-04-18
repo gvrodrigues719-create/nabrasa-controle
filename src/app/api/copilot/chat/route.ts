@@ -30,16 +30,16 @@ export async function POST(req: Request) {
       // Buscar perfil
       const { data: user } = await supabase.from('users').select('*').eq('id', userId).single()
       
-      // Buscar checklists pendentes
+      // Buscar checklists pendentes (Bug B fix: checklist_sessions + join templates)
       const { data: activeChecklists } = await supabase
-        .from('checklists')
-        .select('title, status')
+        .from('checklist_sessions')
+        .select('status, checklist_templates(name)')
         .eq('user_id', userId)
         .eq('status', 'in_progress')
         .limit(5)
       
       const checklistStr = activeChecklists && activeChecklists.length > 0
-        ? activeChecklists.map(c => `- ${c.title}`).join('\n') 
+        ? activeChecklists.map((c: any) => `- ${c.checklist_templates?.name}`).join('\n') 
         : 'Nenhum checklist pendente.'
 
       // Buscar itens em atenção (segurança contra tabela nula caso o user ainda n tenha criado)
@@ -118,19 +118,22 @@ ${userContext}
     // 4. Stream com Gemini
     console.log('[Copilot] chamando streamText com gemini-1.5-flash...')
     
-    // CORREÇÃO DEFINITIVA: Extrai apenas o texto puro de cada mensagem.
-    // Isso evita que metadados internos do SDK 6.x (step-start, reasoning, etc) sejam enviados ao Gemini.
-    const coreMessages = messages.map((m: any) => {
-      const textContent = (m.parts ?? [])
-        .filter((p: any) => p.type === 'text')
-        .map((p: any) => p.text)
-        .join('')
-      
-      return {
-        role: m.role,
-        content: textContent || m.content || ''
-      }
-    }).filter((m: any) => m.content.trim() !== '')
+    // CORREÇÃO (Bug A): Extrair SOMENTE texto puro como string para evitar quebras no histórico (SDK 6.x)
+    const coreMessages = messages
+      .filter((m: any) => m.role === 'user' || m.role === 'assistant')
+      .map((m: any) => {
+        let text = ''
+        if (Array.isArray(m.parts)) {
+          text = m.parts
+            .filter((p: any) => p.type === 'text')
+            .map((p: any) => p.text || '')
+            .join('')
+        } else if (typeof m.content === 'string') {
+          text = m.content
+        }
+        return { role: m.role as 'user' | 'assistant', content: text }
+      })
+      .filter((m: { role: string; content: string }) => m.content.trim() !== '')
 
     const result = streamText({
       model: google('gemini-1.5-flash'),

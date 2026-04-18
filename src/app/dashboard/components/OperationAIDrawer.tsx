@@ -54,13 +54,18 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName }:
 
     const handleFeedback = async (messageId: string, isHelpful: boolean) => {
         if (!userId || messageId === WELCOME_MESSAGE_ID) return
-        toast.success(isHelpful ? "Obrigado pelo feedback!" : "Registrado. Vamos melhorar.")
-        // MVP: Registra no banco de forma silenciosa para auditoria
-        await supabase.from('copilot_feedback').insert([{
-            message_id: messageId,
-            user_id: userId,
-            is_helpful: isHelpful
-        }])
+        
+        try {
+            // Bug C fix: O ID do SDK não é UUID. Salvar no feedback_text como referência.
+            await supabase.from('copilot_feedback').insert([{
+                user_id: userId,
+                is_helpful: isHelpful,
+                feedback_text: `sdk_msg_id:${messageId}`
+            }])
+            toast.success(isHelpful ? "Obrigado pelo feedback!" : "Registrado. Vamos melhorar.")
+        } catch (e) {
+            console.error('Feedback error:', e)
+        }
     }
 
     const onSubmit = (e: React.FormEvent) => {
