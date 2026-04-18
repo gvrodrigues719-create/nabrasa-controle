@@ -246,24 +246,164 @@ export async function completeChecklistSessionAction(sessionId: string) {
 }
 
 /**
- * Busca todas as sessões concluídas (Histórico para o Gerente)
+ * Busca todas as sessões concluídas ou em progresso para monitoramento
  */
-export async function getAllChecklistSessionsAction() {
+export async function getAllChecklistSessionsAction(status?: ChecklistSessionStatus) {
     try {
-        const { data, error } = await supabase
+        let query = supabase
             .from('checklist_sessions')
             .select(`
                 *,
-                checklist_templates(name, context),
-                users(name)
+                checklist_templates(name, context, priority),
+                users(id, name, role, sector, shift)
             `)
-            .eq('status', 'completed')
-            .order('completed_at', { ascending: false })
+        
+        if (status) {
+            query = query.eq('status', status)
+        }
+
+        const { data, error } = await query.order('created_at', { ascending: false })
 
         if (error) throw error
         return { success: true, data }
     } catch (error: any) {
         console.error('Error fetching all checklist sessions:', error)
+        return { success: false, error: error.message }
+    }
+}
+
+/**
+ * BUSCA TAREFAS "PARA MIM" (CHECKLISTS ATRIBUÍDOS)
+ */
+export async function getMyPendingChecklistsAction(userId: string) {
+    try {
+        const { data, error } = await supabase
+            .from('checklist_sessions')
+            .select(`
+                *,
+                checklist_templates(name, description, context, priority, evidence_required_default)
+            `)
+            .eq('user_id', userId)
+            .eq('status', 'in_progress')
+            .order('priority', { ascending: false })
+
+        if (error) throw error
+        return { success: true, data }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+/**
+ * SALVAR/ATUALIZAR TEMPLATE (ADMIN)
+ */
+export async function saveChecklistTemplateAction(template: Partial<ChecklistTemplate>) {
+    try {
+        const { data, error } = await supabase
+            .from('checklist_templates')
+            .upsert({
+                id: template.id,
+                name: template.name,
+                description: template.description,
+                context: template.context,
+                priority: template.priority,
+                frequency: template.frequency,
+                evidence_required_default: template.evidence_required_default,
+                active: template.active
+            })
+            .select()
+            .single()
+
+        if (error) throw error
+        revalidatePath('/dashboard/admin/checklists')
+        return { success: true, data }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+/**
+ * GESTÃO DE REGRAS DE ATRIBUIÇÃO (ADMIN)
+ */
+export async function getTemplateRulesAction(templateId: string) {
+    const { data, error } = await supabase
+        .from('checklist_attribution_rules')
+        .select('*')
+        .eq('template_id', templateId)
+    
+    if (error) return { success: false, error: error.message }
+    return { success: true, data }
+}
+
+export async function saveAttributionRuleAction(rule: any) {
+    const { error } = await supabase
+        .from('checklist_attribution_rules')
+        .upsert(rule)
+    
+    if (error) return { success: false, error: error.message }
+    revalidatePath('/dashboard/admin/checklists')
+    return { success: true }
+}
+
+/**
+ * ENGINE: GERAR SESSÕES BASEADO EM REGRAS
+ * Pode ser chamado manualmente pelo gerente ou via cron.
+ */
+export async function runChecklistDistributionAction() {
+    try {
+        // 1. Buscar todas as regras ativas
+        const { data: rules } = await supabase
+            .from('checklist_attribution_rules')
+            .select('*')
+            .eq('is_active', true)
+
+        if (!rules || rules.length === 0) return { success: true, count: 0 }
+
+        let totalGenerated = 0
+
+        for (const rule of rules) {
+            // 2. Buscar usuários que batem com a regra
+            let userQuery = supabase.from('users').select('id').eq('active', true)
+            
+            if (rule.target_role) userQuery = userQuery.eq('role', rule.target_role)
+            if (rule.target_shift) userQuery = userQuery.eq('shift', rule.target_shift)
+            if (rule.target_sector) userQuery = userQuery.eq('sector', rule.target_sector)
+            if (rule.target_unit_id) userQuery = userQuery.eq('unit_id', rule.target_unit_id)
+
+            const { data: targetUsers } = await userQuery
+
+            if (!targetUsers) continue
+
+            const today = new Date().toISOString().split('T')[0]
+
+            for (const user of targetUsers) {
+                // 3. Verificar se já existe sessão para este template/usuário hoje
+                const { data: existing } = await supabase
+                    .from('checklist_sessions')
+                    .select('id')
+                    .eq('template_id', rule.template_id)
+                    .eq('user_id', user.id)
+                    .eq('scheduled_for', today)
+                    .maybeSingle()
+
+                if (!existing) {
+                    // 4. Gerar nova sessão
+                    await supabase.from('checklist_sessions').insert({
+                        template_id: rule.template_id,
+                        user_id: user.id,
+                        attribution_rule_id: rule.id,
+                        scheduled_for: today,
+                        status: 'in_progress'
+                    })
+                    totalGenerated++
+                }
+            }
+        }
+
+        revalidatePath('/dashboard/checklist')
+        return { success: true, count: totalGenerated }
+    } catch (error: any) {
+        console.error('Distribution error:', error)
         return { success: false, error: error.message }
     }
 }

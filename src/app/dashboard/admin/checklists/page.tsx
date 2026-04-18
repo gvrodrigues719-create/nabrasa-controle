@@ -17,15 +17,17 @@ import {
     Calendar,
     ArrowLeft,
     Loader2,
-    CalendarDays
+    CalendarDays,
+    Settings2
 } from 'lucide-react'
+import AdminChecklistManager from './AdminChecklistManager'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 export default function AdminAuditPage() {
     const router = useRouter()
-    const [activeTab, setActiveTab] = useState<'history' | 'ranking'>('history')
+    const [activeTab, setActiveTab] = useState<'history' | 'ranking' | 'management'>('history')
     const [history, setHistory] = useState<any[]>([])
     const [ranking, setRanking] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
@@ -90,6 +92,17 @@ export default function AdminAuditPage() {
                     >
                         <Trophy className="w-4 h-4" />
                         Ranking
+                    </button>
+                    <button 
+                        onClick={() => setActiveTab('management')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
+                            activeTab === 'management' 
+                                ? 'bg-white text-[#B13A2B] shadow-sm' 
+                                : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                    >
+                        <Settings2 className="w-4 h-4" />
+                        Gestão
                     </button>
                 </div>
 
@@ -168,6 +181,8 @@ export default function AdminAuditPage() {
                             </div>
                         ))}
                     </div>
+                ) : (
+                    <AdminChecklistManager />
                 )}
             </div>
         </div>

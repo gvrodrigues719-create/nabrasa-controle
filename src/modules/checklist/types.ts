@@ -24,6 +24,16 @@ export interface ChecklistTemplateItem {
 }
 
 /**
+ * Prioridade operacional de um checklist
+ */
+export type ChecklistPriority = 'low' | 'medium' | 'high';
+
+/**
+ * Frequência de atribuição
+ */
+export type ChecklistFrequency = 'daily' | 'weekly' | 'manual';
+
+/**
  * Modelo de um Checklist (Template)
  */
 export interface ChecklistTemplate {
@@ -31,8 +41,27 @@ export interface ChecklistTemplate {
     name: string;
     description?: string;
     context: ChecklistContext;
+    priority: ChecklistPriority;
+    frequency: ChecklistFrequency;
     active: boolean;
-    items: ChecklistTemplateItem[];
+    evidence_required_default: boolean;
+    unit_id?: string;
+    items?: ChecklistTemplateItem[];
+}
+
+/**
+ * Regra de Atribuição de Checklist (O "Cérebro" da distribuição)
+ */
+export interface ChecklistAttributionRule {
+    id: string;
+    template_id: string;
+    target_role?: string;
+    target_shift?: string;
+    target_sector?: string;
+    target_unit_id?: string;
+    weekdays?: number[]; // [0-6]
+    is_active: boolean;
+    created_at: string;
 }
 
 /**
@@ -46,16 +75,22 @@ export type ChecklistSessionStatus = 'in_progress' | 'completed' | 'canceled';
 export interface ChecklistSession {
     id: string;
     template_id: string;
-    routine_id?: string; // Vínculo opcional com a rotina principal do MOC
+    routine_id?: string; 
     user_id: string;
-    group_id?: string;   // Vínculo opcional com área/setor/frente
+    group_id?: string;   
+    attribution_rule_id?: string;
     status: ChecklistSessionStatus;
+    scheduled_for?: string; // Data YYYY-MM-DD
     started_at: string;
     completed_at?: string;
     
-    // Regra de fechamento: progresso de itens obrigatórios
+    // Metadados de progresso
     mandatory_total: number;
     mandatory_filled: number;
+
+    // Relacionais (opcionais para listagem)
+    checklist_templates?: Partial<ChecklistTemplate>;
+    users?: { name: string };
 }
 
 /**

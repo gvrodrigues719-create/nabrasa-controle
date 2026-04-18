@@ -1,10 +1,10 @@
-import Link from 'next/link'
-import { ArrowLeft, ClipboardList, CheckCircle2, ChevronRight, Sunrise, Sunset, Calendar, ListChecks } from 'lucide-react'
-import { getChecklistTemplatesAction } from '@/app/actions/checklistAction'
+import { getMyPendingChecklistsAction } from '@/app/actions/checklistAction'
+import { getActiveOperator } from '@/app/actions/pinAuth'
 
 export default async function ChecklistSelectionPage() {
-    const res = await getChecklistTemplatesAction()
-    const templates = res.success ? res.data || [] : []
+    const operator = await getActiveOperator()
+    const res = await getMyPendingChecklistsAction(operator?.userId || '')
+    const sessions = res.success ? res.data || [] : []
 
     // Helper para ícones de contexto
     const getContextIcon = (context: string) => {
@@ -46,46 +46,58 @@ export default async function ChecklistSelectionPage() {
             </header>
 
             <div className="max-w-md mx-auto px-5 py-8">
-                {templates.length === 0 ? (
+                {sessions.length === 0 ? (
                     <div className="text-center py-12 px-4 bg-white rounded-3xl border border-[#e9e8e5] border-dashed">
                         <ClipboardList className="w-12 h-12 mx-auto text-[#dfbfba] mb-3" />
-                        <p className="font-bold text-[#58413e]">Nenhum checklist disponível.</p>
-                        <p className="text-xs text-[#8c716c] mt-1">Fale com o gerente se isso for um erro.</p>
+                        <p className="font-bold text-[#58413e]">Nenhum checklist pendente.</p>
+                        <p className="text-xs text-[#8c716c] mt-1">As tarefas são atribuídas automaticamente por turno e função.</p>
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {templates.map(t => (
-                            <Link 
-                                key={t.id}
-                                href={`/dashboard/checklist/${t.id}`}
-                                className="group bg-white rounded-[32px] p-6 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-[#e9e8e5] hover:border-[#b13a2b]/30 transition-all active:scale-[0.98] block relative overflow-hidden"
-                            >
-                                <div className="flex justify-between items-start">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <div className="p-2 bg-[#F8F7F4] rounded-lg border border-[#eeedea]">
-                                                {getContextIcon(t.context)}
+                        {sessions.map(s => {
+                            const t = s.checklist_templates!;
+                            return (
+                                <Link 
+                                    key={s.id}
+                                    href={`/dashboard/checklist/execute/${s.id}`}
+                                    className="group bg-white rounded-[32px] p-6 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-[#e9e8e5] hover:border-[#b13a2b]/30 transition-all active:scale-[0.98] block relative overflow-hidden"
+                                >
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <div className="p-2 bg-[#F8F7F4] rounded-lg border border-[#eeedea]">
+                                                    {getContextIcon(t.context || 'custom')}
+                                                </div>
+                                                <span className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest bg-[#F8F7F4] px-2.5 py-1 rounded-full border border-[#eeedea]">
+                                                    {getContextLabel(t.context || 'custom')}
+                                                </span>
+                                                {t.priority === 'high' && (
+                                                    <span className="text-[9px] font-black text-white uppercase tracking-widest bg-red-600 px-2.5 py-1 rounded-full animate-pulse">
+                                                        Urgente
+                                                    </span>
+                                                )}
                                             </div>
-                                            <span className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest bg-[#F8F7F4] px-2.5 py-1 rounded-full border border-[#eeedea]">
-                                                {getContextLabel(t.context)}
-                                            </span>
+                                            <h3 className="text-xl font-black text-[#1b1c1a] leading-tight mb-1.5 group-hover:text-[#b13a2b] transition-colors">
+                                                {t.name}
+                                            </h3>
+                                            <p className="text-sm text-[#8c716c] line-clamp-2 pr-4">{t.description}</p>
                                         </div>
-                                        <h3 className="text-xl font-black text-[#1b1c1a] leading-tight mb-1.5 group-hover:text-[#b13a2b] transition-colors">
-                                            {t.name}
-                                        </h3>
-                                        <p className="text-sm text-[#8c716c] line-clamp-2 pr-4">{t.description}</p>
+                                        <div className="mt-1 bg-[#F8F7F4] p-2 rounded-xl border border-[#eeedea] group-hover:bg-[#b13a2b] group-hover:text-white transition-all">
+                                            <ChevronRight className="w-5 h-5" />
+                                        </div>
                                     </div>
-                                    <div className="mt-1 bg-[#F8F7F4] p-2 rounded-xl border border-[#eeedea] group-hover:bg-[#b13a2b] group-hover:text-white transition-all">
-                                        <ChevronRight className="w-5 h-5" />
+                                    
+                                    {/* Indicador de Data */}
+                                    <div className="mt-4 pt-4 border-t border-dashed border-gray-100 flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                        <Calendar className="w-3 h-3" />
+                                        Agendado para: {s.scheduled_for}
                                     </div>
-                                </div>
-                                
-                                {/* Indicador Visual Sutil */}
-                                <div className="absolute bottom-0 right-0 w-24 h-24 bg-[#b13a2b]/[0.02] rounded-full -mr-12 -mb-12 group-hover:bg-[#b13a2b]/[0.05] transition-colors" />
-                            </Link>
-                        ))}
+                                </Link>
+                            )
+                        })}
                     </div>
                 )}
+
 
                 {/* INFO DISCRETA */}
                 <div className="mt-10 px-2 text-center">
