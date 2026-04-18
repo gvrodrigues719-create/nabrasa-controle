@@ -29,6 +29,7 @@ interface Props {
 }
 
 export default function OperationalNoticeCard({ notices, birthdays = [] }: Props) {
+    const [currentIndex, setCurrentIndex] = useState(0)
     const [isBirthdayDrawerOpen, setIsBirthdayDrawerOpen] = useState(false)
  
     if ((!notices || notices.length === 0) && (!birthdays || birthdays.length === 0)) return null
