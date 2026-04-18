@@ -150,7 +150,7 @@ export default function AdminAuditPage() {
                             ))
                         )}
                     </div>
-                ) : (
+                ) : activeTab === 'ranking' ? (
                     <div className="space-y-4">
                         <div className="bg-[#1b1c1a] rounded-[32px] p-8 shadow-xl relative overflow-hidden mb-8">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-red-600 opacity-10 rounded-full -mr-16 -mt-16" />
