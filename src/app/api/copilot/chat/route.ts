@@ -116,19 +116,24 @@ ${userContext}
 `
 
     // 4. Stream com Gemini
-    console.log('[Copilot] chamando streamText com gemini-2.5-flash...')
+    console.log('[Copilot] chamando streamText com gemini-1.5-flash...')
     
-    // Converte UIMessage do cliente (parts) para CoreMessage do servidor (content)
-    const coreMessages = messages.map((m: any) => ({
-      role: m.role,
-      content: m.parts.map((p: any) => {
-        if (p.type === 'text') return { type: 'text', text: p.text };
-        return p;
-      })
-    }))
+    // CORREÇÃO DEFINITIVA: Extrai apenas o texto puro de cada mensagem.
+    // Isso evita que metadados internos do SDK 6.x (step-start, reasoning, etc) sejam enviados ao Gemini.
+    const coreMessages = messages.map((m: any) => {
+      const textContent = (m.parts ?? [])
+        .filter((p: any) => p.type === 'text')
+        .map((p: any) => p.text)
+        .join('')
+      
+      return {
+        role: m.role,
+        content: textContent || m.content || ''
+      }
+    }).filter((m: any) => m.content.trim() !== '')
 
     const result = streamText({
-      model: google('gemini-2.5-flash'),
+      model: google('gemini-1.5-flash'),
       system: systemPrompt,
       messages: coreMessages,
       temperature: 0.2,
