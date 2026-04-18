@@ -47,10 +47,10 @@ export async function POST(req: Request) {
 
         const checklistContext = `
 CHECKLISTS PARA HOJE (${today}):
-${pendingToday.length > 0 ? pendingToday.map(s => `- [PENDENTE] ${s.checklist_templates?.name}`).join('\n') : '- Nenhuma tarefa agendada para hoje.'}
+${pendingToday.length > 0 ? pendingToday.map((s: any) => `- [PENDENTE] ${s.checklist_templates?.name}`).join('\n') : '- Nenhuma tarefa agendada para hoje.'}
 
 CHECKLISTS ATRASADOS (PENDÊNCIAS ANTIGAS):
-${lateSessions.length > 0 ? lateSessions.map(s => `- [ATRASADO] ${s.checklist_templates?.name} (Agendado em: ${s.scheduled_for || 'Sem data'})`).join('\n') : '- Nenhuma pendência de dias anteriores.'}
+${lateSessions.length > 0 ? lateSessions.map((s: any) => `- [ATRASADO] ${s.checklist_templates?.name} (Agendado em: ${s.scheduled_for || 'Sem data'})`).join('\n') : '- Nenhuma pendência de dias anteriores.'}
 `
 
         // C. Perdas Recentes (Últimas 24h)
@@ -64,7 +64,7 @@ ${lateSessions.length > 0 ? lateSessions.map(s => `- [ATRASADO] ${s.checklist_te
 
         const lossesContext = `
 PERDAS RELATADAS RECENTEMENTE (ÚLTIMAS 24H):
-${losses && losses.length > 0 ? losses.map(l => `- ${l.items?.name}: ${l.quantity} (${l.category})${l.observation ? ` - Obs: ${l.observation}` : ''}`).join('\n') : '- Nenhuma perda relatada na unidade nas últimas 24h.'}
+${losses && losses.length > 0 ? (losses as any[]).map(l => `- ${l.items?.name}: ${l.quantity} (${l.category})${l.observation ? ` - Obs: ${l.observation}` : ''}`).join('\n') : '- Nenhuma perda relatada na unidade nas últimas 24h.'}
 `
 
         userContext = `
