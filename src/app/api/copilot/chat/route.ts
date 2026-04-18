@@ -114,10 +114,10 @@ ${userContext}
       })
       .filter((m: { role: string; content: string }) => m.content.trim() !== '')
 
-    console.log(`[Copilot][${requestId}] 🚀 Iniciando streamText com gemini-1.5-flash...`)
+    console.log(`[Copilot][${requestId}] 🚀 Iniciando streamText com gemini-2.0-flash...`)
 
     const result = streamText({
-      model: google('gemini-1.5-flash'),
+      model: google('gemini-2.0-flash'),
       system: systemPrompt,
       messages: coreMessages,
       temperature: 0.2,
