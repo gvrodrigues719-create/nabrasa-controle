@@ -27,7 +27,7 @@ interface Props {
     birthdays?: Birthday[]
 }
 
-export default function OperationalNoticeCard({ notices }: Props) {
+export default function OperationalNoticeCard({ notices, birthdays = [] }: Props) {
     const [currentIndex, setCurrentIndex] = useState(0)
     const [isListOpen, setIsListOpen] = useState(false)
 
