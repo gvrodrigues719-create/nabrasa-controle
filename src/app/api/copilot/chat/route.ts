@@ -5,136 +5,135 @@ import { createClient } from '@supabase/supabase-js'
 
 export const maxDuration = 30; // max vercel timeout
 
-// Setup Supabase (Service Role to safely query all user context)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 export async function POST(req: Request) {
   const requestId = Math.random().toString(36).substring(7)
-  console.log(`[Copilot][${requestId}] ▶ POST recebido`)
+  console.log(`[Copilot][${requestId}] ▶ POST recebido (Fase 2)`)
   
   try {
-    // Verificação de Segurança de Configuração
     if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-      console.error(`[Copilot][${requestId}] ❌ CRÍTICO: GOOGLE_GENERATIVE_AI_API_KEY não configurada no ambiente.`)
-      return NextResponse.json({ 
-        error: 'Configuração de IA pendente (API Key ausente). Favor verificar se GOOGLE_GENERATIVE_AI_API_KEY está no Vercel.' 
-      }, { status: 500 })
+      return NextResponse.json({ error: 'Falta GOOGLE_GENERATIVE_AI_API_KEY no Vercel.' }, { status: 500 })
     }
 
     const body = await req.json()
-    const { messages, userId, conversationId } = body
-    console.log(`[Copilot][${requestId}] payload:`, { userId, messagesCount: messages?.length })
+    const { messages, userId } = body
+    const today = new Date().toISOString().split('T')[0]
 
-    if (!messages || messages.length === 0) {
-      return NextResponse.json({ error: 'Histórico de mensagens vazio.' }, { status: 400 })
-    }
-
-    // 1. Contexto Vivo (Live Data) - Blindagem Adicional
-    let userContext = `Usuário não autenticado.`
+    // 1. CONTEXTO VIVO: Busca de dados reais da operação
+    let userContext = `Usuário não autenticado no MOC.`
+    
     if (userId) {
       try {
-          const { data: user } = await supabase.from('users').select('*').eq('id', userId).single()
-          
-          // Buscar checklists pendentes (Bug B fix: checklist_sessions + join templates)
-          const { data: activeChecklists } = await supabase
-            .from('checklist_sessions')
-            .select('status, checklist_templates(name)')
-            .eq('user_id', userId)
-            .eq('status', 'in_progress')
-            .limit(5)
-          
-          const checklistStr = activeChecklists && activeChecklists.length > 0
-            ? activeChecklists.map((c: any) => `- ${c.checklist_templates?.name || 'Checklist sem nome'}`).join('\n') 
-            : 'Nenhum checklist pendente.'
+        // A. Perfil Operacional
+        const { data: user } = await supabase
+          .from('users')
+          .select('name, position, shift, sector')
+          .eq('id', userId)
+          .single()
 
-          // Buscar itens em atenção
-          let attentionStr = 'Nenhum item em atenção mapeado.'
-          try {
-              const { data: attentionItems } = await supabase
-                .from('inventory_attention_items')
-                .select('item_name, reason')
-                .limit(5)
-              
-              if (attentionItems && attentionItems.length > 0) {
-                  attentionStr = attentionItems.map(a => `- ${a.item_name}: ${a.reason}`).join('\n')
-              }
-          } catch (err) { /* ignore table errors */ }
+        // B. Checklists do Usuário (Pendentes e Atrasados)
+        const { data: sessions } = await supabase
+          .from('checklist_sessions')
+          .select('scheduled_for, checklist_templates(name, priority)')
+          .eq('user_id', userId)
+          .eq('status', 'in_progress')
+          .order('scheduled_for', { ascending: true })
 
-          userContext = `
-=== DADOS REAIS DO USUÁRIO OPERACIONAL ===
-Cargo/Função: ${user?.role || 'Operador'}
-Nome: ${user?.name || 'Não identificado'}
+        const pendingToday = sessions?.filter(s => s.scheduled_for === today) || []
+        const lateSessions = sessions?.filter(s => (s.scheduled_for && s.scheduled_for < today) || !s.scheduled_for) || []
 
-Checklists Pendentes Para Mim Hoje:
-${checklistStr}
+        const checklistContext = `
+CHECKLISTS PARA HOJE (${today}):
+${pendingToday.length > 0 ? pendingToday.map(s => `- [PENDENTE] ${s.checklist_templates?.name}`).join('\n') : '- Nenhuma tarefa agendada para hoje.'}
 
-Itens em Atenção (Minha Área/Geral):
-${attentionStr}
+CHECKLISTS ATRASADOS (PENDÊNCIAS ANTIGAS):
+${lateSessions.length > 0 ? lateSessions.map(s => `- [ATRASADO] ${s.checklist_templates?.name} (Agendado em: ${s.scheduled_for || 'Sem data'})`).join('\n') : '- Nenhuma pendência de dias anteriores.'}
 `
-      } catch (contextError) {
-          console.error(`[Copilot][${requestId}] Erro ao buscar contexto:`, contextError)
-          userContext = "Erro ao carregar dados reais. Respondendo com base em regras gerais."
+
+        // C. Perdas Recentes (Últimas 24h)
+        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+        const { data: losses } = await supabase
+          .from('inventory_losses')
+          .select('quantity, category, observation, items(name)')
+          .gte('created_at', yesterday)
+          .order('created_at', { ascending: false })
+          .limit(5)
+
+        const lossesContext = `
+PERDAS RELATADAS RECENTEMENTE (ÚLTIMAS 24H):
+${losses && losses.length > 0 ? losses.map(l => `- ${l.items?.name}: ${l.quantity} (${l.category})${l.observation ? ` - Obs: ${l.observation}` : ''}`).join('\n') : '- Nenhuma perda relatada na unidade nas últimas 24h.'}
+`
+
+        userContext = `
+=== SNAPSHOT OPERACIONAL DO USUÁRIO ===
+NOME: ${user?.name || 'Operador'}
+CARGO/POSIÇÃO: ${user?.position || 'Colaborador'}
+TURNO: ${user?.shift || 'Não definido'}
+SETOR: ${user?.sector || 'Geral'}
+
+${checklistContext}
+${lossesContext}
+`
+      } catch (err) {
+        console.error(`[Copilot][${requestId}] Erro no Contexto Vivo:`, err)
+        userContext = "Contexto operacional indisponível no momento."
       }
     }
 
-    // 2. Base de Conhecimento (Static FAQ)
-    const { data: faqRows } = await supabase.from('knowledge_faq').select('question, answer')
+    // 2. Base de Conhecimento (FAQ)
+    const { data: faqRows } = await supabase.from('knowledge_faq').select('question, answer').limit(20)
     const faqContext = faqRows && faqRows.length > 0 
-      ? faqRows.map(f => `Pergunta: ${f.question}\nOrientação: ${f.answer}`).join('\n\n')
-      : 'Nenhuma base estática carregada.'
+      ? faqRows.map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n\n')
+      : 'FAQ não disponível.'
 
-    // 3. System Prompt Mestre
+    // 3. System Prompt (Sidekick Persona)
     const systemPrompt = `
-Você é o Copiloto Operacional do NaBrasa Controle. Responda de forma curta, prática e humana.
-Nunca invente regras. Priorize contagem, checklists e perdas.
+Você é a "Ajuda da Operação" do NaBrasa Controle. 
+Sua missão é ser um Sidekick (parceiro) operacional curto, objetivo e prestativo.
 
-=== BASE DE CONHECIMENTO ===
-${faqContext}
+DIRETRIZES:
+1. Use o SNAPSHOT OPERACIONAL para responder sobre pendências ("o que falta?", "tenho algo atrasado?").
+2. Se o usuário perguntar sobre perdas, use a seção de PERDAS RECENTES.
+3. Se a pergunta for técnica/geral, use a BASE DE CONHECIMENTO.
+4. NUNCA invente dados. Se não houver pendências, diga que a "mesa está limpa" ou que "está tudo em dia".
+5. Respostas sempre em Português do Brasil, tom profissional mas próximo (estilo conversa de shift).
 
 ${userContext}
+
+=== BASE DE CONHECIMENTO (FAQ) ===
+${faqContext}
 `
 
-    // 4. Mapeamento Ultra-Seguro de Mensagens (V6 -> CoreMessage)
-    // Extraímos apenas texto para evitar quebras por metadados do SDK 6 (reasoning, tool-calls, etc)
+    // 4. Mapeamento CoreMessage (Ultra-safe)
     const coreMessages = messages
       .filter((m: any) => m.role === 'user' || m.role === 'assistant')
       .map((m: any) => {
         let text = ''
         if (Array.isArray(m.parts)) {
-          text = m.parts
-            .filter((p: any) => p.type === 'text')
-            .map((p: any) => p.text || '')
-            .join('')
+          text = m.parts.filter((p: any) => p.type === 'text').map((p: any) => p.text || '').join('')
         } else if (typeof m.content === 'string') {
           text = m.content
         }
         return { role: m.role as 'user' | 'assistant', content: text }
       })
-      .filter((m: { role: string; content: string }) => m.content.trim() !== '')
+      .filter((m: any) => m.content.trim() !== '')
 
-    console.log(`[Copilot][${requestId}] 🚀 Iniciando streamText com gemini-2.5-flash...`)
+    console.log(`[Copilot][${requestId}] 🚀 StreamText (Gemini 2.5)`)
 
     const result = streamText({
       model: google('gemini-2.5-flash'),
       system: systemPrompt,
       messages: coreMessages,
-      temperature: 0.2,
-      onFinish: ({ text }) => {
-          console.log(`[Copilot][${requestId}] ✅ Resposta gerada com sucesso (${text.length} chars)`)
-      },
+      temperature: 0.1, // Mais preciso para dados operacionais
     })
 
     return result.toUIMessageStreamResponse()
 
   } catch (error: any) {
-    console.error(`[Copilot][${requestId}] ❌ Erro inesperado:`, error)
-    return NextResponse.json({ 
-        error: error.message || 'Erro inesperado na IA. Verifique os logs do Vercel.',
-        diagnosticId: requestId 
-    }, { status: 500 })
+    console.error(`[Copilot][${requestId}] Erro:`, error)
+    return NextResponse.json({ error: 'Erro na IA', diagnosticId: requestId }, { status: 500 })
   }
 }
-
-
