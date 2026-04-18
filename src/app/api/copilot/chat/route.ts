@@ -11,53 +11,58 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 export async function POST(req: Request) {
-  console.log('[Copilot] ▶ POST /api/copilot/chat recebido')
+  const requestId = Math.random().toString(36).substring(7)
+  console.log(`[Copilot][${requestId}] ▶ POST recebido`)
+  
   try {
-    const body = await req.json()
-    const { messages, userId, conversationId } = body
-    console.log('[Copilot] payload:', { userId, conversationId, messagesCount: messages?.length, lastRole: messages?.at(-1)?.role })
-
-    if (!messages || messages.length === 0) {
-      console.warn('[Copilot] ⚠ mensagens ausentes')
-      return NextResponse.json({ error: 'Mensagens não fornecidas' }, { status: 400 })
+    // Verificação de Segurança de Configuração
+    if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+      console.error(`[Copilot][${requestId}] ❌ CRÍTICO: GOOGLE_GENERATIVE_AI_API_KEY não configurada no ambiente.`)
+      return NextResponse.json({ 
+        error: 'Configuração de IA pendente (API Key ausente). Favor verificar se GOOGLE_GENERATIVE_AI_API_KEY está no Vercel.' 
+      }, { status: 500 })
     }
 
-    console.log('[Copilot] GOOGLE_GENERATIVE_AI_API_KEY presente:', !!process.env.GOOGLE_GENERATIVE_AI_API_KEY)
+    const body = await req.json()
+    const { messages, userId, conversationId } = body
+    console.log(`[Copilot][${requestId}] payload:`, { userId, messagesCount: messages?.length })
 
-    // 1. Contexto Vivo (Live Data)
+    if (!messages || messages.length === 0) {
+      return NextResponse.json({ error: 'Histórico de mensagens vazio.' }, { status: 400 })
+    }
+
+    // 1. Contexto Vivo (Live Data) - Blindagem Adicional
     let userContext = `Usuário não autenticado.`
     if (userId) {
-      // Buscar perfil
-      const { data: user } = await supabase.from('users').select('*').eq('id', userId).single()
-      
-      // Buscar checklists pendentes (Bug B fix: checklist_sessions + join templates)
-      const { data: activeChecklists } = await supabase
-        .from('checklist_sessions')
-        .select('status, checklist_templates(name)')
-        .eq('user_id', userId)
-        .eq('status', 'in_progress')
-        .limit(5)
-      
-      const checklistStr = activeChecklists && activeChecklists.length > 0
-        ? activeChecklists.map((c: any) => `- ${c.checklist_templates?.name}`).join('\n') 
-        : 'Nenhum checklist pendente.'
-
-      // Buscar itens em atenção (segurança contra tabela nula caso o user ainda n tenha criado)
-      let attentionStr = 'Nenhum item em atenção mapeado ou sem setor definido.'
       try {
-          const { data: attentionItems } = await supabase
-            .from('inventory_attention_items')
-            .select('item_name, reason')
+          const { data: user } = await supabase.from('users').select('*').eq('id', userId).single()
+          
+          // Buscar checklists pendentes (Bug B fix: checklist_sessions + join templates)
+          const { data: activeChecklists } = await supabase
+            .from('checklist_sessions')
+            .select('status, checklist_templates(name)')
+            .eq('user_id', userId)
+            .eq('status', 'in_progress')
             .limit(5)
           
-          if (attentionItems && attentionItems.length > 0) {
-              attentionStr = attentionItems.map(a => `- ${a.item_name}: ${a.reason}`).join('\n')
-          }
-      } catch (e) {
-          // ignora se a tabela não existir
-      }
+          const checklistStr = activeChecklists && activeChecklists.length > 0
+            ? activeChecklists.map((c: any) => `- ${c.checklist_templates?.name || 'Checklist sem nome'}`).join('\n') 
+            : 'Nenhum checklist pendente.'
 
-      userContext = `
+          // Buscar itens em atenção
+          let attentionStr = 'Nenhum item em atenção mapeado.'
+          try {
+              const { data: attentionItems } = await supabase
+                .from('inventory_attention_items')
+                .select('item_name, reason')
+                .limit(5)
+              
+              if (attentionItems && attentionItems.length > 0) {
+                  attentionStr = attentionItems.map(a => `- ${a.item_name}: ${a.reason}`).join('\n')
+              }
+          } catch (err) { /* ignore table errors */ }
+
+          userContext = `
 === DADOS REAIS DO USUÁRIO OPERACIONAL ===
 Cargo/Função: ${user?.role || 'Operador'}
 Nome: ${user?.name || 'Não identificado'}
@@ -68,6 +73,10 @@ ${checklistStr}
 Itens em Atenção (Minha Área/Geral):
 ${attentionStr}
 `
+      } catch (contextError) {
+          console.error(`[Copilot][${requestId}] Erro ao buscar contexto:`, contextError)
+          userContext = "Erro ao carregar dados reais. Respondendo com base em regras gerais."
+      }
     }
 
     // 2. Base de Conhecimento (Static FAQ)
@@ -76,49 +85,19 @@ ${attentionStr}
       ? faqRows.map(f => `Pergunta: ${f.question}\nOrientação: ${f.answer}`).join('\n\n')
       : 'Nenhuma base estática carregada.'
 
-    // 3. System Prompt Mestre (conforme regras rígidas)
+    // 3. System Prompt Mestre
     const systemPrompt = `
-Você é o Copiloto Operacional do NaBrasa Controle.
+Você é o Copiloto Operacional do NaBrasa Controle. Responda de forma curta, prática e humana.
+Nunca invente regras. Priorize contagem, checklists e perdas.
 
-Seu papel é ajudar colaboradores da operação a executar melhor suas rotinas com clareza, objetividade e segurança.
-
-Regras obrigatórias:
-- Responda de forma curta, prática e operacional.
-- Nunca invente regra, dado ou procedimento.
-- Se a base não for suficiente, diga claramente que não encontrou regra segura e oriente procurar o líder responsável.
-- Priorize respostas sobre contagem, checklist, validade, perdas, organization, execução de rotina e dúvidas operacionais.
-- Quando houver dados reais do usuário, use esses dados para responder de forma contextual.
-- Quando houver fontes internas disponíveis, baseie a resposta nelas.
-- Não responda como professor, consultor, guru ou vendedor.
-- Não use linguagem técnica demais.
-- Não substitua liderança.
-- Não tome decisão disciplinar, financeira sensível ou trabalhista.
-- A operação é o centro. Você é apoio.
-
-Tom:
-- direto
-- simples
-- humano
-- operacional
-- sem floreio
-
-Estrutura ideal da resposta:
-1. resposta direta
-2. passo prático ou orientação
-3. alerta ou encaminhamento, se necessário
-
-Se a pergunta for ambígua, tente responder pelo caminho mais útil e seguro para a operação.
-
-=== BASE DE CONHECIMENTO INTERNA MINERADA (MANUAL) ===
+=== BASE DE CONHECIMENTO ===
 ${faqContext}
 
 ${userContext}
 `
 
-    // 4. Stream com Gemini
-    console.log('[Copilot] chamando streamText com gemini-1.5-flash...')
-    
-    // CORREÇÃO (Bug A): Extrair SOMENTE texto puro como string para evitar quebras no histórico (SDK 6.x)
+    // 4. Mapeamento Ultra-Seguro de Mensagens (V6 -> CoreMessage)
+    // Extraímos apenas texto para evitar quebras por metadados do SDK 6 (reasoning, tool-calls, etc)
     const coreMessages = messages
       .filter((m: any) => m.role === 'user' || m.role === 'assistant')
       .map((m: any) => {
@@ -135,20 +114,27 @@ ${userContext}
       })
       .filter((m: { role: string; content: string }) => m.content.trim() !== '')
 
+    console.log(`[Copilot][${requestId}] 🚀 Iniciando streamText com gemini-1.5-flash...`)
+
     const result = streamText({
       model: google('gemini-1.5-flash'),
       system: systemPrompt,
       messages: coreMessages,
       temperature: 0.2,
-      onFinish: ({ text }) => console.log('[Copilot] ✓ resposta gerada, chars:', text.length),
+      onFinish: ({ text }) => {
+          console.log(`[Copilot][${requestId}] ✅ Resposta gerada com sucesso (${text.length} chars)`)
+      },
     })
 
-    // CORREÇÃO: toUIMessageStreamResponse() — formato esperado pelo DefaultChatTransport no SDK v6
-    // toTextStreamResponse() devolve texto puro; useChat (SDK v6) espera UIMessage stream → resposta sumia
     return result.toUIMessageStreamResponse()
 
   } catch (error: any) {
-    console.error('Chat API Error:', error)
-    return NextResponse.json({ error: error.message || 'Erro inesperado' }, { status: 500 })
+    console.error(`[Copilot][${requestId}] ❌ Erro inesperado:`, error)
+    return NextResponse.json({ 
+        error: error.message || 'Erro inesperado na IA. Verifique os logs do Vercel.',
+        diagnosticId: requestId 
+    }, { status: 500 })
   }
 }
+
+

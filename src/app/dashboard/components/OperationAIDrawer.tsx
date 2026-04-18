@@ -68,21 +68,32 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName }:
         }
     }
 
-    const onSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
+    const onSubmit = (e?: React.FormEvent) => {
+        if (e) e.preventDefault()
         if (!input.trim() || isLoading) return
         
-        // No SDK 6, sendMessage pode aceitar um objeto com 'text'
-        sendMessage({ 
-            text: input 
-        }, {
-            body: { userId }
-        })
-        setInput('')
+        const messageText = input.trim()
+        setInput('') // Limpa imediatamente para feedback visual e evitar duplo envio
+
+        try {
+            sendMessage({ 
+                text: messageText 
+            }, {
+                body: { userId }
+            })
+        } catch (error) {
+            console.error('Failed to send message:', error)
+            toast.error("Erro ao enviar mensagem.")
+        }
     }
 
     const handleSuggestedClick = (q: string) => {
-        sendMessage({ text: q }, { body: { userId } })
+        if (isLoading) return
+        try {
+            sendMessage({ text: q }, { body: { userId } })
+        } catch (error) {
+            console.error('Failed to send suggested message:', error)
+        }
     }
 
     if (!isOpen) return null
