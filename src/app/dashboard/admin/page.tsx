@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { LayoutGrid, Package, CalendarSync, History, TrendingUp, ClipboardCheck } from 'lucide-react'
+import { LayoutGrid, Package, CalendarSync, History, TrendingUp, ClipboardCheck, Bell } from 'lucide-react'
 
 export default function AdminHome() {
     const router = useRouter()
