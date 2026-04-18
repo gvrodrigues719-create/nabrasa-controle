@@ -17,6 +17,7 @@ interface Notice {
 }
 
 interface Birthday {
+    id: string
     name: string
     date: string
     avatarUrl?: string
