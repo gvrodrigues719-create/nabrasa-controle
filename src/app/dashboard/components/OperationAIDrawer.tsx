@@ -24,14 +24,18 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName }:
         transport: new DefaultChatTransport({ 
             api: '/api/copilot/chat',
         }),
-        messages: [
-            { 
-                id: '1', 
-                role: 'assistant', 
-                parts: [{ type: 'text', text: `Olá${userName ? ' ' + userName : ''}! Sou seu assistente de operação. Como posso te ajudar hoje? Posso tirar dúvidas sobre seu CMV, organização de estoque, validade ou checar suas listas de hoje.` }]
-            }
-        ]
     })
+
+    const WELCOME_MESSAGE_ID = 'welcome-msg'
+    // Mensagem visual de boas-vindas, não entra no useChat para não sujar o histórico do servidor
+    const welcomeMessage = { 
+        id: WELCOME_MESSAGE_ID, 
+        role: 'assistant' as const, 
+        parts: [{ type: 'text' as const, text: `Olá${userName ? ' ' + userName : ''}! Sou seu assistente de operação. Como posso te ajudar hoje? Posso tirar dúvidas sobre seu CMV, organização de estoque, validade ou checar suas listas de hoje.` }] 
+    }
+
+    // Na renderização, exibimos a boas-vindas + mensagens reais
+    const allMessages = [welcomeMessage, ...messages]
 
     const isLoading = status !== 'ready' && status !== 'error'
 
@@ -49,7 +53,7 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName }:
     }, [messages, isOpen])
 
     const handleFeedback = async (messageId: string, isHelpful: boolean) => {
-        if (!userId) return
+        if (!userId || messageId === WELCOME_MESSAGE_ID) return
         toast.success(isHelpful ? "Obrigado pelo feedback!" : "Registrado. Vamos melhorar.")
         // MVP: Registra no banco de forma silenciosa para auditoria
         await supabase.from('copilot_feedback').insert([{
@@ -101,9 +105,9 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName }:
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-8 space-y-6">
-                    {messages.map((msg, i) => {
+                    {allMessages.map((msg, i) => {
                         const isAssistant = msg.role === 'assistant'
-                        const isFirstAssistantObj = isAssistant && i === 0
+                        const isWelcome = msg.id === WELCOME_MESSAGE_ID
 
                         // No SDK 6, iteramos pelas partes da mensagem
                         const messageText = msg.parts
@@ -123,11 +127,11 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName }:
                                     </div>
                                     
                                     {/* Feedback de resposta (só pro assistente e se não for a do topo) */}
-                                    {isAssistant && !isFirstAssistantObj && !isLoading && (
+                                    {isAssistant && !isWelcome && !isLoading && (
                                         <div className="flex items-center gap-2 pl-2 mt-1">
                                             <span className="text-[10px] font-bold text-[#c0b3b1] uppercase tracking-wider">Ajudou?</span>
-                                            <button onClick={() => handleFeedback(msg.id, true)} className="hover:text-amber-600 text-[#c0b3b1] transition-colors"><ThumbsUp className="w-3 h-3" /></button>
-                                            <button onClick={() => handleFeedback(msg.id, false)} className="hover:text-red-600 text-[#c0b3b1] transition-colors"><ThumbsDown className="w-3 h-3" /></button>
+                                            <button onClick={() => handleFeedback(msg.id!, true)} className="hover:text-amber-600 text-[#c0b3b1] transition-colors"><ThumbsUp className="w-3 h-3" /></button>
+                                            <button onClick={() => handleFeedback(msg.id!, false)} className="hover:text-red-600 text-[#c0b3b1] transition-colors"><ThumbsDown className="w-3 h-3" /></button>
                                         </div>
                                     )}
                                 </div>
@@ -144,7 +148,7 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName }:
                         </div>
                     )}
 
-                    {messages.length === 1 && (
+                    {messages.length === 0 && (
                         <div className="space-y-3 pt-4">
                             <p className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest px-1">Sugestões vivas</p>
                             <div className="flex flex-wrap gap-2">
