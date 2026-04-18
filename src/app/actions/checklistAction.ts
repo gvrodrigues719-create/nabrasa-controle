@@ -470,3 +470,127 @@ export async function getChecklistSessionDetailsAction(sessionId: string) {
         return { success: false, error: error.message }
     }
 }
+/**
+ * MOC OPERATIONAL MIRROR: Painel do Gerente
+ * Consolda dados em tempo real para o turno atual.
+ */
+export async function getOperationalMirrorAction() {
+    try {
+        const today = new Date().toISOString().split('T')[0]
+        const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+
+        // 1. Buscar todas as sessões relevantes (Hoje + Atrasadas)
+        const { data: sessions, error: sessErr } = await supabase
+            .from('checklist_sessions')
+            .select(`
+                *,
+                checklist_templates(name, context, priority),
+                users(id, name, position, sector, shift)
+            `)
+            .or(`scheduled_for.eq.${today},and(scheduled_for.lt.${today},status.eq.in_progress)`)
+
+        if (sessErr) throw sessErr
+
+        // 2. Buscar perdas recentes (24h)
+        const { data: losses } = await supabase
+            .from('inventory_losses')
+            .select('*, items(name), users(name, sector)')
+            .gte('created_at', yesterday)
+
+        // 3. Buscar todas as regras ativas para checar "Regras Mortas"
+        const { data: activeRules } = await supabase
+            .from('checklist_attribution_rules')
+            .select('*')
+            .eq('is_active', true)
+
+        // 4. PROCESSAMENTO OPERACIONAL
+        const stats = {
+            overview: {
+                total: sessions?.length || 0,
+                completed: sessions?.filter(s => s.status === 'completed').length || 0,
+                pending: sessions?.filter(s => s.status === 'in_progress').length || 0,
+                late: sessions?.filter(s => s.scheduled_for < today && s.status === 'in_progress').length || 0,
+                critical: sessions?.filter(s => s.checklist_templates?.priority === 'critical' && s.status === 'in_progress').length || 0
+            },
+            bySector: {
+                cozinha: { total: 0, completed: 0, losses: 0 },
+                bar: { total: 0, completed: 0, losses: 0 },
+                salao: { total: 0, completed: 0, losses: 0 },
+                estoque: { total: 0, completed: 0, losses: 0 }
+            },
+            collaborators: [] as any[],
+            exceptions: [] as any[]
+        }
+
+        // Mapeamento por Setor
+        sessions?.forEach(s => {
+            const sector = (s.users?.sector?.toLowerCase() || 'geral') as keyof typeof stats.bySector
+            if (stats.bySector[sector]) {
+                stats.bySector[sector].total++
+                if (s.status === 'completed') stats.bySector[sector].completed++
+            }
+        })
+
+        // Perdas por Setor
+        losses?.forEach(l => {
+            const sector = (l.users?.sector?.toLowerCase() || 'geral') as keyof typeof stats.bySector
+            if (stats.bySector[sector]) stats.bySector[sector].losses++
+        })
+
+        // Lista de Colaboradores e suas pendências
+        const userMap = new Map()
+        sessions?.forEach(s => {
+            if (!s.user_id) return
+            if (!userMap.has(s.user_id)) {
+                userMap.set(s.user_id, {
+                    name: s.users?.name,
+                    position: s.users?.position,
+                    sector: s.users?.sector,
+                    total: 0,
+                    completed: 0,
+                    late: 0
+                })
+            }
+            const u = userMap.get(s.user_id)
+            u.total++
+            if (s.status === 'completed') u.completed++
+            if (s.scheduled_for < today && s.status === 'in_progress') u.late++
+        })
+        stats.collaborators = Array.from(userMap.values())
+
+        // Identificar Exceções (Regras Mortas)
+        // Uma regra é morta se não gerou nenhuma sessão no dia
+        activeRules?.forEach(rule => {
+            const hasGenerated = sessions?.some(s => s.attribution_rule_id === rule.id && s.scheduled_for === today)
+            if (!hasGenerated) {
+                stats.exceptions.push({
+                    type: 'dead_rule',
+                    rule_id: rule.id,
+                    template_id: rule.template_id
+                })
+            }
+        })
+
+        return { success: true, data: stats, lastUpdated: new Date().toISOString() }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}
+
+/**
+ * REATRIBUIÇÃO MANUAL: Gerente altera responsável pelo checklist no turno
+ */
+export async function updateSessionUserAction(sessionId: string, newUserId: string) {
+    try {
+        const { error } = await supabase
+            .from('checklist_sessions')
+            .update({ user_id: newUserId })
+            .eq('id', sessionId)
+        
+        if (error) throw error
+        revalidatePath('/dashboard/admin/checklists')
+        return { success: true }
+    } catch (error: any) {
+        return { success: false, error: error.message }
+    }
+}

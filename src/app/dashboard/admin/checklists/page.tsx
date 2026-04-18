@@ -9,6 +9,9 @@ import {
     getWeeklyRankingAction 
 } from '@/app/actions/gamificationAction'
 import { 
+    getOperationalMirrorAction 
+} from '@/app/actions/checklistAction'
+import { 
     ClipboardCheck, 
     Trophy, 
     ChevronRight, 
@@ -18,18 +21,21 @@ import {
     ArrowLeft,
     Loader2,
     CalendarDays,
-    Settings2
+    Settings2,
+    Activity
 } from 'lucide-react'
 import AdminChecklistManager from './AdminChecklistManager'
+import OperationalDashboard from './components/OperationalDashboard'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 export default function AdminAuditPage() {
     const router = useRouter()
-    const [activeTab, setActiveTab] = useState<'history' | 'ranking' | 'management'>('history')
+    const [activeTab, setActiveTab] = useState<'operational' | 'history' | 'ranking' | 'management'>('operational')
     const [history, setHistory] = useState<any[]>([])
     const [ranking, setRanking] = useState<any[]>([])
+    const [operationalData, setOperationalData] = useState<any | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -38,12 +44,13 @@ export default function AdminAuditPage() {
 
     const fetchData = async () => {
         setLoading(true)
-        if (activeTab === 'history') {
+        if (activeTab === 'operational') {
+            const res = await getOperationalMirrorAction()
+            if (res.success) setOperationalData(res.data)
+        } else if (activeTab === 'history') {
             const res = await getAllChecklistSessionsAction()
             if (res.success) setHistory(res.data || [])
         } else {
-            // No admin, não temos o userId atual (ou usamos o logado apenas para preencher o contrato)
-            // Mas a action de ranking retorna o top 5 global
             const res = await getWeeklyRankingAction('')
             if (res.success) setRanking(res.top5 || [])
         }
@@ -69,11 +76,21 @@ export default function AdminAuditPage() {
             </div>
 
             <div className="max-w-4xl mx-auto px-5">
-                {/* TABS */}
-                <div className="flex bg-gray-100 p-1.5 rounded-2xl mb-8">
+                <div className="flex bg-gray-100 p-1.5 rounded-2xl mb-8 overflow-x-auto no-scrollbar">
+                    <button 
+                        onClick={() => setActiveTab('operational')}
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                            activeTab === 'operational' 
+                                ? 'bg-white text-[#B13A2B] shadow-sm' 
+                                : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                    >
+                        <Activity className="w-4 h-4" />
+                        Operacional
+                    </button>
                     <button 
                         onClick={() => setActiveTab('history')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
                             activeTab === 'history' 
                                 ? 'bg-white text-[#B13A2B] shadow-sm' 
                                 : 'text-gray-500 hover:text-gray-700'
@@ -84,7 +101,7 @@ export default function AdminAuditPage() {
                     </button>
                     <button 
                         onClick={() => setActiveTab('ranking')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
                             activeTab === 'ranking' 
                                 ? 'bg-white text-[#B13A2B] shadow-sm' 
                                 : 'text-gray-500 hover:text-gray-700'
@@ -95,7 +112,7 @@ export default function AdminAuditPage() {
                     </button>
                     <button 
                         onClick={() => setActiveTab('management')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
+                        className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
                             activeTab === 'management' 
                                 ? 'bg-white text-[#B13A2B] shadow-sm' 
                                 : 'text-gray-500 hover:text-gray-700'
@@ -181,6 +198,8 @@ export default function AdminAuditPage() {
                             </div>
                         ))}
                     </div>
+                ) : activeTab === 'operational' ? (
+                    <OperationalDashboard data={operationalData} onRefresh={fetchData} />
                 ) : (
                     <AdminChecklistManager />
                 )}
