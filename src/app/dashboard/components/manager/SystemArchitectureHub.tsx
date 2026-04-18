@@ -22,15 +22,16 @@ interface AreaProps {
     title: string;
     icon: any;
     accentColor: string;
-    modules: ModuleItem[];
+    mainModules: ModuleItem[];
+    extraModule?: ModuleItem;
     className?: string;
 }
 
-function AreaCard({ title, icon: Icon, accentColor, modules, className = "" }: AreaProps) {
+function AreaCard({ title, icon: Icon, accentColor, mainModules, extraModule, className = "" }: AreaProps) {
     return (
         <div className={`bg-white rounded-[2.5rem] p-7 border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col h-full group ${className}`}>
             <div className="flex items-center justify-between mb-6">
-                <div className={`w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center group-hover:bg-white group-hover:shadow-sm transition-all`}>
+                <div className={`w-11 h-11 rounded-2xl bg-gray-50 flex items-center justify-center group-hover:bg-white group-hover:shadow-sm transition-all border border-transparent group-hover:border-gray-100`}>
                     <Icon className={`w-5 h-5 ${accentColor} transition-colors`} />
                 </div>
                 <div className="w-1.5 h-1.5 rounded-full bg-gray-200" />
@@ -38,29 +39,35 @@ function AreaCard({ title, icon: Icon, accentColor, modules, className = "" }: A
             
             <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight mb-5">{title}</h3>
             
-            <div className="space-y-3.5 flex-1">
-                {modules.map((m, idx) => (
-                    <div key={idx} className="flex items-center justify-between">
-                        {m.status === 'active' && m.href ? (
-                            <Link 
-                                href={m.href}
-                                className="text-xs font-bold text-gray-500 hover:text-gray-900 flex items-center gap-1.5 transition-colors group/link"
-                            >
-                                {m.label}
-                                <ExternalLink className="w-2.5 h-2.5 opacity-0 group-hover/link:opacity-40 transition-opacity" />
-                            </Link>
-                        ) : (
-                            <span className={`text-[11px] font-bold ${m.status === 'dev' ? 'text-gray-400/80 italic' : 'text-gray-300'}`}>
-                                {m.label}
-                                {m.status === 'dev' && (
-                                    <span className={`ml-2 text-[8px] px-1.5 py-0.5 rounded-md uppercase not-italic font-black bg-gray-100 text-gray-400`}>
-                                        Dev
-                                    </span>
-                                )}
+            <div className="space-y-4 flex-1">
+                <div className="flex flex-wrap gap-x-3 gap-y-2">
+                    {mainModules.map((m, idx) => (
+                        <div key={idx} className="flex items-center gap-1.5">
+                            {m.status === 'active' && m.href ? (
+                                <Link 
+                                    href={m.href}
+                                    className="text-xs font-black text-gray-900 hover:text-indigo-600 flex items-center gap-1 transition-colors border-b border-gray-100 pb-0.5"
+                                >
+                                    {m.label}
+                                </Link>
+                            ) : (
+                                <span className="text-xs font-black text-gray-300 uppercase tracking-tighter decoration-dotted underline decoration-gray-200">{m.label}</span>
+                            )}
+                            {idx < mainModules.length - 1 && <span className="text-gray-200 font-bold">•</span>}
+                        </div>
+                    ))}
+                </div>
+
+                {extraModule && (
+                    <div className="pt-2 border-t border-gray-50">
+                        <span className={`text-[10px] font-bold ${extraModule.status === 'dev' ? 'text-gray-400 italic' : 'text-gray-300'}`}>
+                            {extraModule.label}
+                            <span className="ml-2 text-[7px] px-1.5 py-0.5 rounded-md uppercase not-italic font-black bg-gray-50 text-gray-400 border border-gray-100">
+                                {extraModule.status === 'dev' ? 'Em desenvolvimento' : 'Em breve'}
                             </span>
-                        )}
+                        </span>
                     </div>
-                ))}
+                )}
             </div>
         </div>
     )
@@ -74,7 +81,7 @@ export default function SystemArchitectureHub() {
                     <span className="w-1.5 h-6 bg-gray-900 rounded-full" />
                     <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Áreas do Sistema</h3>
                 </div>
-                <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest leading-none">Management Hub</span>
+                <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest leading-none">Management Framework</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -83,12 +90,11 @@ export default function SystemArchitectureHub() {
                     title="Rotinas Operacionais"
                     icon={ClipboardList}
                     accentColor="text-red-500"
-                    modules={[
+                    mainModules={[
                         { label: 'Checklist', href: '/dashboard/admin/checklists', status: 'active' },
-                        { label: 'Contagem', href: '/dashboard/admin/checklists?tab=management', status: 'active' },
-                        { label: 'Auditoria Operacional', href: '/dashboard/admin/reports', status: 'active' },
-                        { label: 'Abertura & Fechamento', status: 'dev' }
+                        { label: 'Contagem', href: '/dashboard/admin/checklists?tab=management', status: 'active' }
                     ]}
+                    extraModule={{ label: 'Abertura & Fechamento', status: 'dev' }}
                 />
 
                 {/* 2. Estoque, CMV e Produção */}
@@ -96,11 +102,11 @@ export default function SystemArchitectureHub() {
                     title="Estoque, CMV e Produção"
                     icon={Package}
                     accentColor="text-emerald-500"
-                    modules={[
+                    mainModules={[
                         { label: 'CMV & Compras', href: '/dashboard/admin/cmv', status: 'active' },
-                        { label: 'Registro de Perdas', href: '/dashboard/admin/cmv', status: 'active' },
-                        { label: 'Ficha Técnica', status: 'dev' }
+                        { label: 'Perdas', href: '/dashboard/admin/cmv', status: 'active' }
                     ]}
+                    extraModule={{ label: 'Ficha Técnica', status: 'dev' }}
                 />
 
                 {/* 3. Vendas, Delivery e Atendimento */}
@@ -108,11 +114,11 @@ export default function SystemArchitectureHub() {
                     title="Vendas, Delivery e Atendimento"
                     icon={ShoppingCart}
                     accentColor="text-indigo-500"
-                    modules={[
-                        { label: 'Módulo de Vendas', href: '/dashboard/admin/vendas', status: 'active' },
-                        { label: 'Delivery & iFood', status: 'soon' },
-                        { label: 'IA Atendimento', status: 'dev' }
+                    mainModules={[
+                        { label: 'Vendas', href: '/dashboard/admin/vendas', status: 'active' },
+                        { label: 'Delivery', status: 'active', href: '#' }
                     ]}
+                    extraModule={{ label: 'Atendimento', status: 'dev' }}
                 />
 
                 {/* 4. Equipe & Performance */}
@@ -120,11 +126,11 @@ export default function SystemArchitectureHub() {
                     title="Equipe & Performance"
                     icon={Users}
                     accentColor="text-amber-500"
-                    modules={[
-                        { label: 'Ranking Semanal', href: '/dashboard/admin/checklists?tab=ranking', status: 'active' },
-                        { label: 'Gestão da Equipe', href: '/dashboard/admin/users', status: 'active' },
-                        { label: 'Onboarding', status: 'dev' }
+                    mainModules={[
+                        { label: 'Ranking', href: '/dashboard/admin/checklists?tab=ranking', status: 'active' },
+                        { label: 'Equipe', href: '/dashboard/admin/users', status: 'active' }
                     ]}
+                    extraModule={{ label: 'Onboarding', status: 'dev' }}
                 />
 
                 {/* 5. Equipamentos & Manutenção */}
@@ -132,11 +138,10 @@ export default function SystemArchitectureHub() {
                     title="Equipamentos & Manutenção"
                     icon={Container}
                     accentColor="text-slate-500"
-                    modules={[
-                        { label: 'Cadastro de Ativos', status: 'dev' },
-                        { label: 'Plano de Manutenção', status: 'soon' },
-                        { label: 'Chamados Técnicos', status: 'soon' }
+                    mainModules={[
+                        { label: 'Ativos', status: 'dev' }
                     ]}
+                    extraModule={{ label: 'Manutenção', status: 'soon' }}
                 />
 
                 {/* 6. Processos e Regras */}
@@ -144,23 +149,23 @@ export default function SystemArchitectureHub() {
                     title="Processos e Regras"
                     icon={Sliders}
                     accentColor="text-gray-600"
-                    modules={[
-                        { label: 'Templates de Checklist', href: '/dashboard/admin/checklists?tab=management', status: 'active' },
-                        { label: 'Regras de Atribuição', href: '/dashboard/admin/checklists', status: 'active' },
-                        { label: 'Configuração', status: 'dev' }
+                    mainModules={[
+                        { label: 'Templates', href: '/dashboard/admin/checklists?tab=management', status: 'active' },
+                        { label: 'Regras', href: '/dashboard/admin/checklists', status: 'active' }
                     ]}
+                    extraModule={{ label: 'Configuração', status: 'dev' }}
                 />
 
-                {/* 7. Indicadores & Análises - Composição de Grade */}
+                {/* 7. Indicadores & Análises */}
                 <AreaCard 
                     title="Indicadores & Análises"
                     icon={BarChart3}
                     accentColor="text-blue-500"
-                    className="lg:col-span-3" // Resolvendo o isolamento visual
-                    modules={[
-                        { label: 'Relatórios Operacionais', href: '/dashboard/admin/reports', status: 'active' },
-                        { label: 'Painéis de Performance', status: 'dev' }
+                    className="lg:col-span-3 lg:h-auto"
+                    mainModules={[
+                        { label: 'Relatórios', href: '/dashboard/admin/reports', status: 'active' }
                     ]}
+                    extraModule={{ label: 'Painéis', status: 'dev' }}
                 />
             </div>
         </section>
