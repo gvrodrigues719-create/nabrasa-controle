@@ -35,8 +35,65 @@ export default function OperationalNoticeCard({ notices, birthdays = [] }: Props
 
     const totalSlides = notices.length + (birthdays && birthdays.length > 0 ? 1 : 0)
     const isBirthdaySlide = currentIndex >= notices.length
-    const current = notices[currentIndex]
     const hasMultiple = totalSlides > 1
+
+    const nextNotice = () => setCurrentIndex((prev) => (prev + 1) % totalSlides)
+    const prevNotice = () => setCurrentIndex((prev) => (prev - 1 + totalSlides) % totalSlides)
+    
+    // Slide de Aniversariantes
+    if (isBirthdaySlide && birthdays && birthdays.length > 0) {
+        return (
+            <section className="relative">
+                <div className="flex items-center justify-between mb-3 px-1">
+                    <p className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest">Mural da Casa</p>
+                </div>
+
+                <div className="relative overflow-hidden rounded-[2rem] border border-[#e9e8e5] shadow-sm transition-all duration-300 bg-gradient-to-br from-indigo-50 to-white text-[#1b1c1a]">
+                    <div className="p-5 flex gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shrink-0 shadow-sm border border-indigo-100">
+                            <Cake className="w-5 h-5 text-indigo-500 animate-pulse" />
+                        </div>
+
+                        <div className="flex-1 space-y-1">
+                            <div className="flex items-center gap-2">
+                                 <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700">
+                                    CELEBRAÇÃO • ANIVERSARIANTES
+                                </span>
+                            </div>
+                            <h4 className="text-sm font-black leading-tight">Aniversariantes da Semana</h4>
+                            <div className="flex flex-wrap gap-x-3 gap-y-1 pt-1">
+                                {birthdays.map(b => (
+                                    <div key={b.id} className="flex items-center gap-1.5">
+                                        <Gift className="w-3 h-3 text-indigo-400" />
+                                        <span className="text-xs font-bold text-gray-700">{b.name.split(' ')[0]}</span>
+                                        <span className="text-[10px] font-black text-gray-300 tracking-tighter">{b.date}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {hasMultiple && (
+                        <div className="flex items-center justify-between border-t border-indigo-100/50 px-3 py-2 bg-indigo-50/30">
+                            <button onClick={prevNotice} className="p-1 hover:bg-indigo-100 rounded-lg transition-colors">
+                                <ChevronLeft className="w-4 h-4 text-indigo-400" />
+                            </button>
+                            <span className="text-[10px] font-black uppercase tracking-widest opacity-60 text-indigo-400">
+                                Slide {currentIndex + 1} de {totalSlides}
+                            </span>
+                            <button onClick={nextNotice} className="p-1 hover:bg-indigo-100 rounded-lg transition-colors">
+                                <ChevronRight className="w-4 h-4 text-indigo-400" />
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </section>
+        )
+    }
+
+    // Se no  slide de aniversrio, calculamos os dados do aviso atual
+    const current = notices[currentIndex]
+    if (!current) return null // Fallback de segurana
 
     const priorityStyles = {
         urgente: {
