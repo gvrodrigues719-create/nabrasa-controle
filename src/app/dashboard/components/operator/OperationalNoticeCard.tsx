@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { AlertOctagon, Info, Bell, ChevronRight, X, Cake, Gift, Sparkles, MessageSquare, Send, ThumbsUp, CheckCircle, Eye, HighTone, Flame } from 'lucide-react'
+import { AlertOctagon, Info, Bell, ChevronRight, X, Cake, Gift, Sparkles, MessageSquare, Send, ThumbsUp, CheckCircle, Eye, Flame } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { toggleNoticeReactionAction, addNoticeResponseAction, getNoticeInteractionsAction } from '@/app/actions/communicationAction'
