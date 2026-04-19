@@ -73,7 +73,7 @@ export default function OperationHeroCard({
     const cmvConf = cmvStatusConfig[cmvStatus]
 
     return (
-        <div className="bg-white rounded-[32px] shadow-[0_16px_40px_rgba(0,0,0,0.06)] border border-[#e9e8e5] overflow-hidden">
+        <div className="bg-white rounded-[2.5rem] shadow-[0_16px_40px_rgba(0,0,0,0.06)] border border-[#e9e8e5] overflow-hidden flex flex-col">
             <style>{`
                 @keyframes reservoir-drip {
                     0% { transform: translateY(0) scale(0); opacity: 0; }
@@ -83,213 +83,153 @@ export default function OperationHeroCard({
                 }
             `}</style>
 
-            {/* ─── DESTAQUE SUPERIOR PREMIUN ─── */}
-            <div className="h-1 bg-gradient-to-r from-transparent via-[#8c716c]/40 to-transparent" />
+            {/* ═══ BLOCO A: SITUAÇÃO DA OPERAÇÃO ═══ */}
+            <div className="p-6 pb-2">
+                <header className="flex items-center justify-between mb-5 px-1">
+                    <h3 className="text-[10px] font-black text-[#8c716c] uppercase tracking-[0.2em] flex items-center gap-2">
+                        <Activity className="w-3.5 h-3.5" /> Situação da Operação
+                    </h3>
+                    {hasAnyDamage && onViewGlobalClick && (
+                        <button onClick={onViewGlobalClick} className="text-[9px] font-bold text-[#B13A2B] bg-red-50 px-2 py-1 rounded-lg uppercase tracking-wider flex items-center gap-1 transition-all hover:scale-105 active:scale-95">
+                            <Eye className="w-3 h-3" /> Ver Detalhes
+                        </button>
+                    )}
+                </header>
 
-            {/* ═══ PARTE 1: RESERVATÓRIO ═══ */}
-            <div className="p-5 pb-4">
-                <div className="flex items-center gap-2 mb-4">
-                    <Activity className="w-3.5 h-3.5 text-[#8c716c]" />
-                    <span className="text-[10px] font-black text-[#8c716c] uppercase tracking-[0.15em]">Integridade da Operação</span>
-                </div>
-
-                <div className="flex items-start gap-6">
-                    {/* SVG Reservatório */}
-                    <div className="relative shrink-0 flex items-center justify-center">
-                        <div className="relative w-20 h-40 bg-[#F8F7F4] rounded-b-[28px] rounded-t-[10px] border-[5px] border-[#dcdad6] shadow-[inset_0_4px_16px_rgba(0,0,0,0.08),0_8px_20px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col justify-end">
-                            
-                            {/* Camada de Vidro Reflexo */}
-                            <div className="absolute top-0 left-2 w-2 h-full bg-white opacity-20 blur-[1px] pointer-events-none z-30" />
-                            <div className="absolute top-6 right-3 w-4 h-12 bg-white opacity-10 blur-[4px] rounded-full pointer-events-none z-30 rotate-[20deg]" />
-                            <div className="absolute bottom-6 right-2 w-1 h-20 bg-white opacity-5 blur-[1px] pointer-events-none z-30" />
-                            
-                            {/* Líquido Deep (A Integridade) */}
+                <div className="flex items-center gap-6 mb-6">
+                    {/* SVG Reservatório (Reduzido e Assinatura Visual) */}
+                    <div className="relative shrink-0 scale-90 -ml-2">
+                        <div className="relative w-16 h-32 bg-[#F8F7F4] rounded-b-[24px] rounded-t-[8px] border-[4px] border-[#dcdad6] shadow-inner overflow-hidden flex flex-col justify-end">
+                            <div className="absolute top-0 left-1.5 w-1.5 h-full bg-white opacity-20 blur-[0.5px] pointer-events-none z-30" />
                             <div className={`w-full transition-all duration-1000 ease-out relative z-10 bg-gradient-to-t ${getLevelGradient()}`} style={{ height: `${score}%` }}>
-                                {score > 0 && <div className="absolute top-0 left-0 w-full h-[3px] bg-white/40 shadow-[0_-2px_12px_rgba(255,255,255,0.6)]" />}
-                                
-                                {/* Turbulência sutil */}
-                                {damageLevel > 0 && score > 0 && (
-                                    <div className="absolute inset-0 z-0 opacity-30">
-                                        <div className="absolute bottom-6 left-3 w-1 h-1 bg-white rounded-full animate-ping" />
-                                        <div className="absolute bottom-16 right-5 w-1.5 h-1.5 bg-white rounded-full animate-ping delay-500" />
-                                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-4 h-4 bg-white/20 rounded-full blur-md animate-pulse" />
-                                    </div>
-                                )}
+                                {score > 0 && <div className="absolute top-0 left-0 w-full h-[2px] bg-white/40" />}
                             </div>
-
-                            {/* FISSURAS NO VIDRO (Embutidas na estrutura) */}
+                            
+                            {/* FISSURAS */}
                             {damageLevel > 0 && (
-                                <div className="absolute inset-0 z-40 pointer-events-none">
-                                    <svg viewBox="0 0 80 160" className="w-full h-full opacity-90">
-                                        {/* 1. Topo (Aparece a partir do Nível 1: 80-99%) */}
-                                        {damageLevel >= 1 && (
-                                            <g>
-                                                <path d="M 20 20 L 30 35 L 28 45" fill="none" stroke="#ffffff" strokeWidth="0.8" strokeLinejoin="round" />
-                                                <path d="M 21 21 L 30 36 L 28 46" fill="none" stroke="rgba(0,0,0,0.3)" strokeWidth="0.5" strokeLinejoin="round" />
-                                            </g>
-                                        )}
-
-                                        {/* O dano no Topo fica mais evidente no Nível 2 */}
-                                        {damageLevel >= 2 && (
-                                            <g>
-                                                <path d="M 30 35 L 42 30" fill="none" stroke="#ffffff" strokeWidth="1.2" strokeLinecap="round" />
-                                                <path d="M 31 36 L 42 31" fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth="1" strokeLinecap="round" />
-                                                <path d="M 28 45 L 35 55" fill="none" stroke="rgba(0,0,0,0.4)" strokeWidth="0.6" strokeLinecap="round" />
-                                            </g>
-                                        )}
-
-                                        {/* 2. Meio (Aparece no Nível 2: 60-79%) */}
-                                        {damageLevel >= 2 && (
-                                            <g>
-                                                <path d="M 50 65 L 60 75 L 63 85" fill="none" stroke="#ffffff" strokeWidth="1.2" strokeLinejoin="round" />
-                                                <path d="M 50 66 L 59 75 L 62 85" fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth="1" strokeLinejoin="round" />
-                                                <circle cx="50" cy="65" r="1.5" fill="rgba(0,0,0,0.5)" />
-                                            </g>
-                                        )}
-
-                                        {/* 3. Fundo (Aparece no Nível 3: < 60%) */}
-                                        {damageLevel >= 3 && (
-                                            <g>
-                                                <path d="M 15 110 L 25 125 L 35 120" fill="none" stroke="#ffffff" strokeWidth="1.5" strokeLinejoin="round" />
-                                                <path d="M 16 111 L 26 125 L 34 121" fill="none" stroke="rgba(0,0,0,0.8)" strokeWidth="1.5" strokeLinejoin="round" />
-                                                <path d="M 25 125 L 20 140" fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth="1.2" strokeLinejoin="round" />
-                                                <circle cx="25" cy="125" r="2" fill="rgba(0,0,0,0.7)" />
-                                            </g>
-                                        )}
+                                <div className="absolute inset-0 z-40 pointer-events-none opacity-60">
+                                    <svg viewBox="0 0 80 160" className="w-full h-full">
+                                        {damageLevel >= 1 && <path d="M 20 20 L 30 35 L 28 45" fill="none" stroke="#ffffff" strokeWidth="1.2" />}
+                                        {damageLevel >= 3 && <path d="M 15 110 L 25 125 L 35 120" fill="none" stroke="#ffffff" strokeWidth="2" />}
                                     </svg>
                                 </div>
                             )}
-
-                            <div className="absolute bottom-0 left-0 w-full h-3 bg-black/10 blur-[2px] z-20" />
                         </div>
 
-                        {/* VAZAMENTOS EXTATOS NAS FISSURAS */}
+                        {/* VAZAMENTO ANIMAÇÃO */}
                         {damageLevel >= 2 && (
                             <div className="absolute inset-0 z-50 pointer-events-none">
-                                {/* VAZAMENTO 1 (Sai da fissura média M 50 65 -> X=50, Y=65) */}
-                                <div className="absolute flex flex-col items-center" style={{ top: '62px', left: '46px' }}>
-                                    <div className="w-1.5 h-1.5 rounded-full animate-ping opacity-60" style={{ backgroundColor: dropColor, animationDuration: '2s' }} />
-                                    <svg className="absolute top-0 animate-[reservoir-drip_2s_infinite]" style={{ width: '8px', height: '12px' }} viewBox="0 0 18 22" fill={dropColor}>
+                                <div className="absolute flex flex-col items-center" style={{ top: '50px', left: '38px' }}>
+                                    <svg className="absolute top-0 animate-[reservoir-drip_1.8s_infinite]" style={{ width: '6px', height: '10px' }} viewBox="0 0 18 22" fill={dropColor}>
                                         <path d="M9 0 C9 0 0 10 0 15 C0 19.4 4 22 9 22 C14 22 18 19.4 18 15 C18 10 9 0 9 0Z" />
                                     </svg>
                                 </div>
-
-                                {/* VAZAMENTO 2 (Sai da fissura inferior M 25 125 -> X=25, Y=125) */}
-                                {damageLevel >= 3 && (
-                                    <div className="absolute flex flex-col items-center" style={{ top: '122px', left: '21px' }}>
-                                        <div className="w-2 h-2 rounded-full animate-ping opacity-60" style={{ backgroundColor: dropColor, animationDuration: '1.5s', animationDelay: '0.4s' }} />
-                                        <svg className="absolute top-0 animate-[reservoir-drip_1.5s_infinite_0.4s]" style={{ width: '10px', height: '14px' }} viewBox="0 0 18 22" fill={dropColor}>
-                                            <path d="M9 0 C9 0 0 10 0 15 C0 19.4 4 22 9 22 C14 22 18 19.4 18 15 C18 10 9 0 9 0Z" />
-                                        </svg>
-                                    </div>
-                                )}
                             </div>
                         )}
                     </div>
 
-                    {/* Métricas */}
-                    <div className="flex-1 min-w-0 pt-1">
-                        <div className="flex items-center gap-2 mb-1">
+                    {/* Dados Centrais */}
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
                             <div className={`w-2 h-2 rounded-full ${status.dot} ${status.pulse ? 'animate-pulse' : ''}`} />
-                            <span className={`text-[11px] font-black uppercase tracking-[0.12em] ${status.color}`}>{status.label}</span>
+                            <span className={`text-[11px] font-black uppercase tracking-[0.1em] ${status.color}`}>{status.label}</span>
+                        </div>
+                        <div className="flex items-baseline gap-1 mb-3">
+                            <span className="text-5xl font-black text-[#1b1c1a] tracking-tighter leading-none">{score}</span>
+                            <span className="text-xl font-black text-[#1b1c1a] opacity-30">%</span>
                         </div>
 
-                        <div className="flex items-baseline gap-1 mb-4">
-                            <span className="text-5xl font-black text-[#1b1c1a] tracking-tighter leading-none" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>{score}</span>
-                            <span className="text-xl font-black text-[#1b1c1a] opacity-40">%</span>
+                        <div className="space-y-2">
+                             {/* Sinais ativos */}
+                            {activeLeaks.length > 0 && (
+                                <div className="flex flex-wrap gap-1.5">
+                                    {activeLeaks.slice(0, 2).map(l => (
+                                        <div key={l.id} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-50 border border-red-100/50">
+                                            <AlertCircle className="w-2.5 h-2.5 text-[#B13A2B]" />
+                                            <span className="text-[10px] font-bold text-[#B13A2B] truncate max-w-[100px]">{l.label}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            {/* Perdas */}
+                            {weeklyLeaks.length > 0 && (
+                                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-50 border border-gray-100">
+                                    <Package className="w-2.5 h-2.5 text-[#8c716c]" />
+                                    <span className="text-[10px] font-bold text-[#58413e]">Perdas acumuladas na semana</span>
+                                </div>
+                            )}
                         </div>
-
-                        {/* Sinais ativos */}
-                        {activeLeaks.length > 0 && (
-                            <div className="mb-3">
-                                <h4 className="text-[9px] font-black text-[#B13A2B] uppercase tracking-widest mb-1.5 flex items-center gap-1">
-                                    <Activity className="w-2.5 h-2.5" /> Sinais ativos
-                                </h4>
-                                <div className="space-y-0.5 pl-2.5 border-l-2 border-[#fca5a5]">
-                                    {activeLeaks.slice(0, 2).map(l => <p key={l.id} className="text-[11px] font-bold text-[#1b1c1a]">{l.label}</p>)}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Perdas da semana */}
-                        {weeklyLeaks.length > 0 && (
-                            <div className="mb-3">
-                                <h4 className="text-[9px] font-black text-[#8c716c] uppercase tracking-widest mb-1.5 flex items-center gap-1">
-                                    <Package className="w-2.5 h-2.5" /> Perdas da semana
-                                </h4>
-                                <div className="space-y-0.5 pl-2.5 border-l-2 border-[#e9e8e5]">
-                                    {weeklyLeaks.slice(0, 2).map(l => <p key={l.id} className="text-[11px] font-medium text-[#58413e]">{l.label}</p>)}
-                                </div>
-                            </div>
-                        )}
-
-                        {!hasAnyDamage && (
-                            <p className="text-[11px] text-[#8c716c] font-medium bg-[#F8F7F4] p-2.5 rounded-xl border border-[#e9e8e5]">
-                                Operação estabilizada. Padrões mantidos.
-                            </p>
-                        )}
-
-                        {hasAnyDamage && onViewGlobalClick && (
-                            <button onClick={onViewGlobalClick} className="inline-flex items-center gap-1 text-[9px] font-bold text-[#8c716c] hover:text-[#58413e] uppercase tracking-widest transition-colors cursor-pointer mt-1">
-                                <Eye className="w-3 h-3" /> Ver detalhes da semana
-                            </button>
-                        )}
                     </div>
                 </div>
             </div>
 
-            {/* ═══ PARTE 2: CMV INLINE ═══ */}
-            {cmvTarget !== undefined && cmvTarget > 0 && (
-                <div className="mx-5 mb-4 flex items-center justify-between p-3.5 rounded-2xl bg-[#F8F7F4] border border-[#eeedea]">
-                    <div className="flex items-center gap-2.5">
-                        <Target className="w-4 h-4 text-[#8c716c]" />
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-[10px] font-bold text-[#8c716c] uppercase tracking-widest">Meta</span>
-                            <span className="text-base font-black text-[#1b1c1a] tracking-tight">{formatPerc(cmvTarget)}</span>
-                            <span className="text-[10px] text-[#c0b3b1]">·</span>
-                            <span className="text-[10px] font-bold text-[#8c716c] uppercase tracking-widest">CMV</span>
-                            <span className="text-base font-black text-[#58413e] tracking-tight">{cmvCurrent && cmvCurrent > 0 ? formatPerc(cmvCurrent) : '—'}</span>
-                        </div>
-                    </div>
-                    <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-tight ${cmvConf.bg} ${cmvConf.color}`}>
+            {/* ═══ BLOCO B: SITUAÇÃO DA LOJA / CMV ═══ */}
+            <div className="mx-6 mb-5 p-4 rounded-[2rem] bg-[#F8F7F4] border border-[#eeedea] transition-all hover:border-[#8c716c]/20">
+                <header className="flex items-center justify-between mb-3">
+                    <h3 className="text-[9px] font-black text-[#8c716c] uppercase tracking-[0.2em] flex items-center gap-2">
+                        <Target className="w-3.5 h-3.5" /> Situação da Loja
+                    </h3>
+                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-tight ${cmvConf.bg} ${cmvConf.color} border shadow-sm`}>
                         {cmvConf.icon}
                         {cmvConf.label}
                     </div>
-                </div>
-            )}
+                </header>
 
-            {/* ═══ PARTE 3: FOCO DA SEMANA (clean strip) ═══ */}
-            <div className="mx-5 mb-4 flex items-start gap-3 p-3.5 rounded-2xl border border-[#eeedea] bg-[#F8F7F4]">
-                <Flame className="w-4 h-4 text-[#B13A2B] fill-[#B13A2B] shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                        <span className="text-[9px] font-black text-[#8c716c] uppercase tracking-widest">Foco da Semana</span>
-                        {canEdit && !isEditing && (
-                            <button onClick={handleEdit} className="text-[#c0b3b1] hover:text-[#58413e] transition-colors cursor-pointer">
-                                <Edit2 className="w-3 h-3" />
-                            </button>
+                <div className="flex items-center justify-between">
+                    <div className="flex flex-col">
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1 leading-none">CMV Atual</span>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-2xl font-black text-[#1b1c1a] leading-none mb-1">{cmvCurrent && cmvCurrent > 0 ? formatPerc(cmvCurrent) : '—'}</span>
+                        </div>
+                    </div>
+                    
+                    <div className="h-8 w-[1px] bg-gray-200/60" />
+
+                    <div className="flex flex-col text-right">
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1 leading-none">Meta Estipulada</span>
+                        <div className="flex items-baseline gap-1 justify-end">
+                            <span className="text-2xl font-black text-[#8c716c] opacity-60 leading-none mb-1">{cmvTarget !== undefined && cmvTarget > 0 ? formatPerc(cmvTarget) : '—'}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* ═══ BLOCO C: FOCO E DIRECIONAMENTO ═══ */}
+            <div className="mt-auto bg-[#FDF0EF]/50 p-6 border-t border-[#fca5a5]/20">
+                <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-2xl bg-[#B13A2B] flex items-center justify-center shrink-0 shadow-lg shadow-red-100">
+                        <Flame className="w-5 h-5 text-white" fill="currentColor" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <header className="flex items-center justify-between mb-1.5">
+                            <span className="text-[9px] font-black text-[#B13A2B] uppercase tracking-[0.2em]">Foco Estratégico</span>
+                            {canEdit && !isEditing && (
+                                <button onClick={handleEdit} className="text-[#B13A2B]/40 hover:text-[#B13A2B] transition-colors cursor-pointer p-1">
+                                    <Edit2 className="w-3 h-3" />
+                                </button>
+                            )}
+                        </header>
+
+                        {isEditing ? (
+                            <div className="space-y-3 mt-2">
+                                <textarea
+                                    value={draft} onChange={e => setDraft(e.target.value)} disabled={isSaving} autoFocus
+                                    className="w-full bg-white border border-[#fca5a5]/30 rounded-2xl p-4 text-[#1b1c1a] text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#B13A2B]/20 resize-none h-24 shadow-inner"
+                                    placeholder="Qual o foco do time nesta semana?"
+                                />
+                                <div className="flex justify-end gap-2 text-white">
+                                    <button onClick={handleCancel} disabled={isSaving} className="px-4 py-2 rounded-xl bg-white border border-[#e9e8e5] text-[#8c716c] text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all flex items-center gap-1.5 shadow-sm"><X className="w-3.5 h-3.5" /> Cancelar</button>
+                                    <button onClick={handleSave} disabled={isSaving || !draft.trim()} className="px-4 py-2 rounded-xl bg-[#B13A2B] text-white text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all flex items-center gap-1.5 shadow-lg shadow-red-100">
+                                        {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><Check className="w-3.5 h-3.5" /> Salvar</>}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-[14px] font-black text-[#1b1c1a] leading-tight">
+                                {focus?.title || 'Foco operacional: Integridade total e controle de desperdício.'}
+                            </p>
                         )}
                     </div>
-
-                    {isEditing ? (
-                        <div className="space-y-2">
-                            <textarea
-                                value={draft} onChange={e => setDraft(e.target.value)} disabled={isSaving} autoFocus
-                                className="w-full bg-white border border-[#e9e8e5] rounded-xl p-2.5 text-[#1b1c1a] text-sm focus:outline-none focus:border-[#B13A2B] resize-none h-16 placeholder:text-[#c0b3b1]"
-                                placeholder="Digite o foco da semana..."
-                            />
-                            <div className="flex justify-end gap-2">
-                                <button onClick={handleCancel} disabled={isSaving} className="w-7 h-7 flex items-center justify-center rounded-lg bg-[#eeedea] text-[#8c716c] hover:bg-[#e9e8e5] transition-all disabled:opacity-50 cursor-pointer"><X className="w-3.5 h-3.5" /></button>
-                                <button onClick={handleSave} disabled={isSaving || !draft.trim()} className="w-7 h-7 flex items-center justify-center rounded-lg bg-[#B13A2B] text-white hover:bg-red-600 transition-all disabled:opacity-50 cursor-pointer">
-                                    {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                        <p className="text-[13px] font-semibold text-[#1b1c1a] leading-snug">
-                            {focus?.title || 'Manter a operação íntegra e sem vazamento de resultados.'}
-                        </p>
-                    )}
                 </div>
             </div>
         </div>
