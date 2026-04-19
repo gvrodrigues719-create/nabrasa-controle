@@ -107,13 +107,11 @@ export default function MyAreaTodayCard({ stats, primaryAction }: Props) {
                 </div>
             </div>
 
-            {/* Footer: Próxima Ação Direcionada */}
-            {finalActionUrl ? (
+            {/* Footer: Próxima Ação Direcionada (Opcional - Escondido se for redundante) */}
+            {finalActionUrl && (
                 <Link href={finalActionUrl}>
                     <ActionContent />
                 </Link>
-            ) : (
-                <ActionContent />
             )}
         </div>
     )

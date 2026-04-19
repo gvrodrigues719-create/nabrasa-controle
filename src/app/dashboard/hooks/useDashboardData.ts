@@ -201,7 +201,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                     return 0
                 })
 
-            // Ação Primária (Hero)
+            // Ação Primária (Hero/Zap)
             let primaryAction: DashboardAction | undefined
             if (activeSession) {
                 primaryAction = allPotentialActions.find(a => a.id === `${activeSession.routineId}-${activeSession.groupId}`)
@@ -211,13 +211,18 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                 primaryAction = recommended.find(a => a.groupId === primaryGroupId) || recommended[0]
             }
 
-            const areaAction = allPotentialActions.find(a => a.groupId === primaryGroupId && a.status !== 'in_progress')
+            // Ação da Área (Garantir que seja DISTINTA da primária para evitar redundância)
+            const areaActionsOrdered = allPotentialActions
+                .filter(a => a.groupId === primaryGroupId && a.status !== 'in_progress')
+                .sort((a, b) => (a.status === 'overdue' ? -1 : (b.status === 'overdue' ? 1 : 0)))
+
+            const distinctAreaAction = areaActionsOrdered.find(a => a.id !== primaryAction?.id)
 
             setActions({
                 primary: primaryAction,
-                area: areaAction,
+                area: distinctAreaAction,
                 overdue: overdue,
-                recommended: recommended.slice(0, 4) // Mostrar top 4 na fila
+                recommended: recommended.slice(0, 4) 
             })
 
             // 5. Retrocompatibilidade (myAreaStats)
@@ -225,8 +230,8 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                 name: currentAreaName,
                 pendingCount: areaPendingCount,
                 delayCount: overdue.filter(a => a.groupId === primaryGroupId).length,
-                nextActionLabel: areaAction?.label || 'Tudo em dia',
-                nextActionUrl: areaAction?.url
+                nextActionLabel: distinctAreaAction?.label || (areaPendingCount > 0 ? 'Foco na ação prioritária' : 'Tudo em dia'),
+                nextActionUrl: distinctAreaAction?.url
             })
 
             setLateCount(overdue.length)
