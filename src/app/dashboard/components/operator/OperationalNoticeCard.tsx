@@ -43,6 +43,9 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
     const [isLoadingInteractions, setIsLoadingInteractions] = useState(false)
     const [responseText, setResponseText] = useState('')
     const [isSendingResponse, setIsSendingResponse] = useState(false)
+    const [longPressNoticeId, setLongPressNoticeId] = useState<string | null>(null)
+    const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
+
 
 
     if ((!notices || notices.length === 0) && (!birthdays || birthdays.length === 0)) return null
@@ -71,7 +74,32 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
         }
     }
 
+    const handlePressStart = (noticeId: string) => {
+        const timer = setTimeout(() => {
+            setLongPressNoticeId(noticeId)
+            // Haptic feedback could be added here if supported
+            if (window.navigator?.vibrate) window.navigator.vibrate(50)
+        }, 600) // 600ms long press
+        setLongPressTimer(timer)
+    }
+
+    const handlePressEnd = () => {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer)
+            setLongPressTimer(null)
+        }
+    }
+
+    const handleQuickReaction = async (noticeId: string, emoji: string) => {
+        setLongPressNoticeId(null)
+        await toggleNoticeReactionAction(noticeId, emoji)
+        // Opting for simplicity: current architecture fetches active notices in the parent. 
+        // In a real app we'd trigger a refresh or update local state.
+        // For now, let's just show it worked.
+    }
+
     const handleSendResponse = async () => {
+
         if (!selectedNotice || !responseText || isSendingResponse) return
         
         setIsSendingResponse(true)
@@ -190,10 +218,40 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
                         return (
                             <div 
                                 key={notice.id} 
-                                onClick={() => handleOpenNotice(notice)}
+                                onPointerDown={() => handlePressStart(notice.id)}
+                                onPointerUp={handlePressEnd}
+                                onPointerLeave={handlePressEnd}
+                                onClick={() => !longPressNoticeId && handleOpenNotice(notice)}
                                 className={`flex-shrink-0 ${notices.length > 1 ? 'w-[85vw]' : 'w-full'} snap-center relative overflow-hidden rounded-[2.2rem] border border-[#e9e8e5] shadow-sm ${style.bg} ${style.text} cursor-pointer active:scale-[0.98] transition-all`}
                             >
+                                {/* QUICK REACTION MENU (WhatsApp Style) */}
+                                {longPressNoticeId === notice.id && (
+                                    <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-md flex items-center justify-center animate-in fade-in zoom-in duration-200">
+                                        <div className="flex gap-2 p-2 bg-white rounded-3xl shadow-xl border border-gray-100">
+                                            {['👍', '✅', '👀', '🙌', '🔥'].map(emoji => (
+                                                <button 
+                                                    key={emoji}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleQuickReaction(notice.id, emoji);
+                                                    }}
+                                                    className="w-10 h-10 flex items-center justify-center text-xl hover:bg-gray-100 rounded-full transition-colors active:scale-125"
+                                                >
+                                                    {emoji}
+                                                </button>
+                                            ))}
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); setLongPressNoticeId(null); }}
+                                                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:bg-gray-100 rounded-full text-xs"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="p-5 flex gap-4 min-h-[120px]">
+
                                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${notice.priority === 'urgente' ? 'bg-white/10' : 'bg-[#F8F7F4]'}`}>
                                         <div className={notice.priority === 'urgente' ? 'text-white' : 'text-[#8c716c]'}>
                                             {style.icon}
@@ -382,9 +440,10 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
                                     value={responseText}
                                     onChange={e => setResponseText(e.target.value)}
                                     placeholder="Escrever uma resposta..."
-                                    className="flex-1 h-12 px-4 rounded-2xl bg-[#f5f4f1] border-none text-sm font-bold placeholder:text-[#c0b3b1] focus:ring-2 focus:ring-[#B13A2B]/20 outline-none transition-all"
+                                    className="flex-1 h-12 px-4 rounded-2xl bg-[#F8F7F4] border border-[#e9e8e5] text-sm font-black text-[#1b1c1a] placeholder:text-[#8c716c] focus:ring-2 focus:ring-[#B13A2B]/30 outline-none transition-all"
                                     onKeyDown={e => e.key === 'Enter' && handleSendResponse()}
                                 />
+
                                 <button 
                                     onClick={handleSendResponse}
                                     disabled={!responseText || isSendingResponse}
