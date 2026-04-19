@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
+
 import { AlertOctagon, Info, Bell, ChevronRight, X, Cake, Gift, Sparkles, MessageSquare, Send, ThumbsUp, CheckCircle, Eye, Flame } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -45,6 +47,8 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
     const [isSendingResponse, setIsSendingResponse] = useState(false)
     const [longPressNoticeId, setLongPressNoticeId] = useState<string | null>(null)
     const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
+    const router = useRouter()
+
 
 
 
@@ -93,10 +97,9 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
     const handleQuickReaction = async (noticeId: string, emoji: string) => {
         setLongPressNoticeId(null)
         await toggleNoticeReactionAction(noticeId, emoji)
-        // Opting for simplicity: current architecture fetches active notices in the parent. 
-        // In a real app we'd trigger a refresh or update local state.
-        // For now, let's just show it worked.
+        router.refresh()
     }
+
 
     const handleSendResponse = async () => {
 
@@ -258,10 +261,15 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
                                             </span>
                                             
                                             <div className="flex items-center gap-2">
-                                                {notice.reaction_count && notice.reaction_count > 0 ? (
-                                                    <span className="flex items-center gap-1 text-[9px] font-black opacity-60">
-                                                        <ThumbsUp className="w-2.5 h-2.5" /> {notice.reaction_count}
-                                                    </span>
+                                                {notice.reaction_summary && Object.keys(notice.reaction_summary).length > 0 ? (
+                                                    <div className="flex items-center -space-x-1 overflow-hidden">
+                                                        {Object.keys(notice.reaction_summary).slice(0, 3).map(e => (
+                                                            <span key={e} className="text-[10px] filter drop-shadow-sm">{e}</span>
+                                                        ))}
+                                                        {notice.reaction_count && notice.reaction_count > 0 && (
+                                                            <span className="ml-1.5 text-[9px] font-black opacity-60">{notice.reaction_count}</span>
+                                                        )}
+                                                    </div>
                                                 ) : null}
                                                 {notice.response_count && notice.response_count > 0 ? (
                                                     <span className="flex items-center gap-1 text-[9px] font-black opacity-60">
@@ -269,6 +277,7 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
                                                     </span>
                                                 ) : null}
                                             </div>
+
                                         </div>
                                         <h4 className="text-sm font-black leading-tight line-clamp-1">{notice.title}</h4>
                                         <p className="text-xs leading-tight opacity-90 line-clamp-2">
