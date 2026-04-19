@@ -268,24 +268,36 @@ export async function toggleNoticeReactionAction(noticeId: string, emoji: string
         const supabase = getServiceSupabase()
         if (!supabase) throw new Error('Database indisponível')
 
-        // Verificar se já existe
+        // Verificar se já existe QUALQUER reação deste usuário neste aviso
         const { data: existing } = await supabase
             .from('notice_reactions')
-            .select('id')
+            .select('id, emoji')
             .eq('notice_id', noticeId)
             .eq('user_id', authId)
-            .eq('emoji', emoji)
             .single()
 
         if (existing) {
-            // Remover
-            const { error } = await supabase
+            // Sempre remover a anterior
+            const { error: delError } = await supabase
                 .from('notice_reactions')
                 .delete()
                 .eq('id', existing.id)
-            if (error) throw error
+            
+            if (delError) throw delError
+
+            // Se for um emoji DIFERENTE, inserir o novo
+            if (existing.emoji !== emoji) {
+                const { error: insError } = await supabase
+                    .from('notice_reactions')
+                    .insert([{
+                        notice_id: noticeId,
+                        user_id: authId,
+                        emoji: emoji
+                    }])
+                if (insError) throw insError
+            }
         } else {
-            // Adicionar
+            // Adicionar nova
             const { error } = await supabase
                 .from('notice_reactions')
                 .insert([{
@@ -295,6 +307,7 @@ export async function toggleNoticeReactionAction(noticeId: string, emoji: string
                 }])
             if (error) throw error
         }
+
 
         revalidatePath('/dashboard')
         return { success: true }

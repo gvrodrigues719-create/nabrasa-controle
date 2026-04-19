@@ -82,13 +82,12 @@ export default function ManagerHome() {
             {/* EXCEÇÕES DINÂMICAS (CASO HAJA) */}
             {data?.exceptions?.length > 0 && <ExceptionCenter exceptions={data.exceptions} />}
 
-            {/* 4. INTERVENÇÃO OPERACIONAL CONTEXTUAL */}
             <div className="pt-4 border-t border-gray-100">
                 <ManagerQuickActions 
                     lateCount={overview.late} 
-                    pendingRulesCount={overview.deadRulesCount} 
                 />
             </div>
+
 
             {/* 5. ÁREAS DO SISTEMA (Management Hub) */}
             <div className="pt-8 border-t border-gray-100">

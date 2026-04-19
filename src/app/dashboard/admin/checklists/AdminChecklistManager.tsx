@@ -101,16 +101,7 @@ export default function AdminChecklistManager() {
                     )}
                 </div>
                 
-                <div className="p-4 bg-[#1b1c1a] mt-4">
-                    <button 
-                        onClick={runDistribution}
-                        disabled={isProcessing}
-                        className="w-full flex items-center justify-center gap-2 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all disabled:opacity-50"
-                    >
-                        {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-                        Rodar Atribuição Agora
-                    </button>
-                </div>
+
             </div>
 
             {/* CONFIGURAÇÃO DO TEMPLATE SELECIONADO */}
