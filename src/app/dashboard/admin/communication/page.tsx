@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { getActiveNoticesAction, createNoticeAction, deleteNoticeAction } from '@/app/actions/communicationAction'
-import { Bell, Plus, Trash2, Calendar, AlertTriangle, Info, Clock, CheckCircle2 } from 'lucide-react'
+import { Bell, Plus, Trash2, Calendar, AlertTriangle, Info, Clock, CheckCircle2, ThumbsUp, MessageSquare } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
