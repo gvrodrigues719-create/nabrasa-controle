@@ -51,9 +51,10 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
         setSelectedNotice(notice)
         setIsLoadingInteractions(true)
         const res = await getNoticeInteractionsAction(notice.id)
-        if (res.success) {
+        if (res.success && res.data) {
             setInteractions(res.data)
         }
+
         setIsLoadingInteractions(false)
     }
 
@@ -65,7 +66,8 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
         if (res.success) {
             // Refresh interactions
             const updated = await getNoticeInteractionsAction(selectedNotice.id)
-            if (updated.success) setInteractions(updated.data)
+            if (updated.success && updated.data) setInteractions(updated.data)
+
         }
     }
 
@@ -78,7 +80,8 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
             setResponseText('')
             // Refresh interactions
             const updated = await getNoticeInteractionsAction(selectedNotice.id)
-            if (updated.success) setInteractions(updated.data)
+            if (updated.success && updated.data) setInteractions(updated.data)
+
         }
         setIsSendingResponse(false)
     }
