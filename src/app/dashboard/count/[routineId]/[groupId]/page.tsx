@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { getSafeReturnTo } from '@/lib/navigation'
 import { ArrowLeft, Loader2, Save, Check, ShieldAlert, CloudOff, AlertTriangle, ChevronDown, Edit3, Lock, X, User, CheckCircle2, Trophy } from 'lucide-react'
 import toast from 'react-hot-toast'
 import React, { use } from 'react'
@@ -32,6 +33,11 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     const [operator, setOperator] = useState<{ name: string, role: string } | null>(null)
     const [rankPosition, setRankPosition] = useState<number | null>(null)
     const [weeklyPoints, setWeeklyPoints] = useState<number>(0)
+    
+    const searchParams = useSearchParams()
+    const returnTo = searchParams.get('returnTo')
+    const defaultBack = `/dashboard/routines/${routineId}`
+    const backUrl = getSafeReturnTo(returnTo, defaultBack)
 
     const LOCAL_KEY = `count_${routineId}_${groupId}`
     const ZEROED_KEY = `zeroed_${routineId}_${groupId}`
@@ -200,7 +206,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                 <h2 className="text-2xl font-black text-[#1b1c1a]">Acesso Bloqueado</h2>
                 <p className="text-sm text-[#8c716c] font-medium mt-2">{blocked}</p>
             </div>
-            <button onClick={() => router.push(`/dashboard/routines/${routineId}`)} className="w-full max-w-xs py-4 bg-[#1b1c1a] text-white rounded-2xl font-black text-lg shadow-xl active:scale-95 transition">
+            <button onClick={() => router.push(backUrl)} className="w-full max-w-xs py-4 bg-[#1b1c1a] text-white rounded-2xl font-black text-lg shadow-xl active:scale-95 transition">
                 Voltar
             </button>
         </div>
@@ -236,10 +242,10 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                 </div>
 
                 <button 
-                    onClick={() => router.push(`/dashboard/routines/${routineId}`)} 
+                    onClick={() => router.push(backUrl)} 
                     className="w-full max-w-sm py-5 bg-[#1b1c1a] text-white rounded-2xl font-black text-lg shadow-xl active:scale-95 transition"
                 >
-                    Próximo Grupo
+                    {returnTo === '/dashboard' ? 'Voltar para Home' : 'Próximo Grupo'}
                 </button>
             </div>
         )
@@ -250,7 +256,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
             {/* OPERATIONAL HEADER */}
             <div className="bg-white border-b border-[#e9e8e5] sticky top-0 z-40 shadow-sm">
                 <div className="p-4 md:p-5 flex justify-between items-center bg-white">
-                    <button onClick={() => router.push(`/dashboard/routines/${routineId}`)} className="p-2.5 bg-white rounded-xl shadow-sm border border-[#e9e8e5] text-[#58413e] hover:bg-gray-50 active:scale-95 transition-all">
+                    <button onClick={() => router.push(backUrl)} className="p-2.5 bg-white rounded-xl shadow-sm border border-[#e9e8e5] text-[#58413e] hover:bg-gray-50 active:scale-95 transition-all">
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     

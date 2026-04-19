@@ -178,7 +178,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                             areaName: groupName,
                             status: isInProgress ? (isOverdue ? 'overdue' : 'in_progress') : 'pending',
                             priority: isOverdue ? 'high' : (isMyArea ? 'medium' : 'low'),
-                            url: `/dashboard/count/${ag.routine_id}/${ag.group_id}`,
+                            url: `/dashboard/count/${ag.routine_id}/${ag.group_id}?returnTo=/dashboard`,
                             routineId: ag.routine_id,
                             groupId: ag.group_id,
                             startedAt: session?.started_at
@@ -254,7 +254,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                     pendingCount: 2,
                     delayCount: 1,
                     nextActionLabel: 'Finalizar contagem de carnes',
-                    nextActionUrl: '/dashboard/count/demo-routine/group-1'
+                    nextActionUrl: '/dashboard/count/demo-routine/group-1?returnTo=/dashboard'
                 })
             }
 

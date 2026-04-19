@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { getSafeReturnTo, appendReturnTo } from '@/lib/navigation'
 import { Loader2, ArrowLeft, PlayCircle, CheckCircle2, Clock, Play, X, ClipboardList } from 'lucide-react'
 import toast from 'react-hot-toast'
 import React, { use } from 'react'
@@ -21,6 +22,9 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
     const [showStartConfirm, setShowStartConfirm] = useState(false)
     const [selectedGroup, setSelectedGroup] = useState<CountGroupStatus | null>(null)
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const returnTo = searchParams.get('returnTo')
+    const backUrl = getSafeReturnTo(returnTo, '/dashboard/routines')
 
     useEffect(() => {
         load()
@@ -81,7 +85,9 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
 
     const confirmNavigation = () => {
         if (!selectedGroup) return
-        router.push(`/dashboard/count/${routineId}/${selectedGroup.id}`)
+        const targetUrl = `/dashboard/count/${routineId}/${selectedGroup.id}`
+        const finalUrl = returnTo ? appendReturnTo(targetUrl, returnTo) : targetUrl
+        router.push(finalUrl)
         setSelectedGroup(null)
     }
 
@@ -104,7 +110,7 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
             {/* HEADER */}
             <div className="bg-white border-b border-[#e9e8e5] px-5 pt-6 pb-5 shadow-sm sticky top-0 z-10">
                 <div className="flex items-center space-x-4">
-                    <button onClick={() => router.push('/dashboard/routines')} className="p-2.5 bg-white rounded-xl shadow-sm border border-[#e9e8e5] text-[#58413e] hover:bg-gray-50 active:scale-95 transition-all">
+                    <button onClick={() => router.push(backUrl)} className="p-2.5 bg-white rounded-xl shadow-sm border border-[#e9e8e5] text-[#58413e] hover:bg-gray-50 active:scale-95 transition-all">
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div>

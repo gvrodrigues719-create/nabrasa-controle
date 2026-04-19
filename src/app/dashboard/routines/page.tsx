@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { getSafeReturnTo } from '@/lib/navigation'
 import { ArrowLeft, ClipboardList, User, Target, CheckCircle2, LayoutDashboard, Trophy, Medal, Crown, Zap, ListChecks } from 'lucide-react'
 import { getActiveRoutinesAction } from '@/app/actions/routinesAction'
 import { supabase } from '@/lib/supabase/client'
@@ -38,6 +40,9 @@ export default function ActiveRoutinesPage() {
     const [rankPosition, setRankPosition] = useState<number | null>(null)
     const [top5, setTop5] = useState<RankingEntry[]>([])
     const [loading, setLoading] = useState(true)
+    const searchParams = useSearchParams()
+    const returnTo = searchParams.get('returnTo')
+    const backUrl = getSafeReturnTo(returnTo, '/dashboard')
 
     useEffect(() => {
         async function load() {
@@ -94,7 +99,7 @@ export default function ActiveRoutinesPage() {
             {/* ── HEADER & IDENTIDADE ── */}
             <div className="bg-white border-b border-[#e9e8e5] px-5 pt-6 pb-5 shadow-sm sticky top-0 z-10">
                 <div className="flex items-center justify-between mb-4">
-                    <Link href="/dashboard" className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-[#58413e]">
+                    <Link href={backUrl} className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-[#58413e]">
                         <ArrowLeft className="w-5 h-5" />
                     </Link>
                     <div className="flex flex-col items-center">
