@@ -23,6 +23,8 @@ import ContextualCommentsDrawer from '@/app/dashboard/components/ContextualComme
 import { Loader2, CheckCircle2, AlertCircle, Info, Camera, MessageSquare } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+import { useSearchParams } from 'next/navigation'
+
 interface Props {
     template: ChecklistTemplate & { items: ChecklistTemplateItem[] }
     sessionId: string
@@ -31,6 +33,9 @@ interface Props {
 
 export default function ChecklistExecution({ template, sessionId, userId }: Props) {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const returnTo = searchParams.get('returnTo') || '/dashboard'
+    
     const [responses, setResponses] = useState<Record<string, any>>({})
     const [evidences, setEvidences] = useState<Record<string, string>>({})
     const [loading, setLoading] = useState(true)
@@ -80,8 +85,17 @@ export default function ChecklistExecution({ template, sessionId, userId }: Prop
         const res = await completeChecklistSessionAction(sessionId)
         
         if (res.success) {
-            toast.success('Checklist concluído com sucesso!')
-            router.push('/dashboard/checklist')
+            toast.success('Checklist concluído com sucesso!', {
+                icon: '✅',
+                style: {
+                    borderRadius: '1rem',
+                    background: '#1b1c1a',
+                    color: '#fff',
+                    fontWeight: 'bold'
+                }
+            })
+            router.push(returnTo)
+            router.refresh()
         } else {
             toast.error(res.error || 'Erro ao concluir checklist')
             setCompleting(false)

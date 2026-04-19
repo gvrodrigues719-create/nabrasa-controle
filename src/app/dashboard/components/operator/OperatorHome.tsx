@@ -127,7 +127,7 @@ export default function OperatorHome({
             {/* 6. APOIO — IA (AJUDA DA OPERAÇÃO) */}
             <button
                 onClick={onOpenAI}
-                className="w-full flex items-center gap-3 p-4 rounded-2xl bg-[#fff8e1] border border-[#ffecb3] shadow-sm active:scale-[0.98] transition-all text-left cursor-pointer group animate-in fade-in duration-700"
+                className="w-full flex items-center gap-3 p-4 rounded-2xl bg-[#fffcf0] border border-[#fef3c7] shadow-sm active:scale-[0.98] transition-all text-left cursor-pointer group animate-in fade-in duration-700"
             >
                 <div className="w-10 h-10 rounded-xl bg-white/50 flex items-center justify-center text-amber-500 group-hover:bg-amber-50 transition-colors border border-amber-100/50">
                     <Sparkles className="w-5 h-5" />

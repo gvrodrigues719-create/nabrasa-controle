@@ -69,7 +69,82 @@ export async function getChecklistTemplateDetailsAction(templateId: string) {
 }
 
 /**
- * Inicia uma nova sessão de checklist
+ * Inicia ou Recupera uma sessão de checklist baseada em uma rotina e grupo (MOC Flow)
+ */
+export async function initChecklistSessionAction(routineId: string, groupId: string, userId: string) {
+    try {
+        const { data: group } = await supabase.from('groups').select('name').eq('id', groupId).single()
+        const { data: routineRow } = await supabase
+            .from('routines')
+            .select('snapshot_started_at, checklist_template_id')
+            .eq('id', routineId)
+            .single()
+
+        if (!routineRow?.checklist_template_id) {
+            throw new Error('Esta rotina não possui um checklist associado.')
+        }
+
+        // Calcula o âncoras de ciclo (madrugada do dia operacional)
+        const brDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
+        const cycleStart = `${brDate}T03:00:00Z`
+
+        // Verifica se já existe sessão neste ciclo para este grupo/rotina
+        const { data: existingSession } = await supabase
+            .from('checklist_sessions')
+            .select('id, status, user_id, execution_id, users(name)')
+            .eq('routine_id', routineId)
+            .eq('group_id', groupId)
+            .gte('started_at', cycleStart)
+            .order('started_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+
+        if (existingSession) {
+            if (existingSession.status === 'completed') {
+                return { blocked: 'Este checklist já foi concluído hoje.' }
+            }
+            if (existingSession.status === 'in_progress' && existingSession.user_id !== userId) {
+                const uName = (existingSession.users as any)?.name || 'Outro usuário'
+                return { blocked: `Esta tarefa está sendo executada por ${uName}.` }
+            }
+        }
+
+        let sessionId = existingSession?.id
+
+        // Puxa a execução ativa (Operational Event)
+        const { data: exec } = await supabase.from('routine_executions').select('id').eq('routine_id', routineId).eq('status', 'active').maybeSingle()
+
+        if (!existingSession) {
+            const { data: newSession, error: insErr } = await supabase.from('checklist_sessions').insert([{
+                template_id: routineRow.checklist_template_id,
+                routine_id: routineId,
+                group_id: groupId,
+                user_id: userId,
+                status: 'in_progress',
+                started_at: new Date().toISOString(),
+                execution_id: exec?.id || null
+            }]).select('id').single()
+            
+            if (insErr) throw insErr
+            if (newSession) sessionId = newSession.id
+            
+            console.log(`[ACTION] Checklist Session Started | Routine: ${routineId} | Group: ${groupId} | User: ${userId}`)
+        } else {
+            // Garante vínculo com execução oficial se ela nascer depois da sessão
+            if (exec?.id && existingSession.execution_id !== exec.id) {
+                await supabase.from('checklist_sessions').update({ execution_id: exec.id }).eq('id', sessionId)
+            }
+        }
+
+        return { success: true, sessionId }
+    } catch (error: any) {
+        console.error('Error in initChecklistSessionAction:', error)
+        return { success: false, error: error.message }
+    }
+}
+
+/**
+ * Inicia uma nova sessão de checklist avulsa
  */
 export async function startChecklistSessionAction(templateId: string, userId: string) {
     try {
@@ -236,9 +311,21 @@ export async function completeChecklistSessionAction(sessionId: string) {
 
         if (updateError) throw updateError
 
-        // 3. VEDAÇÃO VD-02: Premiar se concluído no prazo (fire-and-forget)
+        // 3. GAMIFICAÇÃO E EVENTOS OPERACIONAIS (Fire-and-forget)
         try {
             if (session.user_id) {
+                const { recordPointsAction, recordSealingEventAction } = await import('./gamificationAction')
+                
+                // 3.1. Pontua conclusão (+50) - Mesma paridade da contagem
+                await recordPointsAction(
+                    session.user_id,
+                    'checklist_completion',
+                    sessionId,
+                    50,
+                    'Checklist operacional concluído.'
+                )
+
+                // 3.2. VD-02: Premiar se concluído no prazo
                 const { data: template } = await supabase
                     .from('checklist_templates')
                     .select('context')
@@ -253,12 +340,14 @@ export async function completeChecklistSessionAction(sessionId: string) {
                     (template?.context === 'closing' && currentHour < 23)
 
                 if (isCritical && isOnTime) {
-                    const { recordSealingEventAction } = await import('./gamificationAction')
                     await recordSealingEventAction(session.user_id, 'checklist_on_time', sessionId)
                 }
+
+                // 3.3. VD-03: Sessão fechada sem abandono
+                await recordSealingEventAction(session.user_id, 'session_clean_close', sessionId)
             }
-        } catch {
-            // Silencioso — gamificação nunca interrompe a operação
+        } catch (gamErr) {
+            console.error('[Gamification] Silently failed during checklist completion:', gamErr)
         }
 
         revalidatePath('/dashboard/checklist')

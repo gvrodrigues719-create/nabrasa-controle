@@ -73,7 +73,7 @@ export default function OperationHeroCard({
     const cmvConf = cmvStatusConfig[cmvStatus]
 
     return (
-        <div className="bg-[#edf1f5] rounded-[2.5rem] shadow-sm border border-[#d9e2ec] overflow-hidden flex flex-col animate-in fade-in duration-700">
+        <div className="bg-[#f3f6f9] rounded-[2.5rem] shadow-sm border border-[#e2e8f0] overflow-hidden flex flex-col animate-in fade-in duration-700">
             <style>{`
                 @keyframes reservoir-drip {
                     0% { transform: translateY(0) scale(0); opacity: 0; }
@@ -177,7 +177,7 @@ export default function OperationHeroCard({
 
                 <div className="flex items-center justify-between">
                     <div className="flex flex-col">
-                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1 leading-none">CMV Atual</span>
+                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1 leading-none">CMV Atual</span>
                         <div className="flex items-baseline gap-1">
                             <span className="text-2xl font-black text-[#1b1c1a] leading-none mb-1">{cmvCurrent && cmvCurrent > 0 ? formatPerc(cmvCurrent) : '—'}</span>
                         </div>
@@ -186,7 +186,7 @@ export default function OperationHeroCard({
                     <div className="h-8 w-[1px] bg-gray-200/60" />
 
                     <div className="flex flex-col text-right">
-                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1 leading-none">Meta Estipulada</span>
+                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1 leading-none">Meta Estipulada</span>
                         <div className="flex items-baseline gap-1 justify-end">
                             <span className="text-2xl font-black text-[#8c716c] opacity-60 leading-none mb-1">{cmvTarget !== undefined && cmvTarget > 0 ? formatPerc(cmvTarget) : '—'}</span>
                         </div>

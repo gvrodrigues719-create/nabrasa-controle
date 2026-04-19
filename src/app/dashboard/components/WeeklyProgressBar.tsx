@@ -25,7 +25,7 @@ export default function WeeklyProgressBar({
     const top5 = topRanking?.slice(0, 5) || []
 
     return (
-        <div className="bg-[#f0f9f0] rounded-[2.5rem] p-6 shadow-sm border border-[#dcf0dc] flex flex-col gap-6 animate-in fade-in duration-700">
+        <div className="bg-[#f4faf4] rounded-[2.5rem] p-6 shadow-sm border border-[#e6f2e6] flex flex-col gap-6 animate-in fade-in duration-700">
             {/* Header: Contexto de Evolução */}
             <header className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2.5">

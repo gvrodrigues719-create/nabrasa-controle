@@ -27,6 +27,7 @@ export type GamificationEventType =
     | 'checklist_on_time'
     | 'session_clean_close'
     | 'routine_zero_rupture'
+    | 'checklist_completion'
 
 const SEALING_POINTS: Record<string, number> = {
     checklist_on_time:    50,

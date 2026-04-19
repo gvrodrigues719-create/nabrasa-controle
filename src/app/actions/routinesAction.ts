@@ -32,25 +32,49 @@ export async function getRoutineDetailsAction(routineId: string) {
     }
 
     const { data: rGroups } = await supabase.from('routine_groups').select('groups(id, name)').eq('routine_id', routineId)
+    
+    // Escolhe a tabela de sessões baseada no tipo de rotina
+    const sessionTable = routine.routine_type === 'checklist' ? 'checklist_sessions' : 'count_sessions'
+    
     const { data: sessions } = await supabase
-        .from('count_sessions')
+        .from(sessionTable)
         .select('id, group_id, status, updated_at, users(name)')
         .eq('routine_id', routineId)
         .gte('started_at', startOfDayBR)
 
     const groupIds = rGroups?.map(rg => (rg.groups as any).id) || []
 
-    // Fetch item counts per group
-    const { data: itemCounts } = await supabase
-        .from('items')
-        .select('group_id')
-        .in('group_id', groupIds)
-        .eq('active', true)
+    // Fetch item counts per group (Se for checklist, o total é o número de itens no template)
+    let itemCountMap: Record<string, number> = {}
+    
+    if (routine.routine_type === 'checklist') {
+        const { data: template } = await supabase
+            .from('routines')
+            .select('checklist_template_id')
+            .eq('id', routineId)
+            .single()
+        
+        if (template?.checklist_template_id) {
+            const { count } = await supabase
+                .from('checklist_template_items')
+                .select('*', { count: 'exact', head: true })
+                .eq('template_id', template.checklist_template_id)
+            
+            groupIds.forEach(gid => {
+                itemCountMap[gid] = count || 0
+            })
+        }
+    } else {
+        const { data: itemCounts } = await supabase
+            .from('items')
+            .select('group_id')
+            .in('group_id', groupIds)
+            .eq('active', true)
 
-    const itemCountMap: Record<string, number> = {}
-    itemCounts?.forEach(i => {
-        itemCountMap[i.group_id] = (itemCountMap[i.group_id] || 0) + 1
-    })
+        itemCounts?.forEach(i => {
+            itemCountMap[i.group_id] = (itemCountMap[i.group_id] || 0) + 1
+        })
+    }
 
     const mappedGroups = mapRoutineGroupsToStatus(rGroups || [], sessions || [], itemCountMap)
 
