@@ -1,12 +1,18 @@
 "use client"
 
-import { Map as MapIcon, ChevronRight } from 'lucide-react'
+import React, { useState } from 'react'
+import { Map as MapIcon, ChevronRight, X, Maximize2 } from 'lucide-react'
 import Image from 'next/image'
 
 export default function HouseView() {
+    const [isExpanded, setIsExpanded] = useState(false)
+
     return (
         <section className="animate-in fade-in slide-in-from-bottom-3 duration-700 delay-150">
-            <div className="relative bg-white border border-gray-100 rounded-[2.5rem] overflow-hidden shadow-xl shadow-gray-200/30 group transition-all duration-500 hover:border-[#B13A2B]/20">
+            <div 
+                onClick={() => setIsExpanded(true)}
+                className="relative bg-white border border-gray-100 rounded-[2.5rem] overflow-hidden shadow-xl shadow-gray-200/30 group transition-all duration-500 hover:border-[#B13A2B]/20 cursor-pointer active:scale-[0.99]"
+            >
                 {/* Horizontal Panoramic Preview Wrapper */}
                 <div className="relative w-full aspect-[2.4/1] md:aspect-[3.5/1] overflow-hidden bg-[#F8F7F4]">
                     <Image 
@@ -35,7 +41,7 @@ export default function HouseView() {
 
                     {/* Botão de Expansão Flutuante (Visual CTA) */}
                     <div className="absolute bottom-4 right-4 w-8 h-8 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all duration-300">
-                         <ChevronRight className="w-4 h-4" />
+                         <Maximize2 className="w-4 h-4" />
                     </div>
                 </div>
 
@@ -53,6 +59,44 @@ export default function HouseView() {
                     </div>
                 </div>
             </div>
+
+            {/* FULLSCREEN MODAL EXPANSION */}
+            {isExpanded && (
+                <div className="fixed inset-0 z-[300] flex items-center justify-center animate-in fade-in duration-300">
+                    {/* Backdrop */}
+                    <div 
+                        className="absolute inset-0 bg-black/90 backdrop-blur-md" 
+                        onClick={() => setIsExpanded(false)} 
+                    />
+                    
+                    {/* Header do Modal */}
+                    <div className="absolute top-0 left-0 right-0 p-6 flex items-center justify-between z-10">
+                        <div className="flex flex-col">
+                            <h3 className="text-sm font-black text-white uppercase tracking-[0.2em]">Mapa da Unidade</h3>
+                            <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest">Plantão Operacional NaBrasa</p>
+                        </div>
+                        <button 
+                            onClick={() => setIsExpanded(false)}
+                            className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
+
+                    {/* Image Viewer Container */}
+                    <div className="relative w-full h-full overflow-auto flex items-center justify-center p-4 pt-24 pb-8">
+                        <div className="relative min-w-[1000px] h-full">
+                            <Image 
+                                src="/assets/house_view.jpg" 
+                                alt="Mapa Expandido" 
+                                fill
+                                className="object-contain"
+                                priority
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </section>
     )
 }
