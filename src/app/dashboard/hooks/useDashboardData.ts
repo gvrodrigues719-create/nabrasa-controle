@@ -70,21 +70,22 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                 getActiveNoticesAction()
             ])
 
-            if (healthRes.success) {
-                setHealthScore(healthRes.score)
-                setActiveLeaks(healthRes.activeLeaks || [])
-                setWeeklyLeaks(healthRes.weeklyLeaks || [])
-            }
-            setRoutinesCount(routinesRes.data?.length || 0)
-            
-            let currentAreaName = 'Cozinha' // Fallback
-            let areaPending = 0
+            // 3. IDENTIFICAÇÃO DE ÁREA (Lógica "Sua área hoje")
+            // Inferimos a área atual a partir da sessão ativa. Caso não haja sessão,
+            // usamos um fallback de demonstração para manter a interface operacional.
+            let currentAreaName = 'Cozinha' 
+            let areaPending = routinesRes.data?.length || 0
             let areaDelay = 0
 
             if (sessionRes.data) {
                 const s = sessionRes.data as any
+                const sessionStartTime = new Date(s.started_at).getTime()
+                const twoHoursAgo = Date.now() - (2 * 60 * 60 * 1000)
+                
                 setCurrentGroupId(s.group_id)
                 currentAreaName = s.groups?.name || 'Cozinha'
+                areaDelay = sessionStartTime < twoHoursAgo ? 1 : 0
+
                 setActiveSession({
                     sessionId: s.id,
                     routineId: s.routine_id,
@@ -107,7 +108,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
             if (focusRes.success) setWeeklyFocus((focusRes as any).data as WeeklyFocus)
             if (noticeRes.success) setNotices(noticeRes.data || [])
 
-            // Calcular Atrasos Globais (Sessões > 2h)
+            // Calcular Atrasos Globais (Painel de Alertas)
             if (routinesRes.data) {
                 const twoHoursAgo = Date.now() - (2 * 60 * 60 * 1000)
                 const late = (routinesRes.data as any[]).filter(s => 
@@ -116,15 +117,12 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                 setLateCount(late)
             }
 
-            // Lógica "Sua área hoje"
-            // Por enquanto, usamos dados reais baseados em sessões ativas + fallback realista
-            areaPending = routinesRes.data?.length || 0
-            if (areaPending > 2) areaPending = 2 // Demo limit para setor específico
-            
+            // Alimentação do bloco de responsabilidade individual
+            // FIXME: No futuro, pendências devem ser filtradas por group_id do operador
             setMyAreaStats({
                 name: currentAreaName,
-                pendingCount: areaPending > 0 ? areaPending : 0,
-                delayCount: activeSession ? (new Date(sessionRes.data?.started_at).getTime() < (Date.now() - 2*60*60*1000) ? 1 : 0) : 0,
+                pendingCount: areaPending,
+                delayCount: areaDelay,
                 nextActionLabel: areaPending > 0 ? 'Concluir contagem pendente' : 'Checklist de encerramento'
             })
 
@@ -144,7 +142,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                     }
                 ])
                 
-                // Add a demo active session
+                // Demo Force para "Sua Área Hoje"
                 setActiveSession({
                     sessionId: 'demo-session',
                     routineId: 'routine-1',
