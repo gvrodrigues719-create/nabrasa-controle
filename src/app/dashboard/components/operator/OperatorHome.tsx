@@ -127,16 +127,16 @@ export default function OperatorHome({
             {/* 6. APOIO — IA (AJUDA DA OPERAÇÃO) */}
             <button
                 onClick={onOpenAI}
-                className="w-full flex items-center gap-3 p-4 rounded-2xl bg-white border border-[#e9e8e5] shadow-sm active:scale-[0.98] transition-all text-left cursor-pointer group"
+                className="w-full flex items-center gap-3 p-4 rounded-2xl bg-[#fffbf0] border border-[#fef3c7] shadow-sm active:scale-[0.98] transition-all text-left cursor-pointer group animate-in fade-in duration-700"
             >
-                <div className="w-10 h-10 rounded-xl bg-[#F8F7F4] flex items-center justify-center text-amber-500 group-hover:bg-amber-50 transition-colors">
+                <div className="w-10 h-10 rounded-xl bg-white/50 flex items-center justify-center text-amber-500 group-hover:bg-amber-50 transition-colors border border-amber-100/50">
                     <Sparkles className="w-5 h-5" />
                 </div>
                 <div className="flex-1">
-                    <p className="text-sm font-bold text-[#1b1c1a]">Ajuda da Operação</p>
-                    <p className="text-[10px] text-[#c0b3b1] font-medium">Dúvidas sobre estoque, perdas e organização</p>
+                    <p className="text-sm font-bold text-amber-950">Ajuda da Operação</p>
+                    <p className="text-[10px] text-amber-900/40 font-medium tracking-tight">Dúvidas sobre estoque, perdas e organização</p>
                 </div>
-                <ArrowRight className="w-4 h-4 text-[#e9e8e5] group-hover:text-[#8c716c] transition-colors" />
+                <ArrowRight className="w-4 h-4 text-amber-200 group-hover:text-amber-500 transition-colors" />
             </button>
 
             {/* 7. PROGRESSO — MINHA SEMANA (RANKING) */}

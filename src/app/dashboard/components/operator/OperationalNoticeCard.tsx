@@ -356,7 +356,7 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
     )
 
     return (
-        <div className="bg-[#fcfbf9] rounded-[2.5rem] p-5 border border-[#e9e8e5] space-y-5">
+        <div className="bg-[#fef9f8] rounded-[2.5rem] p-5 border border-[#f5eded] space-y-5 animate-in fade-in duration-700">
             <header className="flex items-center justify-between px-1 mb-1">
                 <h3 className="text-[10px] font-black text-[#8c716c] uppercase tracking-[0.2em] flex items-center gap-2">
                     <Bell className="w-3.5 h-3.5" /> Mural da Unidade
