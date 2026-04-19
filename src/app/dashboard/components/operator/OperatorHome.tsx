@@ -69,33 +69,24 @@ export default function OperatorHome({
 
     return (
         <div className="space-y-6">
-            {/* MURAL — AVISOS DA CASA + ANIVERSARIANTES */}
+            {/* 1. MURAL — AVISOS DA CASA + ANIVERSARIANTES */}
             <OperationalNoticeCard notices={notices} birthdays={birthdays} userId={userId} />
 
-
-            {/* ALERTAS — ATRASOS CRÍTICOS */}
+            {/* 2. ALERTAS — ATRASOS CRÍTICOS */}
             <OperationalAlertBanner lateCount={lateCount} />
 
+            {/* 3. EXECUÇÃO — CHECKLISTS E ROTINAS */}
             <ExecutionBlock
                 routinesCount={routinesCount}
                 onReportLoss={onReportLoss}
             />
 
-            {/* SORTEIO DO MÊS — INCENTIVO (NOVO) */}
-            <RaffleCard 
-                ticketCount={isDemoMode ? 12 : 0} 
-                prizeName="Jantar Especial" 
-                onClick={() => setIsRaffleOpen(true)} 
-            />
-
-            {/* VISÃO DA CASA — MAPA OPERACIONAL (NOVO) */}
+            {/* 4. VISÃO DA CASA — MAPA OPERACIONAL */}
             <HouseView />
 
-
-            {/* HERO — SAÚDE DA OPERAÇÃO */}
+            {/* 5. HERO — SAÚDE DA OPERAÇÃO (EFICIÊNCIA) */}
             <OperationHeroCard
                 score={healthScore}
-
                 activeLeaks={activeLeaks}
                 weeklyLeaks={weeklyLeaks}
                 cmvCurrent={cmvStatus?.current}
@@ -107,18 +98,7 @@ export default function OperatorHome({
                 onUpdateFocus={onUpdateFocus}
             />
 
-            {/* PROGRESSO — MINHA SEMANA */}
-            <WeeklyProgressBar
-                weeklyPoints={weeklyPoints}
-                totalPoints={totalPoints}
-                rankPosition={rankPosition}
-                lastSealing={lastSealing}
-                topRanking={topRanking}
-                coinBalance={isDemoMode ? 120 : 0}
-                onOpenRewards={onOpenRewards}
-            />
-
-            {/* APOIO — IA */}
+            {/* 6. APOIO — IA (AJUDA DA OPERAÇÃO) */}
             <button
                 onClick={onOpenAI}
                 className="w-full flex items-center gap-3 p-4 rounded-2xl bg-white border border-[#e9e8e5] shadow-sm active:scale-[0.98] transition-all text-left cursor-pointer group"
@@ -132,6 +112,17 @@ export default function OperatorHome({
                 </div>
                 <ArrowRight className="w-4 h-4 text-[#e9e8e5] group-hover:text-[#8c716c] transition-colors" />
             </button>
+
+            {/* 7. PROGRESSO — MINHA SEMANA (RANKING) */}
+            <WeeklyProgressBar
+                weeklyPoints={weeklyPoints}
+                totalPoints={totalPoints}
+                rankPosition={rankPosition}
+                lastSealing={lastSealing}
+                topRanking={topRanking}
+                coinBalance={isDemoMode ? 120 : 0}
+                onOpenRewards={onOpenRewards}
+            />
 
             <RaffleDrawer 
                 isOpen={isRaffleOpen} 
