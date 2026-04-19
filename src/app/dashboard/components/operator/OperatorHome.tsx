@@ -11,6 +11,8 @@ import { Leak } from '@/app/actions/efficiencyAction'
 import RaffleCard from './RaffleCard'
 import RaffleDrawer from '../RaffleDrawer'
 import { useState } from 'react'
+import HouseView from './HouseView'
+
 
 interface OperatorHomeProps {
     healthScore: number;
@@ -86,9 +88,14 @@ export default function OperatorHome({
                 onClick={() => setIsRaffleOpen(true)} 
             />
 
+            {/* VISÃO DA CASA — MAPA OPERACIONAL (NOVO) */}
+            <HouseView />
+
+
             {/* HERO — SAÚDE DA OPERAÇÃO */}
             <OperationHeroCard
                 score={healthScore}
+
                 activeLeaks={activeLeaks}
                 weeklyLeaks={weeklyLeaks}
                 cmvCurrent={cmvStatus?.current}
