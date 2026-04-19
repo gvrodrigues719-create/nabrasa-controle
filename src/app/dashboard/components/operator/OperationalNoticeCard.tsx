@@ -197,12 +197,14 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
         )
     }
 
-    // ────────────── RENDERIZAÇÃO: CAMADA 2 - GERAIS (LISTA VERTICAL) ──────────────
+    // ────────────── RENDERIZAÇÃO: CAMADA 2 - GERAIS (FEEDS/STACK) ──────────────
     const renderGeneralLayer = () => {
         if (generalNotices.length === 0) return null
 
-        const visibleNotices = showAllGeneral ? generalNotices : generalNotices.slice(0, 2)
-        const hasMore = generalNotices.length > 2
+        // Se não estiver expandido, mostramos apenas o PRIMEIRO + O STACK
+        const visibleNotices = showAllGeneral ? generalNotices : [generalNotices[0]]
+        const remainingCount = generalNotices.length - 1
+        const hasMore = generalNotices.length > 1
 
         return (
             <div className="space-y-3">
@@ -244,14 +246,44 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
                             </div>
                         )
                     })}
+
+                    {/* VISUAL STACK / COUNTER (REDE SOCIAL STYLE) */}
+                    {hasMore && !showAllGeneral && (
+                        <div 
+                            onClick={() => setShowAllGeneral(true)}
+                            className="relative mt-[-24px] pt-4 cursor-pointer group active:scale-[0.98] transition-all"
+                        >
+                            {/* Camadas para efeito de pilha */}
+                            <div className="absolute top-6 left-4 right-4 h-full bg-gray-50 border border-gray-100 rounded-[2rem] -z-10 translate-y-2 opacity-50" />
+                            <div className="absolute top-6 left-2 right-2 h-full bg-white/50 border border-gray-50 rounded-[2rem] -z-20 translate-y-4 opacity-30" />
+                            
+                            <div className="relative flex items-center justify-between p-4 bg-white border border-gray-100 rounded-[2rem] shadow-sm hover:border-[#B13A2B]/20 transition-all">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-full bg-red-50 flex items-center justify-center border border-red-100 shadow-inner">
+                                        <Bell className="w-4 h-4 text-[#B13A2B]" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-black text-[#1b1c1a] uppercase tracking-tighter">
+                                            Mais {remainingCount} comunicado{remainingCount > 1 ? 's' : ''} pendente{remainingCount > 1 ? 's' : ''}
+                                        </span>
+                                        <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Toque para ver o feed completo</span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-1.5 bg-red-600 px-2.5 py-1.5 rounded-full shadow-lg shadow-red-100">
+                                    <span className="text-[10px] font-black text-white">+{remainingCount}</span>
+                                    <ChevronRight className="w-3.5 h-3.5 text-white" />
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
-                {hasMore && !showAllGeneral && (
+                {showAllGeneral && hasMore && (
                     <button 
-                        onClick={() => setShowAllGeneral(true)}
-                        className="w-full py-4 text-[10px] font-black text-[#B13A2B] uppercase tracking-[0.2em] bg-red-50/50 hover:bg-red-50 rounded-2xl transition-colors border border-red-100/30"
+                        onClick={() => setShowAllGeneral(false)}
+                        className="w-full py-3 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] hover:text-[#B13A2B] transition-colors"
                     >
-                        Ver mais {generalNotices.length - 2} comunicados
+                        Recolher Mural
                     </button>
                 )}
             </div>
