@@ -221,9 +221,11 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
                                 onPointerDown={() => handlePressStart(notice.id)}
                                 onPointerUp={handlePressEnd}
                                 onPointerLeave={handlePressEnd}
+                                onContextMenu={(e) => e.preventDefault()}
                                 onClick={() => !longPressNoticeId && handleOpenNotice(notice)}
-                                className={`flex-shrink-0 ${notices.length > 1 ? 'w-[85vw]' : 'w-full'} snap-center relative overflow-hidden rounded-[2.2rem] border border-[#e9e8e5] shadow-sm ${style.bg} ${style.text} cursor-pointer active:scale-[0.98] transition-all`}
+                                className={`flex-shrink-0 ${notices.length > 1 ? 'w-[85vw]' : 'w-full'} snap-center relative overflow-hidden rounded-[2.2rem] border border-[#e9e8e5] shadow-sm ${style.bg} ${style.text} cursor-pointer active:scale-[0.98] transition-all select-none`}
                             >
+
                                 {/* QUICK REACTION MENU (WhatsApp Style) */}
                                 {longPressNoticeId === notice.id && (
                                     <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-md flex items-center justify-center animate-in fade-in zoom-in duration-200">
