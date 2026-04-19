@@ -268,44 +268,38 @@ export async function toggleNoticeReactionAction(noticeId: string, emoji: string
         const supabase = getServiceSupabase()
         if (!supabase) throw new Error('Database indisponível')
 
-        // Verificar se já existe QUALQUER reação deste usuário neste aviso
+        // 1. Buscar todas as reações deste usuário especificamente para este aviso
         const { data: existing } = await supabase
             .from('notice_reactions')
             .select('id, emoji')
             .eq('notice_id', noticeId)
             .eq('user_id', authId)
-            .single()
 
-        if (existing) {
-            // Sempre remover a anterior
+        const alreadyHasThisEmoji = existing?.some(r => r.emoji === emoji)
+
+        // 2. Limpeza: Remover todas as reações anteriores deste usuário para este aviso
+        // Isso resolve o problema de ter múltiplas reações simultâneas
+        if (existing && existing.length > 0) {
             const { error: delError } = await supabase
                 .from('notice_reactions')
                 .delete()
-                .eq('id', existing.id)
+                .eq('notice_id', noticeId)
+                .eq('user_id', authId)
             
             if (delError) throw delError
+        }
 
-            // Se for um emoji DIFERENTE, inserir o novo
-            if (existing.emoji !== emoji) {
-                const { error: insError } = await supabase
-                    .from('notice_reactions')
-                    .insert([{
-                        notice_id: noticeId,
-                        user_id: authId,
-                        emoji: emoji
-                    }])
-                if (insError) throw insError
-            }
-        } else {
-            // Adicionar nova
-            const { error } = await supabase
+        // 3. Se ele clicou em um emoji que NÃO estava ativo, inserimos o novo (troca ou ativação)
+        // Se ele clicou no MESMO que já estava ativo, a limpeza acima já fez o "toggle off"
+        if (!alreadyHasThisEmoji) {
+            const { error: insError } = await supabase
                 .from('notice_reactions')
                 .insert([{
                     notice_id: noticeId,
                     user_id: authId,
                     emoji: emoji
                 }])
-            if (error) throw error
+            if (insError) throw insError
         }
 
 
