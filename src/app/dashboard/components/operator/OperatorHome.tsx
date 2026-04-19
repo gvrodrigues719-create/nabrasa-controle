@@ -12,6 +12,8 @@ import RaffleCard from './RaffleCard'
 import RaffleDrawer from '../RaffleDrawer'
 import { useState } from 'react'
 import HouseView from './HouseView'
+import ContinueRoutineCard from './ContinueRoutineCard'
+import { ActiveSession } from '../../hooks/useDashboardData'
 
 
 interface OperatorHomeProps {
@@ -32,6 +34,7 @@ interface OperatorHomeProps {
     birthdays?: any[];
     lateCount?: number;
     userId: string;
+    activeSession: ActiveSession | null;
     onViewGlobalClick: () => void;
 
     onReportLoss: () => void;
@@ -58,6 +61,7 @@ export default function OperatorHome({
     birthdays = [],
     lateCount = 0,
     userId,
+    activeSession,
     onViewGlobalClick,
 
     onReportLoss,
@@ -80,6 +84,9 @@ export default function OperatorHome({
                 routinesCount={routinesCount}
                 onReportLoss={onReportLoss}
             />
+
+            {/* 3.1 CONTINUIDADE — CONTINUAR DE ONDE PAREI (NOVO) */}
+            <ContinueRoutineCard session={activeSession} />
 
             {/* 4. VISÃO DA CASA — MAPA OPERACIONAL */}
             <HouseView />

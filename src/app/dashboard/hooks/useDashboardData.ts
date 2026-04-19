@@ -9,6 +9,14 @@ import { getPublicCMVStatusAction } from '@/app/actions/cmvActions'
 import { getWeeklyFocusAction, type WeeklyFocus } from '@/app/actions/weeklyFocusAction'
 import { getActiveNoticesAction } from '@/app/actions/communicationAction'
 
+export interface ActiveSession {
+    sessionId: string;
+    routineId: string;
+    groupId: string;
+    routineName: string;
+    groupName: string;
+}
+
 export function useDashboardData(userId: string, isDemoMode: boolean) {
     const [routinesCount, setRoutinesCount] = useState<number>(0)
     const [userPoints, setUserPoints] = useState<number | null>(null)
@@ -22,6 +30,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
     const [topRanking, setTopRanking] = useState<{ name: string, points: number, rank: number }[]>([])
     const [weeklyFocus, setWeeklyFocus] = useState<WeeklyFocus | null>(null)
     const [currentGroupId, setCurrentGroupId] = useState<string | undefined>()
+    const [activeSession, setActiveSession] = useState<ActiveSession | null>(null)
     const [notices, setNotices] = useState<any[]>([])
     const [lateCount, setLateCount] = useState<number>(0)
     const [loadingData, setLoadingData] = useState(true)
@@ -40,7 +49,14 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                 getOperationalHealthAction(),
                 getActiveRoutinesAction(),
                 userId
-                    ? supabase.from('count_sessions').select('group_id').eq('status', 'in_progress').eq('user_id', userId).order('updated_at', { ascending: false }).limit(1).maybeSingle()
+                    ? supabase
+                        .from('count_sessions')
+                        .select('id, routine_id, group_id, routines:routine_id(name), groups:group_id(name)')
+                        .eq('status', 'in_progress')
+                        .eq('user_id', userId)
+                        .order('updated_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle()
                     : Promise.resolve({ data: null, error: null }),
                 userId ? getOperatorSummaryAction(userId) : Promise.resolve({ success: false }),
                 getPublicCMVStatusAction(),
@@ -55,7 +71,22 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                 setWeeklyLeaks(healthRes.weeklyLeaks || [])
             }
             setRoutinesCount(routinesRes.data?.length || 0)
-            if (sessionRes.data) setCurrentGroupId(sessionRes.data.group_id)
+            
+            if (sessionRes.data) {
+                const s = sessionRes.data as any
+                setCurrentGroupId(s.group_id)
+                setActiveSession({
+                    sessionId: s.id,
+                    routineId: s.routine_id,
+                    groupId: s.group_id,
+                    routineName: s.routines?.name || 'Rotina',
+                    groupName: s.groups?.name || 'Setor'
+                })
+            } else {
+                setActiveSession(null)
+                setCurrentGroupId(undefined)
+            }
+
             if (summaryRes.success) {
                 setUserPoints((summaryRes as any).totalPoints ?? 0)
                 setWeeklyPoints((summaryRes as any).weeklyPoints ?? 0)
@@ -90,6 +121,15 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                         users: { name: 'Mestre da Brasa' }
                     }
                 ])
+                
+                // Add a demo active session
+                setActiveSession({
+                    sessionId: 'demo-session',
+                    routineId: 'routine-1',
+                    groupId: 'group-1',
+                    routineName: 'Contagem de Estoque',
+                    groupName: 'Câmara Fria'
+                })
             }
 
             const endTime = performance.now()
@@ -112,6 +152,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
         topRanking,
         weeklyFocus,
         currentGroupId,
+        activeSession,
         notices,
         lateCount,
         loadingData,

@@ -45,6 +45,7 @@ function DashboardContent() {
         topRanking,
         weeklyFocus,
         currentGroupId,
+        activeSession,
         lateCount,
         loadingData,
         setWeeklyFocus
@@ -173,6 +174,7 @@ function DashboardContent() {
                         birthdays={birthdays}
                         lateCount={lateCount}
                         userId={userId}
+                        activeSession={activeSession}
                         onViewGlobalClick={() => setIsHealthDrawerOpen(true)}
 
                         onReportLoss={() => setIsLossDrawerOpen(true)}
