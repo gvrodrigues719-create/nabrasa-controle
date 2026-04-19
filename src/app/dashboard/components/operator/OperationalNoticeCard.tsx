@@ -320,7 +320,7 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
                         <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mt-4 mb-2 shrink-0" />
                         <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100">
                             <div>
-                                <h3 className="text-xl font-black text-[#1b1c1a]">Vizinhança de Niver</h3>
+                                <h3 className="text-xl font-black text-[#1b1c1a]">Aniversariantes da Semana</h3>
                                 <p className="text-[10px] font-bold text-[#8c716c] uppercase">Celebrando nossa equipe nesta semana</p>
                             </div>
                             <button onClick={() => setIsBirthdayDrawerOpen(false)} className="p-3 bg-gray-50 rounded-full text-gray-400"><X className="w-5 h-5" /></button>
