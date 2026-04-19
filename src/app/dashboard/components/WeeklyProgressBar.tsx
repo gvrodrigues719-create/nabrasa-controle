@@ -22,95 +22,125 @@ export default function WeeklyProgressBar({
     coinBalance,
     onOpenRewards,
 }: Props) {
-    const top3 = topRanking?.slice(0, 3) || []
+    const top5 = topRanking?.slice(0, 5) || []
 
     return (
-        <div className="bg-white rounded-[24px] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e9e8e5]">
-            {/* Header */}
-            <div className="flex items-center gap-2 mb-4">
-                <Star className="w-3.5 h-3.5 text-[#8c716c]" />
-                <span className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest">Minha Semana</span>
-            </div>
-
-            {/* Métricas em linha */}
-            <div className="grid grid-cols-3 gap-3 mb-4">
-                <div>
-                    <p className="text-[9px] font-bold text-[#c0b3b1] uppercase tracking-widest mb-0.5">Pontos</p>
-                    <div className="flex items-baseline gap-0.5">
-                        <span className="text-2xl font-black text-[#1b1c1a] tracking-tighter">{weeklyPoints}</span>
-                        <span className="text-[9px] font-bold text-[#B13A2B]">PTS</span>
+        <div className="bg-white rounded-[2.5rem] p-6 shadow-[0_16px_40px_rgba(0,0,0,0.04)] border border-[#e9e8e5] flex flex-col gap-6">
+            {/* Header: Contexto de Evolução */}
+            <header className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-[#8c716c]">
+                        <Star className="w-4 h-4" />
+                    </div>
+                    <div>
+                        <h3 className="text-[10px] font-black text-[#1b1c1a] uppercase tracking-[0.2em] leading-none mb-1">Minha Evolução</h3>
+                        <p className="text-[8px] font-bold text-[#c0b3b1] uppercase tracking-widest leading-none">Progresso Semanal</p>
                     </div>
                 </div>
-                <div className="border-l border-[#eeedea] pl-3">
-                    <p className="text-[9px] font-bold text-[#c0b3b1] uppercase tracking-widest mb-0.5">Ranking</p>
+                {weeklyPoints > 0 && (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100/50">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-[9px] font-black text-emerald-700 uppercase tracking-tight">Em Crescimento</span>
+                    </div>
+                )}
+            </header>
+
+            {/* Métricas Operacionais - Cards Sóbrios */}
+            <div className="grid grid-cols-2 gap-3">
+                <div className="p-4 rounded-3xl bg-[#F8F7F4] border border-[#eeedea] transition-all hover:border-[#8c716c]/20">
+                    <p className="text-[9px] font-black text-[#8c716c] uppercase tracking-[0.15em] mb-2">Pontos Acumulados</p>
                     <div className="flex items-baseline gap-1">
-                        {rankPosition && weeklyPoints > 0 ? (
-                            <>
-                                <span className="text-2xl font-black text-[#1b1c1a] tracking-tighter">#{rankPosition}</span>
-                            </>
-                        ) : (
-                            <span className="text-sm font-bold text-[#c0b3b1]">—</span>
-                        )}
+                        <span className="text-3xl font-black text-[#1b1c1a] tracking-tighter">{weeklyPoints}</span>
+                        <span className="text-[10px] font-black text-[#B13A2B] uppercase">Pts</span>
                     </div>
                 </div>
-                <div className="border-l border-[#eeedea] pl-3">
-                    <p className="text-[9px] font-bold text-[#c0b3b1] uppercase tracking-widest mb-0.5">Moedas</p>
-                    <div className="flex items-baseline gap-0.5">
-                        <span className="text-2xl font-black text-amber-600 tracking-tighter">{coinBalance}</span>
-                        <span className="text-[9px] font-bold text-amber-500">NB</span>
+                <div className="p-4 rounded-3xl bg-[#F8F7F4] border border-[#eeedea] transition-all hover:border-[#8c716c]/20">
+                    <p className="text-[9px] font-black text-[#8c716c] uppercase tracking-[0.15em] mb-2">Saldo de Créditos</p>
+                    <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-black text-amber-600 tracking-tighter">{coinBalance}</span>
+                        <span className="text-[10px] font-black text-amber-500 uppercase">Cr</span>
                     </div>
                 </div>
             </div>
 
-            {/* Destaques da Semana */}
-            {top3.length > 0 && (
-                <div className="space-y-2 mb-3">
-                    <div className="flex items-center gap-2 mb-2 px-1">
-                        <Trophy className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <span className="text-[9px] font-black text-[#8c716c] uppercase tracking-widest">Destaques da Semana</span>
-                    </div>
-                    <div className="bg-[#F8F7F4] rounded-xl border border-[#eeedea] overflow-hidden">
-                        {top3.map((item, idx) => (
-                            <div key={idx} className={`flex items-center justify-between p-2.5 ${idx !== top3.length - 1 ? 'border-b border-[#eeedea]' : ''}`}>
-                                <div className="flex items-center gap-3 overflow-hidden">
-                                    <span className={`text-[10px] font-black w-4 ${idx === 0 ? 'text-amber-500' : 'text-[#c0b3b1]'}`}>
-                                        {item.rank}º
-                                    </span>
-                                    <span className="text-[11px] font-black text-[#1b1c1a] truncate">{item.name}</span>
+            {/* Ranking: Top Performance da Unidade */}
+            {top5.length > 0 && (
+                <div className="space-y-3">
+                    <header className="flex items-center justify-between px-1">
+                        <h4 className="text-[9px] font-black text-[#8c716c] uppercase tracking-[0.15em] flex items-center gap-2">
+                            <Trophy className="w-3.5 h-3.5 text-amber-500" /> Top Performance da Unidade
+                        </h4>
+                        {rankPosition && (
+                            <span className="text-[9px] font-black text-[#1b1c1a]/40 bg-gray-50 px-2 py-0.5 rounded-md uppercase tracking-tight">
+                                Minha Posição: {rankPosition}º
+                            </span>
+                        )}
+                    </header>
+                    <div className="bg-white rounded-3xl border border-[#eeedea] overflow-hidden divide-y divide-gray-50 shadow-sm">
+                        {top5.map((item, idx) => (
+                            <div key={idx} className="flex items-center justify-between p-3.5 hover:bg-gray-50/50 transition-colors">
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${
+                                        idx === 0 ? 'bg-amber-100 text-amber-700' :
+                                        idx === 1 ? 'bg-gray-100 text-gray-700' :
+                                        idx === 2 ? 'bg-orange-50 text-orange-700' :
+                                        'bg-gray-50/50 text-[#c0b3b1]'
+                                    }`}>
+                                        {idx + 1}º
+                                    </div>
+                                    <span className="text-xs font-black text-[#1b1c1a]">{item.name}</span>
                                 </div>
-                                <span className="text-[10px] font-bold text-[#8c716c] whitespace-nowrap">{item.points} pts</span>
+                                <div className="flex items-baseline gap-0.5 opacity-60">
+                                    <span className="text-[11px] font-black text-[#1b1c1a]">{item.points}</span>
+                                    <span className="text-[8px] font-bold text-[#8c716c] uppercase">Pts</span>
+                                </div>
                             </div>
                         ))}
                     </div>
                 </div>
             )}
 
-            {/* Última vedação */}
+            {/* Reconhecimento Profissional */}
             {lastSealing && (
-                <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50/50 border border-emerald-100/50 mb-3">
-                    <div className="flex items-center gap-2">
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <p className="text-[10px] font-bold text-[#1b1c1a] truncate max-w-[200px]">{lastSealing.reason}</p>
+                <div className="p-4 rounded-3xl bg-emerald-50/40 border border-emerald-100/50 flex items-center justify-between transition-all hover:bg-emerald-50">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center border border-emerald-100 shadow-sm">
+                            <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest leading-none mb-1">Mérito Profissional</span>
+                            <p className="text-[11px] font-bold text-[#1b1c1a] leading-tight line-clamp-1 max-w-[150px]">{lastSealing.reason}</p>
+                        </div>
                     </div>
-                    <span className="text-[9px] font-black text-emerald-700 whitespace-nowrap">+{lastSealing.points}</span>
+                    <div className="text-right">
+                        <span className="text-sm font-black text-emerald-700">+{lastSealing.points}</span>
+                        <p className="text-[8px] font-bold text-emerald-600/60 uppercase leading-none mt-0.5">Pontos</p>
+                    </div>
                 </div>
             )}
 
-            {/* Botão de Recompensas integrado */}
+            {/* Portal de Benefícios e Méritos */}
             <button
                 onClick={onOpenRewards}
-                className="w-full flex items-center justify-between p-3 rounded-xl bg-[#1b1c1a] text-white active:scale-[0.98] transition-all cursor-pointer group"
+                className="group w-full relative overflow-hidden rounded-[1.75rem] bg-[#1b1c1a] p-1 pr-4 active:scale-[0.98] transition-all cursor-pointer"
             >
-                <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-                        <Gift className="w-4 h-4 text-[#1b1c1a]" />
+                {/* Visual Glass Edge */}
+                <div className="absolute top-0 right-0 w-32 h-32 -mr-16 -mt-16 bg-white/5 blur-3xl rounded-full" />
+                
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3.5">
+                        <div className="w-11 h-11 rounded-2xl bg-white/10 flex items-center justify-center text-white transition-all duration-500 group-hover:scale-110">
+                            <Gift className="w-5 h-5" />
+                        </div>
+                        <div className="text-left py-2">
+                            <p className="text-[12px] font-black text-white tracking-tight">Benefícios e Méritos</p>
+                            <p className="text-[9px] font-bold text-white/30 uppercase tracking-widest">Acesse seu saldo de evolução</p>
+                        </div>
                     </div>
-                    <div className="text-left">
-                        <p className="text-[11px] font-bold text-white/90">Recompensas</p>
-                        <p className="text-[9px] font-medium text-white/40">Resgatar benefícios</p>
+                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
+                        <ChevronRight className="w-4 h-4 text-white/40 group-hover:text-white transition-all group-hover:translate-x-0.5" />
                     </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-white/60 transition-colors" />
             </button>
         </div>
     )
