@@ -247,31 +247,23 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
                         )
                     })}
 
-                    {/* VISUAL STACK / COUNTER (REDE SOCIAL STYLE) */}
+                    {/* SLIM VISUAL STACK / COUNTER (COMPACTO) */}
                     {hasMore && !showAllGeneral && (
                         <div 
                             onClick={() => setShowAllGeneral(true)}
-                            className="relative mt-[-24px] pt-4 cursor-pointer group active:scale-[0.98] transition-all"
+                            className="group cursor-pointer active:scale-[0.98] transition-all -mt-4 relative z-0"
                         >
-                            {/* Camadas para efeito de pilha */}
-                            <div className="absolute top-6 left-4 right-4 h-full bg-gray-50 border border-gray-100 rounded-[2rem] -z-10 translate-y-2 opacity-50" />
-                            <div className="absolute top-6 left-2 right-2 h-full bg-white/50 border border-gray-50 rounded-[2rem] -z-20 translate-y-4 opacity-30" />
-                            
-                            <div className="relative flex items-center justify-between p-4 bg-white border border-gray-100 rounded-[2rem] shadow-sm hover:border-[#B13A2B]/20 transition-all">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-full bg-red-50 flex items-center justify-center border border-red-100 shadow-inner">
-                                        <Bell className="w-4 h-4 text-[#B13A2B]" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] font-black text-[#1b1c1a] uppercase tracking-tighter">
-                                            Mais {remainingCount} comunicado{remainingCount > 1 ? 's' : ''} pendente{remainingCount > 1 ? 's' : ''}
-                                        </span>
-                                        <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Toque para ver o feed completo</span>
-                                    </div>
+                            {/* Visual effect of cards behind */}
+                            <div className="mx-6 h-10 bg-white border border-gray-100 border-t-0 rounded-b-[2rem] flex items-center justify-between px-6 shadow-sm group-hover:bg-gray-50 transition-all">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-[#B13A2B] animate-pulse" />
+                                    <span className="text-[9px] font-black text-[#8c716c] uppercase tracking-[0.15em]">
+                                        +{remainingCount} outro{remainingCount > 1 ? 's' : ''} aviso{remainingCount > 1 ? 's' : ''} no mural
+                                    </span>
                                 </div>
-                                <div className="flex items-center gap-1.5 bg-red-600 px-2.5 py-1.5 rounded-full shadow-lg shadow-red-100">
-                                    <span className="text-[10px] font-black text-white">+{remainingCount}</span>
-                                    <ChevronRight className="w-3.5 h-3.5 text-white" />
+                                <div className="flex items-center gap-1">
+                                    <span className="text-[9px] font-black text-[#B13A2B] uppercase">Ver Feed</span>
+                                    <ChevronRight className="w-3 h-3 text-[#B13A2B]" />
                                 </div>
                             </div>
                         </div>
@@ -281,9 +273,9 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
                 {showAllGeneral && hasMore && (
                     <button 
                         onClick={() => setShowAllGeneral(false)}
-                        className="w-full py-3 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] hover:text-[#B13A2B] transition-colors"
+                        className="w-full py-2 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] hover:text-[#B13A2B] transition-colors flex items-center justify-center gap-2"
                     >
-                        Recolher Mural
+                        Recolher Mural <X className="w-3 h-3" />
                     </button>
                 )}
             </div>
