@@ -88,7 +88,10 @@ export default function OperationalDashboard({ data, onRefresh }: OperationalDas
                     <span className="w-1.5 h-6 bg-[#B13A2B] rounded-full" />
                     <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Performance Individual</h3>
                 </div>
-                <CollaboratorTracker collaborators={data.collaborators} />
+                <CollaboratorTracker 
+                    collaborators={data.collaborators} 
+                    onRefresh={onRefresh}
+                />
             </section>
         </div>
     )

@@ -549,6 +549,37 @@ export async function getOperationalMirrorAction() {
 
         if (sessErr) throw sessErr
 
+        // --- AUTOMAÇÃO: Rodar distribuição proativa ---
+        // Se não há sessões para HOJE, mas existem REGRAS, rodamos a distribuição automaticamente.
+        const todaySessions = sessions?.filter(s => s.scheduled_for === today)
+        if (todaySessions?.length === 0) {
+            const { data: activeRules } = await supabase
+                .from('checklist_attribution_rules')
+                .select('id')
+                .eq('is_active', true)
+                .limit(1)
+
+            if (activeRules && activeRules.length > 0) {
+                console.log('[AUTO-DISTRIBUTION] Nenhuma sessão para hoje. Rodando motor proativamente...')
+                await runChecklistDistributionAction()
+                // Recarregar sessões após distribuição
+                const { data: newSessions } = await supabase
+                    .from('checklist_sessions')
+                    .select(`
+                        *,
+                        checklist_templates(name, context, priority),
+                        users(id, name, position, sector, shift)
+                    `)
+                    .or(`scheduled_for.eq.${today},and(scheduled_for.lt.${today},status.eq.in_progress)`)
+                
+                if (newSessions) {
+                    // Update sessions reference for the rest of calculation
+                    sessions?.splice(0, sessions.length, ...newSessions)
+                }
+            }
+        }
+        // ----------------------------------------------
+
         // 2. Buscar perdas recentes (24h)
         const { data: losses } = await supabase
             .from('inventory_losses')
@@ -603,26 +634,30 @@ export async function getOperationalMirrorAction() {
             if (!s.user_id) return
             if (!userMap.has(s.user_id)) {
                 userMap.set(s.user_id, {
+                    id: s.user_id,
                     name: s.users?.name,
                     position: s.users?.position,
                     sector: s.users?.sector,
                     total: 0,
                     completed: 0,
                     late: 0,
-                    latest_session_id: null
+                    sessions: [] as any[]
                 })
             }
             const u = userMap.get(s.user_id)
             u.total++
             if (s.status === 'completed') u.completed++
-            if (s.scheduled_for < today && s.status === 'in_progress') {
-                u.late++
-                u.latest_session_id = s.id // Prioriza o ID do atraso
-            } else if (u.latest_session_id === null && s.status === 'in_progress') {
-                u.latest_session_id = s.id // Fallback para pendência
+            if (s.status === 'in_progress') {
+                u.sessions.push({
+                    id: s.id,
+                    name: s.checklist_templates?.name,
+                    isLate: s.scheduled_for < today
+                })
+                if (s.scheduled_for < today) u.late++
             }
         })
         stats.collaborators = Array.from(userMap.values())
+
 
         // Identificar Exceções (Regras Mortas)
         // Uma regra é morta se não gerou nenhuma sessão no dia
