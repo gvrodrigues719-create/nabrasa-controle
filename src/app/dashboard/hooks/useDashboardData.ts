@@ -38,6 +38,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
         pendingCount: number;
         delayCount: number;
         nextActionLabel: string;
+        nextActionUrl?: string;
     } | null>(null)
 
     useEffect(() => {
@@ -50,7 +51,8 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
             setLoadingData(true)
             const startTime = performance.now()
             
-            const [healthRes, routinesRes, sessionRes, summaryRes, cmvRes, lastSealRes, focusRes, noticeRes] = await Promise.all([
+            // 1. Fetch de dados básicos e alocação de área
+            const [healthRes, routinesRes, sessionRes, summaryRes, cmvRes, lastSealRes, focusRes, noticeRes, userAreaRes] = await Promise.all([
                 getOperationalHealthAction(),
                 getActiveRoutinesAction(),
                 userId
@@ -67,15 +69,26 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                 getPublicCMVStatusAction(),
                 userId ? getLastSealingAction(userId) : Promise.resolve({ success: false }),
                 getWeeklyFocusAction(),
-                getActiveNoticesAction()
+                getActiveNoticesAction(),
+                userId ? supabase.from('users').select('primary_group_id, groups:primary_group_id(name)').eq('id', userId).maybeSingle() : Promise.resolve({ data: null })
             ])
 
-            // 3. IDENTIFICAÇÃO DE ÁREA (Lógica "Sua área hoje")
-            // Inferimos a área atual a partir da sessão ativa. Caso não haja sessão,
-            // usamos um fallback de demonstração para manter a interface operacional.
+            // 2. Processamento de Saúde e Rotinas Gerais
+            if (healthRes.success) {
+                setHealthScore(healthRes.score)
+                setActiveLeaks(healthRes.activeLeaks || [])
+                setWeeklyLeaks(healthRes.weeklyLeaks || [])
+            }
+            setRoutinesCount(routinesRes.data?.length || 0)
+
+            // 3. Processamento de Sessões Ativas e Áreas
             let currentAreaName = 'Cozinha' 
-            let areaPending = routinesRes.data?.length || 0
-            let areaDelay = 0
+            let primaryGroupId = userAreaRes?.data?.primary_group_id
+            let activeAreaDelay = 0
+
+            if (userAreaRes?.data?.groups) {
+                currentAreaName = (userAreaRes.data.groups as any).name
+            }
 
             if (sessionRes.data) {
                 const s = sessionRes.data as any
@@ -83,21 +96,62 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                 const twoHoursAgo = Date.now() - (2 * 60 * 60 * 1000)
                 
                 setCurrentGroupId(s.group_id)
-                currentAreaName = s.groups?.name || 'Cozinha'
-                areaDelay = sessionStartTime < twoHoursAgo ? 1 : 0
+                // Se a sessão ativa for de outro grupo, priorizamos o nome da sessão no Hero, 
+                // mas a "Sua Área Hoje" continua sendo a primária.
+                activeAreaDelay = sessionStartTime < twoHoursAgo ? 1 : 0
 
                 setActiveSession({
                     sessionId: s.id,
                     routineId: s.routine_id,
                     groupId: s.group_id,
                     routineName: s.routines?.name || 'Rotina',
-                    groupName: currentAreaName
+                    groupName: s.groups?.name || 'Setor'
                 })
             } else {
                 setActiveSession(null)
                 setCurrentGroupId(undefined)
             }
 
+            // 4. Cálculo de Pendências Reais da Área
+            let areaPendingRoutines: any[] = []
+            if (primaryGroupId) {
+                // Busca rotinas que contêm este grupo
+                const { data: groupRoutines } = await supabase
+                    .from('routine_groups')
+                    .select('routine_id, routines:routine_id(name, routine_type)')
+                    .eq('group_id', primaryGroupId)
+
+                if (groupRoutines) {
+                    // Para cada rotina, verifica se já foi finalizada HOJE para este grupo
+                    const brDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
+                    const startOfDayBR = `${brDate}T03:00:00Z`
+
+                    const { data: completedSessions } = await supabase
+                        .from('count_sessions')
+                        .select('routine_id')
+                        .eq('group_id', primaryGroupId)
+                        .eq('status', 'completed')
+                        .gte('started_at', startOfDayBR)
+
+                    const completedRoutineIds = new Set(completedSessions?.map(s => s.routine_id) || [])
+                    areaPendingRoutines = groupRoutines.filter(gr => !completedRoutineIds.has(gr.routine_id))
+                }
+            }
+
+            const nextRoutine = areaPendingRoutines[0]
+            setMyAreaStats({
+                name: currentAreaName,
+                pendingCount: areaPendingRoutines.length,
+                delayCount: activeAreaDelay,
+                nextActionLabel: nextRoutine 
+                    ? `Iniciar ${nextRoutine.routines.name}` 
+                    : 'Checklist de encerramento',
+                nextActionUrl: nextRoutine 
+                    ? `/dashboard/count/${nextRoutine.routineId}/${primaryGroupId}` 
+                    : undefined
+            })
+
+            // 5. Restante dos Estados
             if (summaryRes.success) {
                 setUserPoints((summaryRes as any).totalPoints ?? 0)
                 setWeeklyPoints((summaryRes as any).weeklyPoints ?? 0)
@@ -108,7 +162,6 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
             if (focusRes.success) setWeeklyFocus((focusRes as any).data as WeeklyFocus)
             if (noticeRes.success) setNotices(noticeRes.data || [])
 
-            // Calcular Atrasos Globais (Painel de Alertas)
             if (routinesRes.data) {
                 const twoHoursAgo = Date.now() - (2 * 60 * 60 * 1000)
                 const late = (routinesRes.data as any[]).filter(s => 
@@ -117,45 +170,14 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                 setLateCount(late)
             }
 
-            // Alimentação do bloco de responsabilidade individual
-            // FIXME: No futuro, pendências devem ser filtradas por group_id do operador
-            setMyAreaStats({
-                name: currentAreaName,
-                pendingCount: areaPending,
-                delayCount: areaDelay,
-                nextActionLabel: areaPending > 0 ? 'Concluir contagem pendente' : 'Checklist de encerramento'
-            })
-
             if (isDemoMode) {
-                setHealthScore(84)
-                setRoutinesCount(2)
-                setLateCount(1)
-                setNotices([
-                    {
-                        id: 'demo-1',
-                        title: 'Reposição de Insumos: Alfaces',
-                        message: 'O estoque de alface está baixo no setor de saladas. Favor priorizar reposição na próxima hora.',
-                        type: 'item_em_falta',
-                        priority: 'importante',
-                        created_at: new Date().toISOString(),
-                        users: { name: 'Mestre da Brasa' }
-                    }
-                ])
-                
                 // Demo Force para "Sua Área Hoje"
-                setActiveSession({
-                    sessionId: 'demo-session',
-                    routineId: 'routine-1',
-                    groupId: 'group-1',
-                    routineName: 'Contagem de Estoque',
-                    groupName: 'Cozinha (Carnes)'
-                })
-
                 setMyAreaStats({
                     name: 'Cozinha (Carnes)',
                     pendingCount: 2,
                     delayCount: 1,
-                    nextActionLabel: 'Finalizar contagem de carnes'
+                    nextActionLabel: 'Finalizar contagem de carnes',
+                    nextActionUrl: '/dashboard/count/demo-routine/group-1'
                 })
             }
 
