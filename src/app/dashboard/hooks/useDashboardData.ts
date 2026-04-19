@@ -16,6 +16,27 @@ export interface ActiveSession {
     groupName: string;
 }
 
+export interface DashboardAction {
+    id: string;
+    label: string;
+    description: string;
+    type: 'count' | 'checklist' | 'loss' | 'other';
+    areaName: string;
+    status: 'pending' | 'overdue' | 'in_progress' | 'upcoming';
+    priority: 'high' | 'medium' | 'low';
+    url: string;
+    routineId?: string;
+    groupId?: string;
+    startedAt?: string;
+}
+
+export interface DashboardActions {
+    primary?: DashboardAction;
+    area?: DashboardAction;
+    overdue: DashboardAction[];
+    recommended: DashboardAction[];
+}
+
 export function useDashboardData(userId: string, isDemoMode: boolean) {
     const [routinesCount, setRoutinesCount] = useState<number>(0)
     const [userPoints, setUserPoints] = useState<number | null>(null)
@@ -40,6 +61,10 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
         nextActionLabel: string;
         nextActionUrl?: string;
     } | null>(null)
+    const [actions, setActions] = useState<DashboardActions>({
+        overdue: [],
+        recommended: []
+    })
 
     useEffect(() => {
         if (!userId && !isDemoMode) {
@@ -81,10 +106,10 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
             }
             setRoutinesCount(routinesRes.data?.length || 0)
 
-            // 3. Processamento de Sessões Ativas e Áreas
-            let currentAreaName = 'Cozinha' 
+            // 3. Processamento de Sessões e Áreas
+            let currentAreaName = 'Loja' 
             let primaryGroupId = userAreaRes?.data?.primary_group_id
-            let activeAreaDelay = 0
+            let activeAreaDelayCount = 0
 
             if (userAreaRes?.data?.groups) {
                 currentAreaName = (userAreaRes.data.groups as any).name
@@ -96,9 +121,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                 const twoHoursAgo = Date.now() - (2 * 60 * 60 * 1000)
                 
                 setCurrentGroupId(s.group_id)
-                // Se a sessão ativa for de outro grupo, priorizamos o nome da sessão no Hero, 
-                // mas a "Sua Área Hoje" continua sendo a primária.
-                activeAreaDelay = sessionStartTime < twoHoursAgo ? 1 : 0
+                activeAreaDelayCount = sessionStartTime < twoHoursAgo ? 1 : 0
 
                 setActiveSession({
                     sessionId: s.id,
@@ -112,46 +135,103 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                 setCurrentGroupId(undefined)
             }
 
-            // 4. Cálculo de Pendências Reais da Área
-            let areaPendingRoutines: any[] = []
-            if (primaryGroupId) {
-                // Busca rotinas que contêm este grupo
-                const { data: groupRoutines } = await supabase
-                    .from('routine_groups')
-                    .select('routine_id, routines:routine_id(name, routine_type)')
-                    .eq('group_id', primaryGroupId)
+            // 4. MOTOR DE AÇÕES (Dashboard Engine)
+            let allPotentialActions: DashboardAction[] = []
+            let areaPendingCount = 0
+            
+            // 4.1. Processar Rotinas Ativas (Global e Área)
+            if (routinesRes.data) {
+                const brDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
+                const startOfDayBR = `${brDate}T03:00:00Z`
 
-                if (groupRoutines) {
-                    // Para cada rotina, verifica se já foi finalizada HOJE para este grupo
-                    const brDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
-                    const startOfDayBR = `${brDate}T03:00:00Z`
+                // Buscar detalhes de grupos por rotina para saber o que está pendente de fato
+                const { data: allGroups } = await supabase.from('routine_groups').select('routine_id, group_id, groups:group_id(name)')
+                const { data: allSessionsToday } = await supabase
+                    .from('count_sessions')
+                    .select('routine_id, group_id, status, started_at')
+                    .gte('started_at', startOfDayBR)
 
-                    const { data: completedSessions } = await supabase
-                        .from('count_sessions')
-                        .select('routine_id')
-                        .eq('group_id', primaryGroupId)
-                        .eq('status', 'completed')
-                        .gte('started_at', startOfDayBR)
+                const sessionMap = new Map()
+                allSessionsToday?.forEach(s => {
+                    sessionMap.set(`${s.routine_id}-${s.group_id}`, s)
+                })
 
-                    const completedRoutineIds = new Set(completedSessions?.map(s => s.routine_id) || [])
-                    areaPendingRoutines = groupRoutines.filter(gr => !completedRoutineIds.has(gr.routine_id))
-                }
+                allGroups?.forEach(ag => {
+                    const session = sessionMap.get(`${ag.routine_id}-${ag.group_id}`)
+                    const routine = (routinesRes.data as any[]).find(r => r.id === ag.routine_id)
+                    if (!routine) return
+
+                    const isCompleted = session?.status === 'completed'
+                    const isInProgress = session?.status === 'in_progress'
+                    const isMyArea = ag.group_id === primaryGroupId
+                    const groupName = (ag.groups as any)?.name || 'Setor'
+
+                    if (!isCompleted) {
+                        const deathLine = Date.now() - (2 * 60 * 60 * 1000)
+                        const isOverdue = isInProgress && new Date(session.started_at).getTime() < deathLine
+                        
+                        const action: DashboardAction = {
+                            id: `${ag.routine_id}-${ag.group_id}`,
+                            label: isInProgress ? `Continuar ${routine.name}` : `Iniciar ${routine.name}`,
+                            description: `Setor: ${groupName}`,
+                            type: 'count',
+                            areaName: groupName,
+                            status: isInProgress ? (isOverdue ? 'overdue' : 'in_progress') : 'pending',
+                            priority: isOverdue ? 'high' : (isMyArea ? 'medium' : 'low'),
+                            url: `/dashboard/count/${ag.routine_id}/${ag.group_id}`,
+                            routineId: ag.routine_id,
+                            groupId: ag.group_id,
+                            startedAt: session?.started_at
+                        }
+                        
+                        allPotentialActions.push(action)
+                        if (isMyArea) areaPendingCount++
+                    }
+                })
             }
 
-            const nextRoutine = areaPendingRoutines[0]
-            setMyAreaStats({
-                name: currentAreaName,
-                pendingCount: areaPendingRoutines.length,
-                delayCount: activeAreaDelay,
-                nextActionLabel: nextRoutine 
-                    ? `Iniciar ${nextRoutine.routines.name}` 
-                    : 'Checklist de encerramento',
-                nextActionUrl: nextRoutine 
-                    ? `/dashboard/count/${nextRoutine.routineId}/${primaryGroupId}` 
-                    : undefined
+            // 4.2. Priorização Final
+            const overdue = allPotentialActions.filter(a => a.status === 'overdue')
+            const recommended = allPotentialActions
+                .filter(a => a.status !== 'in_progress' && a.status !== 'overdue')
+                .sort((a, b) => {
+                    // Prioridade 1: Minha Área
+                    if (a.groupId === primaryGroupId && b.groupId !== primaryGroupId) return -1
+                    if (a.groupId !== primaryGroupId && b.groupId === primaryGroupId) return 1
+                    return 0
+                })
+
+            // Ação Primária (Hero)
+            let primaryAction: DashboardAction | undefined
+            if (activeSession) {
+                primaryAction = allPotentialActions.find(a => a.id === `${activeSession.routineId}-${activeSession.groupId}`)
+            } else if (overdue.length > 0) {
+                primaryAction = overdue.find(a => a.groupId === primaryGroupId) || overdue[0]
+            } else if (recommended.length > 0) {
+                primaryAction = recommended.find(a => a.groupId === primaryGroupId) || recommended[0]
+            }
+
+            const areaAction = allPotentialActions.find(a => a.groupId === primaryGroupId && a.status !== 'in_progress')
+
+            setActions({
+                primary: primaryAction,
+                area: areaAction,
+                overdue: overdue,
+                recommended: recommended.slice(0, 4) // Mostrar top 4 na fila
             })
 
-            // 5. Restante dos Estados
+            // 5. Retrocompatibilidade (myAreaStats)
+            setMyAreaStats({
+                name: currentAreaName,
+                pendingCount: areaPendingCount,
+                delayCount: overdue.filter(a => a.groupId === primaryGroupId).length,
+                nextActionLabel: areaAction?.label || 'Tudo em dia',
+                nextActionUrl: areaAction?.url
+            })
+
+            setLateCount(overdue.length)
+
+            // 6. Restante dos Estados
             if (summaryRes.success) {
                 setUserPoints((summaryRes as any).totalPoints ?? 0)
                 setWeeklyPoints((summaryRes as any).weeklyPoints ?? 0)
@@ -162,16 +242,8 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
             if (focusRes.success) setWeeklyFocus((focusRes as any).data as WeeklyFocus)
             if (noticeRes.success) setNotices(noticeRes.data || [])
 
-            if (routinesRes.data) {
-                const twoHoursAgo = Date.now() - (2 * 60 * 60 * 1000)
-                const late = (routinesRes.data as any[]).filter(s => 
-                    s.status === 'in_progress' && new Date(s.started_at).getTime() < twoHoursAgo
-                ).length
-                setLateCount(late)
-            }
-
             if (isDemoMode) {
-                // Demo Force para "Sua Área Hoje"
+                // Demo Force
                 setMyAreaStats({
                     name: 'Cozinha (Carnes)',
                     pendingCount: 2,
@@ -182,7 +254,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
             }
 
             const endTime = performance.now()
-            console.log(`[PERF] Dashboard data loaded in ${(endTime - startTime).toFixed(2)}ms`)
+            console.log(`[PERF] Dashboard Engine loaded in ${(endTime - startTime).toFixed(2)}ms`)
             setLoadingData(false)
         }
         loadData()
@@ -205,6 +277,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
         notices,
         lateCount,
         myAreaStats,
+        actions,
         loadingData,
         setWeeklyFocus
     }

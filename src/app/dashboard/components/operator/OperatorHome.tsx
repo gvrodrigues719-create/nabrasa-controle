@@ -14,7 +14,7 @@ import { useState } from 'react'
 import HouseView from './HouseView'
 import ContinueRoutineCard from './ContinueRoutineCard'
 import MyAreaTodayCard from './MyAreaTodayCard'
-import { ActiveSession } from '../../hooks/useDashboardData'
+import { ActiveSession, DashboardActions } from '../../hooks/useDashboardData'
 
 
 interface OperatorHomeProps {
@@ -41,7 +41,9 @@ interface OperatorHomeProps {
         pendingCount: number;
         delayCount: number;
         nextActionLabel: string;
+        nextActionUrl?: string;
     } | null;
+    actions: DashboardActions;
     onViewGlobalClick: () => void;
 
     onReportLoss: () => void;
@@ -70,6 +72,7 @@ export default function OperatorHome({
     userId,
     activeSession,
     myAreaStats,
+    actions,
     onViewGlobalClick,
 
     onReportLoss,
@@ -91,15 +94,20 @@ export default function OperatorHome({
             <ExecutionBlock
                 routinesCount={routinesCount}
                 onReportLoss={onReportLoss}
+                recommendedActions={actions.recommended}
             />
 
             {/* 3.1 CONTINUIDADE — CONTINUAR DE ONDE PAREI (NOVO) */}
             <ContinueRoutineCard session={activeSession} />
 
             {/* 3.2 RESPONSABILIDADE — SUA ÁREA HOJE (NOVO) */}
-            <MyAreaTodayCard stats={myAreaStats} />
+            <MyAreaTodayCard 
+                stats={myAreaStats} 
+                primaryAction={actions.area}
+            />
 
             {/* 4. VISÃO DA CASA — MAPA OPERACIONAL */}
+...
             <HouseView />
 
             {/* 5. HERO — SAÚDE DA OPERAÇÃO (EFICIÊNCIA) */}

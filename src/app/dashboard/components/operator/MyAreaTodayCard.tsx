@@ -4,6 +4,8 @@ import React from 'react'
 import { MapPin, AlertCircle, ArrowRight, Clock, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 
+import { DashboardAction } from '../../hooks/useDashboardData'
+
 interface Props {
     stats: {
         name: string
@@ -12,12 +14,17 @@ interface Props {
         nextActionLabel: string
         nextActionUrl?: string
     } | null
+    primaryAction?: DashboardAction
 }
 
-export default function MyAreaTodayCard({ stats }: Props) {
+export default function MyAreaTodayCard({ stats, primaryAction }: Props) {
     if (!stats) return null
 
     const hasCriticalDelay = stats.delayCount > 0
+    
+    // Prioriza a ação vinda do motor, ou usa o fallback do stats (retrocompatibilidade)
+    const finalActionLabel = primaryAction?.label || stats.nextActionLabel
+    const finalActionUrl = primaryAction?.url || stats.nextActionUrl
 
     const ActionContent = () => (
         <div className="mt-2 p-5 rounded-3xl bg-[#1b1c1a] text-white flex items-center justify-between group cursor-pointer transition-all hover:bg-[#2a2b28]">
@@ -27,7 +34,7 @@ export default function MyAreaTodayCard({ stats }: Props) {
                 </div>
                 <div>
                     <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] leading-none mb-1 block">Próxima ação recomendada</span>
-                    <p className="text-[13px] font-black text-white leading-tight tracking-tight">{stats.nextActionLabel}</p>
+                    <p className="text-[13px] font-black text-white leading-tight tracking-tight">{finalActionLabel}</p>
                 </div>
             </div>
             <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
@@ -101,8 +108,8 @@ export default function MyAreaTodayCard({ stats }: Props) {
             </div>
 
             {/* Footer: Próxima Ação Direcionada */}
-            {stats.nextActionUrl ? (
-                <Link href={stats.nextActionUrl}>
+            {finalActionUrl ? (
+                <Link href={finalActionUrl}>
                     <ActionContent />
                 </Link>
             ) : (

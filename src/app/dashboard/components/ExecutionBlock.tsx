@@ -4,21 +4,51 @@ import React from 'react'
 import { ClipboardList, ListChecks, Zap, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 
+import { DashboardAction } from '../hooks/useDashboardData'
+
 interface Props {
     routinesCount: number
     onReportLoss: () => void
+    recommendedActions: DashboardAction[]
 }
 
-export default function ExecutionBlock({ routinesCount, onReportLoss }: Props) {
+export default function ExecutionBlock({ routinesCount, onReportLoss, recommendedActions }: Props) {
+    const topRecommended = recommendedActions[0]
+
     return (
         <section className="animate-in fade-in slide-in-from-bottom-3 duration-700 delay-150">
             <header className="flex items-center justify-between mb-3.5 px-1">
-                <p className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest">O que fazer agora</p>
-                <span className="flex h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                <p className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest">Ação Prioritária</p>
+                <Link href="/dashboard/routines" className="text-[10px] font-black text-[#B13A2B] uppercase tracking-tight flex items-center gap-1 group">
+                    Ver todas <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
             </header>
             
             <div className="space-y-3">
-                {/* PRIMARY ACTIONS: CONTAGEM & CHECKLIST */}
+                {/* DYNAMIC RECOMMENDATION */}
+                {topRecommended && (
+                    <Link 
+                        href={topRecommended.url}
+                        className="block relative overflow-hidden bg-white rounded-[2rem] p-5 border-2 border-[#1b1c1a]/5 flex items-center gap-5 active:scale-[0.98] transition-all group shadow-md"
+                    >
+                        <div className="relative w-14 h-14 rounded-2xl bg-[#1b1c1a] flex items-center justify-center text-white shrink-0 shadow-lg shadow-black/10">
+                            <Zap className="w-7 h-7 fill-amber-400 text-amber-400" />
+                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#B13A2B] rounded-full border-2 border-white animate-pulse" />
+                        </div>
+                        
+                        <div className="flex-1 min-w-0">
+                            <span className="text-[9px] font-black text-[#B13A2B] uppercase tracking-[0.2em] mb-1 block">Próxima na Fila</span>
+                            <h4 className="text-[15px] font-black text-[#1b1c1a] truncate leading-tight">{topRecommended.label}</h4>
+                            <p className="text-[10px] font-bold text-gray-400 mt-0.5">{topRecommended.description}</p>
+                        </div>
+                        
+                        <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-[#1b1c1a] group-hover:text-white transition-all">
+                            <ArrowRight className="w-5 h-5" />
+                        </div>
+                    </Link>
+                )}
+
+                {/* PRIMARY ACTIONS: CONTAGEM & CHECKLIST (Static Fallbacks) */}
                 <div className="grid grid-cols-2 gap-3">
                     {/* Contagem */}
                     <Link 
@@ -37,15 +67,8 @@ export default function ExecutionBlock({ routinesCount, onReportLoss }: Props) {
                         </div>
                         
                         <div className="space-y-0.5">
-                            <h4 className="text-sm font-black text-[#1b1c1a] tracking-tight">Contagem</h4>
-                            {routinesCount > 0 ? (
-                                <div className="flex items-center gap-1">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-[#B13A2B]" />
-                                    <p className="text-[10px] font-black text-[#B13A2B] uppercase tracking-tight">{routinesCount} pendente{routinesCount > 1 ? 's' : ''}</p>
-                                </div>
-                            ) : (
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Tudo em dia</p>
-                            )}
+                            <h4 className="text-sm font-black text-[#1b1c1a] tracking-tight">Todas Rotinas</h4>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">{routinesCount} disponível{routinesCount > 1 ? 's' : ''}</p>
                         </div>
                     </Link>
 
@@ -58,8 +81,8 @@ export default function ExecutionBlock({ routinesCount, onReportLoss }: Props) {
                             <ListChecks className="w-6 h-6" />
                         </div>
                         <div className="space-y-0.5">
-                            <h4 className="text-sm font-black text-[#1b1c1a] tracking-tight">Checklist</h4>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Manual Operacional</p>
+                            <h4 className="text-sm font-black text-[#1b1c1a] tracking-tight">Checklists</h4>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Manual e POPs</p>
                         </div>
                     </Link>
                 </div>
