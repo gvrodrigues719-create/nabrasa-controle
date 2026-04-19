@@ -83,34 +83,32 @@ export default function OperatorHome({
     const [isRaffleOpen, setIsRaffleOpen] = useState(false)
 
     return (
-        <div className="space-y-6">
-            {/* 1. MURAL — AVISOS DA CASA + ANIVERSARIANTES */}
-            <OperationalNoticeCard notices={notices} birthdays={birthdays} userId={userId} />
-
-            {/* 2. ALERTAS — ATRASOS CRÍTICOS */}
+        <div className="space-y-4 md:space-y-6 pb-20 md:pb-6">
+            {/* 1. ALERTAS — ATRASOS CRÍTICOS (CRÍTICO EM CIMA) */}
             <OperationalAlertBanner lateCount={lateCount} />
 
-            {/* 3. EXECUÇÃO — CHECKLISTS E ROTINAS */}
+            {/* 2. EXECUÇÃO — CHECKLISTS E ROTINAS (CORAÇÃO DA OPERAÇÃO) */}
             <ExecutionBlock
                 routinesCount={routinesCount}
                 onReportLoss={onReportLoss}
                 recommendedActions={actions.recommended}
             />
 
-            {/* 3.1 CONTINUIDADE — CONTINUAR DE ONDE PAREI (NOVO) */}
+            {/* 2.1 CONTINUIDADE — CONTINUAR DE ONDE PAREI */}
             <ContinueRoutineCard session={activeSession} />
 
-            {/* 3.2 RESPONSABILIDADE — SUA ÁREA HOJE (NOVO) */}
+            {/* 2.2 RESPONSABILIDADE — SUA ÁREA HOJE */}
             <MyAreaTodayCard 
                 stats={myAreaStats} 
                 primaryAction={actions.area}
             />
 
-            {/* 4. VISÃO DA CASA — MAPA OPERACIONAL */}
-...
-            <HouseView />
+            {/* 3. MURAL — AVISOS DA CASA (Mural como preview) */}
+            <div id="mural">
+                <OperationalNoticeCard notices={notices} birthdays={birthdays} userId={userId} />
+            </div>
 
-            {/* 5. HERO — SAÚDE DA OPERAÇÃO (EFICIÊNCIA) */}
+            {/* 4. HERO — SAÚDE DA OPERAÇÃO (EFICIÊNCIA) */}
             <OperationHeroCard
                 score={healthScore}
                 activeLeaks={activeLeaks}
@@ -124,7 +122,21 @@ export default function OperatorHome({
                 onUpdateFocus={onUpdateFocus}
             />
 
-            {/* 6. APOIO — IA (AJUDA DA OPERAÇÃO) */}
+            {/* 5. VISÃO DA CASA — MAPA OPERACIONAL */}
+            <HouseView />
+
+            {/* 6. PROGRESSO — MINHA SEMANA (RANKING) */}
+            <WeeklyProgressBar
+                weeklyPoints={weeklyPoints}
+                totalPoints={totalPoints}
+                rankPosition={rankPosition}
+                lastSealing={lastSealing}
+                topRanking={topRanking}
+                coinBalance={isDemoMode ? 120 : 0}
+                onOpenRewards={onOpenRewards}
+            />
+
+            {/* 7. APOIO — IA (AJUDA DA OPERAÇÃO) */}
             <button
                 onClick={onOpenAI}
                 className="w-full flex items-center gap-3 p-4 rounded-2xl bg-[#fffcf0] border border-[#fef3c7] shadow-sm active:scale-[0.98] transition-all text-left cursor-pointer group animate-in fade-in duration-700"
@@ -138,17 +150,6 @@ export default function OperatorHome({
                 </div>
                 <ArrowRight className="w-4 h-4 text-amber-200 group-hover:text-amber-500 transition-colors" />
             </button>
-
-            {/* 7. PROGRESSO — MINHA SEMANA (RANKING) */}
-            <WeeklyProgressBar
-                weeklyPoints={weeklyPoints}
-                totalPoints={totalPoints}
-                rankPosition={rankPosition}
-                lastSealing={lastSealing}
-                topRanking={topRanking}
-                coinBalance={isDemoMode ? 120 : 0}
-                onOpenRewards={onOpenRewards}
-            />
 
             <RaffleDrawer 
                 isOpen={isRaffleOpen} 

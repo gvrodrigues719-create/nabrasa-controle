@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { getActiveNoticesAction, getWeeklyBirthdaysAction } from '@/app/actions/communicationAction'
 import { Flame, Eye, Settings as SettingsIcon } from 'lucide-react'
+import BottomNav from './components/operator/BottomNav'
 
 // Hooks
 import { useDashboardIdentity } from './hooks/useDashboardIdentity'
@@ -94,15 +95,15 @@ function DashboardContent() {
             <div className="min-h-screen bg-[#F8F7F4] pb-10" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
 
             {/* HEADER UNIFICADO */}
-            <header className="px-5 pt-8 pb-3 bg-white border-b border-gray-100 mb-6 flex flex-col gap-5 shadow-sm sticky top-0 z-30">
+            <header className="px-5 pt-6 pb-2.5 bg-white border-b border-gray-100 mb-4 md:mb-6 flex flex-col gap-4 md:gap-5 shadow-sm sticky top-0 z-30 transition-all">
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-[#B13A2B] rounded-2xl flex items-center justify-center shadow-lg shadow-red-100">
-                            <Flame className="w-5 h-5 text-white" fill="currentColor" />
+                    <div className="flex items-center gap-2.5 md:gap-3">
+                        <div className="w-9 h-9 md:w-10 md:h-10 bg-[#B13A2B] rounded-2xl flex items-center justify-center shadow-lg shadow-red-100 shrink-0">
+                            <Flame className="w-4.5 h-4.5 md:w-5 md:h-5 text-white" fill="currentColor" />
                         </div>
                         <div>
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">NaBrasa Unit 1</p>
-                            <h1 className="text-lg font-black text-gray-900 tracking-tight leading-tight">
+                            <p className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-0.5 md:mb-1">NaBrasa Unit 1</p>
+                            <h1 className="text-base md:text-lg font-black text-gray-900 tracking-tight leading-tight">
                                 {getGreeting()}, {userName}
                             </h1>
                         </div>
@@ -110,11 +111,11 @@ function DashboardContent() {
 
                     <div className="flex items-center gap-2">
                         {isDemoMode && (
-                            <div className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <div className="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full hidden sm:flex items-center gap-1">
                                 <span className="text-[8px] font-black uppercase tracking-widest font-sans">Demo</span>
                             </div>
                         )}
-                        <div className="w-10 h-10 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center font-black text-[#B13A2B] text-sm">
+                        <div className="w-9 h-9 md:w-10 md:h-10 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center font-black text-[#B13A2B] text-xs md:text-sm shrink-0">
                             {(userName || 'v').charAt(0).toUpperCase()}
                         </div>
                     </div>
@@ -197,6 +198,9 @@ function DashboardContent() {
             <HouseHealthDrawer isOpen={isHealthDrawerOpen} onClose={() => setIsHealthDrawerOpen(false)} />
             <OperationAIDrawer isOpen={isAIDrawerOpen} onClose={() => setIsAIDrawerOpen(false)} userId={userId} userName={userName} />
             <RewardsDrawer isOpen={isRewardsDrawerOpen} onClose={() => setIsRewardsDrawerOpen(false)} initialBalance={isDemoMode ? 120 : 0} />
+            
+            {/* MOBILE NAVIGATION */}
+            <BottomNav />
             </div>
         </RewardProvider>
     )

@@ -90,18 +90,18 @@ export default function ExecutionBlock({ routinesCount, onReportLoss, recommende
                 {/* SECONDARY ACTION: RELATAR PERDA */}
                 <button 
                     onClick={onReportLoss}
-                    className="w-full bg-[#1b1c1a] rounded-[1.5rem] p-4 flex items-center justify-between active:scale-[0.98] transition-all group shadow-lg shadow-black/5"
+                    className="w-full bg-[#1b1c1a] rounded-[1.5rem] p-4.5 flex items-center justify-between active:scale-[0.98] transition-all group shadow-lg shadow-black/5 min-h-[64px]"
                 >
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
-                            <Zap className="w-4 h-4 fill-current" />
+                    <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+                            <Zap className="w-5 h-5 fill-current" />
                         </div>
                         <div className="text-left">
-                            <p className="text-xs font-black text-white tracking-tight">Relatar Perda</p>
-                            <p className="text-[9px] font-bold text-white/40 uppercase tracking-wider">Desperdício ou Avaria</p>
+                            <p className="text-[13px] font-black text-white tracking-tight">Relatar Perda</p>
+                            <p className="text-[9px] font-black text-white/40 uppercase tracking-[0.1em]">Desperdício ou Avaria</p>
                         </div>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-white/20 group-hover:text-white group-hover:translate-x-1 transition-all" />
+                    <ArrowRight className="w-5 h-5 text-white/20 group-hover:text-white group-hover:translate-x-1 transition-all" />
                 </button>
             </div>
         </section>
