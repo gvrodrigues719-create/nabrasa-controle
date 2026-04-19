@@ -24,6 +24,7 @@ import { Loader2, CheckCircle2, AlertCircle, Info, Camera, MessageSquare } from 
 import toast from 'react-hot-toast'
 
 import { useSearchParams } from 'next/navigation'
+import { getSafeReturnTo } from '@/lib/navigation'
 
 interface Props {
     template: ChecklistTemplate & { items: ChecklistTemplateItem[] }
@@ -34,7 +35,7 @@ interface Props {
 export default function ChecklistExecution({ template, sessionId, userId }: Props) {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const returnTo = searchParams.get('returnTo') || '/dashboard'
+    const returnTo = getSafeReturnTo(searchParams.get('returnTo'), '/dashboard')
     
     const [responses, setResponses] = useState<Record<string, any>>({})
     const [evidences, setEvidences] = useState<Record<string, string>>({})

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { getSafeReturnTo } from '@/lib/navigation'
+import { getSafeReturnTo, appendReturnTo } from '@/lib/navigation'
 import { ArrowLeft, ClipboardList, User, Target, CheckCircle2, LayoutDashboard, Trophy, Medal, Crown, Zap, ListChecks } from 'lucide-react'
 import { getActiveRoutinesAction } from '@/app/actions/routinesAction'
 import { supabase } from '@/lib/supabase/client'
@@ -269,7 +269,7 @@ export default function ActiveRoutinesPage() {
                                     </h3>
 
                                     <Link
-                                        href={`/dashboard/routines/${r.id}`}
+                                        href={appendReturnTo(`/dashboard/routines/${r.id}`, "/dashboard/routines")}
                                         className="flex items-center justify-center space-x-2 w-full text-white font-bold py-4 rounded-2xl text-base transition-all shadow-lg active:scale-95 border-b-4 border-black/20"
                                         style={{ background: 'linear-gradient(135deg, #1b1c1a 0%, #2d2e2b 100%)' }}
                                     >

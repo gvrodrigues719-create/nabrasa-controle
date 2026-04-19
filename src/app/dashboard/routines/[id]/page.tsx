@@ -86,7 +86,7 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
     const confirmNavigation = () => {
         if (!selectedGroup) return
         const targetUrl = `/dashboard/count/${routineId}/${selectedGroup.id}`
-        const finalUrl = returnTo ? appendReturnTo(targetUrl, returnTo) : targetUrl
+        const finalUrl = appendReturnTo(targetUrl, `/dashboard/routines/${routineId}`)
         router.push(finalUrl)
         setSelectedGroup(null)
     }

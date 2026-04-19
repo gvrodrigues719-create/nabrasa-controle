@@ -19,7 +19,7 @@ export default function ExecutionBlock({ routinesCount, onReportLoss, recommende
         <section className="animate-in fade-in slide-in-from-bottom-3 duration-700 delay-150">
             <header className="flex items-center justify-between mb-3.5 px-1">
                 <p className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest">Ação Prioritária</p>
-                <Link href="/dashboard/routines" className="text-[10px] font-black text-[#B13A2B] uppercase tracking-tight flex items-center gap-1 group">
+                <Link href="/dashboard/routines?returnTo=/dashboard" className="text-[10px] font-black text-[#B13A2B] uppercase tracking-tight flex items-center gap-1 group">
                     Ver todas <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
             </header>
@@ -52,7 +52,7 @@ export default function ExecutionBlock({ routinesCount, onReportLoss, recommende
                 <div className="grid grid-cols-2 gap-3">
                     {/* Contagem */}
                     <Link 
-                        href="/dashboard/routines"
+                        href="/dashboard/routines?returnTo=/dashboard"
                         className="relative overflow-hidden bg-white rounded-3xl p-5 border border-[#e9e8e5] flex flex-col items-start gap-4 active:scale-[0.96] transition-all group shadow-sm hover:shadow-md"
                     >
                         {/* Status Light */}
@@ -74,7 +74,7 @@ export default function ExecutionBlock({ routinesCount, onReportLoss, recommende
 
                     {/* Checklist */}
                     <Link 
-                        href="/dashboard/checklist"
+                        href="/dashboard/checklist?returnTo=/dashboard"
                         className="relative overflow-hidden bg-white rounded-3xl p-5 border border-[#e9e8e5] flex flex-col items-start gap-4 active:scale-[0.96] transition-all group shadow-sm hover:shadow-md"
                     >
                         <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-[#2b58b1] group-hover:text-white transition-all duration-500">

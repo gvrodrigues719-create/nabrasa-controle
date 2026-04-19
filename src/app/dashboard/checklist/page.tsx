@@ -2,8 +2,12 @@ import Link from 'next/link'
 import { ArrowLeft, ClipboardList, CheckCircle2, ChevronRight, Sunrise, Sunset, Calendar, ListChecks } from 'lucide-react'
 import { getMyPendingChecklistsAction } from '@/app/actions/checklistAction'
 import { getActiveOperator } from '@/app/actions/pinAuth'
+import { getSafeReturnTo, appendReturnTo } from '@/lib/navigation'
 
-export default async function ChecklistSelectionPage() {
+export default async function ChecklistSelectionPage({ searchParams }: { searchParams: Promise<{ returnTo?: string }> }) {
+    const { returnTo: rawReturnTo } = await searchParams
+    const returnTo = getSafeReturnTo(rawReturnTo, '/dashboard')
+    
     const operator = await getActiveOperator()
     const res = await getMyPendingChecklistsAction(operator?.userId || '')
     const sessions = res.success ? res.data || [] : []
@@ -35,7 +39,7 @@ export default async function ChecklistSelectionPage() {
             <header className="bg-white border-b border-[#e9e8e5] sticky top-0 z-10 px-4 py-4 md:px-6">
                 <div className="max-w-md mx-auto flex items-center gap-4">
                     <Link 
-                        href="/dashboard/routines" 
+                        href={returnTo} 
                         className="p-2.5 bg-white rounded-xl shadow-sm border border-[#e9e8e5] text-[#58413e] hover:bg-gray-50 active:scale-95 transition-all"
                     >
                         <ArrowLeft className="w-5 h-5" />
@@ -61,7 +65,7 @@ export default async function ChecklistSelectionPage() {
                             return (
                                     <Link 
                                     key={s.id}
-                                    href={`/dashboard/checklist/execute/${s.id}`}
+                                    href={appendReturnTo(`/dashboard/checklist/execute/${s.id}`, "/dashboard/checklist")}
                                     className="group bg-white rounded-[32px] p-6 shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-[#e9e8e5] hover:border-[#b13a2b]/30 transition-all active:scale-[0.98] block relative overflow-hidden"
                                 >
                                     <div className="flex justify-between items-start">

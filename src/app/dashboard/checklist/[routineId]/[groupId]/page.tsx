@@ -2,10 +2,19 @@ import { initChecklistSessionAction } from '@/app/actions/checklistAction'
 import { getAuthenticatedUserId } from '@/lib/auth-utils'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { getSafeReturnTo, appendReturnTo } from '@/lib/navigation'
 import { AlertCircle, ArrowLeft, Loader2 } from 'lucide-react'
 
-export default async function ChecklistLauncherPage({ params }: { params: Promise<{ routineId: string, groupId: string }> }) {
+export default async function ChecklistLauncherPage({ 
+    params, 
+    searchParams 
+}: { 
+    params: Promise<{ routineId: string, groupId: string }>,
+    searchParams: Promise<{ returnTo?: string }>
+}) {
     const { routineId, groupId } = await params
+    const { returnTo: rawReturnTo } = await searchParams
+    const backUrl = getSafeReturnTo(rawReturnTo, '/dashboard')
     const userId = await getAuthenticatedUserId()
 
     if (!userId) {
@@ -24,11 +33,11 @@ export default async function ChecklistLauncherPage({ params }: { params: Promis
                 <h1 className="text-xl font-black text-[#1b1c1a] uppercase">Bloqueado</h1>
                 <p className="text-sm text-[#8c716c] mt-2 mb-8 max-w-xs">{res.blocked}</p>
                 <Link 
-                    href="/dashboard" 
+                    href={backUrl} 
                     className="flex items-center gap-2 px-8 py-4 bg-[#1b1c1a] text-white rounded-2xl font-bold shadow-lg active:scale-95 transition-all"
                 >
                     <ArrowLeft className="w-4 h-4" />
-                    Voltar para Home
+                    Voltar
                 </Link>
             </div>
         )
@@ -42,11 +51,12 @@ export default async function ChecklistLauncherPage({ params }: { params: Promis
                 </div>
                 <h1 className="text-xl font-black text-[#1b1c1a] uppercase">Erro ao Iniciar</h1>
                 <p className="text-sm text-[#8c716c] mt-2 mb-8 max-w-xs">{res.error || 'Não foi possível carregar o checklist.'}</p>
-                <Link href="/dashboard" className="px-8 py-4 bg-[#b13a2b] text-white rounded-2xl font-bold">Voltar</Link>
+                <Link href={backUrl} className="px-8 py-4 bg-[#b13a2b] text-white rounded-2xl font-bold">Voltar</Link>
             </div>
         )
     }
 
     // Redireciona para a tela de execução real
-    redirect(`/dashboard/checklist/execute/${res.sessionId}`)
+    // Redireciona para a tela de execução real preservando o contexto
+    redirect(appendReturnTo(`/dashboard/checklist/execute/${res.sessionId}`, rawReturnTo))
 }

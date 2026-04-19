@@ -3,10 +3,19 @@ import { getAuthenticatedUserContext } from '@/lib/auth-utils'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ShieldAlert } from 'lucide-react'
+import { getSafeReturnTo } from '@/lib/navigation'
 import ChecklistExecution from '@/modules/checklist/components/ChecklistExecution'
 
-export default async function ChecklistSessionRunPage({ params }: { params: Promise<{ sessionId: string }> }) {
+export default async function ChecklistSessionRunPage({ 
+    params, 
+    searchParams 
+}: { 
+    params: Promise<{ sessionId: string }>,
+    searchParams: Promise<{ returnTo?: string }>
+}) {
     const { sessionId } = await params
+    const { returnTo: rawReturnTo } = await searchParams
+    const backUrl = getSafeReturnTo(rawReturnTo, '/dashboard/checklist')
 
     // 1. Validar Usuário/Operador Centralizado
     const context = await getAuthenticatedUserContext()
@@ -23,7 +32,7 @@ export default async function ChecklistSessionRunPage({ params }: { params: Prom
             <div className="flex flex-col items-center justify-center min-h-screen p-10 text-center">
                 <h1 className="text-xl font-black text-[#1b1c1a]">SESSÃO NÃO ENCONTRADA</h1>
                 <p className="text-sm text-[#8c716c] mt-2 mb-6">O link pode estar expirado ou a tarefa foi removida.</p>
-                <Link href="/dashboard/checklist" className="px-6 py-3 bg-[#1b1c1a] text-white rounded-2xl font-bold">Voltar</Link>
+                <Link href={backUrl} className="px-6 py-3 bg-[#1b1c1a] text-white rounded-2xl font-bold">Voltar</Link>
             </div>
         )
     }
@@ -43,7 +52,7 @@ export default async function ChecklistSessionRunPage({ params }: { params: Prom
                 <p className="text-sm text-red-600/80 mt-2 max-w-xs">
                     Você não tem permissão para executar este checklist atribuído a outro colaborador.
                 </p>
-                <Link href="/dashboard/checklist" className="mt-8 px-8 py-3 bg-red-700 text-white rounded-2xl font-bold">Voltar</Link>
+                <Link href={backUrl} className="mt-8 px-8 py-3 bg-red-700 text-white rounded-2xl font-bold">Voltar</Link>
             </div>
         )
     }
@@ -61,7 +70,7 @@ export default async function ChecklistSessionRunPage({ params }: { params: Prom
                 <div className="max-w-md mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Link 
-                            href="/dashboard/checklist" 
+                            href={backUrl} 
                             className="p-2.5 bg-white rounded-xl shadow-sm border border-[#e9e8e5] text-[#58413e] hover:bg-gray-50 active:scale-95 transition-all"
                         >
                             <ArrowLeft className="w-5 h-5" />
