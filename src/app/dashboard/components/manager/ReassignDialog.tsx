@@ -33,10 +33,11 @@ export default function ReassignDialog({ collaborator, onClose, onSuccess }: Rea
     const fetchEmployees = async () => {
         setIsLoading(true)
         const res = await getActiveEmployeesAction()
-        if (res.success) {
+        if (res.success && res.data) {
             // Filtrar o próprio usuário atual da lista de destino
             setEmployees(res.data.filter((e: any) => e.id !== collaborator?.id))
         }
+
         setIsLoading(false)
     }
 
