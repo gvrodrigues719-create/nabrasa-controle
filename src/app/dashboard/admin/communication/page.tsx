@@ -88,34 +88,34 @@ export default function AdminCommunicationPage() {
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <label className="block text-[10px] font-black text-[#c0b3b1] uppercase tracking-widest mb-1.5 ml-1">Título do Aviso</label>
+                                <label className="block text-[10px] font-black text-[#58413e] uppercase tracking-widest mb-1.5 ml-1">Título do Aviso</label>
                                 <input 
                                     value={title}
                                     onChange={e => setTitle(e.target.value)}
                                     placeholder="Ex: Falta de Alface Americana"
-                                    className="w-full h-12 px-4 rounded-2xl bg-[#F8F7F4] border-none text-sm font-bold focus:ring-2 focus:ring-[#B13A2B]/20 outline-none transition-all"
+                                    className="w-full h-12 px-4 rounded-2xl bg-[#F8F7F4] border-none text-sm font-bold text-[#1b1c1a] placeholder:text-[#a39491] focus:ring-2 focus:ring-[#B13A2B]/30 outline-none transition-all"
                                     required
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-black text-[#c0b3b1] uppercase tracking-widest mb-1.5 ml-1">Mensagem</label>
+                                <label className="block text-[10px] font-black text-[#58413e] uppercase tracking-widest mb-1.5 ml-1">Mensagem</label>
                                 <textarea 
                                     value={content}
                                     onChange={e => setContent(e.target.value)}
                                     placeholder="Descreva o que os operadores precisam saber..."
-                                    className="w-full p-4 rounded-2xl bg-[#F8F7F4] border-none text-sm font-medium focus:ring-2 focus:ring-[#B13A2B]/20 outline-none transition-all min-h-[100px]"
+                                    className="w-full p-4 rounded-2xl bg-[#F8F7F4] border-none text-sm font-medium text-[#1b1c1a] placeholder:text-[#a39491] focus:ring-2 focus:ring-[#B13A2B]/30 outline-none transition-all min-h-[100px]"
                                     required
                                 />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-[10px] font-black text-[#c0b3b1] uppercase tracking-widest mb-1.5 ml-1">Tipo</label>
+                                    <label className="block text-[10px] font-black text-[#58413e] uppercase tracking-widest mb-1.5 ml-1">Tipo</label>
                                     <select 
                                         value={type}
                                         onChange={e => setType(e.target.value)}
-                                        className="w-full h-12 px-4 rounded-2xl bg-[#F8F7F4] border-none text-sm font-bold focus:ring-2 focus:ring-[#B13A2B]/20 outline-none"
+                                        className="w-full h-12 px-4 rounded-2xl bg-[#F8F7F4] border-none text-sm font-bold text-[#1b1c1a] focus:ring-2 focus:ring-[#B13A2B]/30 outline-none"
                                     >
                                         <option value="operacional">Operacional</option>
                                         <option value="item_em_falta">Item em Falta</option>
@@ -124,11 +124,11 @@ export default function AdminCommunicationPage() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-black text-[#c0b3b1] uppercase tracking-widest mb-1.5 ml-1">Prioridade</label>
+                                    <label className="block text-[10px] font-black text-[#58413e] uppercase tracking-widest mb-1.5 ml-1">Prioridade</label>
                                     <select 
                                         value={priority}
                                         onChange={e => setPriority(e.target.value)}
-                                        className="w-full h-12 px-4 rounded-2xl bg-[#F8F7F4] border-none text-sm font-bold focus:ring-2 focus:ring-[#B13A2B]/20 outline-none"
+                                        className="w-full h-12 px-4 rounded-2xl bg-[#F8F7F4] border-none text-sm font-bold text-[#1b1c1a] focus:ring-2 focus:ring-[#B13A2B]/30 outline-none"
                                     >
                                         <option value="normal">⚪ Normal</option>
                                         <option value="importante">🟡 Importante</option>
@@ -138,16 +138,17 @@ export default function AdminCommunicationPage() {
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-black text-[#c0b3b1] uppercase tracking-widest mb-1.5 ml-1 flex items-center gap-1">
+                                <label className="block text-[10px] font-black text-[#58413e] uppercase tracking-widest mb-1.5 ml-1 flex items-center gap-1">
                                     <Calendar className="w-3 h-3" /> Exibir até (Opcional)
                                 </label>
                                 <input 
                                     type="date"
                                     value={validUntil}
                                     onChange={e => setValidUntil(e.target.value)}
-                                    className="w-full h-12 px-4 rounded-2xl bg-[#F8F7F4] border-none text-sm font-bold focus:ring-2 focus:ring-[#B13A2B]/20 outline-none"
+                                    className="w-full h-12 px-4 rounded-2xl bg-[#F8F7F4] border-none text-sm font-bold text-[#1b1c1a] focus:ring-2 focus:ring-[#B13A2B]/30 outline-none"
                                 />
                             </div>
+
 
                             <button 
                                 type="submit"
@@ -202,11 +203,26 @@ export default function AdminCommunicationPage() {
                                     <h4 className="text-sm font-black text-[#1b1c1a] mb-1">{notice.title}</h4>
                                     <p className="text-xs text-[#58413e] leading-relaxed line-clamp-3 mb-3">{notice.message}</p>
                                     
-                                    {notice.valid_until && (
-                                        <div className="flex items-center gap-1.5 text-[9px] font-bold text-[#c0b3b1] uppercase">
-                                            <Clock className="w-3 h-3" /> Expira em: {format(new Date(notice.valid_until), "dd/MM")}
+                                    <div className="flex items-center gap-4">
+                                        {notice.valid_until && (
+                                            <div className="flex items-center gap-1.5 text-[9px] font-bold text-[#c0b3b1] uppercase">
+                                                <Clock className="w-3 h-3" /> Expira em: {format(new Date(notice.valid_until), "dd/MM")}
+                                            </div>
+                                        )}
+                                        <div className="flex items-center gap-3 ml-auto">
+                                            {notice.reaction_count > 0 && (
+                                                <span className="flex items-center gap-1 text-[10px] font-black text-[#B13A2B]">
+                                                    <ThumbsUp className="w-3 h-3" /> {notice.reaction_count}
+                                                </span>
+                                            )}
+                                            {notice.response_count > 0 && (
+                                                <span className="flex items-center gap-1 text-[10px] font-black text-[#8c716c]">
+                                                    <MessageSquare className="w-3 h-3" /> {notice.response_count}
+                                                </span>
+                                            )}
                                         </div>
-                                    )}
+                                    </div>
+
                                 </div>
                             ))}
                         </div>

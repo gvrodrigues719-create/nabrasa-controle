@@ -29,7 +29,9 @@ interface OperatorHomeProps {
     notices?: any[];
     birthdays?: any[];
     lateCount?: number;
+    userId: string;
     onViewGlobalClick: () => void;
+
     onReportLoss: () => void;
     onOpenRewards: () => void;
     onOpenAI: () => void;
@@ -53,7 +55,9 @@ export default function OperatorHome({
     notices = [],
     birthdays = [],
     lateCount = 0,
+    userId,
     onViewGlobalClick,
+
     onReportLoss,
     onOpenRewards,
     onOpenAI,
@@ -64,7 +68,8 @@ export default function OperatorHome({
     return (
         <div className="space-y-6">
             {/* MURAL — AVISOS DA CASA + ANIVERSARIANTES */}
-            <OperationalNoticeCard notices={notices} birthdays={birthdays} />
+            <OperationalNoticeCard notices={notices} birthdays={birthdays} userId={userId} />
+
 
             {/* ALERTAS — ATRASOS CRÍTICOS */}
             <OperationalAlertBanner lateCount={lateCount} />

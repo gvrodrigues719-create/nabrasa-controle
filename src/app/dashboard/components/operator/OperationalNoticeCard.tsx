@@ -1,9 +1,11 @@
 'use client'
 
 import React, { useState } from 'react'
-import { AlertOctagon, Info, Bell, ChevronRight, X, Cake, Gift, Sparkles } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
+import { AlertOctagon, Info, Bell, ChevronRight, X, Cake, Gift, Sparkles, MessageSquare, Send, ThumbsUp, CheckCircle, Eye, HighTone, Flame } from 'lucide-react'
+import { formatDistanceToNow, format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { toggleNoticeReactionAction, addNoticeResponseAction, getNoticeInteractionsAction } from '@/app/actions/communicationAction'
+
 
 interface Notice {
     id: string
@@ -13,7 +15,11 @@ interface Notice {
     priority: 'normal' | 'importante' | 'urgente'
     created_at: string
     users?: { name: string }
+    reaction_count?: number
+    response_count?: number
+    reaction_summary?: Record<string, number>
 }
+
 
 interface Birthday {
     id: string
@@ -25,13 +31,58 @@ interface Birthday {
 interface Props {
     notices: Notice[]
     birthdays?: Birthday[]
+    userId: string
 }
 
-export default function OperationalNoticeCard({ notices, birthdays = [] }: Props) {
+
+export default function OperationalNoticeCard({ notices, birthdays = [], userId }: Props) {
+
     const [isBirthdayDrawerOpen, setIsBirthdayDrawerOpen] = useState(false)
-    const [isNoticesListOpen, setIsNoticesListOpen] = useState(false)
+    const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null)
+    const [interactions, setInteractions] = useState<{reactions: any[], responses: any[]}>({ reactions: [], responses: [] })
+    const [isLoadingInteractions, setIsLoadingInteractions] = useState(false)
+    const [responseText, setResponseText] = useState('')
+    const [isSendingResponse, setIsSendingResponse] = useState(false)
+
 
     if ((!notices || notices.length === 0) && (!birthdays || birthdays.length === 0)) return null
+
+    const handleOpenNotice = async (notice: Notice) => {
+        setSelectedNotice(notice)
+        setIsLoadingInteractions(true)
+        const res = await getNoticeInteractionsAction(notice.id)
+        if (res.success) {
+            setInteractions(res.data)
+        }
+        setIsLoadingInteractions(false)
+    }
+
+    const handleToggleReaction = async (emoji: string) => {
+        if (!selectedNotice) return
+        
+        // Optimistic UI could be added here, but let's keep it simple first
+        const res = await toggleNoticeReactionAction(selectedNotice.id, emoji)
+        if (res.success) {
+            // Refresh interactions
+            const updated = await getNoticeInteractionsAction(selectedNotice.id)
+            if (updated.success) setInteractions(updated.data)
+        }
+    }
+
+    const handleSendResponse = async () => {
+        if (!selectedNotice || !responseText || isSendingResponse) return
+        
+        setIsSendingResponse(true)
+        const res = await addNoticeResponseAction(selectedNotice.id, responseText)
+        if (res.success) {
+            setResponseText('')
+            // Refresh interactions
+            const updated = await getNoticeInteractionsAction(selectedNotice.id)
+            if (updated.success) setInteractions(updated.data)
+        }
+        setIsSendingResponse(false)
+    }
+
 
     const monthNames = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
     
@@ -136,7 +187,8 @@ export default function OperationalNoticeCard({ notices, birthdays = [] }: Props
                         return (
                             <div 
                                 key={notice.id} 
-                                className={`flex-shrink-0 ${notices.length > 1 ? 'w-[85vw]' : 'w-full'} snap-center relative overflow-hidden rounded-[2.2rem] border border-[#e9e8e5] shadow-sm ${style.bg} ${style.text}`}
+                                onClick={() => handleOpenNotice(notice)}
+                                className={`flex-shrink-0 ${notices.length > 1 ? 'w-[85vw]' : 'w-full'} snap-center relative overflow-hidden rounded-[2.2rem] border border-[#e9e8e5] shadow-sm ${style.bg} ${style.text} cursor-pointer active:scale-[0.98] transition-all`}
                             >
                                 <div className="p-5 flex gap-4 min-h-[120px]">
                                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${notice.priority === 'urgente' ? 'bg-white/10' : 'bg-[#F8F7F4]'}`}>
@@ -146,10 +198,23 @@ export default function OperationalNoticeCard({ notices, birthdays = [] }: Props
                                     </div>
 
                                     <div className="flex-1 space-y-1">
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center justify-between">
                                             <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${notice.priority === 'urgente' ? 'bg-white/20' : 'bg-black/5'}`}>
                                                 {notice.priority} • {notice.type.replace('_', ' ')}
                                             </span>
+                                            
+                                            <div className="flex items-center gap-2">
+                                                {notice.reaction_count && notice.reaction_count > 0 ? (
+                                                    <span className="flex items-center gap-1 text-[9px] font-black opacity-60">
+                                                        <ThumbsUp className="w-2.5 h-2.5" /> {notice.reaction_count}
+                                                    </span>
+                                                ) : null}
+                                                {notice.response_count && notice.response_count > 0 ? (
+                                                    <span className="flex items-center gap-1 text-[9px] font-black opacity-60">
+                                                        <MessageSquare className="w-2.5 h-2.5" /> {notice.response_count}
+                                                    </span>
+                                                ) : null}
+                                            </div>
                                         </div>
                                         <h4 className="text-sm font-black leading-tight line-clamp-1">{notice.title}</h4>
                                         <p className="text-xs leading-tight opacity-90 line-clamp-2">
@@ -166,6 +231,7 @@ export default function OperationalNoticeCard({ notices, birthdays = [] }: Props
                         )
                     })}
                 </div>
+
             </div>
         )
     }
@@ -217,6 +283,118 @@ export default function OperationalNoticeCard({ notices, birthdays = [] }: Props
                     </div>
                 </div>
             )}
+
+            {/* NOTICE DETAIL DRAWER */}
+            {selectedNotice && (
+                <div className="fixed inset-0 z-[100] flex justify-end">
+                    <div className="absolute inset-0 bg-[#1b1c1a]/40 backdrop-blur-sm transition-opacity" onClick={() => setSelectedNotice(null)} />
+                    <div className="relative w-full md:w-[480px] h-full bg-[#fcfcfc] shadow-2xl flex flex-col md:rounded-l-[40px] overflow-hidden animate-in slide-in-from-right duration-300">
+                        {/* HEADER */}
+                        <header className={`p-8 pb-6 ${
+                            selectedNotice.priority === 'urgente' ? 'bg-[#B13A2B] text-white' : 
+                            selectedNotice.priority === 'importante' ? 'bg-amber-100 text-amber-900' : 'bg-white text-[#1b1c1a]'
+                        } relative shrink-0`}>
+                            <button onClick={() => setSelectedNotice(null)} className="absolute top-6 right-6 p-2 bg-black/5 hover:bg-black/10 rounded-full transition-colors"><X className="w-5 h-5" /></button>
+                            
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${
+                                    selectedNotice.priority === 'urgente' ? 'bg-white/20 text-white' : 'bg-black/5'
+                                }`}>
+                                   {selectedNotice.priority} • {selectedNotice.type.replace('_', ' ')}
+                                </span>
+                            </div>
+                            <h2 className="text-2xl font-black tracking-tight leading-tight mb-2">{selectedNotice.title}</h2>
+                            <div className="flex items-center gap-2 opacity-60 text-[10px] font-bold uppercase tracking-widest">
+                                <Bell className="w-3.5 h-3.5" /> Postado em {format(new Date(selectedNotice.created_at), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                            </div>
+                        </header>
+
+                        {/* CONTENT */}
+                        <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                            <div>
+                                <h3 className="text-[10px] font-black text-[#c0b3b1] uppercase tracking-[0.2em] mb-4">Mensagem Completa</h3>
+                                <p className="text-base text-[#1b1c1a] leading-relaxed font-medium">
+                                    {selectedNotice.message}
+                                </p>
+                            </div>
+
+                            {/* REAÇÕES */}
+                            <div>
+                                <h3 className="text-[10px] font-black text-[#c0b3b1] uppercase tracking-[0.2em] mb-4">Reações Rápidas</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {['👍', '✅', '👀', '🙌', '🔥'].map(emoji => {
+                                        const count = interactions.reactions.filter(r => r.emoji === emoji).length;
+                                        const hasReacted = interactions.reactions.some(r => r.emoji === emoji && r.user_id === userId);
+                                        return (
+
+                                            <button 
+                                                key={emoji}
+                                                onClick={() => handleToggleReaction(emoji)}
+                                                className={`flex items-center gap-1.5 px-4 py-2.5 rounded-2xl border transition-all ${
+                                                    hasReacted ? 'bg-[#B13A2B] border-[#B13A2B] text-white' : 'bg-white border-[#e9e8e5] text-[#1b1c1a] hover:border-[#B13A2B]/30 shadow-sm'
+                                                }`}
+                                            >
+                                                <span className="text-lg">{emoji}</span>
+                                                {count > 0 && <span className="text-[11px] font-black">{count}</span>}
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* THREAD DE RESPOSTAS */}
+                            <div>
+                                <h3 className="text-[10px] font-black text-[#c0b3b1] uppercase tracking-[0.2em] mb-4 flex items-center justify-between">
+                                    <span>Respostas e Retornos</span>
+                                    <span className="bg-[#f5f4f1] px-2 py-0.5 rounded-full text-[10px] text-[#8c716c]">{interactions.responses.length}</span>
+                                </h3>
+
+                                <div className="space-y-4">
+                                    {isLoadingInteractions ? (
+                                        [1, 2].map(i => <div key={i} className="h-16 bg-gray-50 rounded-2xl animate-pulse" />)
+                                    ) : interactions.responses.length === 0 ? (
+                                        <div className="p-8 bg-[#f5f4f1] rounded-[2rem] text-center border border-dashed border-[#e9e8e5]">
+                                            <MessageSquare className="w-8 h-8 text-[#c0b3b1] mx-auto mb-2" />
+                                            <p className="text-xs font-bold text-[#8c716c]">Nenhuma resposta ainda.</p>
+                                        </div>
+                                    ) : (
+                                        interactions.responses.map(res => (
+                                            <div key={res.id} className={`p-4 rounded-3xl border ${res.users?.role === 'admin' || res.users?.role === 'manager' ? 'bg-indigo-50 border-indigo-100' : 'bg-white border-[#e9e8e5] shadow-sm'}`}>
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <span className="text-[11px] font-black text-[#1b1c1a]">{res.users?.name || 'Operador'}</span>
+                                                    <span className="text-[9px] font-bold text-[#c0b3b1]">{formatDistanceToNow(new Date(res.created_at), { addSuffix: true, locale: ptBR })}</span>
+                                                </div>
+                                                <p className="text-sm font-medium text-[#58413e]">{res.message}</p>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* INPUT FOOTER */}
+                        <div className="p-6 bg-white border-t border-[#e9e8e5]">
+                            <div className="flex gap-2">
+                                <input 
+                                    value={responseText}
+                                    onChange={e => setResponseText(e.target.value)}
+                                    placeholder="Escrever uma resposta..."
+                                    className="flex-1 h-12 px-4 rounded-2xl bg-[#f5f4f1] border-none text-sm font-bold placeholder:text-[#c0b3b1] focus:ring-2 focus:ring-[#B13A2B]/20 outline-none transition-all"
+                                    onKeyDown={e => e.key === 'Enter' && handleSendResponse()}
+                                />
+                                <button 
+                                    onClick={handleSendResponse}
+                                    disabled={!responseText || isSendingResponse}
+                                    className="w-12 h-12 rounded-2xl bg-[#B13A2B] text-white flex items-center justify-center shadow-lg shadow-red-100 hover:scale-110 active:scale-95 transition-all disabled:opacity-30 disabled:scale-100"
+                                >
+                                    {isSendingResponse ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-5 h-5" />}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
+
     )
 }

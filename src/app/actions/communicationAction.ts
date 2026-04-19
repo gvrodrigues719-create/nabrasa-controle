@@ -23,19 +23,37 @@ export async function getActiveNoticesAction() {
         
         const { data, error } = await supabase
             .from('operational_notices')
-            .select('*, users!operational_notices_created_by_fkey(name)')
+            .select(`
+                *, 
+                users!operational_notices_created_by_fkey(name),
+                notice_reactions(emoji, user_id),
+                notice_responses(id)
+            `)
             .or(`valid_until.is.null,valid_until.gt.${now}`)
             .order('priority', { ascending: false }) // Urgente > Importante > Normal
             .order('created_at', { ascending: false })
 
         if (error) throw error
 
-        return { success: true, data }
+        // Mapear p/ facilitar no front: adicionar contagens
+        const mappedData = data.map(n => ({
+            ...n,
+            reaction_count: n.notice_reactions?.length || 0,
+            response_count: n.notice_responses?.length || 0,
+            // Agrupar reações por emoji p/ sumário rápido se necessário
+            reaction_summary: (n.notice_reactions || []).reduce((acc: any, r: any) => {
+                acc[r.emoji] = (acc[r.emoji] || 0) + 1
+                return acc
+            }, {})
+        }))
+
+        return { success: true, data: mappedData }
     } catch (err: any) {
         console.error('[CommunicationAction] Erro ao buscar avisos:', err.message)
         return { success: false, error: err.message }
     }
 }
+
 
 /**
  * Adiciona um comentário contextual a uma tarefa/sessão/rotina
@@ -238,3 +256,117 @@ export async function deleteNoticeAction(id: string) {
         return { success: false, error: err.message }
     }
 }
+
+/**
+ * Adiciona ou remove uma reação a um aviso
+ */
+export async function toggleNoticeReactionAction(noticeId: string, emoji: string) {
+    try {
+        const authId = await getAuthenticatedUserId()
+        if (!authId) throw new Error('Não autenticado')
+
+        const supabase = getServiceSupabase()
+        if (!supabase) throw new Error('Database indisponível')
+
+        // Verificar se já existe
+        const { data: existing } = await supabase
+            .from('notice_reactions')
+            .select('id')
+            .eq('notice_id', noticeId)
+            .eq('user_id', authId)
+            .eq('emoji', emoji)
+            .single()
+
+        if (existing) {
+            // Remover
+            const { error } = await supabase
+                .from('notice_reactions')
+                .delete()
+                .eq('id', existing.id)
+            if (error) throw error
+        } else {
+            // Adicionar
+            const { error } = await supabase
+                .from('notice_reactions')
+                .insert([{
+                    notice_id: noticeId,
+                    user_id: authId,
+                    emoji: emoji
+                }])
+            if (error) throw error
+        }
+
+        revalidatePath('/dashboard')
+        return { success: true }
+    } catch (err: any) {
+        console.error('[CommunicationAction] Erro ao alternar reação:', err.message)
+        return { success: false, error: err.message }
+    }
+}
+
+/**
+ * Adiciona uma resposta a um aviso
+ */
+export async function addNoticeResponseAction(noticeId: string, message: string) {
+    try {
+        const authId = await getAuthenticatedUserId()
+        if (!authId) throw new Error('Não autenticado')
+
+        const supabase = getServiceSupabase()
+        if (!supabase) throw new Error('Database indisponível')
+
+        const { error } = await supabase
+            .from('notice_responses')
+            .insert([{
+                notice_id: noticeId,
+                user_id: authId,
+                message: message
+            }])
+
+        if (error) throw error
+
+        revalidatePath('/dashboard')
+        return { success: true }
+    } catch (err: any) {
+        console.error('[CommunicationAction] Erro ao adicionar resposta:', err.message)
+        return { success: false, error: err.message }
+    }
+}
+
+/**
+ * Busca detalhes de interação (reações e respostas) de um aviso
+ */
+export async function getNoticeInteractionsAction(noticeId: string) {
+    try {
+        const supabase = getServiceSupabase()
+        if (!supabase) throw new Error('Database indisponível')
+
+        // Reações
+        const { data: reactions, error: rError } = await supabase
+            .from('notice_reactions')
+            .select('emoji, user_id, users(name)')
+            .eq('notice_id', noticeId)
+
+        if (rError) throw rError
+
+        // Respostas
+        const { data: responses, error: resError } = await supabase
+            .from('notice_responses')
+            .select('*, users(name, role)')
+            .eq('notice_id', noticeId)
+            .order('created_at', { ascending: true })
+
+        if (resError) throw resError
+
+        return { 
+            success: true, 
+            data: {
+                reactions: reactions || [],
+                responses: responses || []
+            }
+        }
+    } catch (err: any) {
+        return { success: false, error: err.message }
+    }
+}
+

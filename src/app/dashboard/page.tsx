@@ -172,7 +172,9 @@ function DashboardContent() {
                         notices={notices}
                         birthdays={birthdays}
                         lateCount={lateCount}
+                        userId={userId}
                         onViewGlobalClick={() => setIsHealthDrawerOpen(true)}
+
                         onReportLoss={() => setIsLossDrawerOpen(true)}
                         onOpenRewards={() => setIsRewardsDrawerOpen(true)}
                         onOpenAI={() => setIsAIDrawerOpen(true)}
