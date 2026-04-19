@@ -147,179 +147,199 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
     const sortedBirthdays = getSortedBirthdays()
     const primaryBirthday = sortedBirthdays[0]
 
-    // ────────────── RENDERIZAÇÃO: ANIVERSÁRIOS (MURAL) ──────────────
-    const renderBirthdaySection = () => {
-        if (!primaryBirthday) return null
-        const [dayStr, monthStr] = primaryBirthday.date.split('/')
-        const monthLabel = monthNames[parseInt(monthStr) - 1]
+    // ────────────── LÓGICA DE PRIORIZAÇÃO ──────────────
+    const urgentNotices = notices.filter(n => n.priority === 'urgente')
+    const generalNotices = notices.filter(n => n.priority !== 'urgente')
+
+    const priorityStyles = {
+        urgente: { bg: 'bg-[#B13A2B]', text: 'text-white', icon: <AlertOctagon className="w-5 h-5" /> },
+        importante: { bg: 'bg-amber-50', text: 'text-amber-900', icon: <Info className="w-5 h-5" /> },
+        normal: { bg: 'bg-white', text: 'text-[#1b1c1a]', icon: <Bell className="w-5 h-5" /> }
+    }
+
+    // ────────────── RENDERIZAÇÃO: CAMADA 1 - URGENTES ──────────────
+    const renderUrgentLayer = () => {
+        if (urgentNotices.length === 0) return null
 
         return (
-            <div 
-                onClick={() => setIsBirthdayDrawerOpen(true)}
-                className="relative overflow-hidden rounded-3xl border border-[#e9e8e5] transition-all duration-300 bg-white text-[#1b1c1a] active:scale-[0.98] cursor-pointer group"
-            >
-                <div className="p-4 flex items-center gap-4">
-                    <div className="flex flex-col items-center justify-center w-12 h-14 bg-[#B13A2B] rounded-xl shadow-md shadow-red-50 shrink-0">
-                        <span className="text-[8px] font-black text-white/80 uppercase mb-0.5 tracking-widest">{monthLabel}</span>
-                        <span className="text-xl font-black text-white leading-none">{dayStr}</span>
-                    </div>
+            <div className="space-y-3">
+                {urgentNotices.map(notice => (
+                    <div 
+                        key={notice.id}
+                        onPointerDown={() => handlePressStart(notice.id)}
+                        onPointerUp={handlePressEnd}
+                        onPointerLeave={handlePressEnd}
+                        onClick={() => !longPressNoticeId && handleOpenNotice(notice)}
+                        className="relative overflow-hidden rounded-[2rem] border border-[#B13A2B] bg-[#B13A2B] text-white p-5 cursor-pointer active:scale-[0.98] transition-all shadow-lg shadow-red-100"
+                    >
+                        {/* QUICK REACTION MENU */}
+                        {longPressNoticeId === notice.id && renderQuickReactionMenu(notice.id)}
 
-                    <div className="flex-1 space-y-1">
-                         <span className="inline-flex text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-600 items-center gap-1">
-                            <Sparkles className="w-2.5 h-2.5" />
-                            ANIVERSÁRIO
-                        </span>
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-indigo-50 border-2 border-white shadow-sm overflow-hidden flex items-center justify-center shrink-0">
-                                {primaryBirthday.avatarUrl ? (
-                                    <img src={primaryBirthday.avatarUrl} className="w-full h-full object-cover" alt="Avatar" />
-                                ) : (
-                                    <Cake className="w-5 h-5 text-indigo-300" />
-                                )}
+                        <div className="flex gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
+                                <AlertOctagon className="w-6 h-6 text-white" />
                             </div>
-                            <div className="leading-tight">
-                                <h4 className="text-sm font-black tracking-tight">{primaryBirthday.name}</h4>
-                                <p className="text-[9px] text-[#8c716c] font-bold uppercase tracking-wide">
-                                    {birthdays.length > 1 ? `🧑‍🤝‍🧑 +${birthdays.length - 1} na semana` : 'Parabéns!'}
-                                </p>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-white/20 px-2 py-0.5 rounded-md">
+                                        Critico • {notice.type.replace('_', ' ')}
+                                    </span>
+                                    {renderInteractionSummary(notice)}
+                                </div>
+                                <h4 className="text-sm font-black leading-tight mb-1">{notice.title}</h4>
+                                <p className="text-xs opacity-90 line-clamp-2 leading-relaxed">{notice.message}</p>
                             </div>
                         </div>
                     </div>
-                    <ChevronRight className="w-4 h-4 opacity-20" />
-                </div>
+                ))}
             </div>
         )
     }
 
-
-    // ────────────── RENDERIZAÇÃO: AVISOS (QUADRO) ──────────────
-    const renderNoticesSection = () => {
-        if (!notices || notices.length === 0) return null
-
-        const priorityStyles = {
-            urgente: { bg: 'bg-[#B13A2B]', text: 'text-white', icon: <AlertOctagon className="w-5 h-5" /> },
-            importante: { bg: 'bg-amber-100', text: 'text-amber-900', icon: <Info className="w-5 h-5" /> },
-            normal: { bg: 'bg-white', text: 'text-[#1b1c1a]', icon: <Bell className="w-5 h-5" /> }
-        }
+    // ────────────── RENDERIZAÇÃO: CAMADA 2 - GERAIS (CARROSSEL) ──────────────
+    const renderGeneralLayer = () => {
+        if (generalNotices.length === 0) return null
 
         return (
-            <div className="space-y-2">
-                <div className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-3 pb-2">
-
-                    {notices.map((notice, idx) => {
+            <div className="space-y-3">
+                {urgentNotices.length > 0 && (
+                     <p className="text-[9px] font-black text-[#c0b3b1] uppercase tracking-[0.2em] px-1">Comunicados Gerais</p>
+                )}
+                <div className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-3 pb-2 pt-1 px-0.5">
+                    {generalNotices.map((notice, idx) => {
                         const style = priorityStyles[notice.priority] || priorityStyles.normal
                         return (
                             <div 
-                                key={notice.id} 
+                                key={notice.id}
                                 onPointerDown={() => handlePressStart(notice.id)}
                                 onPointerUp={handlePressEnd}
                                 onPointerLeave={handlePressEnd}
-                                onContextMenu={(e) => e.preventDefault()}
                                 onClick={() => !longPressNoticeId && handleOpenNotice(notice)}
-                                className={`flex-shrink-0 ${notices.length > 1 ? 'w-[85vw]' : 'w-full'} snap-center relative overflow-hidden rounded-3xl border border-[#e9e8e5] ${style.bg} ${style.text} cursor-pointer active:scale-[0.98] transition-all select-none`}
+                                className={`flex-shrink-0 ${generalNotices.length > 1 ? 'w-[85vw]' : 'w-full'} snap-center relative overflow-hidden rounded-[2rem] border border-gray-100 ${style.bg} ${style.text} p-5 cursor-pointer active:scale-[0.98] transition-all shadow-sm`}
                             >
-
-
-                                {/* QUICK REACTION MENU (WhatsApp Style) */}
-                                {longPressNoticeId === notice.id && (
-                                    <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-md flex items-center justify-center animate-in fade-in zoom-in duration-200">
-                                        <div className="flex gap-2 p-2 bg-white rounded-3xl shadow-xl border border-gray-100">
-                                            {['👍', '✅', '👀', '🙌', '🔥'].map(emoji => (
-                                                <button 
-                                                    key={emoji}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleQuickReaction(notice.id, emoji);
-                                                    }}
-                                                    className="w-10 h-10 flex items-center justify-center text-xl hover:bg-gray-100 rounded-full transition-colors active:scale-125"
-                                                >
-                                                    {emoji}
-                                                </button>
-                                            ))}
-                                            <button 
-                                                onClick={(e) => { e.stopPropagation(); setLongPressNoticeId(null); }}
-                                                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:bg-gray-100 rounded-full text-xs"
-                                            >
-                                                <X className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="p-5 flex gap-4 min-h-[120px]">
-
-                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${notice.priority === 'urgente' ? 'bg-white/10' : 'bg-[#F8F7F4]'}`}>
-                                        <div className={notice.priority === 'urgente' ? 'text-white' : 'text-[#8c716c]'}>
+                                {longPressNoticeId === notice.id && renderQuickReactionMenu(notice.id)}
+                                
+                                <div className="flex gap-4">
+                                    <div className="w-11 h-11 rounded-2xl bg-[#F8F7F4] flex items-center justify-center shrink-0">
+                                        <div className="text-[#8c716c]">
                                             {style.icon}
                                         </div>
                                     </div>
-
-                                    <div className="flex-1 space-y-1">
-                                        <div className="flex items-center justify-between">
-                                            <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md ${notice.priority === 'urgente' ? 'bg-white/20' : 'bg-black/5'}`}>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="text-[8px] font-black uppercase tracking-widest bg-black/5 px-2 py-0.5 rounded-md">
                                                 {notice.priority} • {notice.type.replace('_', ' ')}
                                             </span>
-                                            
-                                            <div className="flex items-center gap-2">
-                                                {notice.reaction_summary && Object.keys(notice.reaction_summary).length > 0 ? (
-                                                    <div className="flex items-center -space-x-1 overflow-hidden">
-                                                        {Object.keys(notice.reaction_summary).slice(0, 3).map(e => (
-                                                            <span key={e} className="text-[10px] filter drop-shadow-sm">{e}</span>
-                                                        ))}
-                                                        {notice.reaction_count && notice.reaction_count > 0 && (
-                                                            <span className="ml-1.5 text-[9px] font-black opacity-60">{notice.reaction_count}</span>
-                                                        )}
-                                                    </div>
-                                                ) : null}
-                                                {notice.response_count && notice.response_count > 0 ? (
-                                                    <span className="flex items-center gap-1 text-[9px] font-black opacity-60">
-                                                        <MessageSquare className="w-2.5 h-2.5" /> {notice.response_count}
-                                                    </span>
-                                                ) : null}
-                                            </div>
-
+                                            {renderInteractionSummary(notice)}
                                         </div>
-                                        <h4 className="text-sm font-black leading-tight line-clamp-1">{notice.title}</h4>
-                                        <p className="text-xs leading-tight opacity-90 line-clamp-2">
-                                            {notice.message}
-                                        </p>
+                                        <h4 className="text-sm font-black leading-tight mb-1 truncate">{notice.title}</h4>
+                                        <p className="text-xs opacity-70 line-clamp-1">{notice.message}</p>
                                     </div>
                                 </div>
-                                {notices.length > 1 && (
-                                    <div className="absolute bottom-2 right-5 text-[8px] font-black opacity-30 uppercase tracking-widest">
-                                        {idx + 1} / {notices.length}
-                                    </div>
-                                )}
                             </div>
                         )
                     })}
                 </div>
-
             </div>
         )
     }
 
+    // ────────────── RENDERIZAÇÃO: CAMADA 3 - COMEMORATIVO (ANIVERSÁRIOS) ──────────────
+    const renderBirthdayLayer = () => {
+        if (!primaryBirthday) return null
+
+        return (
+            <div className="pt-2">
+                <div 
+                    onClick={() => setIsBirthdayDrawerOpen(true)}
+                    className="group relative overflow-hidden rounded-2xl bg-white border border-gray-100 p-3 pl-4 flex items-center gap-4 active:scale-[0.98] transition-all cursor-pointer"
+                >
+                    <div className="w-10 h-10 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0 overflow-hidden">
+                        {primaryBirthday.avatarUrl ? (
+                            <img src={primaryBirthday.avatarUrl} className="w-full h-full object-cover" alt="Avatar" />
+                        ) : (
+                            <Cake className="w-5 h-5 text-indigo-300" />
+                        )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-[7px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100/50">Time NaBrasa</span>
+                            <span className="text-[7px] font-bold text-[#c0b3b1] uppercase tracking-widest">• Hoje</span>
+                        </div>
+                        <h4 className="text-[13px] font-black text-[#1b1c1a] truncate">Aniversariante: {primaryBirthday.name}</h4>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 pr-2">
+                        <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-indigo-50 transition-colors">
+                            <Gift className="w-4 h-4 text-gray-300 group-hover:text-indigo-400" />
+                        </div>
+                        <ChevronRight className="w-3 h-3 text-gray-300" />
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    // HELPERS DE INTERAÇÃO
+    const renderQuickReactionMenu = (noticeId: string) => (
+        <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-md flex items-center justify-center animate-in fade-in zoom-in duration-200">
+            <div className="flex gap-2 p-2 bg-white rounded-3xl shadow-xl border border-gray-100">
+                {['👍', '✅', '👀', '🙌', '🔥'].map(emoji => (
+                    <button 
+                        key={emoji}
+                        onClick={(e) => { e.stopPropagation(); handleQuickReaction(noticeId, emoji); }}
+                        className="w-10 h-10 flex items-center justify-center text-xl hover:bg-gray-100 rounded-full transition-colors active:scale-125"
+                    >
+                        {emoji}
+                    </button>
+                ))}
+                <button onClick={(e) => { e.stopPropagation(); setLongPressNoticeId(null); }} className="w-10 h-10 flex items-center justify-center text-gray-400 hover:bg-gray-100 rounded-full text-xs">
+                    <X className="w-4 h-4" />
+                </button>
+            </div>
+        </div>
+    )
+
+    const renderInteractionSummary = (notice: Notice) => (
+        <div className="flex items-center gap-2">
+            {notice.reaction_summary && Object.keys(notice.reaction_summary).length > 0 ? (
+                <div className="flex items-center -space-x-1">
+                    {Object.keys(notice.reaction_summary).slice(0, 2).map(e => <span key={e} className="text-[9px]">{e}</span>)}
+                    {notice.reaction_count && notice.reaction_count > 1 && <span className="ml-1 text-[8px] font-black opacity-50">+{notice.reaction_count - 1}</span>}
+                </div>
+            ) : null}
+            {notice.response_count && notice.response_count > 0 && (
+                <span className="flex items-center gap-0.5 text-[8px] font-black opacity-40">
+                    <MessageSquare className="w-2 h-2" /> {notice.response_count}
+                </span>
+            )}
+        </div>
+    )
+
     return (
-        <div className="bg-[#fcfbf9] rounded-[2.5rem] p-5 border border-[#e9e8e5] space-y-6">
-            <header className="flex items-center justify-between px-1">
+        <div className="bg-[#fcfbf9] rounded-[2.5rem] p-5 border border-[#e9e8e5] space-y-5">
+            <header className="flex items-center justify-between px-1 mb-1">
                 <h3 className="text-[10px] font-black text-[#8c716c] uppercase tracking-[0.2em] flex items-center gap-2">
                     <Bell className="w-3.5 h-3.5" /> Mural da Unidade
                 </h3>
                 {notices.length > 0 && (
-                    <span className="text-[10px] font-black text-[#B13A2B] bg-red-50 px-2 py-1 rounded-lg uppercase">
-                        {notices.length + (primaryBirthday ? 1 : 0)} Itens
+                    <span className="text-[9px] font-black text-[#B13A2B] bg-red-50 px-2.5 py-1 rounded-lg uppercase tracking-tight">
+                        {notices.length + (primaryBirthday ? 1 : 0)} Itens ativos
                     </span>
                 )}
             </header>
 
-            <div className="space-y-5">
-                {/* ANIVERSÁRIOS */}
-                {renderBirthdaySection()}
+            <div className="space-y-4">
+                {/* CAMADA 1: URGENTES */}
+                {renderUrgentLayer()}
 
-                {/* AVISOS */}
-                {renderNoticesSection()}
+                {/* CAMADA 2: GERAIS */}
+                {renderGeneralLayer()}
+
+                {/* CAMADA 3: ANIVERSÁRIOS */}
+                {renderBirthdayLayer()}
             </div>
-
 
             {/* BIRTHDAY FULL LIST DRAWER */}
             {isBirthdayDrawerOpen && (
