@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { User, Clock, CheckCircle2, ChevronRight } from 'lucide-react'
 import ReassignDialog from './ReassignDialog'
 
 interface Collaborator {
@@ -21,8 +22,6 @@ export default function CollaboratorTracker({ collaborators, onRefresh }: Collab
     const [selectedCollaborator, setSelectedCollaborator] = useState<Collaborator | null>(null)
 
     if (collaborators.length === 0) {
-
-    if (collaborators.length === 0) {
         return (
             <div className="bg-white border border-gray-100 p-10 rounded-[32px] text-center">
                 <User className="w-12 h-12 mx-auto text-gray-200 mb-4" />
@@ -30,6 +29,7 @@ export default function CollaboratorTracker({ collaborators, onRefresh }: Collab
             </div>
         )
     }
+
 
     return (
         <div className="bg-white border border-gray-100 rounded-[32px] overflow-hidden shadow-sm">
