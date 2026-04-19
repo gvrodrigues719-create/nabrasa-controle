@@ -73,7 +73,7 @@ export default function OperationHeroCard({
     const cmvConf = cmvStatusConfig[cmvStatus]
 
     return (
-        <div className="bg-[#f5f6f7] rounded-[2.5rem] shadow-sm border border-[#e9ebed] overflow-hidden flex flex-col animate-in fade-in duration-700">
+        <div className="bg-[#edf1f5] rounded-[2.5rem] shadow-sm border border-[#d9e2ec] overflow-hidden flex flex-col animate-in fade-in duration-700">
             <style>{`
                 @keyframes reservoir-drip {
                     0% { transform: translateY(0) scale(0); opacity: 0; }

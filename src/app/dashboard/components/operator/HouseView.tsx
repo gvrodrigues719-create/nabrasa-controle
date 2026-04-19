@@ -85,7 +85,7 @@ export default function HouseView() {
         <section className="animate-in fade-in slide-in-from-bottom-3 duration-700 delay-150">
             <div 
                 onClick={() => setIsExpanded(true)}
-                className="relative bg-[#f6f6f6] border border-[#eeeeee] rounded-[2.5rem] overflow-hidden shadow-sm shadow-gray-200/30 group transition-all duration-500 hover:border-[#B13A2B]/20 cursor-pointer active:scale-[0.99]"
+                className="relative bg-[#f1f2f3] border border-[#e2e4e6] rounded-[2.5rem] overflow-hidden shadow-sm shadow-gray-200/30 group transition-all duration-500 hover:border-[#B13A2B]/20 cursor-pointer active:scale-[0.99]"
             >
                 {/* Horizontal Panoramic Preview Wrapper */}
                 <div className="relative w-full aspect-[2.4/1] md:aspect-[3.5/1] overflow-hidden bg-[#F8F7F4]">

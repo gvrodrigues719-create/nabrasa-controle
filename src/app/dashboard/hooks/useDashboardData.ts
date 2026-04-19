@@ -14,6 +14,7 @@ export interface ActiveSession {
     groupId: string;
     routineName: string;
     groupName: string;
+    type: 'count' | 'checklist';
 }
 
 export interface DashboardAction {
@@ -77,19 +78,29 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
             const startTime = performance.now()
             
             // 1. Fetch de dados básicos e alocação de área
-            const [healthRes, routinesRes, sessionRes, summaryRes, cmvRes, lastSealRes, focusRes, noticeRes, userAreaRes] = await Promise.all([
+            const [healthRes, routinesRes, sessionsRes, summaryRes, cmvRes, lastSealRes, focusRes, noticeRes, userAreaRes] = await Promise.all([
                 getOperationalHealthAction(),
                 getActiveRoutinesAction(),
                 userId
-                    ? supabase
-                        .from('count_sessions')
-                        .select('id, routine_id, group_id, started_at, routines:routine_id(name), groups:group_id(name)')
-                        .eq('status', 'in_progress')
-                        .eq('user_id', userId)
-                        .order('updated_at', { ascending: false })
-                        .limit(1)
-                        .maybeSingle()
-                    : Promise.resolve({ data: null, error: null }),
+                    ? Promise.all([
+                        supabase
+                            .from('count_sessions')
+                            .select('id, routine_id, group_id, started_at, routines:routine_id(name), groups:group_id(name)')
+                            .eq('status', 'in_progress')
+                            .eq('user_id', userId)
+                            .order('updated_at', { ascending: false })
+                            .limit(1)
+                            .maybeSingle(),
+                        supabase
+                            .from('checklist_sessions')
+                            .select('id, routine_id, group_id, started_at, routines:routine_id(name), groups:group_id(name)')
+                            .eq('status', 'in_progress')
+                            .eq('user_id', userId)
+                            .order('updated_at', { ascending: false })
+                            .limit(1)
+                            .maybeSingle()
+                    ])
+                    : Promise.resolve([{ data: null }, { data: null }]),
                 userId ? getOperatorSummaryAction(userId) : Promise.resolve({ success: false }),
                 getPublicCMVStatusAction(),
                 userId ? getLastSealingAction(userId) : Promise.resolve({ success: false }),
@@ -115,8 +126,14 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                 currentAreaName = (userAreaRes.data.groups as any).name
             }
 
-            if (sessionRes.data) {
-                const s = sessionRes.data as any
+            const [countSessionRes, checklistSessionRes] = sessionsRes as any[]
+            const activeCountSession = countSessionRes?.data
+            const activeChecklistSession = checklistSessionRes?.data
+
+            // Prioriza checklist session se houver (ou vice-versa, aqui optamos pela lógica do mais recente ou simplesmente o que existir)
+            const s = activeCountSession || activeChecklistSession
+
+            if (s) {
                 const sessionStartTime = new Date(s.started_at).getTime()
                 const twoHoursAgo = Date.now() - (2 * 60 * 60 * 1000)
                 
@@ -128,7 +145,8 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                     routineId: s.routine_id,
                     groupId: s.group_id,
                     routineName: s.routines?.name || 'Rotina',
-                    groupName: s.groups?.name || 'Setor'
+                    groupName: s.groups?.name || 'Setor',
+                    type: activeCountSession ? 'count' : 'checklist'
                 })
             } else {
                 setActiveSession(null)
@@ -144,16 +162,25 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                 const brDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
                 const startOfDayBR = `${brDate}T03:00:00Z`
 
-                // Buscar detalhes de grupos por rotina para saber o que está pendente de fato
-                const { data: allGroups } = await supabase.from('routine_groups').select('routine_id, group_id, groups:group_id(name)')
-                const { data: allSessionsToday } = await supabase
-                    .from('count_sessions')
-                    .select('routine_id, group_id, status, started_at')
-                    .gte('started_at', startOfDayBR)
+                // Buscar detalhes de grupos por rotina e sessões de hoje (ambos tipos)
+                const [groupsRes, countSessionsRes, checklistSessionsRes] = await Promise.all([
+                    supabase.from('routine_groups').select('routine_id, group_id, groups:group_id(name)'),
+                    supabase.from('count_sessions').select('routine_id, group_id, status, started_at').gte('started_at', startOfDayBR),
+                    supabase.from('checklist_sessions').select('routine_id, group_id, status, started_at').gte('started_at', startOfDayBR)
+                ])
 
+                const allGroups = groupsRes.data
                 const sessionMap = new Map()
-                allSessionsToday?.forEach(s => {
+                
+                countSessionsRes.data?.forEach(s => {
                     sessionMap.set(`${s.routine_id}-${s.group_id}`, s)
+                })
+                checklistSessionsRes.data?.forEach(s => {
+                    // Se houver conflito (improvável mas possível), mantemos o que estiver em andamento
+                    const key = `${s.routine_id}-${s.group_id}`
+                    if (!sessionMap.has(key) || s.status === 'in_progress') {
+                        sessionMap.set(key, s)
+                    }
                 })
 
                 allGroups?.forEach(ag => {
@@ -165,6 +192,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                     const isInProgress = session?.status === 'in_progress'
                     const isMyArea = ag.group_id === primaryGroupId
                     const groupName = (ag.groups as any)?.name || 'Setor'
+                    const routineType = (routine.routine_type === 'checklist' ? 'checklist' : 'count') as 'count' | 'checklist'
 
                     if (!isCompleted) {
                         const deathLine = Date.now() - (2 * 60 * 60 * 1000)
@@ -174,11 +202,11 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                             id: `${ag.routine_id}-${ag.group_id}`,
                             label: isInProgress ? `Continuar ${routine.name}` : `Iniciar ${routine.name}`,
                             description: `Setor: ${groupName}`,
-                            type: 'count',
+                            type: routineType,
                             areaName: groupName,
                             status: isInProgress ? (isOverdue ? 'overdue' : 'in_progress') : 'pending',
                             priority: isOverdue ? 'high' : (isMyArea ? 'medium' : 'low'),
-                            url: `/dashboard/count/${ag.routine_id}/${ag.group_id}?returnTo=/dashboard`,
+                            url: `/dashboard/${routineType}/${ag.routine_id}/${ag.group_id}?returnTo=/dashboard`,
                             routineId: ag.routine_id,
                             groupId: ag.group_id,
                             startedAt: session?.started_at

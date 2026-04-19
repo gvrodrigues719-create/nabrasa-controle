@@ -44,7 +44,7 @@ export default function MyAreaTodayCard({ stats, primaryAction }: Props) {
     )
 
     return (
-        <div className="bg-[#f9f7f2] rounded-[2.5rem] p-6 shadow-sm border border-[#edeae0] flex flex-col gap-6 animate-in fade-in duration-700">
+        <div className="bg-[#faf6e9] rounded-[2.5rem] p-6 shadow-sm border border-[#f1ead2] flex flex-col gap-6 animate-in fade-in duration-700">
             {/* Header: Área e Identificação */}
             <header className="flex items-center justify-between">
                 <div className="flex items-center gap-3">

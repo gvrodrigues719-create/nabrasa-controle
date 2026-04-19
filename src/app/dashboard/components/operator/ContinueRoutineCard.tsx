@@ -15,7 +15,7 @@ export default function ContinueRoutineCard({ session }: Props) {
     return (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
             <Link 
-                href={`/dashboard/count/${session.routineId}/${session.groupId}`}
+                href={`/dashboard/${session.type}/${session.routineId}/${session.groupId}`}
                 className="block relative overflow-hidden bg-[#1b1c1a] rounded-[2.5rem] p-6 shadow-xl shadow-black/10 group active:scale-[0.98] transition-all"
             >
                 {/* Background Pattern / Glow */}
