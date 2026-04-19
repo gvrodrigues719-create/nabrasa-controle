@@ -59,7 +59,7 @@ export default function RewardToast({ amount, label, type, onClose }: Props) {
                             {typeof amount === 'number' && amount > 0 ? `+${amount}` : amount}
                         </span>
                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                            {type === 'points' ? 'Pontos' : type === 'coins' ? 'Moedas NB' : type === 'ticket' ? 'Ticket Sorteio' : ''}
+                            {type === 'points' ? 'Pontos' : type === 'coins' ? 'CR' : type === 'ticket' ? 'Ticket Sorteio' : ''}
                         </span>
                     </div>
                     <p className="text-[11px] font-bold text-gray-500 leading-tight mt-0.5">{label}</p>

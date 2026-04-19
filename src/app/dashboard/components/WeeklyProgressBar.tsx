@@ -134,7 +134,7 @@ export default function WeeklyProgressBar({
                         </div>
                         <div className="text-left py-2">
                             <p className="text-[12px] font-black text-white tracking-tight">Benefícios e Méritos</p>
-                            <p className="text-[9px] font-bold text-white/30 uppercase tracking-widest">Acesse seu saldo de evolução</p>
+                            <p className="text-[9px] font-bold text-white/30 uppercase tracking-widest">Acesse seu saldo de créditos</p>
                         </div>
                     </div>
                     <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
