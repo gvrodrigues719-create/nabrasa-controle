@@ -13,6 +13,7 @@ import RaffleDrawer from '../RaffleDrawer'
 import { useState } from 'react'
 import HouseView from './HouseView'
 import ContinueRoutineCard from './ContinueRoutineCard'
+import MyAreaTodayCard from './MyAreaTodayCard'
 import { ActiveSession } from '../../hooks/useDashboardData'
 
 
@@ -35,6 +36,12 @@ interface OperatorHomeProps {
     lateCount?: number;
     userId: string;
     activeSession: ActiveSession | null;
+    myAreaStats: {
+        name: string;
+        pendingCount: number;
+        delayCount: number;
+        nextActionLabel: string;
+    } | null;
     onViewGlobalClick: () => void;
 
     onReportLoss: () => void;
@@ -62,6 +69,7 @@ export default function OperatorHome({
     lateCount = 0,
     userId,
     activeSession,
+    myAreaStats,
     onViewGlobalClick,
 
     onReportLoss,
@@ -87,6 +95,9 @@ export default function OperatorHome({
 
             {/* 3.1 CONTINUIDADE — CONTINUAR DE ONDE PAREI (NOVO) */}
             <ContinueRoutineCard session={activeSession} />
+
+            {/* 3.2 RESPONSABILIDADE — SUA ÁREA HOJE (NOVO) */}
+            <MyAreaTodayCard stats={myAreaStats} />
 
             {/* 4. VISÃO DA CASA — MAPA OPERACIONAL */}
             <HouseView />

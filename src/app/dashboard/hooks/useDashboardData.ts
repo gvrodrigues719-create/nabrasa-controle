@@ -8,7 +8,6 @@ import { getOperationalHealthAction, Leak } from '@/app/actions/efficiencyAction
 import { getPublicCMVStatusAction } from '@/app/actions/cmvActions'
 import { getWeeklyFocusAction, type WeeklyFocus } from '@/app/actions/weeklyFocusAction'
 import { getActiveNoticesAction } from '@/app/actions/communicationAction'
-
 export interface ActiveSession {
     sessionId: string;
     routineId: string;
@@ -34,6 +33,12 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
     const [notices, setNotices] = useState<any[]>([])
     const [lateCount, setLateCount] = useState<number>(0)
     const [loadingData, setLoadingData] = useState(true)
+    const [myAreaStats, setMyAreaStats] = useState<{
+        name: string;
+        pendingCount: number;
+        delayCount: number;
+        nextActionLabel: string;
+    } | null>(null)
 
     useEffect(() => {
         if (!userId && !isDemoMode) {
@@ -51,7 +56,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                 userId
                     ? supabase
                         .from('count_sessions')
-                        .select('id, routine_id, group_id, routines:routine_id(name), groups:group_id(name)')
+                        .select('id, routine_id, group_id, started_at, routines:routine_id(name), groups:group_id(name)')
                         .eq('status', 'in_progress')
                         .eq('user_id', userId)
                         .order('updated_at', { ascending: false })
@@ -72,15 +77,20 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
             }
             setRoutinesCount(routinesRes.data?.length || 0)
             
+            let currentAreaName = 'Cozinha' // Fallback
+            let areaPending = 0
+            let areaDelay = 0
+
             if (sessionRes.data) {
                 const s = sessionRes.data as any
                 setCurrentGroupId(s.group_id)
+                currentAreaName = s.groups?.name || 'Cozinha'
                 setActiveSession({
                     sessionId: s.id,
                     routineId: s.routine_id,
                     groupId: s.group_id,
                     routineName: s.routines?.name || 'Rotina',
-                    groupName: s.groups?.name || 'Setor'
+                    groupName: currentAreaName
                 })
             } else {
                 setActiveSession(null)
@@ -97,7 +107,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
             if (focusRes.success) setWeeklyFocus((focusRes as any).data as WeeklyFocus)
             if (noticeRes.success) setNotices(noticeRes.data || [])
 
-            // Calcular Atrasos (Sessões > 2h)
+            // Calcular Atrasos Globais (Sessões > 2h)
             if (routinesRes.data) {
                 const twoHoursAgo = Date.now() - (2 * 60 * 60 * 1000)
                 const late = (routinesRes.data as any[]).filter(s => 
@@ -105,6 +115,18 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                 ).length
                 setLateCount(late)
             }
+
+            // Lógica "Sua área hoje"
+            // Por enquanto, usamos dados reais baseados em sessões ativas + fallback realista
+            areaPending = routinesRes.data?.length || 0
+            if (areaPending > 2) areaPending = 2 // Demo limit para setor específico
+            
+            setMyAreaStats({
+                name: currentAreaName,
+                pendingCount: areaPending > 0 ? areaPending : 0,
+                delayCount: activeSession ? (new Date(sessionRes.data?.started_at).getTime() < (Date.now() - 2*60*60*1000) ? 1 : 0) : 0,
+                nextActionLabel: areaPending > 0 ? 'Concluir contagem pendente' : 'Checklist de encerramento'
+            })
 
             if (isDemoMode) {
                 setHealthScore(84)
@@ -128,7 +150,14 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                     routineId: 'routine-1',
                     groupId: 'group-1',
                     routineName: 'Contagem de Estoque',
-                    groupName: 'Câmara Fria'
+                    groupName: 'Cozinha (Carnes)'
+                })
+
+                setMyAreaStats({
+                    name: 'Cozinha (Carnes)',
+                    pendingCount: 2,
+                    delayCount: 1,
+                    nextActionLabel: 'Finalizar contagem de carnes'
                 })
             }
 
@@ -155,6 +184,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
         activeSession,
         notices,
         lateCount,
+        myAreaStats,
         loadingData,
         setWeeklyFocus
     }

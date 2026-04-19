@@ -47,6 +47,7 @@ function DashboardContent() {
         currentGroupId,
         activeSession,
         lateCount,
+        myAreaStats,
         loadingData,
         setWeeklyFocus
     } = useDashboardData(userId, isDemoMode)
@@ -175,6 +176,7 @@ function DashboardContent() {
                         lateCount={lateCount}
                         userId={userId}
                         activeSession={activeSession}
+                        myAreaStats={myAreaStats}
                         onViewGlobalClick={() => setIsHealthDrawerOpen(true)}
 
                         onReportLoss={() => setIsLossDrawerOpen(true)}
