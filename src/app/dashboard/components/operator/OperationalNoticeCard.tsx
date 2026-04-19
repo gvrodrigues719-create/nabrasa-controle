@@ -40,6 +40,7 @@ interface Props {
 export default function OperationalNoticeCard({ notices, birthdays = [], userId }: Props) {
 
     const [isBirthdayDrawerOpen, setIsBirthdayDrawerOpen] = useState(false)
+    const [showAllGeneral, setShowAllGeneral] = useState(false)
     const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null)
     const [interactions, setInteractions] = useState<{reactions: any[], responses: any[]}>({ reactions: [], responses: [] })
     const [isLoadingInteractions, setIsLoadingInteractions] = useState(false)
@@ -196,17 +197,21 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
         )
     }
 
-    // ────────────── RENDERIZAÇÃO: CAMADA 2 - GERAIS (CARROSSEL) ──────────────
+    // ────────────── RENDERIZAÇÃO: CAMADA 2 - GERAIS (LISTA VERTICAL) ──────────────
     const renderGeneralLayer = () => {
         if (generalNotices.length === 0) return null
+
+        const visibleNotices = showAllGeneral ? generalNotices : generalNotices.slice(0, 2)
+        const hasMore = generalNotices.length > 2
 
         return (
             <div className="space-y-3">
                 {urgentNotices.length > 0 && (
-                     <p className="text-[9px] font-black text-[#c0b3b1] uppercase tracking-[0.2em] px-1">Comunicados Gerais</p>
+                     <p className="text-[9px] font-black text-[#c0b3b1] uppercase tracking-[0.2em] px-1 pt-2">Comunicados Gerais</p>
                 )}
-                <div className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar gap-3 pb-2 pt-1 px-0.5">
-                    {generalNotices.map((notice, idx) => {
+                
+                <div className="space-y-3">
+                    {visibleNotices.map((notice) => {
                         const style = priorityStyles[notice.priority] || priorityStyles.normal
                         return (
                             <div 
@@ -215,7 +220,7 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
                                 onPointerUp={handlePressEnd}
                                 onPointerLeave={handlePressEnd}
                                 onClick={() => !longPressNoticeId && handleOpenNotice(notice)}
-                                className={`flex-shrink-0 ${generalNotices.length > 1 ? 'w-[85vw]' : 'w-full'} snap-center relative overflow-hidden rounded-[2rem] border border-gray-100 ${style.bg} ${style.text} p-5 cursor-pointer active:scale-[0.98] transition-all shadow-sm`}
+                                className={`relative overflow-hidden rounded-3xl border border-gray-100 ${style.bg} ${style.text} p-5 cursor-pointer active:scale-[0.98] transition-all shadow-sm`}
                             >
                                 {longPressNoticeId === notice.id && renderQuickReactionMenu(notice.id)}
                                 
@@ -233,13 +238,22 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
                                             {renderInteractionSummary(notice)}
                                         </div>
                                         <h4 className="text-sm font-black leading-tight mb-1 truncate">{notice.title}</h4>
-                                        <p className="text-xs opacity-70 line-clamp-1">{notice.message}</p>
+                                        <p className="text-xs opacity-70 line-clamp-1 leading-snug">{notice.message}</p>
                                     </div>
                                 </div>
                             </div>
                         )
                     })}
                 </div>
+
+                {hasMore && !showAllGeneral && (
+                    <button 
+                        onClick={() => setShowAllGeneral(true)}
+                        className="w-full py-4 text-[10px] font-black text-[#B13A2B] uppercase tracking-[0.2em] bg-red-50/50 hover:bg-red-50 rounded-2xl transition-colors border border-red-100/30"
+                    >
+                        Ver mais {generalNotices.length - 2} comunicados
+                    </button>
+                )}
             </div>
         )
     }
@@ -381,16 +395,19 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
                 </div>
             )}
 
-            {/* NOTICE DETAIL DRAWER */}
+            {/* NOTICE DETAIL BOTTOM SHEET */}
             {selectedNotice && (
-                <div className="fixed inset-0 z-[100] flex justify-end">
-                    <div className="absolute inset-0 bg-[#1b1c1a]/40 backdrop-blur-sm transition-opacity" onClick={() => setSelectedNotice(null)} />
-                    <div className="relative w-full md:w-[480px] h-full bg-[#fcfcfc] shadow-2xl flex flex-col md:rounded-l-[40px] overflow-hidden animate-in slide-in-from-right duration-300">
+                <div className="fixed inset-0 z-[100] flex items-end justify-center">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setSelectedNotice(null)} />
+                    <div className="relative w-full max-w-2xl bg-white rounded-t-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-500 max-h-[92vh]">
+                        {/* BOTTOM SHEET HANDLE */}
+                        <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mt-4 mb-2 shrink-0 opacity-40" />
+
                         {/* HEADER */}
-                        <header className={`p-8 pb-6 ${
-                            selectedNotice.priority === 'urgente' ? 'bg-[#B13A2B] text-white' : 
-                            selectedNotice.priority === 'importante' ? 'bg-amber-100 text-amber-900' : 'bg-white text-[#1b1c1a]'
-                        } relative shrink-0`}>
+                        <header className={`p-8 pt-4 pb-6 ${
+                            selectedNotice.priority === 'urgente' ? 'bg-[#fdf0ef] text-[#B13A2B]' : 
+                            selectedNotice.priority === 'importante' ? 'bg-amber-50 text-amber-900' : 'bg-white text-[#1b1c1a]'
+                        } relative shrink-0 border-b border-black/5`}>
                             <button onClick={() => setSelectedNotice(null)} className="absolute top-6 right-6 p-2 bg-black/5 hover:bg-black/10 rounded-full transition-colors"><X className="w-5 h-5" /></button>
                             
                             <div className="flex items-center gap-2 mb-3">
