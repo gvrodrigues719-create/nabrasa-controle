@@ -13,8 +13,8 @@ import Link from 'next/link'
 
 interface ManagerQuickActionsProps {
     lateCount: number;
-    pendingRulesCount: number;
 }
+
 
 export default function ManagerQuickActions({ lateCount }: ManagerQuickActionsProps) {
     const lateText = lateCount > 0
