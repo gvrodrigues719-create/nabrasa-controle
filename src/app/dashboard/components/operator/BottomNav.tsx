@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Home, ClipboardList, Bell, User } from 'lucide-react'
+import { Home, ClipboardList, MapPin, Bell, User } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
@@ -11,6 +11,7 @@ export default function BottomNav() {
   const navItems = [
     { id: 'home', label: 'Hoje', icon: Home, url: '/dashboard' },
     { id: 'tasks', label: 'Tarefas', icon: ClipboardList, url: '/dashboard/routines' },
+    { id: 'areas', label: 'Áreas', icon: MapPin, url: '/dashboard/areas' },
     { id: 'mural', label: 'Mural', icon: Bell, url: '/dashboard#mural' },
     { id: 'profile', label: 'Perfil', icon: User, url: '/dashboard/profile' },
   ]
