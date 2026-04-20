@@ -8,7 +8,8 @@ import AttentionList from './AttentionList'
 import ExceptionCenter from './ExceptionCenter'
 import ManagerQuickActions from './ManagerQuickActions'
 import SystemArchitectureHub from './SystemArchitectureHub'
-import { RefreshCw, Clock, ShieldCheck } from 'lucide-react'
+import { RefreshCw, Clock, ShieldCheck, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 
 export default function ManagerHome() {
     const [data, setData] = useState<any>(null)
@@ -72,9 +73,18 @@ export default function ManagerHome() {
 
             {/* 3. SETORES EM TEMPO REAL */}
             <section className="space-y-4">
-                <div className="flex items-center gap-2 px-1">
-                    <span className="w-1 h-4 bg-gray-200 rounded-full" />
-                    <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Monitoramento por Setor</h3>
+                <div className="flex items-center justify-between px-1">
+                    <div className="flex items-center gap-2">
+                        <span className="w-1 h-4 bg-gray-200 rounded-full" />
+                        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Monitoramento por Setor</h3>
+                    </div>
+                    <Link 
+                        href="/dashboard/areas"
+                        className="flex items-center gap-1.5 text-[10px] font-black text-[#B13A2B] uppercase tracking-widest hover:opacity-70 transition-opacity"
+                    >
+                        Ver Diagnóstico Completo
+                        <ArrowRight className="w-3 h-3" />
+                    </Link>
                 </div>
                 {data && <SectorGrid bySector={data.bySector} />}
             </section>
