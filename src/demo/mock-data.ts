@@ -80,7 +80,7 @@ export const INITIAL_DEMO_NOTICES: DemoNotice[] = [
         title: 'Consistência na Cozinha',
         message: 'Parabéns para a cozinha: 3 dias seguidos com rotina completa e zero atrasos nas sessões de reposição.',
         author_id: 'u1',
-        type: 'destaque',
+        type: 'comunicado_geral',
         priority: 'normal',
         date: new Date().toISOString(),
         reactions: [{ emoji: '🔥', count: 12 }, { emoji: '🙌', count: 6 }]
@@ -110,7 +110,7 @@ export const INITIAL_DEMO_NOTICES: DemoNotice[] = [
         title: 'Destaque da Semana',
         message: 'Maria Clara ganhou destaque da semana por consistência excepcional no checklist de abertura.',
         author_id: 'u1',
-        type: 'destaque',
+        type: 'comunicado_geral',
         priority: 'normal',
         date: new Date().toISOString(),
         reactions: [{ emoji: '⭐', count: 15 }, { emoji: '🏆', count: 3 }]

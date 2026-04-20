@@ -1,4 +1,3 @@
-
 'use client'
 
 import React, { useEffect } from 'react'
@@ -33,8 +32,18 @@ export default function MocDemoDashboard() {
 
     // Mocking the data expected by OperatorHome
     const healthScore = 85
+    const activeLeaks: Leak[] = [
+        { id: '1', label: 'Desperdício de Proteína', type: 'reported_loss', severity: 'warning', penalty: 5 },
+        { id: '2', label: 'Atraso na Limpeza L1', type: 'checklist', severity: 'critical', penalty: 10 }
+    ]
+    const weeklyLeaks: Leak[] = []
+    
     const cmvStatus = { current: 0.32, target: 0.30, status: 'warning' as const }
-    const weeklyFocus = { id: 'f1', title: 'Foco na integridade física do estoque e redução de sobras.', created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+    const weeklyFocus = { 
+        week_start: new Date().toISOString().split('T')[0],
+        title: 'Foco na integridade física do estoque e redução de sobras.', 
+        source: 'manual' as const
+    }
     
     // Sort users by weekly points for ranking
     const topRanking = [...users]
