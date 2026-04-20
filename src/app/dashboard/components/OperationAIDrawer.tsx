@@ -8,6 +8,9 @@ import { toast } from 'react-hot-toast'
 import { supabase } from '@/lib/supabase/client'
 
 interface Props {
+    isOpen: boolean
+    onClose: () => void
+    userId?: string
     userName?: string
     isDemoMode?: boolean
 }

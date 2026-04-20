@@ -17,6 +17,7 @@ import { getGlobalHouseHealthAction } from '@/app/actions/efficiencyAction'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
+interface Props {
     isOpen: boolean
     onClose: () => void
     isDemoMode?: boolean

@@ -7,6 +7,9 @@ import { useReward } from '../context/RewardContext'
 import CameraCapture from '@/components/CameraCapture'
 import { supabase } from '@/lib/supabase/client'
 
+interface Props {
+    isOpen: boolean
+    onClose: () => void
     userId: string
     currentGroupId?: string
     isDemoMode?: boolean
