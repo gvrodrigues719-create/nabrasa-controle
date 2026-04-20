@@ -8,11 +8,22 @@ import DemoHeader from '../components/DemoHeader'
 import DemoBottomNav from '../components/DemoBottomNav'
 import { Leak } from '@/app/actions/efficiencyAction'
 import { DashboardActions } from '@/app/dashboard/hooks/useDashboardData'
+import LossRegistrationDrawer from '@/app/dashboard/components/LossRegistrationDrawer'
+import OperationAIDrawer from '@/app/dashboard/components/OperationAIDrawer'
+import HouseHealthDrawer from '@/app/dashboard/components/HouseHealthDrawer'
+import RewardsDrawer from '@/app/dashboard/components/RewardsDrawer'
+import { RewardProvider } from '@/app/dashboard/context/RewardContext'
 
 export default function MocDemoDashboard() {
     const router = useRouter()
     const { activeUser, users, areas, notices, events, addEvent, updateAreaStatus } = useMocDemoStore()
     const [mounted, setMounted] = React.useState(false)
+    
+    // UI Drawer States
+    const [isLossDrawerOpen, setIsLossDrawerOpen] = React.useState(false)
+    const [isAIDrawerOpen, setIsAIDrawerOpen] = React.useState(false)
+    const [isHealthDrawerOpen, setIsHealthDrawerOpen] = React.useState(false)
+    const [isRewardsDrawerOpen, setIsRewardsDrawerOpen] = React.useState(false)
 
     useEffect(() => {
         setMounted(true)
@@ -106,69 +117,100 @@ export default function MocDemoDashboard() {
     }
 
     const handlers = {
-        onViewGlobalClick: () => router.push('/moc-demo/areas'),
-        onReportLoss: () => {},
-        onOpenRewards: () => router.push('/moc-demo/profile'),
-        onOpenAI: () => {},
+        onViewGlobalClick: () => setIsHealthDrawerOpen(true),
+        onReportLoss: () => setIsLossDrawerOpen(true),
+        onOpenRewards: () => setIsRewardsDrawerOpen(true),
+        onOpenAI: () => setIsAIDrawerOpen(true),
         onUpdateFocus: handleUpdateFocus
     }
 
     return (
-        <div className="flex flex-col min-h-screen">
-            <DemoHeader />
-            <div className="flex-1 p-4 pb-24 overflow-y-auto">
-                <OperatorHome 
-                    healthScore={healthScore}
-                    activeLeaks={activeLeaks}
-                    weeklyLeaks={weeklyLeaks}
-                    cmvStatus={cmvStatus}
-                    weeklyFocus={weeklyFocus}
-                    userRole={activeUser.role}
-                    routinesCount={3}
-                    monthlyScore={85}
-                    monthlyPoints={activeUser.weekly_points}
-                    monthlyAvailable={100}
-                    consistency={92}
-                    participation={100}
-                    highlightScore={88}
-                    totalPoints={activeUser.points}
-                    rankPosition={rankPosition > 0 ? rankPosition : null}
-                    lastSealing={null}
-                    topRanking={topRanking.map(u => ({ 
-                        user_id: u.id, 
-                        total_points: u.weekly_points, 
-                        profiles: { name: u.name },
-                        level: u.level,
-                        streak: u.streak
-                    }))}
-                    isDemoMode={true}
-                    notices={notices.map(n => ({
-                        id: n.id,
-                        title: n.title,
-                        message: n.message,
-                        type: n.type as 'operacional' | 'item_em_falta' | 'promocao' | 'mudanca_de_turno' | 'comunicado_geral',
-                        priority: n.priority as 'normal' | 'importante' | 'urgente',
-                        created_at: n.date,
-                        reaction_count: n.reactions.reduce((acc, r) => acc + r.count, 0)
-                    }))}
-                    birthdays={[]}
-                    lateCount={myArea.status === 'delayed' ? 1 : 0}
-                    countsPending={2}
-                    checklistsPending={1}
+        <RewardProvider userId={activeUser.id}>
+            <div className="flex flex-col min-h-screen">
+                <DemoHeader />
+                <div className="flex-1 p-4 pb-24 overflow-y-auto">
+                    <OperatorHome 
+                        healthScore={healthScore}
+                        activeLeaks={activeLeaks}
+                        weeklyLeaks={weeklyLeaks}
+                        cmvStatus={cmvStatus}
+                        weeklyFocus={weeklyFocus}
+                        userRole={activeUser.role}
+                        routinesCount={3}
+                        monthlyScore={85}
+                        monthlyPoints={activeUser.weekly_points}
+                        monthlyAvailable={100}
+                        consistency={92}
+                        participation={100}
+                        highlightScore={88}
+                        totalPoints={activeUser.points}
+                        rankPosition={rankPosition > 0 ? rankPosition : null}
+                        lastSealing={null}
+                        topRanking={topRanking.map(u => ({ 
+                            user_id: u.id, 
+                            total_points: u.weekly_points, 
+                            profiles: { name: u.name },
+                            level: u.level,
+                            streak: u.streak
+                        }))}
+                        isDemoMode={true}
+                        notices={notices.map(n => ({
+                            id: n.id,
+                            title: n.title,
+                            message: n.message,
+                            type: n.type as any,
+                            priority: n.priority as any,
+                            created_at: n.date,
+                            reaction_count: n.reactions.reduce((acc, r) => acc + r.count, 0),
+                            response_count: 0,
+                            reaction_summary: n.reactions.reduce((acc, r) => ({ ...acc, [r.emoji]: r.count }), {})
+                        }))}
+                        birthdays={[
+                            { id: 'b1', name: 'Maria Silva', date: `${new Date().getDate()}/${new Date().getMonth()+1}`, avatarUrl: '' }
+                        ]}
+                        lateCount={myArea.status === 'delayed' ? 1 : 0}
+                        countsPending={2}
+                        checklistsPending={1}
+                        userId={activeUser.id}
+                        activeSession={null}
+                        myAreaStats={{
+                            name: myArea.name,
+                            pendingCount: myArea.pending_tasks,
+                            delayCount: myArea.status === 'delayed' ? 1 : 0,
+                            nextActionLabel: demoActions.area?.label || '',
+                            nextActionUrl: demoActions.area?.url
+                        }}
+                        actions={demoActions}
+                        {...handlers}
+                    />
+                </div>
+                <DemoBottomNav />
+
+                {/* Drawers (Interactive Demo) */}
+                <LossRegistrationDrawer 
+                    isOpen={isLossDrawerOpen} 
+                    onClose={() => setIsLossDrawerOpen(false)} 
                     userId={activeUser.id}
-                    activeSession={null}
-                    myAreaStats={{
-                        name: myArea.name,
-                        pendingCount: myArea.pending_tasks,
-                        delayCount: myArea.status === 'delayed' ? 1 : 0,
-                        nextActionLabel: demoActions.area?.label || '',
-                        nextActionUrl: demoActions.area?.url
-                    }}
-                    actions={demoActions}
-                    {...handlers}
+                    isDemoMode={true}
+                />
+                <OperationAIDrawer 
+                    isOpen={isAIDrawerOpen} 
+                    onClose={() => setIsAIDrawerOpen(false)} 
+                    userId={activeUser.id}
+                    userName={activeUser.name}
+                    isDemoMode={true}
+                />
+                <HouseHealthDrawer 
+                    isOpen={isHealthDrawerOpen} 
+                    onClose={() => setIsHealthDrawerOpen(false)}
+                    isDemoMode={true}
+                />
+                <RewardsDrawer 
+                    isOpen={isRewardsDrawerOpen} 
+                    onClose={() => setIsRewardsDrawerOpen(false)} 
+                    initialBalance={activeUser.points / 10}
                 />
             </div>
-            <DemoBottomNav />
-        </div>
+        </RewardProvider>
     )
 }

@@ -17,9 +17,9 @@ import { getGlobalHouseHealthAction } from '@/app/actions/efficiencyAction'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
-interface Props {
     isOpen: boolean
     onClose: () => void
+    isDemoMode?: boolean
 }
 
 type GroupedLoss = {
@@ -29,7 +29,7 @@ type GroupedLoss = {
     records: any[]
 }
 
-export default function HouseHealthDrawer({ isOpen, onClose }: Props) {
+export default function HouseHealthDrawer({ isOpen, onClose, isDemoMode }: Props) {
     const [loading, setLoading] = useState(true)
     const [losses, setLosses] = useState<any[]>([])
     const [activeLeaks, setActiveLeaks] = useState<any[]>([])
@@ -43,6 +43,22 @@ export default function HouseHealthDrawer({ isOpen, onClose }: Props) {
 
     async function loadData() {
         setLoading(true)
+        
+        if (isDemoMode) {
+            // Mock Global Health Data
+            await new Promise(r => setTimeout(r, 800))
+            setLosses([
+                { id: 'l1', quantity: 2.5, created_at: new Date().toISOString(), category: 'quebra', items: { name: 'Picanha Maturada', unit: 'KG' }, users: { name: 'Guilherme' }, observation: 'Corte errado no pré-preparo' },
+                { id: 'l2', quantity: 1, created_at: new Date(Date.now() - 86400000).toISOString(), category: 'vencido', items: { name: 'Molho Especial', unit: 'UN' }, users: { name: 'Ana Souza' } }
+            ])
+            setActiveLeaks([
+                { id: '1', label: 'Desperdício de Proteína', type: 'reported_loss', severity: 'warning', penalty: 5 },
+                { id: '2', label: 'Atraso na Limpeza L1', type: 'checklist', severity: 'critical', penalty: 10 }
+            ])
+            setLoading(false)
+            return
+        }
+
         const res = await getGlobalHouseHealthAction()
         if (res.success) {
             setLosses(res.losses)

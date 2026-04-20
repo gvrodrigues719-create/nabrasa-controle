@@ -7,14 +7,12 @@ import { useReward } from '../context/RewardContext'
 import CameraCapture from '@/components/CameraCapture'
 import { supabase } from '@/lib/supabase/client'
 
-interface Props {
-    isOpen: boolean
-    onClose: () => void
     userId: string
     currentGroupId?: string
+    isDemoMode?: boolean
 }
 
-export default function LossRegistrationDrawer({ isOpen, onClose, userId, currentGroupId }: Props) {
+export default function LossRegistrationDrawer({ isOpen, onClose, userId, currentGroupId, isDemoMode }: Props) {
     const [step, setStep] = useState<'search' | 'form' | 'success'>('search')
     const [searchQuery, setSearchQuery] = useState('')
     const [items, setItems] = useState<any[]>([])
@@ -41,6 +39,21 @@ export default function LossRegistrationDrawer({ isOpen, onClose, userId, curren
 
         const timer = setTimeout(async () => {
             setSearching(true)
+            
+            if (isDemoMode) {
+                // Mock search
+                const mockItems = [
+                    { id: 'm1', name: 'Picanha Maturada', unit: 'KG', group_id: currentGroupId },
+                    { id: 'm2', name: 'Cerveja NaBrasa 600ml', unit: 'UN', group_id: 'Geral' },
+                    { id: 'm3', name: 'Tomate Italiano', unit: 'KG', group_id: currentGroupId },
+                    { id: 'm4', name: 'Óleo de Soja 900ml', unit: 'UN', group_id: currentGroupId },
+                ].filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                
+                setItems(mockItems)
+                setSearching(false)
+                return
+            }
+
             const res = await getGlobalItemsAction(searchQuery, currentGroupId)
             if (res.success) setItems(res.data || [])
             setSearching(false)
@@ -83,6 +96,20 @@ export default function LossRegistrationDrawer({ isOpen, onClose, userId, curren
             } finally {
                 setUploadingPhoto(false)
             }
+        }
+
+        if (isDemoMode) {
+            // Mock success
+            await new Promise(r => setTimeout(r, 1000))
+            setLoading(false)
+            setStep('success')
+            showReward({
+                amount: 10,
+                label: 'Perda registrada (Demo)',
+                type: 'points'
+            })
+            setTimeout(() => handleClose(), 2000)
+            return
         }
 
         // 2. Registro da perda

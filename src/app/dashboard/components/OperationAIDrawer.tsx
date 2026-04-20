@@ -8,15 +8,15 @@ import { toast } from 'react-hot-toast'
 import { supabase } from '@/lib/supabase/client'
 
 interface Props {
-    isOpen: boolean
-    onClose: () => void
-    userId?: string
     userName?: string
+    isDemoMode?: boolean
 }
 
-export default function OperationAIDrawer({ isOpen, onClose, userId, userName }: Props) {
+export default function OperationAIDrawer({ isOpen, onClose, userId, userName, isDemoMode }: Props) {
     const endOfMessagesRef = useRef<HTMLDivElement>(null)
     const [input, setInput] = useState('')
+    const [demoMessages, setDemoMessages] = useState<any[]>([])
+    const [isDemoTyping, setIsDemoTyping] = useState(false)
 
     // No SDK 6.x, useChat é mais modular e o transporte é explícito.
     // UIMessage agora usa 'parts' em vez de 'content'.
@@ -35,9 +35,11 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName }:
     }
 
     // Na renderização, exibimos a boas-vindas + mensagens reais
-    const allMessages = [welcomeMessage, ...messages]
+    const allMessages = isDemoMode 
+        ? [welcomeMessage, ...demoMessages]
+        : [welcomeMessage, ...messages]
 
-    const isLoading = status !== 'ready' && status !== 'error'
+    const isLoading = isDemoMode ? isDemoTyping : (status !== 'ready' && status !== 'error')
 
     const suggestedQuestions = [
         "O que falta para mim hoje?",
@@ -75,6 +77,31 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName }:
         const messageText = input.trim()
         setInput('') // Limpa imediatamente para feedback visual e evitar duplo envio
 
+        if (isDemoMode) {
+            const userMsg = { id: Date.now().toString(), role: 'user', parts: [{ type: 'text', text: messageText }] }
+            setDemoMessages(prev => [...prev, userMsg])
+            setIsDemoTyping(true)
+
+            // Mock "Impressive" logic
+            setTimeout(() => {
+                let response = "Analisando o contexto do turno de hoje, vejo que sua consistência está excelente (92%). Continue assim para garantir o bônus de performance!"
+                
+                const lower = messageText.toLowerCase()
+                if (lower.includes('falta') || lower.includes('pendente')) {
+                    response = "Você tem 2 contagens pendentes na Cozinha e o Checklist de Abertura ainda não foi finalizado. Recomendo priorizar as proteínas para evitar divergências no CMv do almoço."
+                } else if (lower.includes('cmv') || lower.includes('meta')) {
+                    response = "Seu CMV atual está em 32.2%, ligeiramente acima da meta de 30%. O desvio principal está no grupo de 'Carnes Nobres'. Verifique se houve registro de quebras no último turno."
+                } else if (lower.includes('organizar') || lower.includes('estoque')) {
+                    response = "Para organizar o estoque seco, use a regra PEPS. Itens pesados devem ficar nas prateleiras inferiores e as etiquetas de validade sempre voltadas para frente."
+                }
+
+                const botMsg = { id: (Date.now() + 1).toString(), role: 'assistant', parts: [{ type: 'text', text: response }] }
+                setDemoMessages(prev => [...prev, botMsg])
+                setIsDemoTyping(false)
+            }, 1500)
+            return
+        }
+
         try {
             sendMessage({ 
                 text: messageText 
@@ -89,6 +116,28 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName }:
 
     const handleSuggestedClick = (q: string) => {
         if (isLoading) return
+        if (isDemoMode) {
+            setInput(q)
+            // We can't call onSubmit directly because it expects an event or undefined
+            // So we handle it inside handleSuggestedClick
+            const messageText = q
+            const userMsg = { id: Date.now().toString(), role: 'user', parts: [{ type: 'text', text: messageText }] }
+            setDemoMessages(prev => [...prev, userMsg])
+            setIsDemoTyping(true)
+            setInput('')
+            
+            setTimeout(() => {
+                let response = "Analisando seus dados operacionais no NaBrasa..."
+                if (q.includes('falta')) response = "Você tem 2 contagens pendentes na Cozinha e o Checklist de Abertura ainda não foi finalizado."
+                if (q.includes('fracionados')) response = "Itens fracionados devem ser contados por peso real ou estimativa visual em décimos (0.1 a 0.9). Nunca arredonde para cima se o balde estiver vazio."
+                if (q.includes('geladeira')) response = "Organize por tipo de bebida e data de validade. As mais próximas do vencimento devem ficar na frente (FIFO)."
+                
+                const botMsg = { id: (Date.now() + 1).toString(), role: 'assistant', parts: [{ type: 'text', text: response }] }
+                setDemoMessages(prev => [...prev, botMsg])
+                setIsDemoTyping(false)
+            }, 1200)
+            return
+        }
         try {
             sendMessage({ text: q }, { body: { userId } })
         } catch (error) {
