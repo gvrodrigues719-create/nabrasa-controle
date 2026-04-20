@@ -53,10 +53,10 @@ export default function OperationHeroCard({
     const dropColor = 'rgba(30,60,100,0.72)'
 
     const getStatusInfo = () => {
-        if (score === 100) return { label: 'Íntegra', color: 'text-emerald-700', dot: 'bg-emerald-500', pulse: false }
-        if (score >= 80) return { label: 'Em atenção', color: 'text-amber-700', dot: 'bg-amber-500', pulse: true }
-        if (score >= 60) return { label: 'Comprometida', color: 'text-[#B13A2B]', dot: 'bg-[#B13A2B]', pulse: true }
-        return { label: 'Crítica', color: 'text-red-700', dot: 'bg-red-500', pulse: true }
+        if (score === 100) return { label: 'Operação Saudável', color: 'text-emerald-700', dot: 'bg-emerald-500', pulse: false, msg: 'Tudo certo. Foco em manter o ritmo.' }
+        if (score >= 80) return { label: 'Atenção Necessária', color: 'text-amber-700', dot: 'bg-amber-500', pulse: true, msg: 'Operação estável, mas requer atenção.' }
+        if (score >= 60) return { label: 'Risco Operacional', color: 'text-[#B13A2B]', dot: 'bg-[#B13A2B]', pulse: true, msg: 'Atenção: verifique pendências urgentes.' }
+        return { label: 'Situação Crítica', color: 'text-red-700', dot: 'bg-red-500', pulse: true, msg: 'Ação imediata: resolva os vazamentos!' }
     }
     const status = getStatusInfo()
 
@@ -87,7 +87,7 @@ export default function OperationHeroCard({
             <div className="p-6 pb-2">
                 <header className="flex items-center justify-between mb-5 px-1">
                     <h3 className="text-[10px] font-black text-[#8c716c] uppercase tracking-[0.2em] flex items-center gap-2">
-                        <Activity className="w-3.5 h-3.5" /> Situação da Operação
+                        <Activity className="w-3.5 h-3.5" /> Status do Turno
                     </h3>
                     {hasAnyDamage && onViewGlobalClick && (
                         <button onClick={onViewGlobalClick} className="text-[9px] font-bold text-[#B13A2B] bg-red-50 px-2 py-1 rounded-lg uppercase tracking-wider flex items-center gap-1 transition-all hover:scale-105 active:scale-95">
@@ -139,11 +139,32 @@ export default function OperationHeroCard({
                             <span className="text-xl font-black text-[#1b1c1a] opacity-30">%</span>
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-3">
+                            <div className="flex flex-col gap-1">
+                                <p className={`text-[10px] font-black uppercase tracking-tight ${status.color}`}>Status: {status.label}</p>
+                                <p className="text-[11px] font-bold text-gray-500 leading-tight">{status.msg}</p>
+                            </div>
+
+                             {/* CMV Discreto */}
+                             <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border ${cmvConf.bg} shadow-sm`}>
+                                <div className="flex flex-col">
+                                    <span className="text-[7px] font-black opacity-40 uppercase leading-none">CMV Atual</span>
+                                    <div className="flex items-baseline gap-1">
+                                        <span className="text-[11px] font-black leading-none">{cmvCurrent && cmvCurrent > 0 ? formatPerc(cmvCurrent) : '—'}</span>
+                                        <span className="text-[7px] font-bold opacity-30 tracking-tighter">/ {cmvTarget !== undefined && cmvTarget > 0 ? formatPerc(cmvTarget) : '--'}</span>
+                                    </div>
+                                </div>
+                                <div className="w-[1px] h-4 bg-gray-200" />
+                                <div className="flex items-center gap-1">
+                                    {cmvConf.icon}
+                                    <span className={`text-[9px] font-black uppercase tracking-tight ${cmvConf.color}`}>{cmvConf.label}</span>
+                                </div>
+                             </div>
+
                              {/* Sinais ativos */}
                             {activeLeaks.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5">
-                                    {activeLeaks.slice(0, 2).map(l => (
+                                    {activeLeaks.slice(0, 1).map(l => (
                                         <div key={l.id} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-red-50 border border-red-100/50">
                                             <AlertCircle className="w-2.5 h-2.5 text-[#B13A2B]" />
                                             <span className="text-[10px] font-bold text-[#B13A2B] truncate max-w-[100px]">{l.label}</span>
@@ -151,48 +172,11 @@ export default function OperationHeroCard({
                                     ))}
                                 </div>
                             )}
-                            {/* Perdas */}
-                            {weeklyLeaks.length > 0 && (
-                                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-50 border border-gray-100">
-                                    <Package className="w-2.5 h-2.5 text-[#8c716c]" />
-                                    <span className="text-[10px] font-bold text-[#58413e]">Perdas acumuladas na semana</span>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* ═══ BLOCO B: SITUAÇÃO DA LOJA / CMV ═══ */}
-            <div className="mx-6 mb-5 p-4 rounded-[2rem] bg-[#F8F7F4] border border-[#eeedea] transition-all hover:border-[#8c716c]/20">
-                <header className="flex items-center justify-between mb-3">
-                    <h3 className="text-[9px] font-black text-[#8c716c] uppercase tracking-[0.2em] flex items-center gap-2">
-                        <Target className="w-3.5 h-3.5" /> Situação da Loja
-                    </h3>
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-tight ${cmvConf.bg} ${cmvConf.color} border shadow-sm`}>
-                        {cmvConf.icon}
-                        {cmvConf.label}
-                    </div>
-                </header>
-
-                <div className="flex items-center justify-between">
-                    <div className="flex flex-col">
-                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1 leading-none">CMV Atual</span>
-                        <div className="flex items-baseline gap-1">
-                            <span className="text-2xl font-black text-[#1b1c1a] leading-none mb-1">{cmvCurrent && cmvCurrent > 0 ? formatPerc(cmvCurrent) : '—'}</span>
-                        </div>
-                    </div>
-                    
-                    <div className="h-8 w-[1px] bg-gray-200/60" />
-
-                    <div className="flex flex-col text-right">
-                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1 leading-none">Meta Estipulada</span>
-                        <div className="flex items-baseline gap-1 justify-end">
-                            <span className="text-2xl font-black text-[#8c716c] opacity-60 leading-none mb-1">{cmvTarget !== undefined && cmvTarget > 0 ? formatPerc(cmvTarget) : '—'}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             {/* ═══ BLOCO C: FOCO E DIRECIONAMENTO ═══ */}
             <div className="mt-auto bg-[#FDF0EF]/50 p-6 border-t border-[#fca5a5]/20">

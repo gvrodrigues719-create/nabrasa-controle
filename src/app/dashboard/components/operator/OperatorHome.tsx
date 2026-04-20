@@ -25,7 +25,9 @@ interface OperatorHomeProps {
     weeklyFocus: WeeklyFocus | null;
     userRole: string | null;
     routinesCount: number;
-    weeklyPoints: number;
+    monthlyScore: number;
+    monthlyPoints: number;
+    monthlyAvailable: number;
     totalPoints: number;
     rankPosition: number | null;
     lastSealing: any;
@@ -34,6 +36,8 @@ interface OperatorHomeProps {
     notices?: any[];
     birthdays?: any[];
     lateCount?: number;
+    countsPending: number;
+    checklistsPending: number;
     userId: string;
     activeSession: ActiveSession | null;
     myAreaStats: {
@@ -60,7 +64,9 @@ export default function OperatorHome({
     weeklyFocus,
     userRole,
     routinesCount,
-    weeklyPoints,
+    monthlyScore,
+    monthlyPoints,
+    monthlyAvailable,
     totalPoints,
     rankPosition,
     lastSealing,
@@ -69,6 +75,8 @@ export default function OperatorHome({
     notices = [],
     birthdays = [],
     lateCount = 0,
+    countsPending = 0,
+    checklistsPending = 0,
     userId,
     activeSession,
     myAreaStats,
@@ -90,6 +98,8 @@ export default function OperatorHome({
             {/* 2. EXECUÇÃO — CHECKLISTS E ROTINAS (CORAÇÃO DA OPERAÇÃO) */}
             <ExecutionBlock
                 routinesCount={routinesCount}
+                countsPending={countsPending}
+                checklistsPending={checklistsPending}
                 onReportLoss={onReportLoss}
                 recommendedActions={actions.recommended}
             />
@@ -125,18 +135,7 @@ export default function OperatorHome({
             {/* 5. VISÃO DA CASA — MAPA OPERACIONAL */}
             <HouseView />
 
-            {/* 6. PROGRESSO — MINHA SEMANA (RANKING) */}
-            <WeeklyProgressBar
-                weeklyPoints={weeklyPoints}
-                totalPoints={totalPoints}
-                rankPosition={rankPosition}
-                lastSealing={lastSealing}
-                topRanking={topRanking}
-                coinBalance={isDemoMode ? 120 : 0}
-                onOpenRewards={onOpenRewards}
-            />
-
-            {/* 7. APOIO — IA (AJUDA DA OPERAÇÃO) */}
+            {/* 6. APOIO — IA (AJUDA DA OPERAÇÃO) */}
             <button
                 onClick={onOpenAI}
                 className="w-full flex items-center gap-3 p-4 rounded-2xl bg-[#fffcf0] border border-[#fef3c7] shadow-sm active:scale-[0.98] transition-all text-left cursor-pointer group animate-in fade-in duration-700"

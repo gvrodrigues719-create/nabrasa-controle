@@ -12,6 +12,9 @@ interface Props {
 export default function ContinueRoutineCard({ session }: Props) {
     if (!session) return null
 
+    const isGeneric = session.routineName === 'Rotina' || session.groupName === 'Setor'
+    if (isGeneric) return null
+
     return (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
             <Link 

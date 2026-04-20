@@ -35,8 +35,12 @@ function DashboardContent() {
     // 2. Dados
     const {
         routinesCount,
+        countsPending,
+        checklistsPending,
         userPoints,
-        weeklyPoints,
+        monthlyScore,
+        monthlyPoints,
+        monthlyAvailable,
         rankPosition,
         healthScore,
         activeLeaks,
@@ -167,7 +171,9 @@ function DashboardContent() {
                         weeklyFocus={weeklyFocus}
                         userRole={userRole}
                         routinesCount={routinesCount}
-                        weeklyPoints={weeklyPoints ?? 0}
+                        monthlyScore={monthlyScore}
+                        monthlyPoints={monthlyPoints}
+                        monthlyAvailable={monthlyAvailable}
                         totalPoints={userPoints ?? 0}
                         rankPosition={rankPosition}
                         lastSealing={lastSealing}
@@ -176,6 +182,8 @@ function DashboardContent() {
                         notices={notices}
                         birthdays={birthdays}
                         lateCount={lateCount}
+                        countsPending={countsPending}
+                        checklistsPending={checklistsPending}
                         userId={userId}
                         activeSession={activeSession}
                         myAreaStats={myAreaStats}

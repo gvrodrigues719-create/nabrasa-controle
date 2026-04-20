@@ -8,11 +8,13 @@ import { DashboardAction } from '../hooks/useDashboardData'
 
 interface Props {
     routinesCount: number
+    countsPending: number
+    checklistsPending: number
     onReportLoss: () => void
     recommendedActions: DashboardAction[]
 }
 
-export default function ExecutionBlock({ routinesCount, onReportLoss, recommendedActions }: Props) {
+export default function ExecutionBlock({ routinesCount, countsPending, checklistsPending, onReportLoss, recommendedActions }: Props) {
     const topRecommended = recommendedActions[0]
 
     return (
@@ -48,44 +50,38 @@ export default function ExecutionBlock({ routinesCount, onReportLoss, recommende
                     </Link>
                 )}
 
-                {/* PRIMARY ACTIONS: CONTAGEM & CHECKLIST (Static Fallbacks) */}
-                <div className="grid grid-cols-2 gap-3">
-                    {/* Contagem */}
-                    <Link 
-                        href="/dashboard/routines?returnTo=/dashboard"
-                        className="relative overflow-hidden bg-white rounded-3xl p-5 border border-[#e9e8e5] flex flex-col items-start gap-4 active:scale-[0.96] transition-all group shadow-sm hover:shadow-md"
-                    >
-                        {/* Status Light */}
-                        <div className={`absolute top-0 right-0 w-12 h-12 -mr-4 -mt-4 opacity-5 blur-2xl rounded-full ${routinesCount > 0 ? 'bg-[#B13A2B]' : 'bg-green-500'}`} />
-                        
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${
-                            routinesCount > 0 
-                                ? 'bg-[#B13A2B]/10 text-[#B13A2B] group-hover:bg-[#B13A2B] group-hover:text-white' 
-                                : 'bg-gray-50 text-gray-400 group-hover:bg-gray-100 group-hover:text-gray-900'
-                        }`}>
-                            <ClipboardList className="w-6 h-6" />
+                {/* UNIFIED PRIMARY ACTION: TAREFAS DO TURNO */}
+                <Link 
+                    href="/dashboard/routines?returnTo=/dashboard"
+                    className="relative overflow-hidden bg-white rounded-[2rem] p-6 border border-[#e9e8e5] flex items-center gap-5 active:scale-[0.98] transition-all group shadow-sm hover:shadow-md"
+                >
+                    {/* Status Light */}
+                    <div className={`absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 opacity-5 blur-3xl rounded-full ${routinesCount > 0 ? 'bg-[#B13A2B]' : 'bg-green-500'}`} />
+                    
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${
+                        routinesCount > 0 
+                            ? 'bg-[#B13A2B]/10 text-[#B13A2B] group-hover:bg-[#B13A2B] group-hover:text-white' 
+                            : 'bg-green-50 text-green-600'
+                    }`}>
+                        <ClipboardList className="w-7 h-7" />
+                    </div>
+                    
+                    <div className="flex-1">
+                        <h4 className="text-base font-black text-[#1b1c1a] tracking-tight">Tarefas do Turno</h4>
+                        <div className="flex flex-col mt-0.5">
+                            <span className="text-[11px] font-black text-[#B13A2B] uppercase tracking-tight">
+                                {routinesCount} pendência{routinesCount !== 1 ? 's' : ''} hoje
+                            </span>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                                {countsPending} contagem{countsPending !== 1 ? 's' : ''} • {checklistsPending} checklist{checklistsPending !== 1 ? 's' : ''}
+                            </span>
                         </div>
-                        
-                        <div className="space-y-0.5">
-                            <h4 className="text-sm font-black text-[#1b1c1a] tracking-tight">Todas Rotinas</h4>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">{routinesCount} disponível{routinesCount > 1 ? 's' : ''}</p>
-                        </div>
-                    </Link>
+                    </div>
 
-                    {/* Checklist */}
-                    <Link 
-                        href="/dashboard/checklist?returnTo=/dashboard"
-                        className="relative overflow-hidden bg-white rounded-3xl p-5 border border-[#e9e8e5] flex flex-col items-start gap-4 active:scale-[0.96] transition-all group shadow-sm hover:shadow-md"
-                    >
-                        <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-[#2b58b1] group-hover:text-white transition-all duration-500">
-                            <ListChecks className="w-6 h-6" />
-                        </div>
-                        <div className="space-y-0.5">
-                            <h4 className="text-sm font-black text-[#1b1c1a] tracking-tight">Checklists</h4>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Manual e POPs</p>
-                        </div>
-                    </Link>
-                </div>
+                    <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-[#1b1c1a] group-hover:text-white transition-all">
+                        <ArrowRight className="w-5 h-5" />
+                    </div>
+                </Link>
 
                 {/* SECONDARY ACTION: RELATAR PERDA */}
                 <button 

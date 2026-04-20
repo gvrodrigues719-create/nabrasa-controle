@@ -201,82 +201,54 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
     const renderGeneralLayer = () => {
         if (generalNotices.length === 0) return null
 
-        // Se não estiver expandido, mostramos apenas o PRIMEIRO + O STACK
-        const visibleNotices = showAllGeneral ? generalNotices : [generalNotices[0]]
+        // Em modo home, mostramos APENAS o primeiro aviso geral se não houver urgente
+        if (urgentNotices.length > 0) return null
+
+        const mainNotice = generalNotices[0]
         const remainingCount = generalNotices.length - 1
         const hasMore = generalNotices.length > 1
+        const style = priorityStyles[mainNotice.priority] || priorityStyles.normal
 
         return (
             <div className="space-y-3">
-                {urgentNotices.length > 0 && (
-                     <p className="text-[9px] font-black text-[#c0b3b1] uppercase tracking-[0.2em] px-1 pt-2">Comunicados Gerais</p>
-                )}
-                
-                <div className="space-y-3">
-                    {visibleNotices.map((notice) => {
-                        const style = priorityStyles[notice.priority] || priorityStyles.normal
-                        return (
-                            <div 
-                                key={notice.id}
-                                onPointerDown={() => handlePressStart(notice.id)}
-                                onPointerUp={handlePressEnd}
-                                onPointerLeave={handlePressEnd}
-                                onClick={() => !longPressNoticeId && handleOpenNotice(notice)}
-                                className={`relative overflow-hidden rounded-3xl border border-gray-100 ${style.bg} ${style.text} p-5 cursor-pointer active:scale-[0.98] transition-all shadow-sm`}
-                            >
-                                {longPressNoticeId === notice.id && renderQuickReactionMenu(notice.id)}
-                                
-                                <div className="flex gap-4">
-                                    <div className="w-11 h-11 rounded-2xl bg-[#F8F7F4] flex items-center justify-center shrink-0">
-                                        <div className="text-[#8c716c]">
-                                            {style.icon}
-                                        </div>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center justify-between mb-1">
-                                            <span className="text-[8px] font-black uppercase tracking-widest bg-black/5 px-2 py-0.5 rounded-md">
-                                                {notice.priority} • {notice.type.replace('_', ' ')}
-                                            </span>
-                                            {renderInteractionSummary(notice)}
-                                        </div>
-                                        <h4 className="text-sm font-black leading-tight mb-1 truncate">{notice.title}</h4>
-                                        <p className="text-xs opacity-70 line-clamp-1 leading-snug">{notice.message}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )
-                    })}
-
-                    {/* SLIM VISUAL STACK / COUNTER (COMPACTO) */}
-                    {hasMore && !showAllGeneral && (
-                        <div 
-                            onClick={() => setShowAllGeneral(true)}
-                            className="group cursor-pointer active:scale-[0.98] transition-all -mt-4 relative z-0"
-                        >
-                            {/* Visual effect of cards behind */}
-                            <div className="mx-6 h-10 bg-white border border-gray-100 border-t-0 rounded-b-[2rem] flex items-center justify-between px-6 shadow-sm group-hover:bg-gray-50 transition-all">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-[#B13A2B] animate-pulse" />
-                                    <span className="text-[9px] font-black text-[#8c716c] uppercase tracking-[0.15em]">
-                                        +{remainingCount} outro{remainingCount > 1 ? 's' : ''} aviso{remainingCount > 1 ? 's' : ''} no mural
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <span className="text-[9px] font-black text-[#B13A2B] uppercase">Ver Feed</span>
-                                    <ChevronRight className="w-3 h-3 text-[#B13A2B]" />
-                                </div>
+                <div 
+                    onClick={() => !longPressNoticeId && handleOpenNotice(mainNotice)}
+                    className={`relative overflow-hidden rounded-3xl border border-gray-100 ${style.bg} ${style.text} p-5 cursor-pointer active:scale-[0.98] transition-all shadow-sm`}
+                >
+                    {longPressNoticeId === mainNotice.id && renderQuickReactionMenu(mainNotice.id)}
+                    
+                    <div className="flex gap-4">
+                        <div className="w-11 h-11 rounded-2xl bg-[#F8F7F4] flex items-center justify-center shrink-0">
+                            <div className="text-[#8c716c]">
+                                {style.icon}
                             </div>
                         </div>
-                    )}
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                                <span className="text-[8px] font-black uppercase tracking-widest bg-black/5 px-2 py-0.5 rounded-md">
+                                    {mainNotice.priority} • {mainNotice.type.replace('_', ' ')}
+                                </span>
+                                {renderInteractionSummary(mainNotice)}
+                            </div>
+                            <h4 className="text-sm font-black leading-tight mb-1 truncate">{mainNotice.title}</h4>
+                            <p className="text-xs opacity-70 line-clamp-1 leading-snug">{mainNotice.message}</p>
+                        </div>
+                    </div>
                 </div>
 
-                {showAllGeneral && hasMore && (
-                    <button 
-                        onClick={() => setShowAllGeneral(false)}
-                        className="w-full py-2 text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] hover:text-[#B13A2B] transition-colors flex items-center justify-center gap-2"
-                    >
-                        Recolher Mural <X className="w-3 h-3" />
-                    </button>
+                {hasMore && (
+                    <div className="flex items-center justify-between px-6 -mt-1 group cursor-pointer active:scale-95 transition-all" onClick={() => setShowAllGeneral(true)}>
+                         <div className="flex items-center gap-2">
+                            <div className="w-1 h-1 rounded-full bg-[#B13A2B] animate-pulse" />
+                            <span className="text-[9px] font-black text-[#8c716c] uppercase tracking-widest">
+                                +{remainingCount} outro{remainingCount > 1 ? 's' : ''} no mural
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-1 text-[#B13A2B]">
+                             <span className="text-[9px] font-black uppercase">Ver Todos</span>
+                             <ChevronRight className="w-3 h-3" />
+                        </div>
+                    </div>
                 )}
             </div>
         )
@@ -369,11 +341,44 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
             </header>
 
             <div className="space-y-4">
-                {/* CAMADA 1: URGENTES */}
-                {renderUrgentLayer()}
-
-                {/* CAMADA 2: GERAIS */}
-                {renderGeneralLayer()}
+                {/* CAMADA 1: URGENTES (Mostramos no máximo 1 se for urgente) */}
+                {urgentNotices.length > 0 ? (
+                    <div className="space-y-3">
+                        <div 
+                            key={urgentNotices[0].id}
+                            onClick={() => handleOpenNotice(urgentNotices[0])}
+                            className="relative overflow-hidden rounded-[2rem] border border-[#B13A2B] bg-[#B13A2B] text-white p-5 cursor-pointer active:scale-[0.98] transition-all shadow-lg shadow-red-100"
+                        >
+                            <div className="flex gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
+                                    <AlertOctagon className="w-6 h-6 text-white" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-white/20 px-2 py-0.5 rounded-md">
+                                            Crítico • {urgentNotices[0].type.replace('_', ' ')}
+                                        </span>
+                                        {renderInteractionSummary(urgentNotices[0])}
+                                    </div>
+                                    <h4 className="text-sm font-black leading-tight mb-1 truncate">{urgentNotices[0].title}</h4>
+                                    <p className="text-xs opacity-90 line-clamp-1 leading-relaxed">{urgentNotices[0].message}</p>
+                                </div>
+                            </div>
+                        </div>
+                        {urgentNotices.length > 1 && (
+                            <div className="flex items-center justify-between px-6 -mt-1 group cursor-pointer active:scale-95 transition-all text-[#B13A2B]" onClick={() => setShowAllGeneral(true)}>
+                                <span className="text-[9px] font-black uppercase tracking-widest">+{urgentNotices.length - 1} outro comunicado crítico</span>
+                                <div className="flex items-center gap-1">
+                                     <span className="text-[9px] font-black uppercase">Ver Todos</span>
+                                     <ChevronRight className="w-3 h-3" />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    /* CAMADA 2: GERAIS */
+                    renderGeneralLayer()
+                )}
 
                 {/* CAMADA 3: ANIVERSÁRIOS */}
                 {renderBirthdayLayer()}

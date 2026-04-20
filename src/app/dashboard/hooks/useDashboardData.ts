@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { getActiveRoutinesAction } from '@/app/actions/routinesAction'
-import { getOperatorSummaryAction, getLastSealingAction } from '@/app/actions/gamificationAction'
+import { getOperatorSummaryAction, getLastSealingAction, getUserRecentActivitiesAction, getMonthlyOperatorSummaryAction } from '@/app/actions/gamificationAction'
 import { getOperationalHealthAction, Leak } from '@/app/actions/efficiencyAction'
 import { getPublicCMVStatusAction } from '@/app/actions/cmvActions'
 import { getWeeklyFocusAction, type WeeklyFocus } from '@/app/actions/weeklyFocusAction'
@@ -40,13 +40,18 @@ export interface DashboardActions {
 
 export function useDashboardData(userId: string, isDemoMode: boolean) {
     const [routinesCount, setRoutinesCount] = useState<number>(0)
+    const [countsPending, setCountsPending] = useState<number>(0)
+    const [checklistsPending, setChecklistsPending] = useState<number>(0)
     const [userPoints, setUserPoints] = useState<number | null>(null)
-    const [weeklyPoints, setWeeklyPoints] = useState<number | null>(null)
+    const [monthlyScore, setMonthlyScore] = useState<number>(0)
+    const [monthlyPoints, setMonthlyPoints] = useState<number>(0)
+    const [monthlyAvailable, setMonthlyAvailable] = useState<number>(0)
     const [rankPosition, setRankPosition] = useState<number | null>(null)
     const [healthScore, setHealthScore] = useState<number>(100)
     const [activeLeaks, setActiveLeaks] = useState<Leak[]>([])
     const [weeklyLeaks, setWeeklyLeaks] = useState<Leak[]>([])
     const [cmvStatus, setCmvStatus] = useState<any>(null)
+    const [recentActivities, setRecentActivities] = useState<any[]>([])
     const [lastSealing, setLastSealing] = useState<any>(null)
     const [topRanking, setTopRanking] = useState<{ name: string, points: number, rank: number }[]>([])
     const [weeklyFocus, setWeeklyFocus] = useState<WeeklyFocus | null>(null)
@@ -78,7 +83,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
             const startTime = performance.now()
             
             // 1. Fetch de dados básicos e alocação de área
-            const [healthRes, routinesRes, sessionsRes, summaryRes, cmvRes, lastSealRes, focusRes, noticeRes, userAreaRes] = await Promise.all([
+            const [healthRes, routinesRes, sessionsRes, summaryRes, monthlySummaryRes, cmvRes, lastSealRes, focusRes, noticeRes, userAreaRes, historyRes] = await Promise.all([
                 getOperationalHealthAction(),
                 getActiveRoutinesAction(),
                 userId
@@ -102,11 +107,13 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                     ])
                     : Promise.resolve([{ data: null }, { data: null }]),
                 userId ? getOperatorSummaryAction(userId) : Promise.resolve({ success: false }),
+                userId ? getMonthlyOperatorSummaryAction(userId) : Promise.resolve({ success: false }),
                 getPublicCMVStatusAction(),
                 userId ? getLastSealingAction(userId) : Promise.resolve({ success: false }),
                 getWeeklyFocusAction(),
                 getActiveNoticesAction(),
-                userId ? supabase.from('users').select('primary_group_id, groups:primary_group_id(name)').eq('id', userId).maybeSingle() : Promise.resolve({ data: null })
+                userId ? supabase.from('users').select('primary_group_id, groups:primary_group_id(name)').eq('id', userId).maybeSingle() : Promise.resolve({ data: null }),
+                userId ? getUserRecentActivitiesAction(userId, 5) : Promise.resolve({ success: false, activities: [] })
             ])
 
             // 2. Processamento de Saúde e Rotinas Gerais
@@ -156,6 +163,8 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
             // 4. MOTOR DE AÇÕES (Dashboard Engine)
             let allPotentialActions: DashboardAction[] = []
             let areaPendingCount = 0
+            let countsPendingTemp = 0
+            let checklistsPendingTemp = 0
             
             // 4.1. Processar Rotinas Ativas (Global e Área)
             if (routinesRes.data) {
@@ -214,6 +223,8 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                         
                         allPotentialActions.push(action)
                         if (isMyArea) areaPendingCount++
+                        if (routineType === 'count') countsPendingTemp++
+                        else checklistsPendingTemp++
                     }
                 })
             }
@@ -263,12 +274,21 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
             })
 
             setLateCount(overdue.length)
+            setCountsPending(countsPendingTemp)
+            setChecklistsPending(checklistsPendingTemp)
+            if (historyRes.success) setRecentActivities(historyRes.activities)
 
             // 6. Restante dos Estados
             if (summaryRes.success) {
                 setUserPoints((summaryRes as any).totalPoints ?? 0)
-                setWeeklyPoints((summaryRes as any).weeklyPoints ?? 0)
-                setRankPosition((summaryRes as any).rankPosition ?? null)
+            }
+            if (monthlySummaryRes.success) {
+                const s = monthlySummaryRes as any
+                setMonthlyScore(s.score)
+                setMonthlyPoints(s.pointsEarned)
+                setMonthlyAvailable(s.pointsAvailable)
+                setRankPosition(s.rankPosition)
+                setTopRanking(s.top5)
             }
             if (cmvRes.success) setCmvStatus((cmvRes as any).data)
             if (lastSealRes.success) setLastSealing((lastSealRes as any).data)
@@ -295,8 +315,12 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
 
     return {
         routinesCount,
+        countsPending,
+        checklistsPending,
         userPoints,
-        weeklyPoints,
+        monthlyScore,
+        monthlyPoints,
+        monthlyAvailable,
         rankPosition,
         healthScore,
         activeLeaks,
@@ -304,6 +328,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
         cmvStatus,
         lastSealing,
         topRanking,
+        recentActivities,
         weeklyFocus,
         currentGroupId,
         activeSession,
