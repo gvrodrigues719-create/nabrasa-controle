@@ -52,8 +52,10 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
     const router = useRouter()
 
 
-
-
+    const handleOpenNotice = async (notice: Notice) => {
+        if (!notice) return
+        setSelectedNotice(notice)
+        setIsLoadingInteractions(true)
         
         if (isDemoMode) {
             setInteractions({ 
@@ -73,6 +75,8 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
     }
 
     const handleToggleReaction = async (emoji: string) => {
+        if (!selectedNotice) return
+        
         if (isDemoMode) {
             // Mock reaction toggle
             const existing = interactions.reactions.find(r => r.emoji === emoji && r.user_id === userId)
@@ -95,7 +99,6 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
             // Refresh interactions
             const updated = await getNoticeInteractionsAction(selectedNotice.id)
             if (updated.success && updated.data) setInteractions(updated.data)
-
         }
     }
 
@@ -103,7 +106,7 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
         const timer = setTimeout(() => {
             setLongPressNoticeId(noticeId)
             // Haptic feedback could be added here if supported
-            if (window.navigator?.vibrate) window.navigator.vibrate(50)
+            if (typeof window !== 'undefined' && window.navigator?.vibrate) window.navigator.vibrate(50)
         }, 600) // 600ms long press
         setLongPressTimer(timer)
     }
@@ -124,6 +127,8 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
 
 
     const handleSendResponse = async () => {
+        if (!selectedNotice || !responseText.trim()) return
+        setIsSendingResponse(true)
 
         if (isDemoMode) {
             setInteractions({
@@ -147,11 +152,46 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
             // Refresh interactions
             const updated = await getNoticeInteractionsAction(selectedNotice.id)
             if (updated.success && updated.data) setInteractions(updated.data)
-
         }
         setIsSendingResponse(false)
     }
 
+    const renderInteractionSummary = (notice: Notice) => (
+        <div className="flex items-center gap-2">
+            {notice.reaction_summary && Object.keys(notice.reaction_summary).length > 0 ? (
+                <div className="flex items-center -space-x-1">
+                    {Object.keys(notice.reaction_summary).slice(0, 2).map(e => <span key={e} className="text-[9px]">{e}</span>)}
+                    {notice.reaction_count && notice.reaction_count > 1 && <span className="ml-1 text-[8px] font-black opacity-50">+{notice.reaction_count - 1}</span>}
+                </div>
+            ) : null}
+            {notice.response_count && notice.response_count > 0 && (
+                <span className="flex items-center gap-0.5 text-[8px] font-black opacity-40">
+                    <MessageSquare className="w-2 h-2" /> {notice.response_count}
+                </span>
+            )}
+        </div>
+    )
+
+    const renderQuickReactionMenu = (noticeId: string) => (
+        <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-md flex items-center justify-center animate-in fade-in zoom-in duration-200">
+            <div className="flex gap-2 p-2 bg-white rounded-3xl shadow-xl border border-gray-100">
+                {['👍', '✅', '👀', '🙌', '🔥'].map(emoji => (
+                    <button 
+                        key={emoji}
+                        onClick={(e) => { e.stopPropagation(); handleQuickReaction(noticeId, emoji); }}
+                        className="w-10 h-10 flex items-center justify-center text-xl hover:bg-gray-100 rounded-full transition-colors active:scale-125"
+                    >
+                        {emoji}
+                    </button>
+                ))}
+                <button onClick={(e) => { e.stopPropagation(); setLongPressNoticeId(null); }} className="w-10 h-10 flex items-center justify-center text-gray-400 hover:bg-gray-100 rounded-full text-xs">
+                    <X className="w-4 h-4" />
+                </button>
+            </div>
+        </div>
+    )
+
+    if ((!notices || notices.length === 0) && (!birthdays || birthdays.length === 0)) return null
 
     const monthNames = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"]
     
@@ -181,8 +221,6 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
 
     const sortedBirthdays = getSortedBirthdays()
     const primaryBirthday = sortedBirthdays[0]
-
-    // ────────────── LÓGICA DE PRIORIZAÇÃO ──────────────
     const urgentNotices = notices.filter(n => n.priority === 'urgente')
     const generalNotices = notices.filter(n => n.priority !== 'urgente')
 
@@ -192,55 +230,12 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
         normal: { bg: 'bg-white', text: 'text-[#1b1c1a]', icon: <Bell className="w-5 h-5" /> }
     }
 
-    // ────────────── RENDERIZAÇÃO: CAMADA 1 - URGENTES ──────────────
-    const renderUrgentLayer = () => {
-        if (urgentNotices.length === 0) return null
-
-        return (
-            <div className="space-y-3">
-                {urgentNotices.map(notice => (
-                    <div 
-                        key={notice.id}
-                        onPointerDown={() => handlePressStart(notice.id)}
-                        onPointerUp={handlePressEnd}
-                        onPointerLeave={handlePressEnd}
-                        onClick={() => !longPressNoticeId && handleOpenNotice(notice)}
-                        className="relative overflow-hidden rounded-[2rem] border border-[#B13A2B] bg-[#B13A2B] text-white p-5 cursor-pointer active:scale-[0.98] transition-all shadow-lg shadow-red-100"
-                    >
-                        {/* QUICK REACTION MENU */}
-                        {longPressNoticeId === notice.id && renderQuickReactionMenu(notice.id)}
-
-                        <div className="flex gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
-                                <AlertOctagon className="w-6 h-6 text-white" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between mb-1">
-                                    <span className="text-[8px] font-black uppercase tracking-[0.2em] bg-white/20 px-2 py-0.5 rounded-md">
-                                        Critico • {notice.type.replace('_', ' ')}
-                                    </span>
-                                    {renderInteractionSummary(notice)}
-                                </div>
-                                <h4 className="text-sm font-black leading-tight mb-1">{notice.title}</h4>
-                                <p className="text-xs opacity-90 line-clamp-2 leading-relaxed">{notice.message}</p>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        )
-    }
-
-    // ────────────── RENDERIZAÇÃO: CAMADA 2 - GERAIS (FEEDS/STACK) ──────────────
     const renderGeneralLayer = () => {
         if (generalNotices.length === 0) return null
-
-        // Em modo home, mostramos APENAS o primeiro aviso geral se não houver urgente
         if (urgentNotices.length > 0) return null
 
         const mainNotice = generalNotices[0]
         const remainingCount = generalNotices.length - 1
-        const hasMore = generalNotices.length > 1
         const style = priorityStyles[mainNotice.priority] || priorityStyles.normal
 
         return (
@@ -250,12 +245,9 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
                     className={`relative overflow-hidden rounded-3xl border border-gray-100 ${style.bg} ${style.text} p-5 cursor-pointer active:scale-[0.98] transition-all shadow-sm`}
                 >
                     {longPressNoticeId === mainNotice.id && renderQuickReactionMenu(mainNotice.id)}
-                    
                     <div className="flex gap-4">
                         <div className="w-11 h-11 rounded-2xl bg-[#F8F7F4] flex items-center justify-center shrink-0">
-                            <div className="text-[#8c716c]">
-                                {style.icon}
-                            </div>
+                            <div className="text-[#8c716c]">{style.icon}</div>
                         </div>
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
@@ -270,7 +262,7 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
                     </div>
                 </div>
 
-                {hasMore && (
+                {generalNotices.length > 1 && (
                     <div className="flex items-center justify-between px-6 -mt-1 group cursor-pointer active:scale-95 transition-all" onClick={() => setShowAllGeneral(true)}>
                          <div className="flex items-center gap-2">
                             <div className="w-1 h-1 rounded-full bg-[#B13A2B] animate-pulse" />
@@ -288,10 +280,8 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
         )
     }
 
-    // ────────────── RENDERIZAÇÃO: CAMADA 3 - COMEMORATIVO (ANIVERSÁRIOS) ──────────────
     const renderBirthdayLayer = () => {
         if (!primaryBirthday) return null
-
         return (
             <div className="pt-2">
                 <div 
@@ -305,7 +295,6 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
                             <Cake className="w-5 h-5 text-indigo-300" />
                         )}
                     </div>
-
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
                             <span className="text-[7px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100/50">Time NaBrasa</span>
@@ -313,7 +302,6 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
                         </div>
                         <h4 className="text-[13px] font-black text-[#1b1c1a] truncate">Aniversariante: {primaryBirthday.name}</h4>
                     </div>
-
                     <div className="flex items-center gap-1.5 pr-2">
                         <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-indigo-50 transition-colors">
                             <Gift className="w-4 h-4 text-gray-300 group-hover:text-indigo-400" />
@@ -324,42 +312,6 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
             </div>
         )
     }
-
-    // HELPERS DE INTERAÇÃO
-    const renderQuickReactionMenu = (noticeId: string) => (
-        <div className="absolute inset-0 z-50 bg-white/60 backdrop-blur-md flex items-center justify-center animate-in fade-in zoom-in duration-200">
-            <div className="flex gap-2 p-2 bg-white rounded-3xl shadow-xl border border-gray-100">
-                {['👍', '✅', '👀', '🙌', '🔥'].map(emoji => (
-                    <button 
-                        key={emoji}
-                        onClick={(e) => { e.stopPropagation(); handleQuickReaction(noticeId, emoji); }}
-                        className="w-10 h-10 flex items-center justify-center text-xl hover:bg-gray-100 rounded-full transition-colors active:scale-125"
-                    >
-                        {emoji}
-                    </button>
-                ))}
-                <button onClick={(e) => { e.stopPropagation(); setLongPressNoticeId(null); }} className="w-10 h-10 flex items-center justify-center text-gray-400 hover:bg-gray-100 rounded-full text-xs">
-                    <X className="w-4 h-4" />
-                </button>
-            </div>
-        </div>
-    )
-
-    const renderInteractionSummary = (notice: Notice) => (
-        <div className="flex items-center gap-2">
-            {notice.reaction_summary && Object.keys(notice.reaction_summary).length > 0 ? (
-                <div className="flex items-center -space-x-1">
-                    {Object.keys(notice.reaction_summary).slice(0, 2).map(e => <span key={e} className="text-[9px]">{e}</span>)}
-                    {notice.reaction_count && notice.reaction_count > 1 && <span className="ml-1 text-[8px] font-black opacity-50">+{notice.reaction_count - 1}</span>}
-                </div>
-            ) : null}
-            {notice.response_count && notice.response_count > 0 && (
-                <span className="flex items-center gap-0.5 text-[8px] font-black opacity-40">
-                    <MessageSquare className="w-2 h-2" /> {notice.response_count}
-                </span>
-            )}
-        </div>
-    )
 
     return (
         <div className="bg-[#fff7f6] rounded-[2.5rem] p-5 border border-[#f5eded] shadow-sm space-y-5 animate-in fade-in duration-700">
@@ -375,7 +327,6 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
             </header>
 
             <div className="space-y-4">
-                {/* CAMADA 1: URGENTES (Mostramos no máximo 1 se for urgente) */}
                 {urgentNotices.length > 0 ? (
                     <div className="space-y-3">
                         <div 
@@ -410,15 +361,13 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
                         )}
                     </div>
                 ) : (
-                    /* CAMADA 2: GERAIS */
                     renderGeneralLayer()
                 )}
 
-                {/* CAMADA 3: ANIVERSÁRIOS */}
                 {renderBirthdayLayer()}
             </div>
 
-            {/* BIRTHDAY FULL LIST DRAWER */}
+            {/* BIRTHDAY LIST DRAWER */}
             {isBirthdayDrawerOpen && (
                 <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 backdrop-blur-sm p-0 animate-in fade-in duration-300">
                     <div className="absolute inset-0" onClick={() => setIsBirthdayDrawerOpen(false)} />
@@ -435,9 +384,9 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
                             {sortedBirthdays.map((b) => {
                                 const [d, m] = b.date.split('/')
                                 const label = monthNames[parseInt(m) - 1]
-                                const isToday = parseInt(d) === new Date().getDate() && parseInt(m) === new Date().getMonth() + 1
+                                const isTodayDay = parseInt(d) === new Date().getDate() && parseInt(m) === new Date().getMonth() + 1
                                 return (
-                                    <div key={b.id} className={`p-4 rounded-3xl flex items-center gap-4 border transition-all ${isToday ? 'bg-indigo-50 border-indigo-200 shadow-sm' : 'bg-gray-50 border-gray-100'}`}>
+                                    <div key={b.id} className={`p-4 rounded-3xl flex items-center gap-4 border transition-all ${isTodayDay ? 'bg-indigo-50 border-indigo-200 shadow-sm' : 'bg-gray-50 border-gray-100'}`}>
                                         <div className="w-12 h-12 rounded-2xl bg-white flex flex-col items-center justify-center shadow-sm border border-gray-100">
                                             <span className="text-[8px] font-extrabold text-[#B13A2B] leading-none mb-0.5">{label}</span>
                                             <span className="text-lg font-black text-[#1b1c1a] leading-none">{d}</span>
@@ -447,9 +396,9 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <h4 className="text-sm font-black text-[#1b1c1a] truncate">{b.name}</h4>
-                                            {isToday && <span className="text-[9px] font-black text-indigo-600 uppercase flex items-center gap-1"><Sparkles className="w-3 h-3" /> É Hoje! Parabéns!</span>}
+                                            {isTodayDay && <span className="text-[9px] font-black text-indigo-600 uppercase flex items-center gap-1"><Sparkles className="w-3 h-3" /> É Hoje! Parabéns!</span>}
                                         </div>
-                                        <Gift className={`w-5 h-5 ${isToday ? 'text-indigo-400' : 'text-gray-200'}`} />
+                                        <Gift className={`w-5 h-5 ${isTodayDay ? 'text-indigo-400' : 'text-gray-200'}`} />
                                     </div>
                                 )
                             })}
@@ -463,16 +412,12 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
                 <div className="fixed inset-0 z-[100] flex items-end justify-center">
                     <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setSelectedNotice(null)} />
                     <div className="relative w-full max-w-2xl bg-white rounded-t-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-500 max-h-[92vh]">
-                        {/* BOTTOM SHEET HANDLE */}
                         <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mt-4 mb-2 shrink-0 opacity-40" />
-
-                        {/* HEADER */}
                         <header className={`p-8 pt-4 pb-6 ${
                             selectedNotice.priority === 'urgente' ? 'bg-[#fdf0ef] text-[#B13A2B]' : 
                             selectedNotice.priority === 'importante' ? 'bg-amber-50 text-amber-900' : 'bg-white text-[#1b1c1a]'
                         } relative shrink-0 border-b border-black/5`}>
                             <button onClick={() => setSelectedNotice(null)} className="absolute top-6 right-6 p-2 bg-black/5 hover:bg-black/10 rounded-full transition-colors"><X className="w-5 h-5" /></button>
-                            
                             <div className="flex items-center gap-2 mb-3">
                                 <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg ${
                                     selectedNotice.priority === 'urgente' ? 'bg-white/20 text-white' : 'bg-black/5'
@@ -486,16 +431,12 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
                             </div>
                         </header>
 
-                        {/* CONTENT */}
                         <div className="flex-1 overflow-y-auto p-8 space-y-8">
                             <div>
                                 <h3 className="text-[10px] font-black text-[#c0b3b1] uppercase tracking-[0.2em] mb-4">Mensagem Completa</h3>
-                                <p className="text-base text-[#1b1c1a] leading-relaxed font-medium">
-                                    {selectedNotice.message}
-                                </p>
+                                <p className="text-base text-[#1b1c1a] leading-relaxed font-medium">{selectedNotice.message}</p>
                             </div>
 
-                            {/* REAÇÕES */}
                             <div>
                                 <h3 className="text-[10px] font-black text-[#c0b3b1] uppercase tracking-[0.2em] mb-4">Reações Rápidas</h3>
                                 <div className="flex flex-wrap gap-2">
@@ -503,7 +444,6 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
                                         const count = interactions.reactions.filter(r => r.emoji === emoji).length;
                                         const hasReacted = interactions.reactions.some(r => r.emoji === emoji && r.user_id === userId);
                                         return (
-
                                             <button 
                                                 key={emoji}
                                                 onClick={() => handleToggleReaction(emoji)}
@@ -519,13 +459,11 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
                                 </div>
                             </div>
 
-                            {/* THREAD DE RESPOSTAS */}
                             <div>
                                 <h3 className="text-[10px] font-black text-[#c0b3b1] uppercase tracking-[0.2em] mb-4 flex items-center justify-between">
                                     <span>Respostas e Retornos</span>
                                     <span className="bg-[#f5f4f1] px-2 py-0.5 rounded-full text-[10px] text-[#8c716c]">{interactions.responses.length}</span>
                                 </h3>
-
                                 <div className="space-y-4">
                                     {isLoadingInteractions ? (
                                         [1, 2].map(i => <div key={i} className="h-16 bg-gray-50 rounded-2xl animate-pulse" />)
@@ -549,7 +487,6 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
                             </div>
                         </div>
 
-                        {/* INPUT FOOTER */}
                         <div className="p-6 bg-white border-t border-[#e9e8e5]">
                             <div className="flex gap-2">
                                 <input 
@@ -559,10 +496,9 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
                                     className="flex-1 h-12 px-4 rounded-2xl bg-[#F8F7F4] border border-[#e9e8e5] text-sm font-black text-[#1b1c1a] placeholder:text-[#8c716c] focus:ring-2 focus:ring-[#B13A2B]/30 outline-none transition-all"
                                     onKeyDown={e => e.key === 'Enter' && handleSendResponse()}
                                 />
-
                                 <button 
                                     onClick={handleSendResponse}
-                                    disabled={!responseText || isSendingResponse}
+                                    disabled={!responseText.trim() || isSendingResponse}
                                     className="w-12 h-12 rounded-2xl bg-[#B13A2B] text-white flex items-center justify-center shadow-lg shadow-red-100 hover:scale-110 active:scale-95 transition-all disabled:opacity-30 disabled:scale-100"
                                 >
                                     {isSendingResponse ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-5 h-5" />}
@@ -573,6 +509,5 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId,
                 </div>
             )}
         </div>
-
     )
 }

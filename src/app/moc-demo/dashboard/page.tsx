@@ -7,6 +7,8 @@ import { useMocDemoStore } from '@/demo/use-moc-demo-store'
 import OperatorHome from '@/app/dashboard/components/operator/OperatorHome'
 import DemoHeader from '../components/DemoHeader'
 import DemoBottomNav from '../components/DemoBottomNav'
+import { Leak } from '@/app/actions/efficiencyAction'
+import { DashboardActions } from '@/app/dashboard/hooks/useDashboardData'
 
 export default function MocDemoDashboard() {
     const router = useRouter()
@@ -31,11 +33,6 @@ export default function MocDemoDashboard() {
 
     // Mocking the data expected by OperatorHome
     const healthScore = 85
-    const activeLeaks: Leak[] = [
-        { id: '1', label: 'Desperdício de Proteína', type: 'waste' },
-        { id: '2', label: 'Atraso na Limpeza L1', type: 'delay' }
-    ]
-    const weeklyLeaks: Leak[] = []
     const cmvStatus = { current: 0.32, target: 0.30, status: 'warning' as const }
     const weeklyFocus = { id: 'f1', title: 'Foco na integridade física do estoque e redução de sobras.', created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
     
