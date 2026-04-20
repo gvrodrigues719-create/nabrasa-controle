@@ -34,10 +34,11 @@ interface Props {
     notices: Notice[]
     birthdays?: Birthday[]
     userId: string
+    isDemoMode?: boolean
 }
 
 
-export default function OperationalNoticeCard({ notices, birthdays = [], userId }: Props) {
+export default function OperationalNoticeCard({ notices, birthdays = [], userId, isDemoMode }: Props) {
 
     const [isBirthdayDrawerOpen, setIsBirthdayDrawerOpen] = useState(false)
     const [showAllGeneral, setShowAllGeneral] = useState(false)
@@ -53,11 +54,16 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
 
 
 
-    if ((!notices || notices.length === 0) && (!birthdays || birthdays.length === 0)) return null
+        
+        if (isDemoMode) {
+            setInteractions({ 
+                reactions: notice.reaction_count ? Array(notice.reaction_count).fill({ emoji: '👍', user_id: 'other' }) : [], 
+                responses: [] 
+            })
+            setIsLoadingInteractions(false)
+            return
+        }
 
-    const handleOpenNotice = async (notice: Notice) => {
-        setSelectedNotice(notice)
-        setIsLoadingInteractions(true)
         const res = await getNoticeInteractionsAction(notice.id)
         if (res.success && res.data) {
             setInteractions(res.data)
@@ -67,9 +73,23 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
     }
 
     const handleToggleReaction = async (emoji: string) => {
-        if (!selectedNotice) return
-        
-        // Optimistic UI could be added here, but let's keep it simple first
+        if (isDemoMode) {
+            // Mock reaction toggle
+            const existing = interactions.reactions.find(r => r.emoji === emoji && r.user_id === userId)
+            if (existing) {
+                setInteractions({
+                    ...interactions,
+                    reactions: interactions.reactions.filter(r => r !== existing)
+                })
+            } else {
+                setInteractions({
+                    ...interactions,
+                    reactions: [...interactions.reactions, { emoji, user_id: userId }]
+                })
+            }
+            return
+        }
+
         const res = await toggleNoticeReactionAction(selectedNotice.id, emoji)
         if (res.success) {
             // Refresh interactions
@@ -97,6 +117,7 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
 
     const handleQuickReaction = async (noticeId: string, emoji: string) => {
         setLongPressNoticeId(null)
+        if (isDemoMode) return
         await toggleNoticeReactionAction(noticeId, emoji)
         router.refresh()
     }
@@ -104,9 +125,22 @@ export default function OperationalNoticeCard({ notices, birthdays = [], userId 
 
     const handleSendResponse = async () => {
 
-        if (!selectedNotice || !responseText || isSendingResponse) return
-        
-        setIsSendingResponse(true)
+        if (isDemoMode) {
+            setInteractions({
+                ...interactions,
+                responses: [{
+                    id: Math.random().toString(),
+                    message: responseText,
+                    created_at: new Date().toISOString(),
+                    user_id: userId,
+                    users: { name: 'Você (Demo)', role: 'operator' }
+                }, ...interactions.responses]
+            })
+            setResponseText('')
+            setIsSendingResponse(false)
+            return
+        }
+
         const res = await addNoticeResponseAction(selectedNotice.id, responseText)
         if (res.success) {
             setResponseText('')

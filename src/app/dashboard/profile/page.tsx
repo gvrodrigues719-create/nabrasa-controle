@@ -16,6 +16,28 @@ import {
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
+function ProfileContent() {
+    const { userName, userRole, userId, loadingIdentity, primaryAreaName } = useDashboardIdentity()
+    
+    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+    const isDemoMode = searchParams?.get('demo') === 'true' || searchParams?.get('demo') === '1'
+
+    const { 
+        userPoints, 
+        monthlyScore, 
+        monthlyPoints, 
+        consistency,
+        participation,
+        rankPosition, 
+        recentActivities, 
+        loadingData 
+    } = useDashboardData(userId, isDemoMode)
+
+    const { isRewardsDrawerOpen, setIsRewardsDrawerOpen } = useDashboardUI(userRole)
+
+    const loading = loadingIdentity || loadingData
+
+    if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-[#F8F7F4]">
                 <div className="w-8 h-8 border-4 border-[#B13A2B] border-t-transparent rounded-full animate-spin" />

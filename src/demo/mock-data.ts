@@ -28,7 +28,7 @@ export interface DemoNotice {
     title: string;
     message: string;
     author_id: string;
-    type: 'operacional' | 'comunicado_geral' | 'destaque';
+    type: 'operacional' | 'item_em_falta' | 'promocao' | 'mudanca_de_turno' | 'comunicado_geral';
     priority: 'normal' | 'importante' | 'urgente';
     date: string;
     reactions: { emoji: string; count: number }[];

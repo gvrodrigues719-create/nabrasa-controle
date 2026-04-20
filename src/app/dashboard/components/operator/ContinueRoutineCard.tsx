@@ -7,10 +7,12 @@ import { ActiveSession } from '../../hooks/useDashboardData'
 
 interface Props {
     session: ActiveSession | null
+    isDemoMode?: boolean
 }
 
-export default function ContinueRoutineCard({ session }: Props) {
+export default function ContinueRoutineCard({ session, isDemoMode }: Props) {
     if (!session) return null
+    const baseUrl = isDemoMode ? '/moc-demo' : '/dashboard'
 
     const isGeneric = session.routineName === 'Rotina' || session.groupName === 'Setor'
     if (isGeneric) return null
@@ -18,7 +20,7 @@ export default function ContinueRoutineCard({ session }: Props) {
     return (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
             <Link 
-                href={`/dashboard/${session.type}/${session.routineId}/${session.groupId}?returnTo=/dashboard`}
+                href={`${baseUrl}/${session.type}/${session.routineId}/${session.groupId}?returnTo=${baseUrl}`}
                 className="block relative overflow-hidden bg-[#1b1c1a] rounded-[2.5rem] p-6 shadow-xl shadow-black/10 group active:scale-[0.98] transition-all"
             >
                 {/* Background Pattern / Glow */}

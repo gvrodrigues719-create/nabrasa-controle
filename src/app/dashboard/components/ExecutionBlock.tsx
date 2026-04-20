@@ -12,16 +12,25 @@ interface Props {
     checklistsPending: number
     onReportLoss: () => void
     recommendedActions: DashboardAction[]
+    isDemoMode?: boolean
 }
 
-export default function ExecutionBlock({ routinesCount, countsPending, checklistsPending, onReportLoss, recommendedActions }: Props) {
+export default function ExecutionBlock({ 
+    routinesCount, 
+    countsPending, 
+    checklistsPending, 
+    onReportLoss, 
+    recommendedActions,
+    isDemoMode 
+}: Props) {
     const topRecommended = recommendedActions[0]
+    const baseUrl = isDemoMode ? '/moc-demo' : '/dashboard'
 
     return (
         <section className="animate-in fade-in slide-in-from-bottom-3 duration-700 delay-150">
             <header className="flex items-center justify-between mb-3.5 px-1">
                 <p className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest">Ação Prioritária</p>
-                <Link href="/dashboard/routines?returnTo=/dashboard" className="text-[10px] font-black text-[#B13A2B] uppercase tracking-tight flex items-center gap-1 group">
+                <Link href={`${baseUrl}/routines?returnTo=${baseUrl}`} className="text-[10px] font-black text-[#B13A2B] uppercase tracking-tight flex items-center gap-1 group">
                     Ver todas <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
             </header>
@@ -52,7 +61,7 @@ export default function ExecutionBlock({ routinesCount, countsPending, checklist
 
                 {/* UNIFIED PRIMARY ACTION: TAREFAS DO TURNO */}
                 <Link 
-                    href="/dashboard/routines?returnTo=/dashboard"
+                    href={`${baseUrl}/routines?returnTo=${baseUrl}`}
                     className="relative overflow-hidden bg-white rounded-[2rem] p-6 border border-[#e9e8e5] flex items-center gap-5 active:scale-[0.98] transition-all group shadow-sm hover:shadow-md"
                 >
                     {/* Status Light */}

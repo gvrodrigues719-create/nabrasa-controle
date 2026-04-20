@@ -99,7 +99,7 @@ export default function OperatorHome({
     return (
         <div className="space-y-4 md:space-y-6 pb-20 md:pb-6">
             {/* 1. ALERTAS — ATRASOS CRÍTICOS (CRÍTICO EM CIMA) */}
-            <OperationalAlertBanner lateCount={lateCount} />
+            <OperationalAlertBanner lateCount={lateCount} isDemoMode={isDemoMode} />
 
             {/* DESTAQUE DO MÊS (SE RANK 1) */}
             {rankPosition === 1 && highlightScore > 0 && (
@@ -125,10 +125,11 @@ export default function OperatorHome({
                 checklistsPending={checklistsPending}
                 onReportLoss={onReportLoss}
                 recommendedActions={actions.recommended}
+                isDemoMode={isDemoMode}
             />
 
             {/* 2.1 CONTINUIDADE — CONTINUAR DE ONDE PAREI */}
-            <ContinueRoutineCard session={activeSession} />
+            <ContinueRoutineCard session={activeSession} isDemoMode={isDemoMode} />
 
             {/* 2.2 RESPONSABILIDADE — SUA ÁREA HOJE */}
             <MyAreaTodayCard 
@@ -138,7 +139,7 @@ export default function OperatorHome({
 
             {/* 3. MURAL — AVISOS DA CASA (Mural como preview) */}
             <div id="mural">
-                <OperationalNoticeCard notices={notices} birthdays={birthdays} userId={userId} />
+                <OperationalNoticeCard notices={notices} birthdays={birthdays} userId={userId} isDemoMode={isDemoMode} />
             </div>
 
             {/* 4. HERO — SAÚDE DA OPERAÇÃO (EFICIÊNCIA) */}

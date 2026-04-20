@@ -6,14 +6,16 @@ import Link from 'next/link'
 
 interface Props {
     lateCount: number
+    isDemoMode?: boolean
 }
 
-export default function OperationalAlertBanner({ lateCount }: Props) {
+export default function OperationalAlertBanner({ lateCount, isDemoMode }: Props) {
     if (lateCount === 0) return null
+    const baseUrl = isDemoMode ? '/moc-demo' : '/dashboard'
 
     return (
         <Link 
-            href="/dashboard/checklist"
+            href={`${baseUrl}/checklist`}
             className="flex items-center gap-4 p-4 rounded-2xl bg-[#FFF1F0] border border-[#FEE2E2] shadow-sm active:scale-[0.98] transition-all group"
         >
             <div className="w-10 h-10 rounded-xl bg-[#FECECB] flex items-center justify-center text-[#B13A2B] group-hover:bg-[#B13A2B] group-hover:text-white transition-all">

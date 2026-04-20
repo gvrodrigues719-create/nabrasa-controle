@@ -31,13 +31,13 @@ export default function MocDemoDashboard() {
 
     // Mocking the data expected by OperatorHome
     const healthScore = 85
-    const activeLeaks = [
+    const activeLeaks: Leak[] = [
         { id: '1', label: 'Desperdício de Proteína', type: 'waste' },
         { id: '2', label: 'Atraso na Limpeza L1', type: 'delay' }
     ]
-    const weeklyLeaks: any[] = []
-    const cmvStatus = { current: 0.32, target: 0.30, status: 'warning' }
-    const weeklyFocus = { title: 'Foco na integridade física do estoque e redução de sobras.' }
+    const weeklyLeaks: Leak[] = []
+    const cmvStatus = { current: 0.32, target: 0.30, status: 'warning' as const }
+    const weeklyFocus = { id: 'f1', title: 'Foco na integridade física do estoque e redução de sobras.', created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
     
     // Sort users by weekly points for ranking
     const topRanking = [...users]
@@ -48,48 +48,48 @@ export default function MocDemoDashboard() {
 
     const myArea = areas.find(a => a.id === (activeUser.primary_area === 'Cozinha' ? 'area1' : activeUser.primary_area === 'Bar' ? 'area2' : activeUser.primary_area === 'Salão' ? 'area3' : activeUser.primary_area === 'Estoque seco' ? 'area4' : 'area6')) || areas[0]
 
-    const demoActions = {
+    const demoActions: DashboardActions = {
         primary: {
-            label: 'Contagem de Proteínas',
             id: 'p1',
-            type: 'count' as const,
-            url: '/moc-demo/routines/count',
+            label: 'Contagem de Proteínas',
             description: 'Ação sugerida pelo sistema',
+            type: 'count',
             areaName: 'Cozinha',
-            status: 'pending' as const,
-            priority: 'high' as const
+            status: 'pending',
+            priority: 'high',
+            url: '/moc-demo/routines/count'
         },
         area: {
-            label: myArea.status === 'completed' ? 'Revisar área' : 'Iniciar Contagem',
-            url: '/moc-demo/routines/count',
             id: 'a1',
-            type: 'count' as const,
+            label: myArea.status === 'completed' ? 'Revisar área' : 'Iniciar Contagem',
             description: 'Tarefa do seu setor',
+            type: 'count',
             areaName: myArea.name,
-            status: 'pending' as const,
-            priority: 'medium' as const
+            status: 'pending',
+            priority: 'medium',
+            url: '/moc-demo/routines/count'
         },
         overdue: [],
         recommended: [
             { 
-                label: 'Contagem de Proteínas', 
                 id: 'c1', 
-                type: 'count' as const, 
-                url: '/moc-demo/routines/count',
+                label: 'Contagem de Proteínas', 
                 description: 'Verificação diária de estoque',
+                type: 'count',
                 areaName: 'Cozinha',
-                status: 'pending' as const,
-                priority: 'medium' as const
+                status: 'pending',
+                priority: 'medium',
+                url: '/moc-demo/routines/count'
             },
             { 
-                label: 'Checklist de Abertura', 
                 id: 'ch1', 
-                type: 'checklist' as const, 
-                url: '/moc-demo/routines/checklist',
+                label: 'Checklist de Abertura', 
                 description: 'Prévia da próxima rotina',
+                type: 'checklist',
                 areaName: 'Geral',
-                status: 'pending' as const,
-                priority: 'low' as const
+                status: 'pending',
+                priority: 'low',
+                url: '/moc-demo/routines/checklist'
             }
         ]
     }
@@ -99,16 +99,24 @@ export default function MocDemoDashboard() {
         return Promise.resolve()
     }
 
+    const handlers = {
+        onViewGlobalClick: () => router.push('/moc-demo/areas'),
+        onReportLoss: () => {},
+        onOpenRewards: () => router.push('/moc-demo/profile'),
+        onOpenAI: () => {},
+        onUpdateFocus: handleUpdateFocus
+    }
+
     return (
         <div className="flex flex-col min-h-screen">
             <DemoHeader />
             <div className="flex-1 p-4 pb-24 overflow-y-auto">
                 <OperatorHome 
                     healthScore={healthScore}
-                    activeLeaks={activeLeaks as any}
-                    weeklyLeaks={weeklyLeaks as any}
+                    activeLeaks={activeLeaks}
+                    weeklyLeaks={weeklyLeaks}
                     cmvStatus={cmvStatus}
-                    weeklyFocus={weeklyFocus as any}
+                    weeklyFocus={weeklyFocus}
                     userRole={activeUser.role}
                     routinesCount={3}
                     monthlyScore={85}
@@ -132,8 +140,8 @@ export default function MocDemoDashboard() {
                         id: n.id,
                         title: n.title,
                         message: n.message,
-                        type: n.type,
-                        priority: n.priority,
+                        type: n.type as 'operacional' | 'item_em_falta' | 'promocao' | 'mudanca_de_turno' | 'comunicado_geral',
+                        priority: n.priority as 'normal' | 'importante' | 'urgente',
                         created_at: n.date,
                         reaction_count: n.reactions.reduce((acc, r) => acc + r.count, 0)
                     }))}
@@ -147,15 +155,11 @@ export default function MocDemoDashboard() {
                         name: myArea.name,
                         pendingCount: myArea.pending_tasks,
                         delayCount: myArea.status === 'delayed' ? 1 : 0,
-                        nextActionLabel: demoActions.area.label,
-                        nextActionUrl: demoActions.area.url
+                        nextActionLabel: demoActions.area?.label || '',
+                        nextActionUrl: demoActions.area?.url
                     }}
-                    actions={demoActions as any}
-                    onViewGlobalClick={() => router.push('/moc-demo/areas')}
-                    onReportLoss={() => {}}
-                    onOpenRewards={() => router.push('/moc-demo/profile')}
-                    onOpenAI={() => {}}
-                    onUpdateFocus={handleUpdateFocus}
+                    actions={demoActions}
+                    {...handlers}
                 />
             </div>
             <DemoBottomNav />
