@@ -179,8 +179,8 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName, i
 
                         // No SDK 6, iteramos pelas partes da mensagem
                         const messageText = msg.parts
-                            .filter(part => part.type === 'text')
-                            .map(part => (part as any).text)
+                            .filter((part: any) => part.type === 'text')
+                            .map((part: any) => part.text)
                             .join('')
 
                         return (
