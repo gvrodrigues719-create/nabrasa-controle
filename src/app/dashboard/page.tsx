@@ -41,6 +41,9 @@ function DashboardContent() {
         monthlyScore,
         monthlyPoints,
         monthlyAvailable,
+        consistency,
+        participation,
+        highlightScore,
         rankPosition,
         healthScore,
         activeLeaks,
@@ -174,6 +177,9 @@ function DashboardContent() {
                         monthlyScore={monthlyScore}
                         monthlyPoints={monthlyPoints}
                         monthlyAvailable={monthlyAvailable}
+                        consistency={consistency}
+                        participation={participation}
+                        highlightScore={highlightScore}
                         totalPoints={userPoints ?? 0}
                         rankPosition={rankPosition}
                         lastSealing={lastSealing}

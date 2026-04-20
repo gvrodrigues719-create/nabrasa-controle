@@ -312,6 +312,81 @@ export async function getUserRecentActivitiesAction(userId: string, limit = 5) {
     }
 }
 
+// ═══ MOTOR MENSAL V2 (OFERECIMENTOS REAIS) ═══
+
+/**
+ * Calcula o potencial de pontos diários de um usuário baseado nas rotinas atribuídas.
+ */
+async function calculateUserPotential(userId: string, track: UserTrack) {
+    const { data: user } = await supabase.from('users').select('primary_group_id').eq('id', userId).single()
+    if (!user?.primary_group_id) return 0
+
+    const { data: routines } = await supabase
+        .from('routine_groups')
+        .select(`
+            routine_id,
+            routines:routine_id (
+                id,
+                routine_type,
+                checklist_template_id
+            )
+        `)
+        .eq('group_id', user.primary_group_id)
+
+    if (!routines || routines.length === 0) return 0
+
+    let dailyPotential = 0
+
+    routines.forEach((rg: any) => {
+        const r = rg.routines
+        if (!r) return
+
+        const type = r.routine_type === 'checklist' ? 'checklist_completion' : 'count_group_completion'
+        const weight = TRACK_WEIGHTS[track][type] || 0
+        
+        // Assume 1 vez ao dia por padrão (v2 simplificada)
+        dailyPotential += weight
+    })
+
+    return dailyPotential
+}
+
+/**
+ * Calcula a consistência do mês (dias ativos / dias passados).
+ */
+async function calculateConsistency(userId: string, startOfMonth: string) {
+    const dayOfMonth = new Date().getDate()
+    
+    // Busca dias distintos que tiveram eventos
+    const { data: events } = await supabase
+        .from('gamification_events')
+        .select('created_at')
+        .eq('user_id', userId)
+        .gte('created_at', startOfMonth)
+
+    if (!events || events.length === 0) return 0
+
+    const distinctDays = new Set(events.map(e => new Date(e.created_at).toISOString().split('T')[0]))
+    return Math.min((distinctDays.size / dayOfMonth) * 100, 100)
+}
+
+/**
+ * Calcula a participação do mês (tarefas feitas / total esperado).
+ */
+async function calculateParticipation(userId: string, startOfMonth: string, totalOpportunities: number) {
+    if (totalOpportunities <= 0) return 100
+
+    const { data: events } = await supabase
+        .from('gamification_events')
+        .select('id')
+        .eq('user_id', userId)
+        .in('source_type', ['count_group_completion', 'checklist_completion'])
+        .gte('created_at', startOfMonth)
+
+    const completedTasks = events?.length || 0
+    return Math.min((completedTasks / totalOpportunities) * 100, 100)
+}
+
 // ═══ MOTOR MENSAL (ETAPAS 5 & 6) ═══
 
 /**
@@ -339,33 +414,38 @@ export async function inferUserTrack(userId: string): Promise<UserTrack> {
 }
 
 /**
- * Calcula e persiste o score mensal de um usuário.
+ * Calcula e persiste o score mensal de um usuário (V2 - Lógica Real).
  */
 export async function recalculateMonthlyScoreAction(userId: string, monthRef?: string) {
     try {
-        const ref = monthRef || new Date().toISOString().slice(0, 7) // YYYY-MM
+        const ref = monthRef || new Date().toISOString().slice(0, 7)
         const track = await inferUserTrack(userId)
-        
-        // 1. Ganhos do Mês
         const startOfMonth = `${ref}-01T03:00:00Z`
+        const dayOfMonth = new Date().getDate()
+
+        // 1. Ganhos do Mês (Real)
         const { data: events } = await supabase
             .from('gamification_events')
-            .select('points, source_type')
+            .select('points')
             .eq('user_id', userId)
             .gte('created_at', startOfMonth)
 
         const pointsEarned = events?.reduce((acc, curr) => acc + curr.points, 0) || 0
 
-        // 2. Disponíveis do Mês (Estimativa teórica v1)
-        // Por enquanto, baseamos na agenda teórica: 2 checklists/dia e 1 contagem/dia como base.
-        // Em uma v2, isto leria a tabela 'routine_groups' para ser 100% preciso.
-        const daysInMonth = 30 
-        const dailyAvailable = (TRACK_WEIGHTS[track].checklist_completion || 20) * 1 + (TRACK_WEIGHTS[track].count_group_completion || 50) * 1
-        const pointsAvailable = dailyAvailable * daysInMonth
+        // 2. Disponíveis do Mês (V2 - Baseado em Potencial da Trilha e Agendamento)
+        const dailyPotential = await calculateUserPotential(userId, track)
+        const pointsAvailable = dailyPotential * dayOfMonth
+        const totalOpportunities = (dailyPotential > 0) ? (pointsAvailable / dailyPotential) : 0 // v2 simplificada de contagem total
 
-        const scorePercentage = Math.min((pointsEarned / (pointsAvailable || 1)) * 100, 100)
+        // 3. Métricas de Qualidade
+        const scorePercentage = pointsAvailable > 0 ? Math.min((pointsEarned / pointsAvailable) * 100, 110) : 100 // Bônus permitido até 110
+        const consistencyScore = await calculateConsistency(userId, startOfMonth)
+        const participationScore = await calculateParticipation(userId, startOfMonth, totalOpportunities)
 
-        // 3. Persistência
+        // 4. Fórmula do Destaque (70/20/10)
+        const highlightScore = (scorePercentage * 0.70) + (consistencyScore * 0.20) + (participationScore * 0.10)
+
+        // 5. Persistência
         const { error } = await supabase
             .from('monthly_user_scores')
             .upsert({
@@ -375,14 +455,17 @@ export async function recalculateMonthlyScoreAction(userId: string, monthRef?: s
                 points_earned: pointsEarned,
                 points_available: pointsAvailable,
                 score_percentage: scorePercentage,
+                consistency_score: consistencyScore,
+                participation_score: participationScore,
+                highlight_score: highlightScore,
                 updated_at: new Date().toISOString()
             }, { onConflict: 'user_id, month_ref' })
 
         if (error) throw error
 
-        return { success: true, scorePercentage, pointsEarned, pointsAvailable }
+        return { success: true, scorePercentage, consistencyScore, participationScore, highlightScore }
     } catch (err: any) {
-        console.error('[MonthlyScore] Erro:', err.message)
+        console.error('[MonthlyScoreV2] Erro:', err.message)
         return { success: false, error: err.message }
     }
 }
@@ -404,13 +487,16 @@ export async function getMonthlyOperatorSummaryAction(userId: string) {
             .eq('month_ref', ref)
             .single()
 
-        // Ranking Mensal (Top 5)
+        // Ranking Mensal (Top 5) de Highlights
         const rankingRes = await getMonthlyRankingAction(userId)
 
         return {
             success: true,
             monthRef: ref,
             score: scoreData?.score_percentage || 0,
+            consistency: scoreData?.consistency_score || 0,
+            participation: scoreData?.participation_score || 0,
+            highlightScore: scoreData?.highlight_score || 0,
             pointsEarned: scoreData?.points_earned || 0,
             pointsAvailable: scoreData?.points_available || 0,
             rankPosition: rankingRes.userPosition,
@@ -431,9 +517,9 @@ export async function getMonthlyRankingAction(userId?: string) {
 
         const { data: scores, error } = await supabase
             .from('monthly_user_scores')
-            .select('user_id, score_percentage, points_earned, users(name)')
+            .select('user_id, score_percentage, highlight_score, points_earned, users(name)')
             .eq('month_ref', ref)
-            .order('score_percentage', { ascending: false })
+            .order('highlight_score', { ascending: false })
 
         if (error) throw error
 

@@ -16,26 +16,6 @@ import {
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
-function ProfileContent() {
-    const { userName, userRole, userId, loadingIdentity, primaryAreaName } = useDashboardIdentity()
-    
-    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
-    const isDemoMode = searchParams?.get('demo') === 'true' || searchParams?.get('demo') === '1'
-
-    const {
-        userPoints,
-        monthlyScore,
-        monthlyPoints,
-        rankPosition,
-        recentActivities,
-        loadingData
-    } = useDashboardData(userId, isDemoMode)
-
-    const { isRewardsDrawerOpen, setIsRewardsDrawerOpen } = useDashboardUI(userRole)
-
-    const loading = loadingIdentity || loadingData
-
-    if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-[#F8F7F4]">
                 <div className="w-8 h-8 border-4 border-[#B13A2B] border-t-transparent rounded-full animate-spin" />
@@ -217,12 +197,27 @@ function ProfileContent() {
                                             <span className="text-[9px] block font-black text-white/40 uppercase">Score</span>
                                         </div>
                                     </div>
-                                    <div className="flex flex-col gap-2">
-                                        <p className="text-[10px] text-white/70 font-bold leading-relaxed">
-                                            Seu score de evolução reflete sua execução em relação ao total de oportunidades deste mês.
-                                        </p>
-                                        <p className="text-[10px] text-white/40 font-medium leading-relaxed">
-                                            Manter o ritmo garante que você permaneça no radar de reconhecimento da unidade.
+                                    <div className="flex flex-col gap-4">
+                                        <div className="space-y-1">
+                                            <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-white/40">
+                                                <span>Consistência Operacional</span>
+                                                <span className="text-white">{Math.round(consistency || 0)}%</span>
+                                            </div>
+                                            <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                                                <div className="h-full bg-blue-500 rounded-full" style={{ width: `${consistency || 0}%` }} />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest text-white/40">
+                                                <span>Taxa de Participação</span>
+                                                <span className="text-white">{Math.round(participation || 0)}%</span>
+                                            </div>
+                                            <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                                                <div className="h-full bg-green-500 rounded-full" style={{ width: `${participation || 0}%` }} />
+                                            </div>
+                                        </div>
+                                        <p className="text-[10px] text-white/40 font-medium leading-relaxed pt-2">
+                                            Seu score final é ponderado: 70% Desempenho, 20% Consistência e 10% Participação.
                                         </p>
                                     </div>
                                 </div>

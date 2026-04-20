@@ -11,14 +11,23 @@ import DemoBottomNav from '../components/DemoBottomNav'
 export default function MocDemoDashboard() {
     const router = useRouter()
     const { activeUser, users, areas, notices, events, addEvent, updateAreaStatus } = useMocDemoStore()
+    const [mounted, setMounted] = React.useState(false)
 
     useEffect(() => {
-        if (!activeUser) {
+        setMounted(true)
+    }, [])
+
+    useEffect(() => {
+        if (mounted && !activeUser) {
             router.push('/moc-demo')
         }
-    }, [activeUser, router])
+    }, [activeUser, router, mounted])
 
-    if (!activeUser) return null
+    if (!mounted || !activeUser) return (
+        <div className="min-h-screen flex items-center justify-center bg-[#F8F7F4]">
+            <div className="w-8 h-8 border-4 border-[#B13A2B] border-t-transparent rounded-full animate-spin" />
+        </div>
+    )
 
     // Mocking the data expected by OperatorHome
     const healthScore = 85
@@ -40,13 +49,48 @@ export default function MocDemoDashboard() {
     const myArea = areas.find(a => a.id === (activeUser.primary_area === 'Cozinha' ? 'area1' : activeUser.primary_area === 'Bar' ? 'area2' : activeUser.primary_area === 'Salão' ? 'area3' : activeUser.primary_area === 'Estoque seco' ? 'area4' : 'area6')) || areas[0]
 
     const demoActions = {
+        primary: {
+            label: 'Contagem de Proteínas',
+            id: 'p1',
+            type: 'count' as const,
+            url: '/moc-demo/routines/count',
+            description: 'Ação sugerida pelo sistema',
+            areaName: 'Cozinha',
+            status: 'pending' as const,
+            priority: 'high' as const
+        },
         area: {
             label: myArea.status === 'completed' ? 'Revisar área' : 'Iniciar Contagem',
-            url: '/moc-demo/routines/count'
+            url: '/moc-demo/routines/count',
+            id: 'a1',
+            type: 'count' as const,
+            description: 'Tarefa do seu setor',
+            areaName: myArea.name,
+            status: 'pending' as const,
+            priority: 'medium' as const
         },
+        overdue: [],
         recommended: [
-            { label: 'Contagem de Proteínas', id: 'c1', type: 'count' },
-            { label: 'Checklist de Abertura', id: 'ch1', type: 'checklist' }
+            { 
+                label: 'Contagem de Proteínas', 
+                id: 'c1', 
+                type: 'count' as const, 
+                url: '/moc-demo/routines/count',
+                description: 'Verificação diária de estoque',
+                areaName: 'Cozinha',
+                status: 'pending' as const,
+                priority: 'medium' as const
+            },
+            { 
+                label: 'Checklist de Abertura', 
+                id: 'ch1', 
+                type: 'checklist' as const, 
+                url: '/moc-demo/routines/checklist',
+                description: 'Prévia da próxima rotina',
+                areaName: 'Geral',
+                status: 'pending' as const,
+                priority: 'low' as const
+            }
         ]
     }
 
@@ -70,6 +114,9 @@ export default function MocDemoDashboard() {
                     monthlyScore={85}
                     monthlyPoints={activeUser.weekly_points}
                     monthlyAvailable={100}
+                    consistency={92}
+                    participation={100}
+                    highlightScore={88}
                     totalPoints={activeUser.points}
                     rankPosition={rankPosition > 0 ? rankPosition : null}
                     lastSealing={null}

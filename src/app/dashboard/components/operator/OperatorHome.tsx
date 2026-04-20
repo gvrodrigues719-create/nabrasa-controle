@@ -5,7 +5,7 @@ import ExecutionBlock from '../ExecutionBlock'
 import OperationalAlertBanner from './OperationalAlertBanner'
 import WeeklyProgressBar from '../WeeklyProgressBar'
 import OperationalNoticeCard from './OperationalNoticeCard'
-import { Sparkles, ArrowRight } from 'lucide-react'
+import { Sparkles, ArrowRight, Trophy } from 'lucide-react'
 import { WeeklyFocus } from '@/app/actions/weeklyFocusAction'
 import { Leak } from '@/app/actions/efficiencyAction'
 import RaffleCard from './RaffleCard'
@@ -28,6 +28,9 @@ interface OperatorHomeProps {
     monthlyScore: number;
     monthlyPoints: number;
     monthlyAvailable: number;
+    consistency: number;
+    participation: number;
+    highlightScore: number;
     totalPoints: number;
     rankPosition: number | null;
     lastSealing: any;
@@ -67,6 +70,9 @@ export default function OperatorHome({
     monthlyScore,
     monthlyPoints,
     monthlyAvailable,
+    consistency,
+    participation,
+    highlightScore,
     totalPoints,
     rankPosition,
     lastSealing,
@@ -94,6 +100,23 @@ export default function OperatorHome({
         <div className="space-y-4 md:space-y-6 pb-20 md:pb-6">
             {/* 1. ALERTAS — ATRASOS CRÍTICOS (CRÍTICO EM CIMA) */}
             <OperationalAlertBanner lateCount={lateCount} />
+
+            {/* DESTAQUE DO MÊS (SE RANK 1) */}
+            {rankPosition === 1 && highlightScore > 0 && (
+                <div className="mx-1 p-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 shadow-lg shadow-orange-200/50 flex items-center justify-between overflow-hidden relative group animate-in slide-in-from-top duration-500">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 blur-3xl rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-1000" />
+                    <div className="flex items-center gap-4 relative z-10">
+                        <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-white border border-white/30 shadow-inner">
+                            <Trophy className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black text-amber-100 uppercase tracking-widest mb-0.5">Reconhecimento</p>
+                            <h4 className="text-sm font-black text-white tracking-tight">Você é o Destaque do Mês!</h4>
+                        </div>
+                    </div>
+                    <Sparkles className="w-5 h-5 text-amber-200 animate-pulse relative z-10" />
+                </div>
+            )}
 
             {/* 2. EXECUÇÃO — CHECKLISTS E ROTINAS (CORAÇÃO DA OPERAÇÃO) */}
             <ExecutionBlock

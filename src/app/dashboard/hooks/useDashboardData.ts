@@ -46,6 +46,9 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
     const [monthlyScore, setMonthlyScore] = useState<number>(0)
     const [monthlyPoints, setMonthlyPoints] = useState<number>(0)
     const [monthlyAvailable, setMonthlyAvailable] = useState<number>(0)
+    const [consistency, setConsistency] = useState<number>(0)
+    const [participation, setParticipation] = useState<number>(0)
+    const [highlightScore, setHighlightScore] = useState<number>(0)
     const [rankPosition, setRankPosition] = useState<number | null>(null)
     const [healthScore, setHealthScore] = useState<number>(100)
     const [activeLeaks, setActiveLeaks] = useState<Leak[]>([])
@@ -287,6 +290,9 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                 setMonthlyScore(s.score)
                 setMonthlyPoints(s.pointsEarned)
                 setMonthlyAvailable(s.pointsAvailable)
+                setConsistency(s.consistency)
+                setParticipation(s.participation)
+                setHighlightScore(s.highlightScore)
                 setRankPosition(s.rankPosition)
                 setTopRanking(s.top5)
             }
@@ -321,6 +327,9 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
         monthlyScore,
         monthlyPoints,
         monthlyAvailable,
+        consistency,
+        participation,
+        highlightScore,
         rankPosition,
         healthScore,
         activeLeaks,
