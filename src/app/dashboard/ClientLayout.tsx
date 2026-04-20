@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { Loader2 } from 'lucide-react'
 import { ConfirmModal } from '@/components/ConfirmModal'
 import { logoutOperator } from '@/app/actions/pinAuth'
+import BottomNav from './components/operator/BottomNav'
 
 export default function ClientDashboardLayout({
     children,
@@ -18,6 +19,10 @@ export default function ClientDashboardLayout({
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
     const [opName, setOpName] = useState<string | null>(initialOp ? initialOp.name : null)
     const router = useRouter()
+    const pathname = usePathname()
+
+    const isExecutionPage = pathname?.includes('/routines/') || pathname?.includes('/checklist/') || pathname?.includes('/count/')
+    const showBottomNav = !isExecutionPage
 
     useEffect(() => {
         let isMounted = true
@@ -84,9 +89,10 @@ export default function ClientDashboardLayout({
                     </div>
                 </div>
             </header>
-            <main className="pb-20 max-w-md lg:max-w-6xl mx-auto relative z-0">
+            <main className={`max-w-md lg:max-w-6xl mx-auto relative z-0 ${showBottomNav ? 'pb-24' : 'pb-6'}`}>
                 {children}
             </main>
+            {showBottomNav && <BottomNav />}
         </div>
     )
 }

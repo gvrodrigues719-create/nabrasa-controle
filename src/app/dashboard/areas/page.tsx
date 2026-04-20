@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react'
 import { MapPin, RefreshCw } from 'lucide-react'
 import AreaDiagnosticCard from '../components/operator/AreaDiagnosticCard'
 import { getAreasDiagnosticAction, AreaDiagnostic } from '@/app/actions/groupsAction'
-import BottomNav from '../components/operator/BottomNav'
 import Header from '../components/operator/Header'
 import { useDashboardIdentity } from '../hooks/useDashboardIdentity'
 import { useSearchParams } from 'next/navigation'
@@ -80,8 +79,6 @@ export default function AreasDiagnosticPage() {
                     )}
                 </div>
             </main>
-
-            <BottomNav />
         </div>
     )
 }

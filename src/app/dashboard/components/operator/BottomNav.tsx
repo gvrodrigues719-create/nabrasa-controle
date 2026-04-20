@@ -3,18 +3,16 @@
 import React from 'react'
 import { Home, ClipboardList, MapPin, Bell, User } from 'lucide-react'
 import Link from 'next/link'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 
 export default function BottomNav() {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const currentView = searchParams.get('view')
   
   const navItems = [
     { id: 'home', label: 'Hoje', icon: Home, url: '/dashboard' },
     { id: 'tasks', label: 'Tarefas', icon: ClipboardList, url: '/dashboard/routines' },
     { id: 'areas', label: 'Áreas', icon: MapPin, url: '/dashboard/areas' },
-    { id: 'mural', label: 'Mural', icon: Bell, url: '/dashboard?view=operator#mural' },
+    { id: 'mural', label: 'Mural', icon: Bell, url: '/dashboard/mural' },
     { id: 'profile', label: 'Perfil', icon: User, url: '/dashboard/profile' },
   ]
 
@@ -25,11 +23,10 @@ export default function BottomNav() {
       
       <div className="relative flex items-center justify-around h-16 px-2">
         {navItems.map((item) => {
-          const isActive = item.id === 'home'
-            ? pathname === '/dashboard' && currentView !== 'operator'
-            : item.id === 'mural'
-              ? pathname === '/dashboard' && currentView === 'operator'
-              : pathname === item.url
+          const isActive = item.url === '/dashboard' 
+            ? pathname === '/dashboard' 
+            : pathname.startsWith(item.url)
+          
           const Icon = item.icon
           
           return (

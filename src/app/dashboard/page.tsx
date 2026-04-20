@@ -4,7 +4,6 @@ import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { getActiveNoticesAction, getWeeklyBirthdaysAction } from '@/app/actions/communicationAction'
 import { Eye } from 'lucide-react'
-import BottomNav from './components/operator/BottomNav'
 import Header from './components/operator/Header'
 
 // Hooks
@@ -167,8 +166,6 @@ function DashboardContent() {
             <OperationAIDrawer isOpen={isAIDrawerOpen} onClose={() => setIsAIDrawerOpen(false)} userId={userId} userName={userName} />
             <RewardsDrawer isOpen={isRewardsDrawerOpen} onClose={() => setIsRewardsDrawerOpen(false)} initialBalance={isDemoMode ? 120 : 0} />
             
-            {/* MOBILE NAVIGATION */}
-            <BottomNav />
             </div>
         </RewardProvider>
     )

@@ -1,7 +1,6 @@
 'use client'
 
 import { Suspense } from 'react'
-import BottomNav from '../components/operator/BottomNav'
 import { useDashboardIdentity } from '../hooks/useDashboardIdentity'
 import { useDashboardData } from '../hooks/useDashboardData'
 import { RewardProvider } from '../context/RewardContext'
@@ -327,7 +326,6 @@ function ProfileContent() {
                 </div>
 
                 <RewardsDrawer isOpen={isRewardsDrawerOpen} onClose={() => setIsRewardsDrawerOpen(false)} initialBalance={userPoints ? Math.floor(userPoints/10) : 0} />
-                <BottomNav />
             </div>
         </RewardProvider>
     )
