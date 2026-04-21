@@ -137,6 +137,20 @@ export default function OperatorHome({
                 primaryAction={actions.area}
             />
 
+            {/* 2.3 PROGRESSO E RECONHECIMENTO (NOVO — POLÍTICA TOP 3) */}
+            <WeeklyProgressBar 
+                weeklyPoints={monthlyPoints} // Usando pontos mensais como referência de progresso atual
+                totalPoints={totalPoints}
+                rankPosition={rankPosition}
+                lastSealing={lastSealing}
+                topRanking={topRanking}
+                coinBalance={isDemoMode ? 120 : 0}
+                onOpenRewards={onOpenRewards}
+                isManagerView={userRole === 'manager' || userRole === 'admin'}
+                showTop3Recognition={true}
+                showFullTeamRanking={false}
+            />
+
             {/* 3. MURAL — AVISOS DA CASA (Mural como preview) */}
             <div id="mural">
                 <OperationalNoticeCard notices={notices} birthdays={birthdays} userId={userId} isDemoMode={isDemoMode} />

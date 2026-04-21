@@ -60,7 +60,7 @@ function DashboardContent() {
         actions,
         loadingData,
         setWeeklyFocus
-    } = useDashboardData(userId, isDemoMode)
+    } = useDashboardData(userId, isDemoMode, userRole)
 
     useEffect(() => {
         async function fetchData() {

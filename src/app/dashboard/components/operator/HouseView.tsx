@@ -120,16 +120,47 @@ export default function HouseView() {
                 </div>
 
                 {/* Compact Footer — Uma barra de ação fina e premium */}
-                <div className="px-6 py-4 bg-white flex items-center justify-between border-t border-gray-50">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:bg-[#B13A2B]/10 group-hover:text-[#B13A2B] transition-all">
-                            <MapIcon className="w-4 h-4" />
+                <div className="px-6 py-4 bg-white flex flex-col gap-4 border-t border-gray-50">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:bg-[#B13A2B]/10 group-hover:text-[#B13A2B] transition-all">
+                                <MapIcon className="w-4 h-4" />
+                            </div>
+                            <div>
+                                <p className="text-[11px] font-black text-[#1b1c1a] tracking-tight leading-none mb-1">Mapa Operativo</p>
+                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none">Status por áreas</p>
+                            </div>
                         </div>
-                        <p className="text-[11px] font-black text-[#1b1c1a] tracking-tight">Mapa Operativo · <span className="text-gray-400 font-bold uppercase text-[9px] tracking-widest">Acesse a planta</span></p>
+                        
+                        <div className="flex items-center gap-1.5 text-[10px] font-black text-[#B13A2B] uppercase tracking-tighter group-hover:translate-x-1 transition-transform">
+                            Ver Mapa <ChevronRight className="w-3.5 h-3.5" />
+                        </div>
                     </div>
-                    
-                    <div className="flex items-center gap-1.5 text-[10px] font-black text-[#B13A2B] uppercase tracking-tighter group-hover:translate-x-1 transition-transform">
-                        Abrir <ChevronRight className="w-3.5 h-3.5" />
+
+                    {/* STATUS POR ÁREAS - LEITURA COLETIVA SEGURA */}
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-50">
+                        <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50/50 border border-emerald-100/50">
+                            <span className="text-[9px] font-black text-emerald-800 uppercase tracking-tight">Salão</span>
+                            <span className="text-[8px] font-bold text-emerald-600 uppercase">Em dia</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2.5 rounded-xl bg-amber-50/50 border border-amber-100/50">
+                            <span className="text-[9px] font-black text-amber-800 uppercase tracking-tight">Cozinha</span>
+                            <span className="text-[8px] font-bold text-amber-600 uppercase">Em atenção</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 border border-gray-100">
+                            <span className="text-[9px] font-black text-gray-800 uppercase tracking-tight">Estoque</span>
+                            <span className="text-[8px] font-bold text-gray-500 uppercase">Pendente</span>
+                        </div>
+                        <div className="flex items-center justify-between p-2.5 rounded-xl bg-red-50/50 border border-red-100/50">
+                            <span className="text-[9px] font-black text-red-800 uppercase tracking-tight">Limpeza</span>
+                            <span className="text-[8px] font-bold text-red-600 uppercase">Em atraso</span>
+                        </div>
+                    </div>
+
+                    <div className="bg-gray-50 rounded-lg p-2 text-center">
+                        <p className="text-[8px] font-medium text-gray-400 italic">
+                            Esta é uma visão coletiva da unidade. Detalhes nominais são restritos à gestão.
+                        </p>
                     </div>
                 </div>
             </div>

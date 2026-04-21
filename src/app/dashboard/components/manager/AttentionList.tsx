@@ -3,7 +3,13 @@
 import { AlertCircle, Clock, CheckCircle2, User, MessageSquare } from 'lucide-react'
 import { useState } from 'react'
 import ContextualCommentsDrawer from '../ContextualCommentsDrawer'
+import { useDashboardIdentity } from '../../hooks/useDashboardIdentity'
 
+/**
+ * MANAGER-ONLY COMPONENT
+ * Este componente exibe dados sensíveis (nominais) sobre falhas e atrasos.
+ * Deve ser renderizado apenas em contextos restritos à gestão.
+ */
 interface Collaborator {
     name: string;
     position: string;
@@ -19,7 +25,14 @@ interface AttentionListProps {
 }
 
 export default function AttentionList({ collaborators }: AttentionListProps) {
+    const { userRole, loadingIdentity } = useDashboardIdentity()
     const [chargingTarget, setChargingTarget] = useState<Collaborator | null>(null)
+
+    // SEGURANÇA: Bloqueio preventivo caso o componente seja chamado fora do contexto de gestão
+    if (!loadingIdentity && userRole !== 'admin' && userRole !== 'manager') {
+        return null
+    }
+
     // Lógica de Hierarquia:
     // 1. Atrasados (late > 0)
     // 2. Em Atenção (total - completed > 0)
@@ -48,15 +61,15 @@ export default function AttentionList({ collaborators }: AttentionListProps) {
     return (
         <div className="bg-white border border-gray-100 p-5 rounded-[2.5rem] shadow-sm">
             <div className="flex items-center justify-between mb-4">
-                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Equipe em Atenção</h4>
+                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Acompanhamento de Equipe</h4>
                 <div className="flex gap-2">
                     <div className="flex items-center gap-1">
                         <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                        <span className="text-[8px] font-black text-gray-400 uppercase">Crítico</span>
+                        <span className="text-[8px] font-black text-gray-400 uppercase">Atraso Crítico</span>
                     </div>
                     <div className="flex items-center gap-1">
                         <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                        <span className="text-[8px] font-black text-gray-400 uppercase">Alerta</span>
+                        <span className="text-[8px] font-black text-gray-400 uppercase">Em Atenção</span>
                     </div>
                 </div>
             </div>

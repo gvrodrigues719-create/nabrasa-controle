@@ -23,9 +23,9 @@ export default function OperationalAlertBanner({ lateCount, isDemoMode }: Props)
             </div>
             
             <div className="flex-1">
-                <h4 className="text-sm font-black text-[#1b1c1a] leading-none">Atraso Identificado</h4>
+                <h4 className="text-sm font-black text-[#1b1c1a] leading-none">Ação Prioritária</h4>
                 <p className="text-[10px] font-bold text-[#b13a2b] uppercase tracking-widest mt-1">
-                    {lateCount} {lateCount === 1 ? 'tarefa pendente' : 'tarefas pendentes'} há mais de 2h
+                    {lateCount} {lateCount === 1 ? 'item exige atenção' : 'itens exigem atenção'} agora
                 </p>
             </div>
 

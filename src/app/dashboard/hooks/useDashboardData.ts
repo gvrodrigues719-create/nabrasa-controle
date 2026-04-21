@@ -38,7 +38,7 @@ export interface DashboardActions {
     recommended: DashboardAction[];
 }
 
-export function useDashboardData(userId: string, isDemoMode: boolean) {
+export function useDashboardData(userId: string, isDemoMode: boolean, userRole?: string | null) {
     const [routinesCount, setRoutinesCount] = useState<number>(0)
     const [countsPending, setCountsPending] = useState<number>(0)
     const [checklistsPending, setChecklistsPending] = useState<number>(0)
@@ -116,8 +116,13 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                 getWeeklyFocusAction(),
                 getActiveNoticesAction(),
                 userId ? supabase.from('users').select('primary_group_id, groups:primary_group_id(name)').eq('id', userId).maybeSingle() : Promise.resolve({ data: null }),
-                userId ? getUserRecentActivitiesAction(userId, 5) : Promise.resolve({ success: false, activities: [] })
+                userId ? getUserRecentActivitiesAction(userId, 5) : Promise.resolve({ success: false, activities: [] }),
+                (userRole === 'admin' || userRole === 'manager') ? import('@/app/actions/gamificationAction').then(m => m.getManagerRankingSummaryAction()) : Promise.resolve({ success: false })
             ])
+
+            const [healthRes, routinesRes, sessionsRes, summaryRes, monthlySummaryRes, cmvRes, lastSealRes, focusRes, noticeRes, userAreaRes, historyRes, managerRankingRes] = [
+                results[0], results[1], results[2], results[3], results[4], results[5], results[6], results[7], results[8], results[9], results[10], results[11]
+            ]
 
             // 2. Processamento de Saúde e Rotinas Gerais
             if (healthRes.success) {
@@ -294,7 +299,21 @@ export function useDashboardData(userId: string, isDemoMode: boolean) {
                 setParticipation(s.participation)
                 setHighlightScore(s.highlightScore)
                 setRankPosition(s.rankPosition)
-                setTopRanking(s.top5)
+                
+                // POLÍTICA: Se for gestor, usa o ranking gerencial completo. Se for operador, usa o Top 3.
+                if (userRole === 'admin' || userRole === 'manager') {
+                    if (managerRankingRes && (managerRankingRes as any).success) {
+                        setTopRanking((managerRankingRes as any).ranking.map((r: any, idx: number) => ({
+                            name: r.name,
+                            points: r.points,
+                            rank: idx + 1
+                        })))
+                    } else {
+                        setTopRanking(s.top3 || [])
+                    }
+                } else {
+                    setTopRanking(s.top3 || [])
+                }
             }
             if (cmvRes.success) setCmvStatus((cmvRes as any).data)
             if (lastSealRes.success) setLastSealing((lastSealRes as any).data)

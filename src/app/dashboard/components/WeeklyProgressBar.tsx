@@ -11,6 +11,9 @@ interface Props {
     topRanking?: { name: string; points: number; rank: number }[]
     coinBalance: number
     onOpenRewards: () => void
+    isManagerView?: boolean
+    showTop3Recognition?: boolean
+    showFullTeamRanking?: boolean
 }
 
 export default function WeeklyProgressBar({
@@ -21,10 +24,16 @@ export default function WeeklyProgressBar({
     topRanking,
     coinBalance,
     onOpenRewards,
+    isManagerView = false,
+    showTop3Recognition = true,
+    showFullTeamRanking = false,
 }: Props) {
-    const top5 = topRanking?.slice(0, 5) || []
+    // POLÍTICA: Operador vê apenas Top 3. Manager vê o que estiver disponível (geralmente Full).
+    const displayRanking = isManagerView && showFullTeamRanking 
+        ? topRanking 
+        : topRanking?.slice(0, 3) || []
 
-    return (
+    const hasRanking = displayRanking && displayRanking.length > 0
         <div className="bg-[#f4faf4] rounded-[2.5rem] p-6 shadow-sm border border-[#e6f2e6] flex flex-col gap-6 animate-in fade-in duration-700">
             {/* Header: Contexto de Evolução */}
             <header className="flex items-center justify-between px-1">
@@ -63,12 +72,13 @@ export default function WeeklyProgressBar({
                 </div>
             </div>
 
-            {/* Ranking: Top Performance da Unidade */}
-            {top5.length > 0 && (
+            {/* Ranking: Reconhecimento Positivo da Unidade */}
+            {showTop3Recognition && hasRanking && (
                 <div className="space-y-3">
                     <header className="flex items-center justify-between px-1">
                         <h4 className="text-[9px] font-black text-[#8c716c] uppercase tracking-[0.15em] flex items-center gap-2">
-                            <Trophy className="w-3.5 h-3.5 text-amber-500" /> Top Performance da Unidade
+                            <Trophy className="w-3.5 h-3.5 text-amber-500" /> 
+                            {isManagerView ? 'Ranking da Equipe' : 'Destaque e Reconhecimento'}
                         </h4>
                         {rankPosition && (
                             <span className="text-[9px] font-black text-[#1b1c1a]/40 bg-gray-50 px-2 py-0.5 rounded-md uppercase tracking-tight">
@@ -77,7 +87,7 @@ export default function WeeklyProgressBar({
                         )}
                     </header>
                     <div className="bg-white rounded-3xl border border-[#eeedea] overflow-hidden divide-y divide-gray-50 shadow-sm">
-                        {top5.map((item, idx) => (
+                        {displayRanking.map((item, idx) => (
                             <div key={idx} className="flex items-center justify-between p-3.5 hover:bg-gray-50/50 transition-colors">
                                 <div className="flex items-center gap-4">
                                     <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${

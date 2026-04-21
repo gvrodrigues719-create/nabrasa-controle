@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { getStartOfOperationalWeek } from '@/lib/dateUtils'
 import { triggerMissionValidationAction } from './missionAction'
+import { requireManagerOrAdmin } from '@/lib/auth-utils'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -233,13 +234,63 @@ export async function getWeeklyRankingAction(userId: string) {
         })
 
         const userPosition = ranking.findIndex(r => r.userId === userId) + 1
-        const top5 = ranking.slice(0, 5)
+        const top3 = ranking.slice(0, 3) // POLÍTICA: Operador vê apenas Top 3 positivo
 
         return {
             success: true,
-            top5,
+            top3,
             userPosition,
             userPointsWeekly: userPointsMap[userId] || 0,
+            startOfWeek
+        }
+    } catch (err: any) {
+        return { success: false, error: err.message }
+    }
+}
+
+/**
+ * Retorna o Ranking Completo (Gerencial) da unidade.
+ * Restrito à camada gerente/admin (validado no servidor).
+ */
+export async function getManagerRankingSummaryAction() {
+    try {
+        await requireManagerOrAdmin()
+        const startOfWeek = getStartOfOperationalWeek()
+
+        const { data: events, error: eErr } = await supabase
+            .from('gamification_events')
+            .select('user_id, points')
+            .gte('created_at', startOfWeek)
+
+        if (eErr) throw eErr
+
+        const { data: users, error: uErr } = await supabase
+            .from('users')
+            .select('id, name')
+            .eq('role', 'operator')
+
+        if (uErr) throw uErr
+
+        const userPointsMap: Record<string, number> = {}
+        events.forEach(ev => {
+            userPointsMap[ev.user_id] = (userPointsMap[ev.user_id] || 0) + ev.points
+        })
+
+        const ranking = users.map(u => ({
+            userId: u.id,
+            name: u.name,
+            points: userPointsMap[u.id] || 0
+        }))
+
+        ranking.sort((a, b) => {
+            if (b.points !== a.points) return b.points - a.points
+            return a.name.localeCompare(b.name)
+        })
+
+        return {
+            success: true,
+            ranking, // Lista completa
+            count: ranking.length,
             startOfWeek
         }
     } catch (err: any) {
@@ -264,7 +315,7 @@ export async function getOperatorSummaryAction(userId: string) {
             totalPoints: totalPointsRes.total,
             weeklyPoints: rankingRes.userPointsWeekly,
             rankPosition: rankingRes.userPosition,
-            top5: rankingRes.top5
+            top3: rankingRes.top3 // POLÍTICA: Apenas Top 3 para operadores
         }
     } catch (err: any) {
         return { success: false, error: err.message }
@@ -487,7 +538,7 @@ export async function getMonthlyOperatorSummaryAction(userId: string) {
             .eq('month_ref', ref)
             .single()
 
-        // Ranking Mensal (Top 5) de Highlights
+        // Ranking Mensal (Top 3 Positivo para Operador)
         const rankingRes = await getMonthlyRankingAction(userId)
 
         return {
@@ -500,7 +551,7 @@ export async function getMonthlyOperatorSummaryAction(userId: string) {
             pointsEarned: scoreData?.points_earned || 0,
             pointsAvailable: scoreData?.points_available || 0,
             rankPosition: rankingRes.userPosition,
-            top5: rankingRes.top5,
+            top3: rankingRes.top3, // POLÍTICA: Top 3
             track: scoreData?.track_type || 'operacional'
         }
     } catch (err: any) {
@@ -532,11 +583,24 @@ export async function getMonthlyRankingAction(userId?: string) {
         }))
 
         const userPosition = userId ? ranking.findIndex(r => r.userId === userId) + 1 : null
-        const top5 = ranking.slice(0, 5)
+        const top3 = ranking.slice(0, 3) // POLÍTICA: Reduzido para Top 3
+
+        let fullRanking = []
+        if (!userId) {
+            try {
+                // Tenta validar se é gestor para liberar a lista completa
+                await requireManagerOrAdmin()
+                fullRanking = ranking
+            } catch (e) {
+                // Se não for gestor e chamou sem userId, retorna vazio por segurança
+                fullRanking = []
+            }
+        }
 
         return {
             success: true,
-            top5,
+            top3,
+            ranking: fullRanking, // Retorna ranking completo apenas para gestores autenticados
             userPosition
         }
     } catch (err: any) {

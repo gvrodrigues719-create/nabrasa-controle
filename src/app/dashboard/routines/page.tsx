@@ -38,7 +38,7 @@ export default function ActiveRoutinesPage() {
     const [userPoints, setUserPoints] = useState<number | null>(null)
     const [weeklyPoints, setWeeklyPoints] = useState<number | null>(null)
     const [rankPosition, setRankPosition] = useState<number | null>(null)
-    const [top5, setTop5] = useState<RankingEntry[]>([])
+    const [top3, setTop3] = useState<RankingEntry[]>([])
     const [loading, setLoading] = useState(true)
     const searchParams = useSearchParams()
     const returnTo = searchParams.get('returnTo')
@@ -84,7 +84,7 @@ export default function ActiveRoutinesPage() {
                     setUserPoints(summary.totalPoints ?? 0)
                     setWeeklyPoints(summary.weeklyPoints ?? 0)
                     setRankPosition(summary.rankPosition ?? null)
-                    setTop5(summary.top5 ?? [])
+                    setTop3(summary.top3 ?? [])
                 }
             }
 
@@ -142,8 +142,8 @@ export default function ActiveRoutinesPage() {
                                     <Crown className="w-6 h-6" />
                                 </div>
                                 <div>
-                                    <h3 className="text-xl font-black text-[#1b1c1a]">Minha Operação</h3>
-                                    <p className="text-[10px] font-bold text-[#8c716c] uppercase tracking-widest">Resumo Semanal</p>
+                                    <h3 className="text-xl font-black text-[#1b1c1a]">Minha Evolução</h3>
+                                    <p className="text-[10px] font-bold text-[#8c716c] uppercase tracking-widest">Foco no seu progresso</p>
                                 </div>
                             </div>
                             <div className="text-right">
@@ -151,7 +151,7 @@ export default function ActiveRoutinesPage() {
                                     <div className="w-20 h-6 bg-gray-100 animate-pulse rounded-full" />
                                 ) : weeklyPoints && weeklyPoints > 0 ? (
                                     <span className="inline-flex items-center bg-[#1b1c1a] px-3 py-1 rounded-full text-[10px] font-black text-white uppercase tracking-widest shadow-lg">
-                                        # {rankPosition ?? '--'} na Posição
+                                        Minha Posição: {rankPosition ?? '--'}º
                                     </span>
                                 ) : (
                                     <span className="inline-flex items-center bg-[#F8F7F4] border border-[#eeedea] px-3 py-1 rounded-full text-[10px] font-bold text-[#8c716c] uppercase tracking-widest shadow-sm">
@@ -187,26 +187,26 @@ export default function ActiveRoutinesPage() {
                             </div>
                         </div>
 
-                        {/* RANKING TOP 5 DISCRETO */}
+                        {/* RECONHECIMENTO TOP 3 */}
                         <div className="border-t border-[#F8F7F4] pt-6">
                             <div className="flex items-center justify-between mb-4 px-1">
-                                <h4 className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest">Top 5 da Semana</h4>
+                                <h4 className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest">Destaques da Unidade</h4>
                                 <Trophy className="w-3.5 h-3.5 text-amber-500" />
                             </div>
                             
                             {loading ? (
                                 <div className="space-y-3">
-                                    {[1, 2, 3].map(i => (
+                                    {[1, 2].map(i => (
                                         <div key={i} className="h-12 bg-gray-50 animate-pulse rounded-2xl" />
                                     ))}
                                 </div>
                             ) : (
                                 <div className="space-y-3">
-                                    {top5.length === 0 ? (
+                                    {top3.length === 0 ? (
                                         <div className="text-center py-4 text-[10px] font-bold text-[#8c716c] uppercase tracking-widest bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                                            Aguardando pontuações
+                                            Aguardando reconhecimentos
                                         </div>
-                                    ) : top5.map((entry, idx) => {
+                                    ) : top3.map((entry, idx) => {
                                         const isMe = entry.userId === uId
                                         return (
                                             <div key={entry.userId} className={`flex items-center justify-between p-3.5 rounded-2xl transition-all ${isMe ? 'bg-[#1b1c1a] text-white shadow-xl ring-4 ring-[#1b1c1a]/5' : 'bg-white border border-[#eeedea]'}`}>
