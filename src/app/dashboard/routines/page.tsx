@@ -9,6 +9,8 @@ import { getActiveRoutinesAction } from '@/app/actions/routinesAction'
 import { supabase } from '@/lib/supabase/client'
 import { getActiveOperator } from '@/app/actions/pinAuth'
 import { getOperatorSummaryAction, RankingEntry } from '@/app/actions/gamificationAction'
+import { useDashboardUI } from '../hooks/useDashboardUI'
+import Header from '../components/operator/Header'
 
 type Routine = {
     id: string
@@ -33,13 +35,15 @@ function getGreeting() {
 export default function ActiveRoutinesPage() {
     const [routines, setRoutines] = useState<Routine[]>([])
     const [userName, setUserName] = useState('')
-    const [userRole, setUserRole] = useState('')
+    const [userRoleLabel, setUserRoleLabel] = useState('')
+    const [rawRole, setRawRole] = useState('')
     const [uId, setUId] = useState('')
     const [userPoints, setUserPoints] = useState<number | null>(null)
     const [weeklyPoints, setWeeklyPoints] = useState<number | null>(null)
     const [rankPosition, setRankPosition] = useState<number | null>(null)
     const [top3, setTop3] = useState<RankingEntry[]>([])
     const [loading, setLoading] = useState(true)
+    const { viewMode, setViewMode } = useDashboardUI(rawRole)
     const searchParams = useSearchParams()
     const returnTo = searchParams.get('returnTo')
     const backUrl = getSafeReturnTo(returnTo, '/dashboard')
@@ -55,7 +59,8 @@ export default function ActiveRoutinesPage() {
             let currentUserId = ''
             if (op) {
                 setUserName(op.name.split(' ')[0])
-                setUserRole(op.role === 'admin' ? 'Administrador' : op.role === 'manager' ? 'Gerente' : 'Operador')
+                setRawRole(op.role || 'operator')
+                setUserRoleLabel(op.role === 'admin' ? 'Administrador' : op.role === 'manager' ? 'Gerente' : 'Operador')
                 currentUserId = op.userId
             } else {
                 const { data: { user } } = await supabase.auth.getUser()
@@ -68,10 +73,12 @@ export default function ActiveRoutinesPage() {
                         .single()
                     if (profile?.name) {
                         setUserName(profile.name.split(' ')[0])
-                        setUserRole(profile.role === 'admin' ? 'Administrador' : profile.role === 'manager' ? 'Gerente' : 'Operador')
+                        setRawRole(profile.role || 'operator')
+                        setUserRoleLabel(profile.role === 'admin' ? 'Administrador' : profile.role === 'manager' ? 'Gerente' : 'Operador')
                     } else {
                         setUserName(user.email?.split('@')[0] || '')
-                        setUserRole('Usuário')
+                        setRawRole('operator')
+                        setUserRoleLabel('Usuário')
                     }
                 }
             }
@@ -97,37 +104,15 @@ export default function ActiveRoutinesPage() {
         <div className="min-h-screen bg-[#F8F7F4] text-[#1b1c1a]" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
 
             {/* ── HEADER & IDENTIDADE ── */}
-            <div className="bg-white border-b border-[#e9e8e5] px-5 pt-6 pb-5 shadow-sm sticky top-0 z-10">
-                <div className="flex items-center justify-between mb-4">
-                    <Link href={backUrl} className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-[#58413e]">
-                        <ArrowLeft className="w-5 h-5" />
-                    </Link>
-                    <div className="flex flex-col items-center">
-                        <span className="text-[10px] font-bold text-[#b13a2b] uppercase tracking-[0.2em] mb-0.5">NaBrasa</span>
-                        <div className="flex items-center space-x-1.5">
-                            <span className="text-sm font-extrabold text-[#1b1c1a] tracking-tight uppercase" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
-                                Controle Operacional
-                            </span>
-                            <span className="text-[8px] font-black text-[#b13a2b] bg-red-50 px-1 py-0.5 rounded border border-red-100">MOC</span>
-                        </div>
-                    </div>
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#902216] to-[#B13A2B] flex items-center justify-center shadow-md text-white font-bold text-lg">
-                        {userName ? userName.charAt(0).toUpperCase() : <User className="w-5 h-5" />}
-                    </div>
-                </div>
-
-                <div className="flex items-center space-x-3">
-                    <div className="flex-1">
-                        <h1 className="text-lg font-black leading-none mb-1">
-                            {getGreeting()}, {userName}
-                        </h1>
-                        <div className="flex items-center text-[#8c716c] space-x-1.5 text-xs font-bold uppercase tracking-wider">
-                            <User className="w-3 h-3" />
-                            <span>{userRole}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <Header 
+                userName={userName}
+                isDemoMode={false} // Routines don't typically use demo param but could be added
+                isManager={rawRole === 'admin' || rawRole === 'manager'}
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+                showBack={true}
+                backUrl={backUrl}
+            />
 
             <div className="px-5 py-6 space-y-8">
 

@@ -25,7 +25,6 @@ import OperatorHome from './components/operator/OperatorHome'
 function DashboardContent() {
     const searchParams = useSearchParams()
     const isDemoMode = searchParams.get('demo') === 'true' || searchParams.get('demo') === '1'
-    const requestedView = searchParams.get('view')
     
     const [notices, setNotices] = useState<any[]>([])
     const [birthdays, setBirthdays] = useState<any[]>([])
@@ -92,11 +91,7 @@ function DashboardContent() {
     const isManager = userRole === 'admin' || userRole === 'manager'
     const loading = loadingIdentity || loadingData
 
-    useEffect(() => {
-        if (isManager && requestedView === 'operator') {
-            setViewMode('operator')
-        }
-    }, [isManager, requestedView, setViewMode])
+
 
     return (
         <RewardProvider userId={userId}>

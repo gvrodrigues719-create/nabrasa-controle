@@ -6,13 +6,15 @@ import AreaDiagnosticCard from '../components/operator/AreaDiagnosticCard'
 import { getAreasDiagnosticAction, AreaDiagnostic } from '@/app/actions/groupsAction'
 import Header from '../components/operator/Header'
 import { useDashboardIdentity } from '../hooks/useDashboardIdentity'
+import { useDashboardUI } from '../hooks/useDashboardUI'
 import { useSearchParams } from 'next/navigation'
 import { toast } from 'react-hot-toast'
 
 export default function AreasDiagnosticPage() {
     const searchParams = useSearchParams()
     const isDemoMode = searchParams.get('demo') === 'true' || searchParams.get('demo') === '1'
-    const { userName } = useDashboardIdentity()
+    const { userName, userRole } = useDashboardIdentity()
+    const { viewMode, setViewMode } = useDashboardUI(userRole)
     
     const [diagnostics, setDiagnostics] = useState<AreaDiagnostic[]>([])
     const [loading, setLoading] = useState(true)
@@ -39,7 +41,13 @@ export default function AreasDiagnosticPage() {
 
     return (
         <div className="flex flex-col min-h-screen bg-[#F8F7F4]">
-            <Header userName={userName} isDemoMode={isDemoMode} />
+            <Header 
+                userName={userName} 
+                isDemoMode={isDemoMode} 
+                isManager={userRole === 'admin' || userRole === 'manager'}
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+            />
             
             <main className="flex-1 p-6 pb-24 overflow-y-auto space-y-6">
                 <header className="flex items-center justify-between px-1">

@@ -1,7 +1,8 @@
 'use client'
 
 import React from 'react'
-import { Flame, Eye, Settings as SettingsIcon } from 'lucide-react'
+import { Flame, Eye, Settings as SettingsIcon, ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
 
 interface HeaderProps {
     userName?: string
@@ -9,6 +10,8 @@ interface HeaderProps {
     isManager?: boolean
     viewMode?: 'manager' | 'operator'
     setViewMode?: (mode: 'manager' | 'operator') => void
+    showBack?: boolean
+    backUrl?: string
 }
 
 export default function Header({ 
@@ -16,7 +19,9 @@ export default function Header({
     isDemoMode, 
     isManager, 
     viewMode, 
-    setViewMode 
+    setViewMode,
+    showBack,
+    backUrl = '/dashboard'
 }: HeaderProps) {
     
     function getGreeting() {
@@ -30,6 +35,11 @@ export default function Header({
         <header className="px-5 pt-6 pb-2.5 bg-white border-b border-gray-100 mb-4 md:mb-6 flex flex-col gap-4 md:gap-5 shadow-sm sticky top-0 z-30 transition-all">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5 md:gap-3">
+                    {showBack && (
+                        <Link href={backUrl} className="p-2 -ml-2 hover:bg-gray-100 rounded-xl transition-colors text-[#58413e]">
+                            <ArrowLeft className="w-5 h-5" />
+                        </Link>
+                    )}
                     <div className="w-9 h-9 md:w-10 md:h-10 bg-[#B13A2B] rounded-2xl flex items-center justify-center shadow-lg shadow-red-100 shrink-0">
                         <Flame className="w-4.5 h-4.5 md:w-5 md:h-5 text-white" fill="currentColor" />
                     </div>

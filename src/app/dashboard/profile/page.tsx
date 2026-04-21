@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import Header from '../components/operator/Header'
 
 function ProfileContent() {
     const { userName, userRole, userId, loadingIdentity, primaryAreaName } = useDashboardIdentity()
@@ -32,7 +33,7 @@ function ProfileContent() {
         loadingData 
     } = useDashboardData(userId, isDemoMode)
 
-    const { isRewardsDrawerOpen, setIsRewardsDrawerOpen } = useDashboardUI(userRole)
+    const { viewMode, setViewMode, isRewardsDrawerOpen, setIsRewardsDrawerOpen } = useDashboardUI(userRole)
 
     const loading = loadingIdentity || loadingData
 
@@ -50,47 +51,39 @@ function ProfileContent() {
             <div className="min-h-screen bg-[#F8F7F4] pb-24 font-sans text-[#1b1c1a]">
                 
                 {/* 1. IDENTITY BLOCK — Premium & Clean */}
-                <header className="px-6 pt-12 pb-10 bg-white border-b border-gray-100 rounded-b-[3.5rem] shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] mb-8">
-                    <div className="flex items-center gap-6">
+                <Header 
+                    userName={userName}
+                    isDemoMode={isDemoMode}
+                    isManager={userRole === 'admin' || userRole === 'manager'}
+                    viewMode={viewMode}
+                    setViewMode={setViewMode}
+                />
+
+                {/* Profile Identity Card */}
+                <div className="px-6 pb-10 bg-white border-b border-gray-100 rounded-b-[3.5rem] shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] mb-8">
+                    <div className="flex items-center gap-6 pt-8">
                         <div className="relative">
-                            <div className="w-20 h-20 rounded-[2.2rem] bg-[#F8F7F4] border-2 border-gray-50 flex items-center justify-center font-black text-[#B13A2B] text-3xl shadow-inner overflow-hidden">
+                            <div className="w-16 h-16 rounded-2xl bg-[#F8F7F4] border border-gray-50 flex items-center justify-center font-black text-[#B13A2B] text-2xl shadow-inner">
                                 {(userName || 'v').charAt(0).toUpperCase()}
                             </div>
-                            <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-[#1b1c1a] rounded-xl border-4 border-white flex items-center justify-center text-white shadow-lg">
-                                <ShieldCheck className="w-3.5 h-3.5" />
+                            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#1b1c1a] rounded-lg border-2 border-white flex items-center justify-center text-white">
+                                <ShieldCheck className="w-3 h-3" />
                             </div>
                         </div>
                         <div className="flex-1">
-                            <h2 className="text-xl font-black tracking-tight mb-0.5">{userName}</h2>
-                            <div className="flex items-center gap-2 mb-2">
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.12em]">
-                                    {userRole === 'admin' ? 'Administrador' : userRole === 'manager' ? 'Gerente de Unidade' : 'Operador de Loja'}
+                            <h2 className="text-lg font-black tracking-tight">{userName}</h2>
+                            <div className="flex items-center gap-2 mb-1">
+                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
+                                    {userRole === 'admin' ? 'Administrador' : userRole === 'manager' ? 'Gerente' : 'Operador'}
                                 </p>
-                                <div className="w-1 h-1 rounded-full bg-gray-300" />
-                                <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest">Ativo</span>
                             </div>
-                            
                             <div className="flex items-center gap-1.5 text-gray-500">
                                 <LayoutGrid className="w-3 h-3" />
-                                <span className="text-[11px] font-bold tracking-tight">Setor: {primaryAreaName || 'Geral'}</span>
+                                <span className="text-[10px] font-bold tracking-tight">Setor: {primaryAreaName || 'Geral'}</span>
                             </div>
                         </div>
                     </div>
-
-                    <div className="mt-8 pt-8 border-t border-gray-50 grid grid-cols-2 gap-4">
-                        <div className="flex flex-col">
-                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mb-1">Unidade</span>
-                            <span className="text-xs font-bold text-gray-700">Matriz - Rio de Janeiro</span>
-                        </div>
-                        <div className="flex flex-col text-right">
-                            <span className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mb-1">Status Operacional</span>
-                            <div className="flex items-center justify-end gap-1.5 text-green-600">
-                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                <span className="text-xs font-bold">Em conformidade</span>
-                            </div>
-                        </div>
-                    </div>
-                </header>
+                </div>
 
                 <div className="px-6 space-y-10">
                     

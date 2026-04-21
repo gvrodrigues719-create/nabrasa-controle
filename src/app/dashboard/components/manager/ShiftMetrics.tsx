@@ -18,6 +18,7 @@ interface ShiftMetricsProps {
         late: number;
         critical: number;
         lossesCount: number;
+        pendingIssuesCount: number;
     }
 }
 
@@ -36,7 +37,7 @@ function MetricItem({ label, value, icon: Icon, color, bg, isCritical }: { label
 }
 
 export default function ShiftMetrics({ overview }: ShiftMetricsProps) {
-    const isClean = overview.late === 0 && overview.critical === 0
+    const isClean = overview.late === 0 && overview.critical === 0 && (overview.pendingIssuesCount || 0) === 0
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -67,22 +68,22 @@ export default function ShiftMetrics({ overview }: ShiftMetricsProps) {
                 </div>
             </div>
 
-            {/* Bloco 2: Foco de Intervenção */}
+            {/* Bloco 2: Foco de Intervenção (Pendências + Atrasos) */}
             <div className={`bg-white border p-4 rounded-[2rem] shadow-sm grid grid-cols-2 xs:grid-cols-3 gap-2 transition-colors ${isClean ? 'border-gray-100' : 'border-red-50 shadow-red-50/20'}`}>
+                <MetricItem 
+                    label="Pendências" 
+                    value={overview.pendingIssuesCount || 0} 
+                    icon={OctagonAlert} 
+                    color={overview.pendingIssuesCount > 0 ? 'text-[#B13A2B]' : 'text-gray-900/20'} 
+                    bg={overview.pendingIssuesCount > 0 ? 'bg-red-50/50' : 'bg-gray-50/50'} 
+                    isCritical
+                />
                 <MetricItem 
                     label="Atrasados" 
                     value={overview.late} 
                     icon={TriangleAlert} 
                     color={overview.late > 0 ? 'text-red-600' : 'text-gray-900/20'} 
                     bg={overview.late > 0 ? 'bg-red-50' : 'bg-gray-50/50'} 
-                    isCritical
-                />
-                <MetricItem 
-                    label="Críticos" 
-                    value={overview.critical} 
-                    icon={OctagonAlert} 
-                    color={overview.critical > 0 ? 'text-purple-600' : 'text-gray-900/20'} 
-                    bg={overview.critical > 0 ? 'bg-purple-50' : 'bg-gray-50/50'} 
                     isCritical
                 />
                 <div className="col-span-2 xs:col-span-1">

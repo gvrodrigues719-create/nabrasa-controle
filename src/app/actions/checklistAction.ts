@@ -9,6 +9,7 @@ import {
 } from '@/modules/checklist/types'
 import { revalidatePath } from 'next/cache'
 import { getAuthenticatedUserId, requireManagerOrAdmin } from '@/lib/auth-utils'
+import { getActiveOperator } from './pinAuth'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -178,7 +179,10 @@ export async function saveChecklistResponseAction(
     itemId: string, 
     value: any,
     observation?: string,
-    evidenceUrl?: string
+    evidenceUrl?: string,
+    correctedNow: boolean = false,
+    needsAttention: boolean = false,
+    numericValue?: number
 ) {
     try {
         // SEGURANÇA: Validar Ownership
@@ -190,8 +194,6 @@ export async function saveChecklistResponseAction(
             .single()
         
         if (!session || (session.user_id !== authId)) {
-            // Permitir se for manager/admin? No handoff diz "proteção de dono", então restringimos.
-            // Mas gestores podem precisar auditar. Por ora, restringimos ao dono para anti-spoofing rigoroso.
             throw new Error('Acesso negado: Você não é o responsável por esta sessão.')
         }
 
@@ -202,13 +204,16 @@ export async function saveChecklistResponseAction(
                 item_id: itemId,
                 value: value,
                 observation: observation,
-                evidence_url: evidenceUrl
+                evidence_url: evidenceUrl,
+                corrected_now: correctedNow,
+                needs_manager_attention: needsAttention,
+                numeric_value: numericValue
             }, {
                 onConflict: 'session_id,item_id'
             })
 
         if (error) throw error
-        console.log(`[ACTION] Checklist response saved | Session: ${sessionId} | Item: ${itemId} | User: ${authId}`)
+        console.log(`[ACTION] Checklist response saved | Session: ${sessionId} | Item: ${itemId} | User: ${authId} | Corrected: ${correctedNow}`)
         return { success: true }
     } catch (error: any) {
         console.error(`[AUTH_FAIL] saveChecklistResponseAction | Session: ${sessionId} | Error: ${error.message}`)
@@ -274,7 +279,7 @@ export async function completeChecklistSessionAction(sessionId: string) {
         // Buscamos as respostas já salvas com as evidências
         const { data: responses } = await supabase
             .from('checklist_session_items')
-            .select('item_id, value, evidence_url')
+            .select('item_id, value, evidence_url, observation')
             .eq('session_id', sessionId)
 
         const respondedIds = responses?.filter(r => r.value !== null && r.value !== undefined).map(r => r.item_id) || []
@@ -300,23 +305,69 @@ export async function completeChecklistSessionAction(sessionId: string) {
             }
         }
 
-        // 2. Marcar como concluído
+        // 2. Buscar dados do template e itens para o snapshot
+        const { data: templateItems } = await supabase
+            .from('checklist_template_items')
+            .select('*')
+            .eq('template_id', session.template_id)
+            .order('display_order')
+
+        const { data: templateData } = await supabase
+            .from('checklist_templates')
+            .select('*')
+            .eq('id', session.template_id)
+            .single()
+
+        // 3. Buscar detalhes do operador para a assinatura
+        const operator = await getActiveOperator()
+
+        // 4. Marcar como concluído e salvar snapshot + assinatura
         const { error: updateError } = await supabase
             .from('checklist_sessions')
             .update({
                 status: 'completed',
-                completed_at: new Date().toISOString()
+                completed_at: new Date().toISOString(),
+                template_snapshot: { 
+                    template: templateData, 
+                    items: templateItems 
+                },
+                signature_name: operator?.name || 'Sistema',
+                signature_role: operator?.role || 'operator'
             })
             .eq('id', sessionId)
 
         if (updateError) throw updateError
 
-        // 3. GAMIFICAÇÃO E EVENTOS OPERACIONAIS (Fire-and-forget)
+        // 5. Gerar Pendências Operacionais para itens marcados como "Não" (false)
+        const failedResponses = responses?.filter(r => r.value === false) || []
+        
+        if (failedResponses.length > 0) {
+            const pendingIssues = failedResponses.map(r => {
+                const itemDef = templateItems?.find(it => it.id === r.item_id)
+                return {
+                    checklist_session_id: sessionId,
+                    checklist_item_id: r.item_id,
+                    unit_id: (templateData as any).unit_id || '00000000-0000-0000-0000-000000000000', // Valor fallback se unit_id não estiver no template
+                    area: templateData?.area,
+                    turno: templateData?.turno,
+                    severity: itemDef?.criticality === 'critical' ? 'critical' : (itemDef?.criticality === 'important' ? 'high' : 'medium'),
+                    title: `Falha: ${itemDef?.label || 'Item de Checklist'}`,
+                    description: r.observation || 'Nenhuma observação fornecida.',
+                    status: 'pending',
+                    visible_to_manager: true,
+                    visible_in_collective_view: (itemDef as any).generates_issue || false
+                }
+            })
+
+            const { error: issueErr } = await supabase.from('operational_pending_issues').insert(pendingIssues)
+            if (issueErr) console.error('[ACTION] Erro ao gerar pendências operacionais:', issueErr)
+        }
+
+        // 6. GAMIFICAÇÃO E EVENTOS OPERACIONAIS (Fire-and-forget)
         try {
             if (session.user_id) {
                 const { recordPointsAction, recordSealingEventAction } = await import('./gamificationAction')
                 
-                // 3.1. Pontua conclusão (+50) - Mesma paridade da contagem
                 await recordPointsAction(
                     session.user_id,
                     'checklist_completion',
@@ -325,25 +376,17 @@ export async function completeChecklistSessionAction(sessionId: string) {
                     'Checklist operacional concluído.'
                 )
 
-                // 3.2. VD-02: Premiar se concluído no prazo
-                const { data: template } = await supabase
-                    .from('checklist_templates')
-                    .select('context')
-                    .eq('id', session.template_id)
-                    .single()
-
                 const now = new Date()
                 const currentHour = now.getHours()
-                const isCritical = template?.context === 'opening' || template?.context === 'closing'
+                const isCritical = templateData?.context === 'opening' || templateData?.context === 'closing'
                 const isOnTime = 
-                    (template?.context === 'opening' && currentHour < 11) ||
-                    (template?.context === 'closing' && currentHour < 23)
+                    (templateData?.context === 'opening' && currentHour < 11) ||
+                    (templateData?.context === 'closing' && currentHour < 23)
 
                 if (isCritical && isOnTime) {
                     await recordSealingEventAction(session.user_id, 'checklist_on_time', sessionId)
                 }
 
-                // 3.3. VD-03: Sessão fechada sem abandono
                 await recordSealingEventAction(session.user_id, 'session_clean_close', sessionId)
             }
         } catch (gamErr) {
@@ -421,9 +464,13 @@ export async function saveChecklistTemplateAction(template: Partial<ChecklistTem
                 name: template.name,
                 description: template.description,
                 context: template.context,
+                area: template.area,
+                momento: template.momento,
+                turno: template.turno,
                 priority: template.priority,
                 frequency: template.frequency,
                 evidence_required_default: template.evidence_required_default,
+                requires_signature: template.requires_signature,
                 active: template.active
             })
             .select()
@@ -544,6 +591,50 @@ export async function runChecklistDistributionAction(triggeringUserId?: string) 
         return { success: true, count: stats.sessionsCreated, stats }
     } catch (error: any) {
         console.error('Distribution error:', error)
+        return { success: false, error: error.message }
+    }
+}
+
+/**
+ * SALVAR ITENS DO TEMPLATE (ADMIN)
+ * Substitui os itens atuais do template pelos novos fornecidos.
+ */
+export async function saveTemplateItemsAction(templateId: string, items: ChecklistTemplateItem[]) {
+    try {
+        await requireManagerOrAdmin()
+
+        // 1. Deleta itens atuais (estratégia de replace total para simplificar reordenação e deleção)
+        const { error: delErr } = await supabase
+            .from('checklist_template_items')
+            .delete()
+            .eq('template_id', templateId)
+        
+        if (delErr) throw delErr
+
+        // 2. Insere os novos itens
+        const { error: insErr } = await supabase
+            .from('checklist_template_items')
+            .insert(items.map(item => ({
+                template_id: templateId,
+                label: item.label,
+                description: item.description,
+                response_type: item.response_type,
+                required: item.required,
+                evidence_required: item.evidence_required,
+                display_order: item.display_order,
+                criticality: item.criticality,
+                generates_issue: item.generates_issue,
+                generates_alert: item.generates_alert,
+                help_text: item.help_text,
+                options: item.options
+            })))
+
+        if (insErr) throw insErr
+
+        revalidatePath('/dashboard/admin/checklists')
+        return { success: true }
+    } catch (error: any) {
+        console.error('Error saving template items:', error)
         return { success: false, error: error.message }
     }
 }
@@ -676,13 +767,13 @@ export async function getOperationalMirrorAction() {
             .select('*, items(name), users(name, sector)')
             .gte('created_at', yesterday)
 
-        // 3. Buscar todas as regras ativas para checar "Regras Mortas"
-        const { data: activeRules } = await supabase
-            .from('checklist_attribution_rules')
-            .select('*')
-            .eq('is_active', true)
+        // 4. Buscar Pendências Operacionais Ativas
+        const { count: pendingIssuesCount } = await supabase
+            .from('operational_pending_issues')
+            .select('*', { count: 'exact', head: true })
+            .eq('resolved', false)
 
-        // 4. PROCESSAMENTO OPERACIONAL
+        // 5. PROCESSAMENTO OPERACIONAL
         const stats = {
             overview: {
                 total: sessions?.length || 0,
@@ -691,7 +782,8 @@ export async function getOperationalMirrorAction() {
                 late: sessions?.filter(s => s.scheduled_for < today && s.status === 'in_progress').length || 0,
                 critical: sessions?.filter(s => s.checklist_templates?.priority === 'critical' && s.status === 'in_progress').length || 0,
                 lossesCount: losses?.length || 0,
-                deadRulesCount: 0 // Será calculado abaixo
+                pendingIssuesCount: pendingIssuesCount || 0,
+                deadRulesCount: 0
             },
             bySector: {
                 cozinha: { total: 0, completed: 0, losses: 0 },
@@ -784,5 +876,32 @@ export async function updateSessionUserAction(sessionId: string, newUserId: stri
         return { success: true }
     } catch (error: any) {
         return { success: false, error: error.message }
+    }
+}
+
+/**
+ * Busca pendências operacionais ativas (não resolvidas)
+ */
+export async function getPendingIssuesAction() {
+    try {
+        const { data, error } = await supabase
+            .from('operational_pending_issues')
+            .select(`
+                *,
+                checklist_sessions (
+                    id,
+                    checklist_templates (name)
+                ),
+                users (name)
+            `)
+            .eq('resolved', false)
+            .order('criticality', { ascending: false })
+            .order('created_at', { ascending: false })
+
+        if (error) throw error
+
+        return { success: true, data }
+    } catch (err: any) {
+        return { success: false, error: err.message }
     }
 }

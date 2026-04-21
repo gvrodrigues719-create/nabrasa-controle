@@ -19,8 +19,12 @@ export interface ChecklistTemplateItem {
     response_type: ChecklistItemType;
     required: boolean;
     evidence_required: boolean;
-    options?: string[]; // Somente para o tipo 'choice'
+    options?: string[];
     display_order: number;
+    criticality: 'critical' | 'important' | 'standard';
+    generates_issue: boolean;
+    generates_alert: boolean;
+    help_text?: string;
 }
 
 /**
@@ -46,6 +50,10 @@ export interface ChecklistTemplate {
     active: boolean;
     evidence_required_default: boolean;
     unit_id?: string;
+    area?: string;
+    momento?: string;
+    turno?: string;
+    requires_signature: boolean;
     items?: ChecklistTemplateItem[];
 }
 
@@ -79,15 +87,20 @@ export interface ChecklistSession {
     attribution_source: 'manual' | 'automatic';
     created_by?: string;
     status: ChecklistSessionStatus;
-    scheduled_for?: string; // Data YYYY-MM-DD
+    scheduled_for?: string; 
     started_at: string;
     completed_at?: string;
     
+    // Novas propriedades de preservação e assinatura
+    signature_name?: string;
+    signature_role?: string;
+    template_snapshot?: any; // Snapshot dos itens no momento da execução
+
     // Metadados de progresso
     mandatory_total: number;
     mandatory_filled: number;
 
-    // Relacionais (opcionais para listagem)
+    // Relacionais
     checklist_templates?: Partial<ChecklistTemplate>;
     users?: { name: string; position?: string; shift?: string };
 }
@@ -100,8 +113,11 @@ export interface ChecklistResponse {
     session_id: string;
     item_id: string;
     value: string | number | boolean | null;
+    numeric_value?: number | null;
     observation?: string;
     evidence_url?: string | null;
-    is_na: boolean; // Not Applicable
+    corrected_now: boolean;
+    needs_manager_attention: boolean;
+    is_na: boolean;
     created_at: string;
 }
