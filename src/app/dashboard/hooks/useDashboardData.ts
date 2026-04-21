@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
-import { getActiveRoutinesAction } from '@/app/actions/routinesAction'
+import { getActiveRoutinesAction, getOperatorDailyTasksAction } from '@/app/actions/routinesAction'
 import { getOperatorSummaryAction, getLastSealingAction, getUserRecentActivitiesAction, getMonthlyOperatorSummaryAction } from '@/app/actions/gamificationAction'
 import { getOperationalHealthAction, Leak } from '@/app/actions/efficiencyAction'
 import { getPublicCMVStatusAction } from '@/app/actions/cmvActions'
@@ -180,63 +180,53 @@ export function useDashboardData(userId: string, isDemoMode: boolean, userRole?:
                 const startOfDayBR = `${brDate}T03:00:00Z`
 
                 // Buscar detalhes de grupos por rotina e sessões de hoje (ambos tipos)
-                const [groupsRes, countSessionsRes, checklistSessionsRes] = await Promise.all([
+                const results_sub = await Promise.all([
                     supabase.from('routine_groups').select('routine_id, group_id, groups:group_id(name)'),
                     supabase.from('count_sessions').select('routine_id, group_id, status, started_at').gte('started_at', startOfDayBR),
-                    supabase.from('checklist_sessions').select('routine_id, group_id, status, started_at').gte('started_at', startOfDayBR)
+                    supabase.from('checklist_sessions').select('routine_id, group_id, status, started_at').gte('started_at', startOfDayBR),
+                    getOperatorDailyTasksAction(userId)
                 ])
 
-                const allGroups = groupsRes.data
-                const sessionMap = new Map()
+                const [groupsRes, countSessionsRes, checklistSessionsRes, tasksRes] = results_sub as any[]
                 
-                countSessionsRes.data?.forEach(s => {
-                    sessionMap.set(`${s.routine_id}-${s.group_id}`, s)
-                })
-                checklistSessionsRes.data?.forEach(s => {
-                    // Se houver conflito (improvável mas possível), mantemos o que estiver em andamento
-                    const key = `${s.routine_id}-${s.group_id}`
-                    if (!sessionMap.has(key) || s.status === 'in_progress') {
-                        sessionMap.set(key, s)
-                    }
-                })
+                // Usamos os dados unificados do novo action
+                if (tasksRes.success) {
+                    tasksRes.data.today.forEach((t: any) => {
+                        allPotentialActions.push({
+                            id: t.id,
+                            label: t.label || `Iniciar ${t.name}`,
+                            description: `Setor: ${t.groupName}`,
+                            type: t.type,
+                            areaName: t.groupName,
+                            status: 'pending',
+                            priority: 'medium',
+                            url: t.url,
+                            routineId: t.routineId,
+                            groupId: t.groupId,
+                            startedAt: t.startedAt
+                        })
+                    })
 
-                allGroups?.forEach(ag => {
-                    const session = sessionMap.get(`${ag.routine_id}-${ag.group_id}`)
-                    const routine = (routinesRes.data as any[]).find(r => r.id === ag.routine_id)
-                    if (!routine) return
+                    tasksRes.data.inProgress.forEach((t: any) => {
+                        allPotentialActions.push({
+                            id: t.id,
+                            label: t.label || `Continuar ${t.name}`,
+                            description: `Setor: ${t.groupName}`,
+                            type: t.type,
+                            areaName: t.groupName,
+                            status: 'in_progress',
+                            priority: 'medium',
+                            url: t.url,
+                            routineId: t.routineId,
+                            groupId: t.groupId,
+                            startedAt: t.startedAt
+                        })
+                    })
 
-                    const isCompleted = session?.status === 'completed'
-                    const isInProgress = session?.status === 'in_progress'
-                    const isMyArea = ag.group_id === primaryGroupId
-                    const groupName = (ag.groups as any)?.name || 'Setor'
-                    const routineType = (routine.routine_type === 'checklist' ? 'checklist' : 'count') as 'count' | 'checklist'
-
-                    if (!isCompleted) {
-                        const deathLine = Date.now() - (2 * 60 * 60 * 1000)
-                        const isOverdue = isInProgress && new Date(session.started_at).getTime() < deathLine
-                        
-                        const action: DashboardAction = {
-                            id: `${ag.routine_id}-${ag.group_id}`,
-                            label: isInProgress ? `Continuar ${routine.name}` : `Iniciar ${routine.name}`,
-                            description: `Setor: ${groupName}`,
-                            type: routineType,
-                            areaName: groupName,
-                            status: isInProgress ? (isOverdue ? 'overdue' : 'in_progress') : 'pending',
-                            priority: isOverdue ? 'high' : (isMyArea ? 'medium' : 'low'),
-                            url: `/dashboard/${routineType}/${ag.routine_id}/${ag.group_id}?returnTo=/dashboard`,
-                            routineId: ag.routine_id,
-                            groupId: ag.group_id,
-                            startedAt: session?.started_at
-                        }
-                        
-                        allPotentialActions.push(action)
-                        if (isMyArea) {
-                            areaPendingCount++
-                            if (routineType === 'count') countsPendingTemp++
-                            else checklistsPendingTemp++
-                        }
-                    }
-                })
+                    countsPendingTemp = tasksRes.counts.pendingCounts
+                    checklistsPendingTemp = tasksRes.counts.pendingChecklists
+                    areaPendingCount = tasksRes.counts.todayCount
+                }
             }
 
             // 4.2. Priorização Final
