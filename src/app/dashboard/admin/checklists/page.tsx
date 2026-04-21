@@ -6,7 +6,8 @@ import {
     getAllChecklistSessionsAction 
 } from '@/app/actions/checklistAction'
 import { 
-    getWeeklyRankingAction 
+    getWeeklyRankingAction,
+    getManagerRankingSummaryAction
 } from '@/app/actions/gamificationAction'
 import { 
     getOperationalMirrorAction 
@@ -51,8 +52,8 @@ export default function AdminAuditPage() {
             const res = await getAllChecklistSessionsAction()
             if (res.success) setHistory(res.data || [])
         } else {
-            const res = await getWeeklyRankingAction('')
-            if (res.success) setRanking(res.top5 || [])
+            const res = await getManagerRankingSummaryAction()
+            if (res.success) setRanking((res as any).ranking || [])
         }
         setLoading(false)
     }
@@ -171,8 +172,8 @@ export default function AdminAuditPage() {
                     <div className="space-y-4">
                         <div className="bg-[#1b1c1a] rounded-[32px] p-8 shadow-xl relative overflow-hidden mb-8">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-red-600 opacity-10 rounded-full -mr-16 -mt-16" />
-                            <h2 className="text-white text-xl font-extrabold mb-1">Top 5 Colaboradores</h2>
-                            <p className="text-white/60 text-xs font-bold uppercase tracking-widest">Ranking Semanal de Performance</p>
+                            <h2 className="text-white text-xl font-extrabold mb-1">Performance da Equipe</h2>
+                            <p className="text-white/60 text-xs font-bold uppercase tracking-widest">Ranking Completo de Pontuação</p>
                         </div>
 
                         {ranking.map((player, idx) => (
