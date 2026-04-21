@@ -14,6 +14,7 @@ import { useState } from 'react'
 import HouseView from './HouseView'
 import ContinueRoutineCard from './ContinueRoutineCard'
 import MyAreaTodayCard from './MyAreaTodayCard'
+import PriorityActionCard from './PriorityActionCard'
 import { ActiveSession, DashboardActions } from '../../hooks/useDashboardData'
 
 
@@ -98,6 +99,12 @@ export default function OperatorHome({
 
     return (
         <div className="space-y-4 md:space-y-6 pb-20 md:pb-6">
+            {/* 0. AÇÃO PRIORITÁRIA (COMANDO PRINCIPAL) */}
+            <PriorityActionCard 
+                action={actions.primary} 
+                loading={!actions} 
+            />
+
             {/* 1. ALERTAS — ATRASOS CRÍTICOS (CRÍTICO EM CIMA) */}
             <OperationalAlertBanner lateCount={lateCount} isDemoMode={isDemoMode} />
 

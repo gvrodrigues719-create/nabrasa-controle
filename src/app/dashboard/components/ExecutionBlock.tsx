@@ -36,39 +36,7 @@ export default function ExecutionBlock({
 
     return (
         <section className="animate-in fade-in slide-in-from-bottom-3 duration-700 delay-150">
-            <header className="flex items-center justify-between mb-3.5 px-1">
-                <p className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest">Ação Prioritária</p>
-                <Link href={`${baseUrl}/routines?returnTo=${baseUrl}`} className="text-[10px] font-black text-[#B13A2B] uppercase tracking-tight flex items-center gap-1 group">
-                    Ver todas <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-                </Link>
-            </header>
-            
             <div className="flex flex-col gap-2">
-                {/* 1. Destaque Dinâmico + Resumo (Grupo Conectado) */}
-                <div className="flex flex-col gap-2">
-                {/* DYNAMIC RECOMMENDATION */}
-                {topRecommended && (
-                    <Link 
-                        href={topRecommended.url}
-                        className="block relative overflow-hidden bg-white rounded-[2rem] p-5 border-2 border-[#1b1c1a]/5 flex items-center gap-5 active:scale-[0.98] transition-all group shadow-md"
-                    >
-                        <div className="relative w-14 h-14 rounded-2xl bg-[#1b1c1a] flex items-center justify-center shrink-0 shadow-lg shadow-black/10 transition-colors group-hover:bg-[#B13A2B]/10">
-                            {getActionIcon(topRecommended.type)}
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#B13A2B] rounded-full border-2 border-white animate-pulse" />
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                            <span className="text-[9px] font-black text-[#B13A2B] uppercase tracking-[0.2em] mb-1 block">Próxima na Fila</span>
-                            <h4 className="text-[15px] font-black text-[#1b1c1a] truncate leading-tight">{topRecommended.label}</h4>
-                            <p className="text-[10px] font-bold text-gray-400 mt-0.5">{topRecommended.description}</p>
-                        </div>
-                        
-                        <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-[#1b1c1a] group-hover:text-white transition-all">
-                            <ArrowRight className="w-5 h-5" />
-                        </div>
-                    </Link>
-                )}
-
                 {/* MINIMALIST UTILITY LINE: TAREFAS DO TURNO — Solo aparece se houver pendências */}
                 {routinesCount > 0 && (
                     <Link 
@@ -97,8 +65,6 @@ export default function ExecutionBlock({
                         </div>
                     </Link>
                 )}
-                </div>
-
                 {/* 2. Ações Secundárias */}
 
                 {/* SECONDARY ACTION: REGISTRAR PERDA */}

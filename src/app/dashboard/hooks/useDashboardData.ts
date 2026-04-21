@@ -130,7 +130,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean, userRole?:
                 setActiveLeaks(healthRes.activeLeaks || [])
                 setWeeklyLeaks(healthRes.weeklyLeaks || [])
             }
-            setRoutinesCount(routinesRes.data?.length || 0)
+            setRoutinesCount(0) // Será calculado pelo motor de ações abaixo
 
             // 3. Processamento de Sessões e Áreas
             let currentAreaName = 'Loja' 
@@ -284,6 +284,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean, userRole?:
             })
 
             setLateCount(overdue.length)
+            setRoutinesCount(areaPendingCount)
             setCountsPending(countsPendingTemp)
             setChecklistsPending(checklistsPendingTemp)
             if (historyRes.success) setRecentActivities(historyRes.activities)
