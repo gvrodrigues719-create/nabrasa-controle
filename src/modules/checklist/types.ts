@@ -6,7 +6,7 @@ export type ChecklistContext = 'opening' | 'closing' | 'daily' | 'receiving' | '
 /**
  * Tipos de resposta suportados pela engine de checklist
  */
-export type ChecklistItemType = 'boolean' | 'number' | 'text' | 'choice' | 'temperature';
+export type ChecklistItemType = 'boolean' | 'number' | 'text' | 'choice' | 'temperature' | 'numeric_if_yes' | 'info_only';
 
 /**
  * Definição de um item (pergunta/tarefa) dentro de um template

@@ -137,8 +137,44 @@ export default function TemplateItemEditor({ items, onUpdate }: Props) {
                                 >
                                     <option value="boolean">Sim/Não</option>
                                     <option value="number">Numérico</option>
-                                    <option value="text">Texto</option>
+                                    <option value="text">Escrita Livre</option>
+                                    <option value="numeric_if_yes">Financeiro (Numérico se Sim)</option>
+                                    <option value="temperature">Temperatura</option>
+                                    <option value="info_only">Apenas Informativo</option>
                                 </select>
+                            </div>
+
+                            {/* Help Text / Microinstrução */}
+                            <div className="pt-2 border-t border-gray-50">
+                                <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Microinstrução (Ajuda Contextual)</label>
+                                <input 
+                                    type="text"
+                                    value={item.help_text || ''}
+                                    onChange={(e) => updateItem(item.id, { help_text: e.target.value })}
+                                    className="w-full bg-gray-50 border-none rounded-lg px-2 py-1 text-[10px] font-medium text-gray-600 placeholder:text-gray-300 focus:ring-0"
+                                    placeholder="Ex: Como verificar este item? Qual o padrão esperado?"
+                                />
+                            </div>
+
+                            <div className="flex items-center gap-4 text-[9px] font-bold text-gray-400">
+                                <label className="flex items-center gap-2 cursor-pointer hover:text-gray-600">
+                                    <input 
+                                        type="checkbox"
+                                        checked={item.generates_alert}
+                                        onChange={(e) => updateItem(item.id, { generates_alert: e.target.checked })}
+                                        className="rounded text-[#B13A2B] focus:ring-[#B13A2B] bg-gray-50 border-gray-200"
+                                    />
+                                    Alertar Gerente Imediatamente
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer hover:text-gray-600">
+                                    <input 
+                                        type="checkbox"
+                                        checked={item.evidence_required}
+                                        onChange={(e) => updateItem(item.id, { evidence_required: e.target.checked })}
+                                        className="rounded text-[#B13A2B] focus:ring-[#B13A2B] bg-gray-50 border-gray-200"
+                                    />
+                                    Exigir Foto
+                                </label>
                             </div>
                         </div>
 

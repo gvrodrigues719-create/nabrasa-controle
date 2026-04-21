@@ -100,10 +100,15 @@ export default function OperatorHome({
     return (
         <div className="space-y-4 md:space-y-6 pb-20 md:pb-6">
             {/* 0. AÇÃO PRIORITÁRIA (COMANDO PRINCIPAL) */}
-            <PriorityActionCard 
-                action={actions.primary} 
-                loading={!actions} 
-            />
+            <div className="space-y-2">
+                <PriorityActionCard 
+                    action={actions.primary} 
+                    loading={!actions} 
+                />
+
+                {/* 0.1 CONTINUIDADE — CONTINUAR DE ONDE PAREI (COMPACTO) */}
+                <ContinueRoutineCard session={activeSession} isDemoMode={isDemoMode} />
+            </div>
 
             {/* 1. ALERTAS — ATRASOS CRÍTICOS (CRÍTICO EM CIMA) */}
             <OperationalAlertBanner lateCount={lateCount} isDemoMode={isDemoMode} />
@@ -134,9 +139,6 @@ export default function OperatorHome({
                 recommendedActions={actions.recommended}
                 isDemoMode={isDemoMode}
             />
-
-            {/* 2.1 CONTINUIDADE — CONTINUAR DE ONDE PAREI */}
-            <ContinueRoutineCard session={activeSession} isDemoMode={isDemoMode} />
 
             {/* 2.2 RESPONSABILIDADE — SUA ÁREA HOJE */}
             <MyAreaTodayCard 

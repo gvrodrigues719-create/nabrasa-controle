@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { PlayCircle, ArrowRight, Timer } from 'lucide-react'
+import { ArrowRight, Timer, Play } from 'lucide-react'
 import Link from 'next/link'
 import { ActiveSession } from '../../hooks/useDashboardData'
 
@@ -18,40 +18,37 @@ export default function ContinueRoutineCard({ session, isDemoMode }: Props) {
     if (isGeneric) return null
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="mx-1 animate-in fade-in slide-in-from-top-2 duration-500">
             <Link 
                 href={`${baseUrl}/${session.type}/${session.routineId}/${session.groupId}?returnTo=${baseUrl}`}
-                className="block relative overflow-hidden bg-[#1b1c1a] rounded-[2.5rem] p-6 shadow-xl shadow-black/10 group active:scale-[0.98] transition-all"
+                className="flex items-center justify-between p-3.5 bg-amber-50 rounded-2xl border border-amber-100 shadow-sm active:scale-[0.99] transition-all group group-hover:bg-amber-100/50"
             >
-                {/* Background Pattern / Glow */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-[#B13A2B] opacity-10 blur-3xl rounded-full -mr-10 -mt-10 group-hover:opacity-20 transition-opacity" />
-                
-                <div className="relative flex items-center gap-5">
-                    {/* Icon Base */}
-                    <div className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-white shrink-0">
-                        <PlayCircle className="w-7 h-7 fill-white/10 group-hover:scale-110 transition-transform duration-500" />
+                <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0 border border-amber-200/50 group-hover:scale-105 transition-transform">
+                        <Play className="w-4 h-4 fill-amber-600" />
                     </div>
-
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1.5">
-                            <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-red-500/20 border border-red-500/20">
-                                <Timer className="w-3 h-3 text-red-400" />
-                                <span className="text-[8px] font-black text-red-200 uppercase tracking-widest">Em Andamento</span>
-                            </div>
-                            <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Continuar de onde parei</span>
+                    
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-[8px] font-black text-amber-600 uppercase tracking-widest px-1.5 py-0.5 bg-white rounded border border-amber-200">
+                                Em Andamento
+                            </span>
                         </div>
-                        
-                        <h4 className="text-xl font-black text-white leading-tight truncate">
+                        <p className="text-sm font-black text-amber-900 truncate leading-tight">
                             {session.routineName}
-                        </h4>
-                        <p className="text-xs font-bold text-white/60 tracking-tight mt-0.5">
-                            Setor: <span className="text-white">{session.groupName}</span>
+                        </p>
+                        <p className="text-[9px] font-bold text-amber-700/60 uppercase tracking-tight">
+                            {session.groupName}
                         </p>
                     </div>
+                </div>
 
-                    {/* Arrow CTA */}
-                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:bg-[#B13A2B] group-hover:shadow-lg group-hover:shadow-red-500/20 transition-all duration-500">
-                        <ArrowRight className="w-5 h-5" />
+                <div className="flex items-center gap-2 pl-4 shrink-0">
+                    <span className="text-[10px] font-black text-amber-600 uppercase tracking-tight group-hover:translate-x-1 transition-transform">
+                        Continuar
+                    </span>
+                    <div className="w-6 h-6 rounded-lg bg-white/50 flex items-center justify-center text-amber-400 group-hover:text-amber-600 transition-colors">
+                        <ArrowRight className="w-4 h-4" />
                     </div>
                 </div>
             </Link>
