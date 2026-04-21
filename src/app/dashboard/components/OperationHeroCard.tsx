@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Activity, Package, Eye, Target, AlertCircle, CheckCircle2, Flame, Edit2, Check, X, Loader2 } from 'lucide-react'
+import { Activity, Package, Eye, Target, AlertCircle, CheckCircle2, Edit2, Check, X, Loader2 } from 'lucide-react'
 import { Leak } from '@/app/actions/efficiencyAction'
 import type { WeeklyFocus } from '@/app/actions/weeklyFocusAction'
 
@@ -182,7 +182,7 @@ export default function OperationHeroCard({
             <div className="mt-auto bg-[#FDF0EF]/50 p-6 border-t border-[#fca5a5]/20">
                 <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-2xl bg-[#B13A2B] flex items-center justify-center shrink-0 shadow-lg shadow-red-100">
-                        <Flame className="w-5 h-5 text-white" fill="currentColor" />
+                        <Target className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
                         <header className="flex items-center justify-between mb-1.5">

@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Star, Trophy, ShieldCheck, Gift, ChevronRight } from 'lucide-react'
+import { TrendingUp, Trophy, ShieldCheck, Gift, ChevronRight } from 'lucide-react'
 
 interface Props {
     weeklyPoints: number
@@ -41,7 +41,7 @@ export default function WeeklyProgressBar({
             <header className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-[#8c716c]">
-                        <Star className="w-4 h-4" />
+                        <TrendingUp className="w-4 h-4" />
                     </div>
                     <div>
                         <h3 className="text-[10px] font-black text-[#1b1c1a] uppercase tracking-[0.2em] leading-none mb-1">Minha Evolução</h3>

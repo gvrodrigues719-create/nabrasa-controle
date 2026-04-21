@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { MapPin, AlertCircle, ArrowRight, Clock, CheckCircle2 } from 'lucide-react'
+import { LayoutGrid, AlertCircle, ArrowRight, Clock, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 
 import { DashboardAction } from '../../hooks/useDashboardData'
@@ -49,7 +49,7 @@ export default function MyAreaTodayCard({ stats, primaryAction }: Props) {
             <header className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-[#F8F7F4] flex items-center justify-center text-[#8c716c] shadow-sm border border-[#eeedea]">
-                        <MapPin className="w-5 h-5" />
+                        <LayoutGrid className="w-5 h-5" />
                     </div>
                     <div>
                         <h3 className="text-[10px] font-black text-[#8c716c] uppercase tracking-[0.2em] leading-none mb-1">Sua área hoje</h3>
