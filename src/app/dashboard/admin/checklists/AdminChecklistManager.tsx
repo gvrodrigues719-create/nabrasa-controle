@@ -137,29 +137,55 @@ export default function AdminChecklistManager() {
             <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm h-fit">
                 <div className="p-5 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
                     <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Templates</h3>
-                    <button className="p-1.5 bg-[#B13A2B] text-white rounded-lg hover:bg-[#8c2e22] transition">
+                    <button 
+                        onClick={createNewTemplate}
+                        className="p-1.5 bg-[#B13A2B] text-white rounded-lg hover:bg-[#8c2e22] transition active:scale-95"
+                    >
                         <Plus className="w-4 h-4" />
                     </button>
                 </div>
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-gray-50 max-h-[60vh] md:max-h-none overflow-y-auto">
                     {loading ? (
                         <div className="p-10 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-gray-300" /></div>
+                    ) : templates.length === 0 ? (
+                        <div className="p-10 text-center">
+                            <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Nenhum template cadastrado</p>
+                        </div>
                     ) : (
                         templates.map(t => (
                             <button 
                                 key={t.id}
                                 onClick={() => handleSelectTemplate(t)}
-                                className={`w-full p-4 text-left flex items-center justify-between group transition-all ${
-                                    selectedTemplate?.id === t.id ? 'bg-red-50' : 'hover:bg-gray-50'
+                                className={`w-full p-4 text-left flex items-center justify-between group transition-all border-l-4 ${
+                                    selectedTemplate?.id === t.id ? 'bg-red-50 border-[#B13A2B]' : 'hover:bg-gray-50 border-transparent'
                                 }`}
                             >
-                                <div>
-                                    <p className={`font-bold text-sm ${selectedTemplate?.id === t.id ? 'text-[#B13A2B]' : 'text-gray-700'}`}>
+                                <div className="flex-1 min-w-0 pr-2">
+                                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                        {t.area && (
+                                            <span className="text-[8px] font-black text-blue-600 uppercase tracking-tight bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
+                                                {t.area}
+                                            </span>
+                                        )}
+                                        {t.turno && (
+                                            <span className="text-[8px] font-black text-orange-600 uppercase tracking-tight bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
+                                                {t.turno}
+                                            </span>
+                                        )}
+                                        {!t.active && (
+                                            <span className="text-[8px] font-black text-gray-400 uppercase tracking-tight bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">
+                                                Inativo
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className={`font-black text-sm truncate ${selectedTemplate?.id === t.id ? 'text-[#B13A2B]' : 'text-gray-900'}`}>
                                         {t.name}
                                     </p>
-                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">{t.context}</p>
+                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tight mt-0.5">
+                                        {t.frequency === 'daily' ? 'Diário' : t.frequency} • {t.priority === 'high' ? 'Alta Prioridade' : 'Padrão'}
+                                    </p>
                                 </div>
-                                <ChevronRight className={`w-4 h-4 transition-transform ${selectedTemplate?.id === t.id ? 'text-[#B13A2B] translate-x-1' : 'text-gray-300'}`} />
+                                <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${selectedTemplate?.id === t.id ? 'text-[#B13A2B] translate-x-1' : 'text-gray-300'}`} />
                             </button>
                         ))
                     )}
