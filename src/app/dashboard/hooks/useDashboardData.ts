@@ -86,7 +86,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean, userRole?:
             const startTime = performance.now()
             
             // 1. Fetch de dados básicos e alocação de área
-            const [healthRes, routinesRes, sessionsRes, summaryRes, monthlySummaryRes, cmvRes, lastSealRes, focusRes, noticeRes, userAreaRes, historyRes] = await Promise.all([
+            const results = await Promise.all([
                 getOperationalHealthAction(),
                 getActiveRoutinesAction(),
                 userId
