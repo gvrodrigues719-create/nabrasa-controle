@@ -84,9 +84,12 @@ export default function ExecutionBlock({
                                     {routinesCount} {routinesCount === 1 ? 'tarefa' : 'tarefas'} hoje
                                 </span>
                                 <span className="w-0.5 h-0.5 rounded-full bg-gray-300" />
-                                <span className="text-[10px] font-medium text-gray-400">
-                                    {countsPending} {countsPending === 1 ? 'contagem' : 'contagens'} • {checklistsPending} {checklistsPending === 1 ? 'auditoria' : 'auditorias'}
-                                </span>
+                                <p className="text-[10px] font-medium text-gray-500 uppercase tracking-tighter">
+                                    {[
+                                        countsPending > 0 ? `${countsPending} ${countsPending === 1 ? 'contagem' : 'contagens'}` : null,
+                                        checklistsPending > 0 ? `${checklistsPending} ${checklistsPending === 1 ? 'checklist' : 'checklists'}` : null
+                                    ].filter(Boolean).join(' • ')}
+                                </p>
                             </div>
                         </div>
                         <div className="flex items-center gap-1 text-[10px] font-bold text-[#B13A2B] uppercase tracking-tighter hover:underline">

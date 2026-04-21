@@ -230,9 +230,11 @@ export function useDashboardData(userId: string, isDemoMode: boolean, userRole?:
                         }
                         
                         allPotentialActions.push(action)
-                        if (isMyArea) areaPendingCount++
-                        if (routineType === 'count') countsPendingTemp++
-                        else checklistsPendingTemp++
+                        if (isMyArea) {
+                            areaPendingCount++
+                            if (routineType === 'count') countsPendingTemp++
+                            else checklistsPendingTemp++
+                        }
                     }
                 })
             }
