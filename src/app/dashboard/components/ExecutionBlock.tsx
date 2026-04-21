@@ -67,27 +67,28 @@ export default function ExecutionBlock({
                     </Link>
                 )}
 
-                {/* COMPACT SUMMARY LINE: TAREFAS DO TURNO — Solo aparece se houver pendências */}
+                {/* MINIMALIST UTILITY LINE: TAREFAS DO TURNO — Solo aparece se houver pendências */}
                 {routinesCount > 0 && (
                     <Link 
                         href={`${baseUrl}/routines?returnTo=${baseUrl}`}
-                        className="flex items-center justify-between px-5 py-3.5 bg-[#F8F7F4]/80 backdrop-blur-sm rounded-2xl border border-gray-100/50 active:scale-[0.98] transition-all group animate-in fade-in slide-in-from-top-1 duration-500"
+                        className="flex items-center justify-between px-4 py-2 bg-gray-50/50 rounded-xl border border-gray-100/30 active:opacity-70 transition-all group animate-in fade-in duration-500"
                     >
-                        <div className="flex items-center gap-3.5">
-                            <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-[#B13A2B] shadow-sm border border-gray-100 group-hover:bg-[#B13A2B] group-hover:text-white transition-colors">
-                                <ListChecks className="w-5 h-5" />
+                        <div className="flex items-center gap-3">
+                            <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center text-[#B13A2B] shadow-sm border border-gray-100/50 group-hover:scale-105 transition-transform">
+                                <ListChecks className="w-4 h-4" />
                             </div>
-                            <div>
-                                <p className="text-[13px] font-black text-[#1b1c1a] leading-none mb-0.5">
-                                    {routinesCount} {routinesCount === 1 ? 'tarefa' : 'tarefas'} pendentes hoje
-                                </p>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-                                    {countsPending} {countsPending === 1 ? 'contagem' : 'contagens'} • {checklistsPending} {checklistsPending === 1 ? 'checklist' : 'checklists'}
-                                </p>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[12px] font-bold text-[#1b1c1a]">
+                                    {routinesCount} {routinesCount === 1 ? 'tarefa' : 'tarefas'} hoje
+                                </span>
+                                <span className="w-0.5 h-0.5 rounded-full bg-gray-300" />
+                                <span className="text-[10px] font-medium text-gray-400">
+                                    {countsPending}C • {checklistsPending}L
+                                </span>
                             </div>
                         </div>
-                        <div className="flex items-center gap-1 text-[10px] font-black text-[#B13A2B] uppercase tracking-widest bg-white py-1.5 px-3 rounded-full border border-gray-100 shadow-sm opacity-80 group-hover:opacity-100 transition-opacity">
-                            Ver lista <ArrowRight className="w-3 h-3" />
+                        <div className="flex items-center gap-1 text-[10px] font-black text-[#B13A2B] uppercase tracking-tighter hover:underline">
+                            Ver lista <ArrowRight className="w-2.5 h-2.5" />
                         </div>
                     </Link>
                 )}
