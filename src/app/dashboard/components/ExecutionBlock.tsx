@@ -85,7 +85,7 @@ export default function ExecutionBlock({
                                 </span>
                                 <span className="w-0.5 h-0.5 rounded-full bg-gray-300" />
                                 <span className="text-[10px] font-medium text-gray-400">
-                                    {countsPending} {countsPending === 1 ? 'contagem' : 'contagens'} • {checklistsPending} {checklistsPending === 1 ? 'checklist' : 'checklists'}
+                                    {countsPending} {countsPending === 1 ? 'contagem' : 'contagens'} • {checklistsPending} {checklistsPending === 1 ? 'auditoria' : 'auditorias'}
                                 </span>
                             </div>
                         </div>

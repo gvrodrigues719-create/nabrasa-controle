@@ -18,7 +18,7 @@ interface ManagerQuickActionsProps {
 
 export default function ManagerQuickActions({ lateCount }: ManagerQuickActionsProps) {
     const lateText = lateCount > 0
-        ? `${lateCount} ${lateCount === 1 ? 'checklist' : 'checklists'} em atraso`
+        ? `${lateCount} ${lateCount === 1 ? 'tarefa de auditoria' : 'tarefas de auditoria'} em atraso`
         : "sem atrasos no momento"
 
     return (
