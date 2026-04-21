@@ -43,7 +43,9 @@ export default function ExecutionBlock({
                 </Link>
             </header>
             
-            <div className="space-y-3">
+            <div className="flex flex-col gap-2">
+                {/* 1. Destaque Dinâmico + Resumo (Grupo Conectado) */}
+                <div className="flex flex-col gap-2">
                 {/* DYNAMIC RECOMMENDATION */}
                 {topRecommended && (
                     <Link 
@@ -71,7 +73,7 @@ export default function ExecutionBlock({
                 {routinesCount > 0 && (
                     <Link 
                         href={`${baseUrl}/routines?returnTo=${baseUrl}`}
-                        className="flex items-center justify-between px-4 py-2 bg-gray-50/50 rounded-xl border border-gray-100/30 active:opacity-70 transition-all group animate-in fade-in duration-500"
+                        className="flex items-center justify-between px-4 py-2 bg-gray-50/50 rounded-xl border border-gray-100/30 active:opacity-70 transition-all group animate-in fade-in duration-500 -mt-1"
                     >
                         <div className="flex items-center gap-3">
                             <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center text-[#B13A2B] shadow-sm border border-gray-100/50 group-hover:scale-105 transition-transform">
@@ -83,15 +85,18 @@ export default function ExecutionBlock({
                                 </span>
                                 <span className="w-0.5 h-0.5 rounded-full bg-gray-300" />
                                 <span className="text-[10px] font-medium text-gray-400">
-                                    {countsPending}C • {checklistsPending}L
+                                    {countsPending} {countsPending === 1 ? 'contagem' : 'contagens'} • {checklistsPending} {checklistsPending === 1 ? 'checklist' : 'checklists'}
                                 </span>
                             </div>
                         </div>
-                        <div className="flex items-center gap-1 text-[10px] font-black text-[#B13A2B] uppercase tracking-tighter hover:underline">
+                        <div className="flex items-center gap-1 text-[10px] font-bold text-[#B13A2B] uppercase tracking-tighter hover:underline">
                             Ver lista <ArrowRight className="w-2.5 h-2.5" />
                         </div>
                     </Link>
                 )}
+                </div>
+
+                {/* 2. Ações Secundárias */}
 
                 {/* SECONDARY ACTION: REGISTRAR PERDA */}
                 <button 
