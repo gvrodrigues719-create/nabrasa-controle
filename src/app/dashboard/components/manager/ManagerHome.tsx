@@ -51,6 +51,13 @@ export default function ManagerHome() {
             <div className="flex justify-between items-center mb-2 px-1">
                 <div className="flex items-center gap-3">
                     <h2 className="text-lg font-black text-gray-900 leading-none">Espelho do Turno</h2>
+                    <Link 
+                        href="/dashboard/admin/checklists"
+                        className="px-2.5 py-1 rounded-full border bg-white border-gray-100 text-[9px] font-black uppercase tracking-wider text-gray-400 hover:text-[#B13A2B] hover:border-[#B13A2B]/20 transition-all flex items-center gap-1.5 shadow-sm"
+                    >
+                        <ShieldCheck className="w-3 h-3" />
+                        Auditoria & Performance
+                    </Link>
                     <span className={`px-2.5 py-1 rounded-full border text-[9px] font-black uppercase tracking-wider ${status.color}`}>
                         {status.label}
                     </span>

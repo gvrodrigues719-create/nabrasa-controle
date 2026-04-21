@@ -91,7 +91,7 @@ export default function SystemArchitectureHub() {
                     icon={ClipboardList}
                     accentColor="text-[#B13A2B]"
                     mainModules={[
-                        { label: 'Checklist', href: '/dashboard/admin/checklists', status: 'ativo' },
+                        { label: 'Auditoria & Performance', href: '/dashboard/admin/checklists', status: 'ativo' },
                         { label: 'Contagem', href: '/dashboard/admin/routines', status: 'ativo parcial' }
                     ]}
                     extraModule={{ label: 'Abertura & Fechamento', status: 'em desenvolvimento' }}
