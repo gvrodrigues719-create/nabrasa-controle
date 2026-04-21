@@ -584,8 +584,8 @@ export async function getMonthlyRankingAction(userId?: string) {
 
         const userPosition = userId ? ranking.findIndex(r => r.userId === userId) + 1 : null
         const top3 = ranking.slice(0, 3) // POLÍTICA: Reduzido para Top 3
-
-        let fullRanking = []
+ 
+        let fullRanking: any[] = []
         if (!userId) {
             try {
                 // Tenta validar se é gestor para liberar a lista completa
