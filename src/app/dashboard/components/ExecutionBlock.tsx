@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { ClipboardList, ListChecks, Zap, ArrowRight, PackageX } from 'lucide-react'
+import { ClipboardList, ListChecks, ArrowRight, PackageX, Boxes } from 'lucide-react'
 import Link from 'next/link'
 
 import { DashboardAction } from '../hooks/useDashboardData'
@@ -26,6 +26,14 @@ export default function ExecutionBlock({
     const topRecommended = recommendedActions[0]
     const baseUrl = isDemoMode ? '/moc-demo' : '/dashboard'
 
+    const getActionIcon = (type: string) => {
+        switch (type) {
+            case 'count': return <Boxes className="w-7 h-7 text-amber-500" />
+            case 'checklist': return <ListChecks className="w-7 h-7 text-amber-500" />
+            default: return <Boxes className="w-7 h-7 text-amber-500" />
+        }
+    }
+
     return (
         <section className="animate-in fade-in slide-in-from-bottom-3 duration-700 delay-150">
             <header className="flex items-center justify-between mb-3.5 px-1">
@@ -42,8 +50,8 @@ export default function ExecutionBlock({
                         href={topRecommended.url}
                         className="block relative overflow-hidden bg-white rounded-[2rem] p-5 border-2 border-[#1b1c1a]/5 flex items-center gap-5 active:scale-[0.98] transition-all group shadow-md"
                     >
-                        <div className="relative w-14 h-14 rounded-2xl bg-[#1b1c1a] flex items-center justify-center text-white shrink-0 shadow-lg shadow-black/10">
-                            <Zap className="w-7 h-7 fill-amber-400 text-amber-400" />
+                        <div className="relative w-14 h-14 rounded-2xl bg-[#1b1c1a] flex items-center justify-center shrink-0 shadow-lg shadow-black/10 transition-colors group-hover:bg-[#B13A2B]/10">
+                            {getActionIcon(topRecommended.type)}
                             <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#B13A2B] rounded-full border-2 border-white animate-pulse" />
                         </div>
                         
