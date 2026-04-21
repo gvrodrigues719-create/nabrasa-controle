@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { ClipboardList, ListChecks, Zap, ArrowRight } from 'lucide-react'
+import { ClipboardList, ListChecks, Zap, ArrowRight, PackageX } from 'lucide-react'
 import Link from 'next/link'
 
 import { DashboardAction } from '../hooks/useDashboardData'
@@ -92,21 +92,24 @@ export default function ExecutionBlock({
                     </div>
                 </Link>
 
-                {/* SECONDARY ACTION: RELATAR PERDA */}
+                {/* SECONDARY ACTION: REGISTRAR PERDA */}
                 <button 
                     onClick={onReportLoss}
-                    className="w-full bg-[#1b1c1a] rounded-[1.5rem] p-4.5 flex items-center justify-between active:scale-[0.98] transition-all group shadow-lg shadow-black/5 min-h-[64px]"
+                    className="w-full bg-white rounded-[1.5rem] p-4.5 flex items-center justify-between active:scale-[0.98] transition-all group shadow-sm border border-[#fde68a]/50 hover:border-[#fde68a] min-h-[64px]"
+                    style={{ background: 'linear-gradient(135deg, #ffffff 0%, #fffcf0 100%)' }}
                 >
                     <div className="flex items-center gap-3.5">
-                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
-                            <Zap className="w-5 h-5 fill-current" />
+                        <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 transition-transform group-hover:scale-105 border border-amber-100">
+                            <PackageX className="w-5 h-5" />
                         </div>
-                        <div className="text-left">
-                            <p className="text-[13px] font-black text-white tracking-tight">Relatar Perda</p>
-                            <p className="text-[9px] font-black text-white/40 uppercase tracking-[0.1em]">Desperdício ou Avaria</p>
+                        <div className="text-left font-sans">
+                            <p className="text-[14px] font-black text-[#1b1c1a] tracking-tight leading-none mb-1">Registrar perda</p>
+                            <p className="text-[10px] font-bold text-[#8c716c] uppercase tracking-widest">Desperdício, avaria ou descarte</p>
                         </div>
                     </div>
-                    <ArrowRight className="w-5 h-5 text-white/20 group-hover:text-white group-hover:translate-x-1 transition-all" />
+                    <div className="bg-amber-50 p-1.5 rounded-lg text-amber-300 group-hover:text-amber-600 transition-colors">
+                        <ArrowRight className="w-4 h-4" />
+                    </div>
                 </button>
             </div>
         </section>
