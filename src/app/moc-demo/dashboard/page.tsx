@@ -204,6 +204,7 @@ export default function MocDemoDashboard() {
                     isOpen={isHealthDrawerOpen} 
                     onClose={() => setIsHealthDrawerOpen(false)}
                     isDemoMode={true}
+                    userRole={activeUser.role}
                 />
                 <RewardsDrawer 
                     isOpen={isRewardsDrawerOpen} 

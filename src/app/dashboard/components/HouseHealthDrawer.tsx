@@ -21,6 +21,7 @@ interface Props {
     isOpen: boolean
     onClose: () => void
     isDemoMode?: boolean
+    userRole?: string | null
 }
 
 type GroupedLoss = {
@@ -30,7 +31,7 @@ type GroupedLoss = {
     records: any[]
 }
 
-export default function HouseHealthDrawer({ isOpen, onClose, isDemoMode }: Props) {
+export default function HouseHealthDrawer({ isOpen, onClose, isDemoMode, userRole }: Props) {
     const [loading, setLoading] = useState(true)
     const [losses, setLosses] = useState<any[]>([])
     const [activeLeaks, setActiveLeaks] = useState<any[]>([])
@@ -49,8 +50,8 @@ export default function HouseHealthDrawer({ isOpen, onClose, isDemoMode }: Props
             // Mock Global Health Data
             await new Promise(r => setTimeout(r, 800))
             setLosses([
-                { id: 'l1', quantity: 2.5, created_at: new Date().toISOString(), category: 'quebra', items: { name: 'Picanha Maturada', unit: 'KG' }, users: { name: 'Guilherme' }, observation: 'Corte errado no pré-preparo' },
-                { id: 'l2', quantity: 1, created_at: new Date(Date.now() - 86400000).toISOString(), category: 'vencido', items: { name: 'Molho Especial', unit: 'UN' }, users: { name: 'Ana Souza' } }
+                { id: 'l1', quantity: 2.5, created_at: new Date().toISOString(), category: 'quebra', items: { name: 'Picanha Maturada', unit: 'KG' }, users: { name: 'Equipe' }, observation: 'Corte identificado na conferência' },
+                { id: 'l2', quantity: 1, created_at: new Date(Date.now() - 86400000).toISOString(), category: 'vencido', items: { name: 'Molho Especial', unit: 'UN' }, users: { name: 'Sistema' } }
             ])
             setActiveLeaks([
                 { id: '1', label: 'Desperdício de Proteína', type: 'reported_loss', severity: 'warning', penalty: 5 },
@@ -191,7 +192,11 @@ export default function HouseHealthDrawer({ isOpen, onClose, isDemoMode }: Props
                                                         <div className="flex items-center justify-between">
                                                             <div className="flex items-center gap-1.5 text-[#1b1c1a]">
                                                                 <User className="w-3 h-3 text-[#dfbfba]" />
-                                                                <span className="text-[11px] font-bold">{record.users?.name || 'Sistema'}</span>
+                                                                <span className="text-[11px] font-bold">
+                                                                    {userRole === 'admin' || userRole === 'manager' 
+                                                                        ? (record.users?.name || 'Sistema')
+                                                                        : 'Membro da Equipe'}
+                                                                </span>
                                                             </div>
                                                             <span className="text-xs font-black text-[#1b1c1a]">{record.quantity} {item.unit}</span>
                                                         </div>
