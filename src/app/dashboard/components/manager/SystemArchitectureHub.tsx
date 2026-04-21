@@ -3,13 +3,13 @@
 import Link from 'next/link'
 import { 
     ClipboardList, 
-    Package, 
-    ShoppingCart, 
+    Boxes, 
+    ShoppingBag, 
     Users, 
-    Sliders, 
+    ListChecks, 
     BarChart3,
     ExternalLink,
-    Container
+    Wrench
 } from 'lucide-react'
 
 interface ModuleItem {
@@ -100,7 +100,7 @@ export default function SystemArchitectureHub() {
                 {/* 2. Estoque, CMV e Produção */}
                 <AreaCard 
                     title="Estoque, CMV e Produção"
-                    icon={Package}
+                    icon={Boxes}
                     accentColor="text-emerald-500"
                     mainModules={[
                         { label: 'CMV & Compras', href: '/dashboard/admin/cmv', status: 'ativo parcial' },
@@ -112,7 +112,7 @@ export default function SystemArchitectureHub() {
                 {/* 3. Vendas, Delivery e Atendimento */}
                 <AreaCard 
                     title="Vendas, Delivery e Atendimento"
-                    icon={ShoppingCart}
+                    icon={ShoppingBag}
                     accentColor="text-indigo-500"
                     mainModules={[
                         { label: 'Vendas', href: '/dashboard/admin/vendas', status: 'ativo parcial' },
@@ -137,7 +137,7 @@ export default function SystemArchitectureHub() {
                 {/* 5. Equipamentos & Manutenção */}
                 <AreaCard 
                     title="Equipamentos & Manutenção"
-                    icon={Container}
+                    icon={Wrench}
                     accentColor="text-slate-500"
                     mainModules={[
                         { label: 'Ativos', status: 'em desenvolvimento' }
@@ -148,7 +148,7 @@ export default function SystemArchitectureHub() {
                 {/* 6. Processos e Regras */}
                 <AreaCard 
                     title="Processos e Regras"
-                    icon={Sliders}
+                    icon={ListChecks}
                     accentColor="text-gray-600"
                     mainModules={[
                         { label: 'Templates', href: '/dashboard/admin/checklists?tab=management', status: 'ativo' },

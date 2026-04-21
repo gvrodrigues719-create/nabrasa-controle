@@ -1,12 +1,11 @@
 "use client"
 
-import { 
     ClipboardList, 
     CheckCircle2, 
-    Clock, 
-    AlertTriangle,
-    Zap,
-    TrendingDown,
+    Clock3, 
+    TriangleAlert,
+    OctagonAlert,
+    PackageX,
     ShieldCheck
 } from 'lucide-react'
 
@@ -60,7 +59,7 @@ export default function ShiftMetrics({ overview }: ShiftMetricsProps) {
                     <MetricItem 
                         label="Pendentes" 
                         value={overview.pending} 
-                        icon={Clock} 
+                        icon={Clock3} 
                         color="text-gray-900" 
                         bg="bg-gray-50" 
                     />
@@ -72,7 +71,7 @@ export default function ShiftMetrics({ overview }: ShiftMetricsProps) {
                 <MetricItem 
                     label="Atrasados" 
                     value={overview.late} 
-                    icon={AlertTriangle} 
+                    icon={TriangleAlert} 
                     color={overview.late > 0 ? 'text-red-600' : 'text-gray-900/20'} 
                     bg={overview.late > 0 ? 'bg-red-50' : 'bg-gray-50/50'} 
                     isCritical
@@ -80,7 +79,7 @@ export default function ShiftMetrics({ overview }: ShiftMetricsProps) {
                 <MetricItem 
                     label="Críticos" 
                     value={overview.critical} 
-                    icon={Zap} 
+                    icon={OctagonAlert} 
                     color={overview.critical > 0 ? 'text-purple-600' : 'text-gray-900/20'} 
                     bg={overview.critical > 0 ? 'bg-purple-50' : 'bg-gray-50/50'} 
                     isCritical
@@ -89,7 +88,7 @@ export default function ShiftMetrics({ overview }: ShiftMetricsProps) {
                     <MetricItem 
                         label="Perdas 24h" 
                         value={overview.lossesCount} 
-                        icon={TrendingDown} 
+                        icon={PackageX} 
                         color={overview.lossesCount > 0 ? 'text-orange-600' : 'text-gray-900/20'} 
                         bg={overview.lossesCount > 0 ? 'bg-orange-50' : 'bg-gray-50/50'} 
                     />
