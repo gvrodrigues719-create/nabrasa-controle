@@ -1,9 +1,9 @@
 "use server"
 
 import { createClient } from '@supabase/supabase-js'
-import { 
-    ChecklistTemplate, 
-    ChecklistSession, 
+import {
+    ChecklistTemplate,
+    ChecklistSession,
     ChecklistSessionStatus,
     ChecklistTemplateItem
 } from '@/modules/checklist/types'
@@ -56,12 +56,12 @@ export async function getChecklistTemplateDetailsAction(templateId: string) {
 
         if (iError) throw iError
 
-        return { 
-            success: true, 
-            data: { 
-                ...template, 
-                items: items as ChecklistTemplateItem[] 
-            } 
+        return {
+            success: true,
+            data: {
+                ...template,
+                items: items as ChecklistTemplateItem[]
+            }
         }
     } catch (error: any) {
         console.error('Error fetching template details:', error)
@@ -125,10 +125,10 @@ export async function initChecklistSessionAction(routineId: string, groupId: str
                 started_at: new Date().toISOString(),
                 execution_id: exec?.id || null
             }]).select('id').single()
-            
+
             if (insErr) throw insErr
             if (newSession) sessionId = newSession.id
-            
+
             console.log(`[ACTION] Checklist Session Started | Routine: ${routineId} | Group: ${groupId} | User: ${userId}`)
         } else {
             // Garante vínculo com execução oficial se ela nascer depois da sessão
@@ -175,8 +175,8 @@ export async function startChecklistSessionAction(templateId: string, userId: st
  * Salva ou atualiza uma resposta individual
  */
 export async function saveChecklistResponseAction(
-    sessionId: string, 
-    itemId: string, 
+    sessionId: string,
+    itemId: string,
     value: any,
     observation?: string,
     evidenceUrl?: string,
@@ -192,7 +192,7 @@ export async function saveChecklistResponseAction(
             .select('user_id')
             .eq('id', sessionId)
             .single()
-        
+
         if (!session || (session.user_id !== authId)) {
             throw new Error('Acesso negado: Você não é o responsável por esta sessão.')
         }
@@ -264,7 +264,7 @@ export async function completeChecklistSessionAction(sessionId: string) {
             .select('id')
             .eq('template_id', session.template_id)
             .eq('required', true)
-        
+
         const requiredIds = requiredItems?.map(i => i.id) || []
 
         // Buscamos IDs dos itens que EXIGEM evidência deste template
@@ -273,7 +273,7 @@ export async function completeChecklistSessionAction(sessionId: string) {
             .select('id')
             .eq('template_id', session.template_id)
             .eq('evidence_required', true)
-        
+
         const evidenceRequiredIds = evidenceItems?.map(i => i.id) || []
 
         // Buscamos as respostas já salvas com as evidências
@@ -287,14 +287,14 @@ export async function completeChecklistSessionAction(sessionId: string) {
 
         // Verifica se faltam itens obrigatórios
         const missingIds = requiredIds.filter(id => !respondedIds.includes(id))
-        
+
         // Verifica se faltam evidências obrigatórias
         const missingEvidenceIds = evidenceRequiredIds.filter(id => !evidencedIds.includes(id))
 
         if (missingIds.length > 0) {
-            return { 
-                success: false, 
-                error: `Faltam ${missingIds.length} itens obrigatórios para preencher.` 
+            return {
+                success: false,
+                error: `Faltam ${missingIds.length} itens obrigatórios para preencher.`
             }
         }
 
@@ -327,9 +327,9 @@ export async function completeChecklistSessionAction(sessionId: string) {
             .update({
                 status: 'completed',
                 completed_at: new Date().toISOString(),
-                template_snapshot: { 
-                    template: templateData, 
-                    items: templateItems 
+                template_snapshot: {
+                    template: templateData,
+                    items: templateItems
                 },
                 signature_name: operator?.name || 'Sistema',
                 signature_role: operator?.role || 'operator'
@@ -340,7 +340,7 @@ export async function completeChecklistSessionAction(sessionId: string) {
 
         // 5. Gerar Pendências Operacionais para itens marcados como "Não" (false)
         const failedResponses = responses?.filter(r => r.value === false) || []
-        
+
         if (failedResponses.length > 0) {
             const pendingIssues = failedResponses.map(r => {
                 const itemDef = templateItems?.find(it => it.id === r.item_id)
@@ -367,7 +367,7 @@ export async function completeChecklistSessionAction(sessionId: string) {
         try {
             if (session.user_id) {
                 const { recordPointsAction, recordSealingEventAction } = await import('./gamificationAction')
-                
+
                 await recordPointsAction(
                     session.user_id,
                     'checklist_completion',
@@ -379,7 +379,7 @@ export async function completeChecklistSessionAction(sessionId: string) {
                 const now = new Date()
                 const currentHour = now.getHours()
                 const isCritical = templateData?.context === 'opening' || templateData?.context === 'closing'
-                const isOnTime = 
+                const isOnTime =
                     (templateData?.context === 'opening' && currentHour < 11) ||
                     (templateData?.context === 'closing' && currentHour < 23)
 
@@ -413,7 +413,7 @@ export async function getAllChecklistSessionsAction(status?: ChecklistSessionSta
                 checklist_templates(name, context, priority),
                 users(id, name, role, position, sector, shift)
             `)
-        
+
         if (status) {
             query = query.eq('status', status)
         }
@@ -494,7 +494,7 @@ export async function getTemplateRulesAction(templateId: string) {
             .from('checklist_attribution_rules')
             .select('*')
             .eq('template_id', templateId)
-        
+
         if (error) return { success: false, error: error.message }
         return { success: true, data }
     } catch (e: any) {
@@ -508,7 +508,7 @@ export async function saveAttributionRuleAction(rule: any) {
         const { error } = await supabase
             .from('checklist_attribution_rules')
             .upsert(rule)
-        
+
         if (error) return { success: false, error: error.message }
         revalidatePath('/dashboard/admin/checklists')
         return { success: true }
@@ -525,7 +525,7 @@ export async function runChecklistDistributionAction(triggeringUserId?: string) 
         const authId = await requireManagerOrAdmin()
         const source = triggeringUserId ? 'manual' : 'automatic'
         const today = new Date().toISOString().split('T')[0]
-        
+
         // 1. Buscar todas as regras ativas
         const { data: rules } = await supabase
             .from('checklist_attribution_rules')
@@ -544,7 +544,7 @@ export async function runChecklistDistributionAction(triggeringUserId?: string) 
         for (const rule of rules) {
             // 2. Buscar usuários que batem com a regra (usando POSITION agora)
             let userQuery = supabase.from('users').select('id').eq('active', true)
-            
+
             if (rule.target_position) userQuery = userQuery.eq('position', rule.target_position)
             if (rule.target_shift) userQuery = userQuery.eq('shift', rule.target_shift)
             if (rule.target_sector) userQuery = userQuery.eq('sector', rule.target_sector)
@@ -578,7 +578,7 @@ export async function runChecklistDistributionAction(triggeringUserId?: string) 
                         scheduled_for: today,
                         status: 'in_progress'
                     })
-                    
+
                     if (!insError) stats.sessionsCreated++
                 } else {
                     stats.sessionsSkipped++
@@ -608,7 +608,7 @@ export async function saveTemplateItemsAction(templateId: string, items: Checkli
             .from('checklist_template_items')
             .delete()
             .eq('template_id', templateId)
-        
+
         if (delErr) throw delErr
 
         // 2. Insere os novos itens
@@ -695,13 +695,13 @@ export async function getChecklistSessionDetailsAction(sessionId: string) {
 
         if (rError) throw rError
 
-        return { 
-            success: true, 
-            data: { 
-                session, 
-                items: templateItems as ChecklistTemplateItem[], 
-                responses 
-            } 
+        return {
+            success: true,
+            data: {
+                session,
+                items: templateItems as ChecklistTemplateItem[],
+                responses
+            }
         }
     } catch (error: any) {
         console.error('Error fetching session details for audit:', error)
@@ -752,7 +752,7 @@ export async function getOperationalMirrorAction() {
                         users(id, name, position, sector, shift)
                     `)
                     .or(`scheduled_for.eq.${today},and(scheduled_for.lt.${today},status.eq.in_progress)`)
-                
+
                 if (newSessions) {
                     // Update sessions reference for the rest of calculation
                     sessions?.splice(0, sessions.length, ...newSessions)
@@ -766,6 +766,12 @@ export async function getOperationalMirrorAction() {
             .from('inventory_losses')
             .select('*, items(name), users(name, sector)')
             .gte('created_at', yesterday)
+
+        // 3. Buscar todas as regras ativas para checar "Regras Mortas"
+        const { data: activeRules } = await supabase
+            .from('checklist_attribution_rules')
+            .select('*')
+            .eq('is_active', true)
 
         // 4. Buscar Pendências Operacionais Ativas
         const { count: pendingIssuesCount } = await supabase
@@ -870,7 +876,7 @@ export async function updateSessionUserAction(sessionId: string, newUserId: stri
             .from('checklist_sessions')
             .update({ user_id: newUserId })
             .eq('id', sessionId)
-        
+
         if (error) throw error
         revalidatePath('/dashboard/admin/checklists')
         return { success: true }
@@ -904,4 +910,3 @@ export async function getPendingIssuesAction() {
     } catch (err: any) {
         return { success: false, error: err.message }
     }
-}
