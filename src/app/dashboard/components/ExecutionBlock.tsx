@@ -67,38 +67,30 @@ export default function ExecutionBlock({
                     </Link>
                 )}
 
-                {/* UNIFIED PRIMARY ACTION: TAREFAS DO TURNO */}
-                <Link 
-                    href={`${baseUrl}/routines?returnTo=${baseUrl}`}
-                    className="relative overflow-hidden bg-white rounded-[2rem] p-6 border border-[#e9e8e5] flex items-center gap-5 active:scale-[0.98] transition-all group shadow-sm hover:shadow-md"
-                >
-                    {/* Status Light */}
-                    <div className={`absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 opacity-5 blur-3xl rounded-full ${routinesCount > 0 ? 'bg-[#B13A2B]' : 'bg-green-500'}`} />
-                    
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 ${
-                        routinesCount > 0 
-                            ? 'bg-[#B13A2B]/10 text-[#B13A2B] group-hover:bg-[#B13A2B] group-hover:text-white' 
-                            : 'bg-green-50 text-green-600'
-                    }`}>
-                        <ClipboardList className="w-7 h-7" />
-                    </div>
-                    
-                    <div className="flex-1">
-                        <h4 className="text-base font-black text-[#1b1c1a] tracking-tight">Tarefas do Turno</h4>
-                        <div className="flex flex-col mt-0.5">
-                            <span className="text-[11px] font-black text-[#B13A2B] uppercase tracking-tight">
-                                {routinesCount} pendência{routinesCount !== 1 ? 's' : ''} hoje
-                            </span>
-                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-                                {countsPending} contagem{countsPending !== 1 ? 's' : ''} • {checklistsPending} checklist{checklistsPending !== 1 ? 's' : ''}
-                            </span>
+                {/* COMPACT SUMMARY LINE: TAREFAS DO TURNO — Solo aparece se houver pendências */}
+                {routinesCount > 0 && (
+                    <Link 
+                        href={`${baseUrl}/routines?returnTo=${baseUrl}`}
+                        className="flex items-center justify-between px-5 py-3.5 bg-[#F8F7F4]/80 backdrop-blur-sm rounded-2xl border border-gray-100/50 active:scale-[0.98] transition-all group animate-in fade-in slide-in-from-top-1 duration-500"
+                    >
+                        <div className="flex items-center gap-3.5">
+                            <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-[#B13A2B] shadow-sm border border-gray-100 group-hover:bg-[#B13A2B] group-hover:text-white transition-colors">
+                                <ListChecks className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <p className="text-[13px] font-black text-[#1b1c1a] leading-none mb-0.5">
+                                    {routinesCount} {routinesCount === 1 ? 'tarefa' : 'tarefas'} pendentes hoje
+                                </p>
+                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                                    {countsPending} {countsPending === 1 ? 'contagem' : 'contagens'} • {checklistsPending} {checklistsPending === 1 ? 'checklist' : 'checklists'}
+                                </p>
+                            </div>
                         </div>
-                    </div>
-
-                    <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 group-hover:bg-[#1b1c1a] group-hover:text-white transition-all">
-                        <ArrowRight className="w-5 h-5" />
-                    </div>
-                </Link>
+                        <div className="flex items-center gap-1 text-[10px] font-black text-[#B13A2B] uppercase tracking-widest bg-white py-1.5 px-3 rounded-full border border-gray-100 shadow-sm opacity-80 group-hover:opacity-100 transition-opacity">
+                            Ver lista <ArrowRight className="w-3 h-3" />
+                        </div>
+                    </Link>
+                )}
 
                 {/* SECONDARY ACTION: REGISTRAR PERDA */}
                 <button 
