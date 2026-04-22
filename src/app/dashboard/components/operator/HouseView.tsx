@@ -212,7 +212,8 @@ export default function HouseView() {
                     onClick={() => setIsExpanded(false)} 
                 />
                 
-                <div className="relative z-10 p-6 pt-8 flex items-center justify-between border-b border-white/10 bg-black/40 backdrop-blur-md">
+                {/* Header */}
+                <div className="relative z-10 p-6 pt-8 flex items-center justify-between border-b border-white/10 bg-black/40 backdrop-blur-md shrink-0">
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2 mb-0.5">
                             <MapIcon className="w-4 h-4 text-[#B13A2B]" />
@@ -228,31 +229,75 @@ export default function HouseView() {
                     </button>
                 </div>
 
-                <div className="relative flex-1 overflow-auto no-scrollbar flex items-center justify-center p-4">
-                    <div className="relative w-full max-w-6xl aspect-[2.4/1] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] bg-[#111]">
-                        <Image 
-                            src="/assets/house_view.jpg" 
-                            alt="Mapa Expandido" 
-                            fill
-                            className="object-cover"
-                            priority
-                        />
-                        <div className="absolute inset-0 bg-black/10" />
-                        {renderOverlays(true)}
+                {/* Content Area */}
+                <div className="relative flex-1 flex flex-col md:flex-row overflow-hidden">
+                    {/* Map Section */}
+                    <div className="relative w-full aspect-[1.8/1] md:flex-1 md:aspect-auto md:p-8 flex items-center justify-center shrink-0">
+                        <div className="relative w-full h-full md:max-w-6xl md:aspect-[2.4/1] md:rounded-[2.5rem] overflow-hidden border-b md:border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] bg-[#111]">
+                            <Image 
+                                src="/assets/house_view.jpg" 
+                                alt="Mapa Expandido" 
+                                fill
+                                className="object-cover opacity-80"
+                                priority
+                            />
+                            <div className="absolute inset-0 bg-black/20" />
+                            {renderOverlays(true)}
+                        </div>
                     </div>
-                </div>
 
-                <div className="relative z-10 p-6 pb-12 flex justify-center">
-                    <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-4 px-8 py-4 bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/10">
-                        {['completed', 'attention', 'pending', 'delayed', 'critical', 'none'].map(s => {
-                            const t = getStatusTheme(s)
+                    {/* Detailed List Section (Visible on Mobile Modal) */}
+                    <div className="flex-1 md:hidden overflow-y-auto no-scrollbar p-6 pt-4 space-y-4">
+                        {diagnostics.map(diag => {
+                            const theme = getStatusTheme(diag.status)
+                            const isSelected = selectedSector === diag.name
+
                             return (
-                                <div key={s} className="flex items-center gap-2.5">
-                                    <div className={`w-2 h-2 rounded-full ${t.bg}`} />
-                                    <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">{t.label}</span>
+                                <div 
+                                    key={diag.id}
+                                    id={`modal-list-${diag.name}`}
+                                    className={`
+                                        p-4 rounded-[2rem] border transition-all duration-500
+                                        ${isSelected ? 'bg-white border-[#B13A2B] shadow-2xl scale-[1.02]' : 'bg-white/5 border-white/10'}
+                                    `}
+                                    onClick={() => setSelectedSector(diag.name === selectedSector ? null : diag.name)}
+                                >
+                                    <div className="mb-2">
+                                        <h4 className={`text-sm font-black uppercase tracking-tight mb-0.5 ${isSelected ? 'text-[#1b1c1a]' : 'text-white'}`}>
+                                            {diag.name}
+                                        </h4>
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? theme.light.split(' ')[1] : 'text-white/40'}`}>
+                                                {theme.label} — {diag.progress}%
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className={`w-full h-2 rounded-full overflow-hidden border ${isSelected ? 'bg-gray-100 border-gray-50' : 'bg-white/5 border-white/5'}`}>
+                                        <div 
+                                            className={`h-full transition-all duration-1000 ${isSelected ? theme.bg : theme.bg}`}
+                                            style={{ width: `${diag.progress}%` }}
+                                        />
+                                    </div>
                                 </div>
                             )
                         })}
+                        <div className="h-20" /> {/* Spacer */}
+                    </div>
+
+                    {/* Desktop Legend (Visible on Desktop Modal) */}
+                    <div className="hidden md:flex absolute bottom-8 left-1/2 -translate-x-1/2 z-10 p-6 flex justify-center">
+                        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-4 px-8 py-4 bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/10">
+                            {['completed', 'attention', 'pending', 'delayed', 'critical', 'none'].map(s => {
+                                const t = getStatusTheme(s)
+                                return (
+                                    <div key={s} className="flex items-center gap-2.5">
+                                        <div className={`w-2 h-2 rounded-full ${t.bg}`} />
+                                        <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">{t.label}</span>
+                                    </div>
+                                )
+                            })}
+                        </div>
                     </div>
                 </div>
             </div>
