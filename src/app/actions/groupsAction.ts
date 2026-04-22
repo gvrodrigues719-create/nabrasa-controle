@@ -122,6 +122,88 @@ export async function getAreasDiagnosticAction() {
     }
 }
 
+
+const MACRO_SECTOR_MAP: Record<string, string> = {
+    'Cozinha (Carnes)': 'Cozinha',
+    'Cozinha (Geral)': 'Cozinha',
+    'Hortifruti': 'Cozinha',
+    'Cozinha Principal': 'Cozinha',
+    'Produção': 'Cozinha',
+    'Salão': 'Salão',
+    'Salão Principal': 'Salão',
+    'Limpeza': 'Salão',
+    'Banheiros': 'Salão',
+    'Apoio': 'Salão',
+    'Caixa': 'Caixa',
+    'Caixa Central': 'Caixa',
+    'Copa': 'Caixa',
+    'Estoque': 'Logística',
+    'Almoxarifado': 'Logística',
+    'Delivery': 'Logística',
+    'Delivery Express': 'Logística',
+    'Churrasqueira': 'Churrasqueira',
+    'Churrasqueira (Área)': 'Churrasqueira',
+    'Grelha': 'Churrasqueira'
+}
+
+export async function getMacroDiagnosticAction() {
+    const res = await getAreasDiagnosticAction()
+    if (!res.success || !res.data) return res
+
+    const microDiagnostics = res.data
+    const macroMap: Record<string, AreaDiagnostic & { microCount: number }> = {}
+
+    microDiagnostics.forEach(micro => {
+        const macroName = MACRO_SECTOR_MAP[micro.name] || micro.name
+        
+        if (!macroMap[macroName]) {
+            macroMap[macroName] = {
+                id: `macro-${macroName}`,
+                name: macroName,
+                progress: 0,
+                status: 'none',
+                lastUpdate: micro.lastUpdate,
+                routinesCount: 0,
+                completedCount: 0,
+                microCount: 0
+            }
+        }
+
+        const macro = macroMap[macroName]
+        macro.routinesCount += micro.routinesCount
+        macro.completedCount += micro.completedCount
+        macro.microCount += 1
+
+        // Status precedence: critical > delayed > attention > pending > completed > none
+        const statusPriority: Record<AreaStatus, number> = {
+            'critical': 5,
+            'delayed': 4,
+            'attention': 3,
+            'pending': 2,
+            'completed': 1,
+            'none': 0
+        }
+
+        if (statusPriority[micro.status] > statusPriority[macro.status]) {
+            macro.status = micro.status
+        }
+    })
+
+    // Final calculation
+    const macroList: AreaDiagnostic[] = Object.values(macroMap).map(macro => {
+        const progress = macro.routinesCount > 0 
+            ? Math.round((macro.completedCount / macro.routinesCount) * 100) 
+            : 100
+        
+        return {
+            ...macro,
+            progress
+        }
+    })
+
+    return { success: true, data: macroList }
+}
+
 function formatUpdateLabel(dateStr: string) {
     const date = new Date(dateStr)
     const diffMs = Date.now() - date.getTime()

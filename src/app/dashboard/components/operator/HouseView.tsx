@@ -2,41 +2,17 @@
 
 import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Map as MapIcon, ChevronRight, X, Maximize2, Loader2, Zap } from 'lucide-react'
+import { Map as MapIcon, ChevronRight, X, Maximize2, Loader2 } from 'lucide-react'
 import Image from 'next/image'
-import { getAreasDiagnosticAction, AreaDiagnostic } from '@/app/actions/groupsAction'
+import { getMacroDiagnosticAction, AreaDiagnostic } from '@/app/actions/groupsAction'
 
-// Mapeamento lógico de coordenadas para os setores na planta
-const AREA_COORDINATES: Record<string, { x: number, y: number }> = {
-    'Cozinha': { x: 42, y: 34 },
-    'Cozinha (Carnes)': { x: 34, y: 32 },
-    'Cozinha (Geral)': { x: 48, y: 32 },
-    'Salão': { x: 60, y: 64 },
-    'Caixa': { x: 82, y: 74 },
-    'Delivery': { x: 84, y: 44 },
-    'Estoque': { x: 22, y: 34 },
-    'Churrasqueira': { x: 48, y: 16 },
-    'Bar': { x: 72, y: 46 },
-    'Hortifruti': { x: 28, y: 68 },
-    'Limpeza': { x: 16, y: 82 },
-    'Copa': { x: 55, y: 30 },
-    'Apoio': { x: 40, y: 55 },
-    'Produção': { x: 30, y: 20 }
-}
-
-// Helper para converter nomes longos do banco em nomes curtos oficiais para o mapa
-function getShortName(fullName: string) {
-    const nameMap: Record<string, string> = {
-        'Cozinha (Carnes)': 'Cozinha',
-        'Cozinha (Geral)': 'Cozinha',
-        'Cozinha Principal': 'Cozinha',
-        'Salão Principal': 'Salão',
-        'Caixa Central': 'Caixa',
-        'Estoque Geral': 'Estoque',
-        'Churrasqueira (Área)': 'Churrasqueira',
-        'Delivery Express': 'Delivery',
-    }
-    return nameMap[fullName] || fullName
+// Coordenadas para os Setores Macro da unidade
+const MACRO_COORDINATES: Record<string, { x: number, y: number }> = {
+    'Cozinha': { x: 38, y: 34 },
+    'Salão': { x: 55, y: 64 },
+    'Caixa': { x: 78, y: 74 },
+    'Logística': { x: 82, y: 42 },
+    'Churrasqueira': { x: 48, y: 18 }
 }
 
 export default function HouseView() {
@@ -58,7 +34,7 @@ export default function HouseView() {
     }, [isExpanded])
 
     const fetchStatus = async () => {
-        const res = await getAreasDiagnosticAction()
+        const res = await getMacroDiagnosticAction()
         if (res.success && res.data) {
             setDiagnostics(res.data)
         }
@@ -71,46 +47,53 @@ export default function HouseView() {
                 bg: 'bg-[#10B981]', 
                 text: 'text-white',
                 label: 'Em dia',
-                dot: 'bg-white'
+                dot: 'bg-white',
+                progress: 'bg-emerald-400'
             }
             case 'attention': return {
                 bg: 'bg-[#FBBF24]', 
                 text: 'text-black',
-                label: 'Em atenção',
-                dot: 'bg-black/40'
+                label: 'Atenção',
+                dot: 'bg-black/40',
+                progress: 'bg-black/20'
             }
             case 'pending': return {
                 bg: 'bg-[#F59E0B]', 
                 text: 'text-white',
                 label: 'Pendente',
-                dot: 'bg-white'
+                dot: 'bg-white',
+                progress: 'bg-white/30'
             }
             case 'delayed': return {
                 bg: 'bg-[#F87171]', 
                 text: 'text-white',
                 label: 'Em atraso',
-                dot: 'bg-white'
+                dot: 'bg-white',
+                progress: 'bg-white/40'
             }
             case 'critical': return {
                 bg: 'bg-[#EF4444]', 
                 text: 'text-white',
                 label: 'Crítico',
-                dot: 'bg-white animate-pulse'
+                dot: 'bg-white animate-pulse',
+                progress: 'bg-white/50'
             }
             default: return {
                 bg: 'bg-gray-300', 
                 text: 'text-gray-600',
                 label: 'Sem leitura',
-                dot: 'bg-gray-400'
+                dot: 'bg-gray-400',
+                progress: 'bg-gray-400'
             }
         }
     }
 
     const renderOverlays = (isLarge = false) => {
         return diagnostics.map(diag => {
-            const coords = AREA_COORDINATES[diag.name] || AREA_COORDINATES[getShortName(diag.name)] || { x: 50, y: 50 }
+            const coords = MACRO_COORDINATES[diag.name]
+            if (!coords) return null // Não mostrar se não for macro mapeado
+
             const theme = getStatusTheme(diag.status)
-            const displayName = isLarge ? diag.name : getShortName(diag.name)
             
             return (
                 <div 
@@ -123,21 +106,35 @@ export default function HouseView() {
                     }}
                 >
                     <div className={`
-                        flex items-center gap-1.5 px-2.5 py-1 rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.1)] border border-white/20
+                        flex flex-col gap-1.5 p-2 rounded-2xl shadow-[0_8px_20px_rgba(0,0,0,0.15)] border border-white/20
                         ${theme.bg} ${theme.text}
-                        ${isLarge ? 'scale-110 px-3 py-1.5' : 'scale-[0.8] md:scale-95'}
+                        ${isLarge ? 'scale-110 min-w-[110px]' : 'scale-[0.8] md:scale-100 min-w-[90px]'}
                         transition-all hover:scale-105 cursor-default
                     `}>
-                        <div className={`w-1 h-1 rounded-full ${theme.dot}`} />
-                        <span className="text-[10px] font-black uppercase tracking-tight whitespace-nowrap">
-                            {displayName} {(!isLarge && diag.status !== 'none') && ` · ${theme.label.split(' ')[1] || theme.label}`}
-                        </span>
+                        <div className="flex items-center justify-between gap-2">
+                             <div className="flex items-center gap-1.5">
+                                <div className={`w-1.5 h-1.5 rounded-full ${theme.dot}`} />
+                                <span className="text-[10px] font-black uppercase tracking-tight whitespace-nowrap">
+                                    {diag.name}
+                                </span>
+                            </div>
+                            <span className={`text-[8px] font-bold opacity-80`}>{diag.progress}%</span>
+                        </div>
+
+                        {/* Barra de Progresso do Setor */}
+                        <div className="w-full h-1.5 bg-black/10 rounded-full overflow-hidden border border-white/5">
+                            <div 
+                                className={`h-full transition-all duration-1000 ${theme.progress}`}
+                                style={{ width: `${diag.progress}%` }}
+                            />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <span className="text-[7px] font-black uppercase tracking-widest opacity-90">
+                                {theme.label}
+                            </span>
+                        </div>
                     </div>
-                    {isLarge && (
-                        <span className="bg-black/60 backdrop-blur-sm text-[8px] font-black text-white/90 px-2 py-0.5 rounded-full uppercase tracking-widest border border-white/5">
-                            {theme.label}
-                        </span>
-                    )}
                 </div>
             )
         })
@@ -157,9 +154,9 @@ export default function HouseView() {
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2 mb-0.5">
                             <MapIcon className="w-4 h-4 text-[#B13A2B]" />
-                            <h3 className="text-sm font-black text-white uppercase tracking-[0.2em]">Mapa Operativo</h3>
+                            <h3 className="text-sm font-black text-white uppercase tracking-[0.2em]">Visão Macro da Unidade</h3>
                         </div>
-                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Leitura coletiva por áreas</p>
+                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Leitura agregada por setores principais</p>
                     </div>
                     <button 
                         onClick={() => setIsExpanded(false)}
@@ -209,7 +206,7 @@ export default function HouseView() {
                 className="relative bg-white border border-[#eceef0] rounded-[2.5rem] overflow-hidden shadow-sm shadow-gray-200/30 group transition-all duration-500 hover:border-[#B13A2B]/20 cursor-pointer active:scale-[0.99]"
             >
                 {/* PLANTA COM OVERLAYS */}
-                <div className="relative w-full aspect-[2/1] md:aspect-[3/1] overflow-hidden bg-[#F8F7F4]">
+                <div className="relative w-full aspect-[2.2/1] md:aspect-[3.2/1] overflow-hidden bg-[#F8F7F4]">
                     <Image 
                         src="/assets/house_view.jpg" 
                         alt="Planta da Casa NaBrasa" 
@@ -220,7 +217,7 @@ export default function HouseView() {
                     
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
                     
-                    {/* Status Badges Over Image */}
+                    {/* Macro Sector Badges Over Image */}
                     {!loading && renderOverlays(false)}
 
                     {loading && (
@@ -231,7 +228,7 @@ export default function HouseView() {
 
                     <div className="absolute top-5 left-6 flex items-center gap-2 pointer-events-none z-30">
                          <div className="bg-[#B13A2B] px-2 py-0.5 rounded-full shadow-lg text-[7px] font-black text-white uppercase tracking-[0.2em]">
-                            Status da Unidade
+                            Visão Macro
                         </div>
                         <h3 className="text-[11px] font-black text-white uppercase tracking-[0.2em] drop-shadow-md">Mapa Operativo</h3>
                     </div>
@@ -248,13 +245,13 @@ export default function HouseView() {
                             <MapIcon className="w-4 h-4" />
                         </div>
                         <div>
-                            <p className="text-[11px] font-black text-[#1b1c1a] tracking-tight leading-none mb-1">Status por Áreas</p>
-                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none">Leitura operacional coletiva</p>
+                            <p className="text-[11px] font-black text-[#1b1c1a] tracking-tight leading-none mb-1">Status por Setores</p>
+                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none">Leitura agregada da unidade</p>
                         </div>
                     </div>
                     
                     <div className="flex items-center gap-1.5 text-[10px] font-black text-[#B13A2B] uppercase tracking-tighter group-hover:translate-x-1 transition-transform">
-                        Explorar Planta <ChevronRight className="w-3.5 h-3.5" />
+                        Ver Planta <ChevronRight className="w-3.5 h-3.5" />
                     </div>
                 </div>
             </div>
