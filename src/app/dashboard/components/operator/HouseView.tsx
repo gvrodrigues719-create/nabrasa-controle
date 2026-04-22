@@ -15,6 +15,11 @@ const MACRO_COORDINATES: Record<string, { x: number, y: number }> = {
     'Churrasqueira': { x: 48, y: 18 }
 }
 
+// Nomes curtos para exibição no mapa
+const SHORT_NAMES: Record<string, string> = {
+    'Estoque & Delivery': 'Estoque'
+}
+
 export default function HouseView() {
     const [isExpanded, setIsExpanded] = useState(false)
     const [mounted, setMounted] = useState(false)
@@ -89,8 +94,8 @@ export default function HouseView() {
                 text: 'text-white',
                 label: 'Sem leitura',
                 dot: 'bg-white/40',
-                progress: 'bg-white/20',
-                light: 'bg-gray-50 text-gray-400 border-gray-100'
+                progress: 'bg-white/10',
+                light: 'bg-gray-100 text-gray-500 border-gray-200'
             }
         }
     }
@@ -102,6 +107,8 @@ export default function HouseView() {
 
             const theme = getStatusTheme(diag.status)
             const isSelected = selectedSector === diag.name
+            const displayName = SHORT_NAMES[diag.name] || diag.name
+            const isNone = diag.status === 'none'
             
             return (
                 <div 
@@ -119,7 +126,7 @@ export default function HouseView() {
                         }
                     }}
                 >
-                    {/* DESKTOP BADGE (Escondido em telas pequenas se não expandido) */}
+                    {/* DESKTOP BADGE */}
                     <div className={`
                         hidden md:flex flex-col gap-1 p-1.5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.15)] border border-white/20
                         ${theme.bg} ${theme.text}
@@ -130,27 +137,27 @@ export default function HouseView() {
                              <div className="flex items-center gap-1">
                                 <div className={`w-1 h-1 rounded-full ${theme.dot}`} />
                                 <span className="text-[9px] font-black uppercase tracking-tight whitespace-nowrap">
-                                    {diag.name}
+                                    {displayName}
                                 </span>
                             </div>
-                            <span className="text-[8px] font-black opacity-90">{diag.progress}%</span>
+                            <span className="text-[8px] font-black opacity-90">{isNone ? '—' : `${diag.progress}%`}</span>
                         </div>
                         <div className="w-full h-1.5 bg-black/15 rounded-full overflow-hidden border border-white/5">
-                            <div className={`h-full transition-all duration-1000 ${theme.progress}`} style={{ width: `${diag.progress}%` }} />
+                            <div className={`h-full transition-all duration-1000 ${theme.progress}`} style={{ width: `${isNone ? 0 : diag.progress}%` }} />
                         </div>
                         <div className="px-0.5">
                             <span className="text-[7px] font-black uppercase tracking-[0.1em] opacity-80">{theme.label}</span>
                         </div>
                     </div>
 
-                    {/* MOBILE MARKER (Visível apenas em telas pequenas) */}
+                    {/* MOBILE MARKER */}
                     <div className={`
                         md:hidden flex items-center gap-1 px-2 py-0.5 rounded-full border shadow-sm
                         ${isSelected ? theme.bg + ' ' + theme.text + ' scale-110 ring-4 ring-white/30' : theme.light}
                         transition-all duration-300
                     `}>
                         <div className={`w-1 h-1 rounded-full ${isSelected ? theme.dot : theme.bg}`} />
-                        <span className="text-[8px] font-black uppercase tracking-tight whitespace-nowrap">{diag.name}</span>
+                        <span className="text-[8px] font-black uppercase tracking-tight whitespace-nowrap">{displayName}</span>
                     </div>
                 </div>
             )
@@ -159,40 +166,38 @@ export default function HouseView() {
 
     const renderMobileList = () => {
         return (
-            <div className="md:hidden mt-4 space-y-3 px-1 animate-in fade-in slide-in-from-bottom-2 duration-700">
+            <div className="md:hidden mt-4 space-y-2.5 px-1 animate-in fade-in slide-in-from-bottom-2 duration-700">
                 {diagnostics.map(diag => {
                     const theme = getStatusTheme(diag.status)
                     const isSelected = selectedSector === diag.name
+                    const isNone = diag.status === 'none'
 
                     return (
                         <div 
                             key={diag.id}
                             className={`
-                                p-3 rounded-2xl border transition-all duration-300
-                                ${isSelected ? 'bg-white border-[#B13A2B] shadow-md -translate-y-1' : 'bg-white/50 border-gray-100'}
+                                p-2.5 px-3 rounded-2xl border transition-all duration-300
+                                ${isSelected ? 'bg-white border-[#B13A2B] shadow-md -translate-y-0.5' : 'bg-white/50 border-gray-100'}
                             `}
                             onClick={() => setSelectedSector(diag.name === selectedSector ? null : diag.name)}
                         >
-                            <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center justify-between mb-1.5">
                                 <div className="flex items-center gap-2">
                                     <div className={`w-1.5 h-1.5 rounded-full ${theme.bg}`} />
-                                    <span className="text-[11px] font-black text-[#1b1c1a] uppercase tracking-tight">{diag.name}</span>
+                                    <span className="text-[10px] font-black text-[#1b1c1a] uppercase tracking-tight">{diag.name}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-lg border ${theme.light}`}>
+                                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-lg border ${theme.light} shadow-sm`}>
                                         {theme.label}
                                     </span>
-                                    <span className="text-xs font-black text-[#1b1c1a]">{diag.progress}%</span>
+                                    <span className="text-[10px] font-black text-[#1b1c1a]">{isNone ? 'N/D' : `${diag.progress}%`}</span>
                                 </div>
                             </div>
 
-                            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden border border-gray-50">
+                            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden border border-gray-100/50">
                                 <div 
-                                    className={`h-full transition-all duration-1000 ${theme.bg.replace('bg-', 'bg-')}`}
-                                    style={{ 
-                                        width: `${diag.progress}%`,
-                                        backgroundColor: theme.bg.includes('#') ? theme.bg.replace('bg-[', '').replace(']', '') : undefined
-                                    }}
+                                    className={`h-full transition-all duration-1000 ${theme.bg}`}
+                                    style={{ width: `${isNone ? 0 : diag.progress}%` }}
                                 />
                             </div>
                         </div>
@@ -247,36 +252,37 @@ export default function HouseView() {
                     </div>
 
                     {/* Detailed List Section (Visible on Mobile Modal) */}
-                    <div className="flex-1 md:hidden overflow-y-auto no-scrollbar p-6 pt-4 space-y-4">
+                    <div className="flex-1 md:hidden overflow-y-auto no-scrollbar p-6 pt-4 space-y-3">
                         {diagnostics.map(diag => {
                             const theme = getStatusTheme(diag.status)
                             const isSelected = selectedSector === diag.name
+                            const isNone = diag.status === 'none'
 
                             return (
                                 <div 
                                     key={diag.id}
                                     id={`modal-list-${diag.name}`}
                                     className={`
-                                        p-4 rounded-[2rem] border transition-all duration-500
-                                        ${isSelected ? 'bg-white border-[#B13A2B] shadow-2xl scale-[1.02]' : 'bg-white/5 border-white/10'}
+                                        p-3.5 px-4 rounded-[2rem] border transition-all duration-500
+                                        ${isSelected ? 'bg-white border-[#B13A2B] shadow-2xl scale-[1.01]' : 'bg-white/5 border-white/10'}
                                     `}
                                     onClick={() => setSelectedSector(diag.name === selectedSector ? null : diag.name)}
                                 >
-                                    <div className="mb-2">
-                                        <h4 className={`text-sm font-black uppercase tracking-tight mb-0.5 ${isSelected ? 'text-[#1b1c1a]' : 'text-white'}`}>
+                                    <div className="mb-1.5">
+                                        <h4 className={`text-[13px] font-black uppercase tracking-tight mb-0.5 ${isSelected ? 'text-[#1b1c1a]' : 'text-white'}`}>
                                             {diag.name}
                                         </h4>
                                         <div className="flex items-center gap-2">
-                                            <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? theme.light.split(' ')[1] : 'text-white/40'}`}>
-                                                {theme.label} — {diag.progress}%
+                                            <span className={`text-[9px] font-black uppercase tracking-[0.1em] ${isSelected ? 'text-[#B13A2B] opacity-100' : 'text-white/60'}`}>
+                                                {theme.label} — {isNone ? 'N/D' : `${diag.progress}%`}
                                             </span>
                                         </div>
                                     </div>
 
-                                    <div className={`w-full h-2 rounded-full overflow-hidden border ${isSelected ? 'bg-gray-100 border-gray-50' : 'bg-white/5 border-white/5'}`}>
+                                    <div className={`w-full h-1.5 rounded-full overflow-hidden border ${isSelected ? 'bg-gray-100 border-gray-100' : 'bg-white/5 border-white/5'}`}>
                                         <div 
-                                            className={`h-full transition-all duration-1000 ${isSelected ? theme.bg : theme.bg}`}
-                                            style={{ width: `${diag.progress}%` }}
+                                            className={`h-full transition-all duration-1000 ${theme.bg}`}
+                                            style={{ width: `${isNone ? 0 : diag.progress}%` }}
                                         />
                                     </div>
                                 </div>
@@ -285,7 +291,7 @@ export default function HouseView() {
                         <div className="h-20" /> {/* Spacer */}
                     </div>
 
-                    {/* Desktop Legend (Visible on Desktop Modal) */}
+                    {/* Desktop Legend */}
                     <div className="hidden md:flex absolute bottom-8 left-1/2 -translate-x-1/2 z-10 p-6 flex justify-center">
                         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-4 px-8 py-4 bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/10">
                             {['completed', 'attention', 'pending', 'delayed', 'critical', 'none'].map(s => {
@@ -349,10 +355,10 @@ export default function HouseView() {
 
                 {/* CONTEÚDO MOBILE / DESKTOP RODAPÉ */}
                 <div className="px-5 py-4 bg-white border-t border-gray-50">
-                    {/* LISTA MOBILE (Visível apenas em telas pequenas) */}
+                    {/* LISTA MOBILE */}
                     {renderMobileList()}
 
-                    {/* RODAPÉ DESKTOP (Escondido em telas pequenas) */}
+                    {/* RODAPÉ DESKTOP */}
                     <div className="hidden md:flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="w-9 h-9 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:bg-[#B13A2B]/10 group-hover:text-[#B13A2B] transition-all">
