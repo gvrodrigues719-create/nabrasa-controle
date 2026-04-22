@@ -137,10 +137,10 @@ const MACRO_SECTOR_MAP: Record<string, string> = {
     'Caixa': 'Caixa',
     'Caixa Central': 'Caixa',
     'Copa': 'Caixa',
-    'Estoque': 'Logística',
-    'Almoxarifado': 'Logística',
-    'Delivery': 'Logística',
-    'Delivery Express': 'Logística',
+    'Estoque': 'Estoque & Delivery',
+    'Almoxarifado': 'Estoque & Delivery',
+    'Delivery': 'Estoque & Delivery',
+    'Delivery Express': 'Estoque & Delivery',
     'Churrasqueira': 'Churrasqueira',
     'Churrasqueira (Área)': 'Churrasqueira',
     'Grelha': 'Churrasqueira'
@@ -151,7 +151,22 @@ export async function getMacroDiagnosticAction() {
     if (!res.success || !res.data) return res
 
     const microDiagnostics = res.data
+    const MAIN_SECTORS = ['Cozinha', 'Salão', 'Caixa', 'Estoque & Delivery', 'Churrasqueira']
     const macroMap: Record<string, AreaDiagnostic & { microCount: number }> = {}
+
+    // Initialize with main sectors to ensure they always appear
+    MAIN_SECTORS.forEach(name => {
+        macroMap[name] = {
+            id: `macro-${name}`,
+            name: name,
+            progress: 0,
+            status: 'none',
+            lastUpdate: 'Sem registros',
+            routinesCount: 0,
+            completedCount: 0,
+            microCount: 0
+        }
+    })
 
     microDiagnostics.forEach(micro => {
         const macroName = MACRO_SECTOR_MAP[micro.name] || micro.name

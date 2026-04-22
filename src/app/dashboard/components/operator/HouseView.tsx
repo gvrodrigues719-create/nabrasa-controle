@@ -6,12 +6,12 @@ import { Map as MapIcon, ChevronRight, X, Maximize2, Loader2 } from 'lucide-reac
 import Image from 'next/image'
 import { getMacroDiagnosticAction, AreaDiagnostic } from '@/app/actions/groupsAction'
 
-// Coordenadas para os Setores Macro da unidade
+// Coordenadas refinadas para os Setores Macro da unidade
 const MACRO_COORDINATES: Record<string, { x: number, y: number }> = {
     'Cozinha': { x: 38, y: 34 },
     'Salão': { x: 55, y: 64 },
     'Caixa': { x: 78, y: 74 },
-    'Logística': { x: 82, y: 42 },
+    'Estoque & Delivery': { x: 82, y: 42 },
     'Churrasqueira': { x: 48, y: 18 }
 }
 
@@ -48,7 +48,7 @@ export default function HouseView() {
                 text: 'text-white',
                 label: 'Em dia',
                 dot: 'bg-white',
-                progress: 'bg-emerald-400'
+                progress: 'bg-emerald-300'
             }
             case 'attention': return {
                 bg: 'bg-[#FBBF24]', 
@@ -79,11 +79,11 @@ export default function HouseView() {
                 progress: 'bg-white/50'
             }
             default: return {
-                bg: 'bg-gray-300', 
-                text: 'text-gray-600',
+                bg: 'bg-gray-400', 
+                text: 'text-white',
                 label: 'Sem leitura',
-                dot: 'bg-gray-400',
-                progress: 'bg-gray-400'
+                dot: 'bg-white/40',
+                progress: 'bg-white/20'
             }
         }
     }
@@ -91,7 +91,7 @@ export default function HouseView() {
     const renderOverlays = (isLarge = false) => {
         return diagnostics.map(diag => {
             const coords = MACRO_COORDINATES[diag.name]
-            if (!coords) return null // Não mostrar se não for macro mapeado
+            if (!coords) return null
 
             const theme = getStatusTheme(diag.status)
             
@@ -106,31 +106,33 @@ export default function HouseView() {
                     }}
                 >
                     <div className={`
-                        flex flex-col gap-1.5 p-2 rounded-2xl shadow-[0_8px_20px_rgba(0,0,0,0.15)] border border-white/20
+                        flex flex-col gap-1 p-1.5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.15)] border border-white/20
                         ${theme.bg} ${theme.text}
-                        ${isLarge ? 'scale-110 min-w-[110px]' : 'scale-[0.8] md:scale-100 min-w-[90px]'}
+                        ${isLarge ? 'scale-110 min-w-[100px]' : 'scale-[0.85] md:scale-95 min-w-[85px]'}
                         transition-all hover:scale-105 cursor-default
                     `}>
-                        <div className="flex items-center justify-between gap-2">
-                             <div className="flex items-center gap-1.5">
-                                <div className={`w-1.5 h-1.5 rounded-full ${theme.dot}`} />
-                                <span className="text-[10px] font-black uppercase tracking-tight whitespace-nowrap">
+                        {/* Linha 1: Nome + % */}
+                        <div className="flex items-center justify-between gap-2 px-0.5">
+                             <div className="flex items-center gap-1">
+                                <div className={`w-1 h-1 rounded-full ${theme.dot}`} />
+                                <span className="text-[9px] font-black uppercase tracking-tight whitespace-nowrap">
                                     {diag.name}
                                 </span>
                             </div>
-                            <span className={`text-[8px] font-bold opacity-80`}>{diag.progress}%</span>
+                            <span className="text-[8px] font-black opacity-90">{diag.progress}%</span>
                         </div>
 
-                        {/* Barra de Progresso do Setor */}
-                        <div className="w-full h-1.5 bg-black/10 rounded-full overflow-hidden border border-white/5">
+                        {/* Linha 2: Barra de Progresso (Mais Visível) */}
+                        <div className="w-full h-1.5 bg-black/15 rounded-full overflow-hidden border border-white/5">
                             <div 
                                 className={`h-full transition-all duration-1000 ${theme.progress}`}
                                 style={{ width: `${diag.progress}%` }}
                             />
                         </div>
 
-                        <div className="flex items-center justify-between">
-                            <span className="text-[7px] font-black uppercase tracking-widest opacity-90">
+                        {/* Linha 3: Status Textual */}
+                        <div className="px-0.5">
+                            <span className="text-[7px] font-black uppercase tracking-[0.1em] opacity-80">
                                 {theme.label}
                             </span>
                         </div>
