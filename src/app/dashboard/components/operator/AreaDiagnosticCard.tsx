@@ -8,7 +8,6 @@ interface Props {
     name: string
     progress: number
     status: AreaStatus
-    responsibleName: string
     lastUpdate: string
     routinesCount: number
     completedCount: number
@@ -18,7 +17,6 @@ export default function AreaDiagnosticCard({
     name, 
     progress, 
     status, 
-    responsibleName, 
     lastUpdate,
     routinesCount,
     completedCount
@@ -90,12 +88,12 @@ export default function AreaDiagnosticCard({
 
             <div className="flex items-center justify-between pt-1">
                 <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center">
-                        <User className="w-3 h-3 text-gray-300" />
+                    <div className="w-6 h-6 rounded-full bg-[#F8F7F4] flex items-center justify-center">
+                        <CheckCircle2 className={`w-3 h-3 ${status === 'completed' ? 'text-emerald-500' : 'text-gray-300'}`} />
                     </div>
                     <div>
-                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none">Responsável</p>
-                        <p className="text-[10px] font-bold text-[#58413e]">{responsibleName}</p>
+                        <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest leading-none">Unidade</p>
+                        <p className="text-[10px] font-bold text-[#58413e]">Visão Coletiva</p>
                     </div>
                 </div>
                 <div className="text-right">

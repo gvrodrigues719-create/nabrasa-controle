@@ -125,12 +125,12 @@ export default function HouseView() {
                     <div className={`
                         flex items-center gap-1.5 px-2.5 py-1 rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.1)] border border-white/20
                         ${theme.bg} ${theme.text}
-                        ${isLarge ? 'scale-110 px-3 py-1.5' : 'scale-[0.8] md:scale-90'}
+                        ${isLarge ? 'scale-110 px-3 py-1.5' : 'scale-[0.8] md:scale-95'}
                         transition-all hover:scale-105 cursor-default
                     `}>
                         <div className={`w-1 h-1 rounded-full ${theme.dot}`} />
-                        <span className="text-[10px] font-black uppercase tracking-tight whitespace-nowrap truncate max-w-[100px]">
-                            {displayName}
+                        <span className="text-[10px] font-black uppercase tracking-tight whitespace-nowrap">
+                            {displayName} {(!isLarge && diag.status !== 'none') && ` · ${theme.label.split(' ')[1] || theme.label}`}
                         </span>
                     </div>
                     {isLarge && (
@@ -157,9 +157,9 @@ export default function HouseView() {
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2 mb-0.5">
                             <MapIcon className="w-4 h-4 text-[#B13A2B]" />
-                            <h3 className="text-sm font-black text-white uppercase tracking-[0.2em]">Mapa da Unidade</h3>
+                            <h3 className="text-sm font-black text-white uppercase tracking-[0.2em]">Mapa Operativo</h3>
                         </div>
-                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Visualização operacional detalhada</p>
+                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Leitura coletiva por áreas</p>
                     </div>
                     <button 
                         onClick={() => setIsExpanded(false)}
@@ -231,7 +231,7 @@ export default function HouseView() {
 
                     <div className="absolute top-5 left-6 flex items-center gap-2 pointer-events-none z-30">
                          <div className="bg-[#B13A2B] px-2 py-0.5 rounded-full shadow-lg text-[7px] font-black text-white uppercase tracking-[0.2em]">
-                            Ao vivo
+                            Status da Unidade
                         </div>
                         <h3 className="text-[11px] font-black text-white uppercase tracking-[0.2em] drop-shadow-md">Mapa Operativo</h3>
                     </div>
@@ -249,7 +249,7 @@ export default function HouseView() {
                         </div>
                         <div>
                             <p className="text-[11px] font-black text-[#1b1c1a] tracking-tight leading-none mb-1">Status por Áreas</p>
-                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none">Visão em tempo real</p>
+                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none">Leitura operacional coletiva</p>
                         </div>
                     </div>
                     

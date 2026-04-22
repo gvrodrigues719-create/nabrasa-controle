@@ -20,7 +20,6 @@ export interface AreaDiagnostic {
     name: string
     progress: number
     status: AreaStatus
-    responsibleName: string
     lastUpdate: string
     routinesCount: number
     completedCount: number
@@ -42,13 +41,12 @@ export async function getAreasDiagnosticAction() {
         const brHour = parseInt(new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', hour12: false }).format(new Date()))
 
         // 2. Fetch de Dados
-        const [groupsRes, routinesRes, routineGroupsRes, countSessionsRes, checklistSessionsRes, usersRes] = await Promise.all([
+        const [groupsRes, routinesRes, routineGroupsRes, countSessionsRes, checklistSessionsRes] = await Promise.all([
             supabase.from('groups').select('id, name'),
             supabase.from('routines').select('id, name, routine_type').eq('active', true),
             supabase.from('routine_groups').select('routine_id, group_id'),
             supabase.from('count_sessions').select('routine_id, group_id, status, started_at, updated_at').gte('started_at', startOfDayBR),
-            supabase.from('checklist_sessions').select('routine_id, group_id, status, started_at, updated_at').gte('started_at', startOfDayBR),
-            supabase.from('users').select('name, primary_group_id').not('primary_group_id', 'is', null)
+            supabase.from('checklist_sessions').select('routine_id, group_id, status, started_at, updated_at').gte('started_at', startOfDayBR)
         ])
 
         if (groupsRes.error) throw groupsRes.error
@@ -57,7 +55,6 @@ export async function getAreasDiagnosticAction() {
         const activeRoutines = routinesRes.data || []
         const routineGroups = routineGroupsRes.data || []
         const sessions = [...(countSessionsRes.data || []), ...(checklistSessionsRes.data || [])]
-        const users = usersRes.data || []
 
         // 3. Processamento
         const diagnostics: AreaDiagnostic[] = groups.map(group => {
@@ -97,14 +94,6 @@ export async function getAreasDiagnosticAction() {
                 }
             }
 
-            // Responsible
-            const groupUsers = users.filter(u => u.primary_group_id === group.id)
-            let responsibleName = 'Sem responsável'
-            if (groupUsers.length === 1) {
-                responsibleName = groupUsers[0].name
-            } else if (groupUsers.length > 1) {
-                responsibleName = `${groupUsers[0].name} e equipe`
-            }
 
             // Last Update
             let lastUpdate = 'Sem registros'
@@ -120,7 +109,6 @@ export async function getAreasDiagnosticAction() {
                 name: group.name,
                 progress,
                 status,
-                responsibleName,
                 lastUpdate,
                 routinesCount: totalRoutines,
                 completedCount: completedSessions.length
