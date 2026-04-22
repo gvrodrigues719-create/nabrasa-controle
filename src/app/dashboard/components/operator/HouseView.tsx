@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Map as MapIcon, ChevronRight, X, Maximize2, Loader2 } from 'lucide-react'
+import { Map as MapIcon, ChevronRight, X, Maximize2, Loader2, Info } from 'lucide-react'
 import Image from 'next/image'
 import { getMacroDiagnosticAction, AreaDiagnostic } from '@/app/actions/groupsAction'
 
@@ -20,6 +20,7 @@ export default function HouseView() {
     const [mounted, setMounted] = useState(false)
     const [diagnostics, setDiagnostics] = useState<AreaDiagnostic[]>([])
     const [loading, setLoading] = useState(true)
+    const [selectedSector, setSelectedSector] = useState<string | null>(null)
 
     useEffect(() => {
         setMounted(true)
@@ -48,42 +49,48 @@ export default function HouseView() {
                 text: 'text-white',
                 label: 'Em dia',
                 dot: 'bg-white',
-                progress: 'bg-emerald-300'
+                progress: 'bg-emerald-300',
+                light: 'bg-emerald-50 text-emerald-600 border-emerald-100'
             }
             case 'attention': return {
                 bg: 'bg-[#FBBF24]', 
                 text: 'text-black',
                 label: 'Atenção',
                 dot: 'bg-black/40',
-                progress: 'bg-black/20'
+                progress: 'bg-black/20',
+                light: 'bg-amber-50 text-amber-700 border-amber-100'
             }
             case 'pending': return {
                 bg: 'bg-[#F59E0B]', 
                 text: 'text-white',
                 label: 'Pendente',
                 dot: 'bg-white',
-                progress: 'bg-white/30'
+                progress: 'bg-white/30',
+                light: 'bg-orange-50 text-orange-600 border-orange-100'
             }
             case 'delayed': return {
                 bg: 'bg-[#F87171]', 
                 text: 'text-white',
                 label: 'Em atraso',
                 dot: 'bg-white',
-                progress: 'bg-white/40'
+                progress: 'bg-white/40',
+                light: 'bg-red-50 text-red-600 border-red-100'
             }
             case 'critical': return {
                 bg: 'bg-[#EF4444]', 
                 text: 'text-white',
                 label: 'Crítico',
                 dot: 'bg-white animate-pulse',
-                progress: 'bg-white/50'
+                progress: 'bg-white/50',
+                light: 'bg-red-50 text-red-700 border-red-200'
             }
             default: return {
                 bg: 'bg-gray-400', 
                 text: 'text-white',
                 label: 'Sem leitura',
                 dot: 'bg-white/40',
-                progress: 'bg-white/20'
+                progress: 'bg-white/20',
+                light: 'bg-gray-50 text-gray-400 border-gray-100'
             }
         }
     }
@@ -94,6 +101,7 @@ export default function HouseView() {
             if (!coords) return null
 
             const theme = getStatusTheme(diag.status)
+            const isSelected = selectedSector === diag.name
             
             return (
                 <div 
@@ -104,14 +112,20 @@ export default function HouseView() {
                         top: `${coords.y}%`,
                         transform: 'translate(-50%, -50%)'
                     }}
+                    onClick={(e) => {
+                        if (!isLarge) {
+                            e.stopPropagation()
+                            setSelectedSector(diag.name === selectedSector ? null : diag.name)
+                        }
+                    }}
                 >
+                    {/* DESKTOP BADGE (Escondido em telas pequenas se não expandido) */}
                     <div className={`
-                        flex flex-col gap-1 p-1.5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.15)] border border-white/20
+                        hidden md:flex flex-col gap-1 p-1.5 rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.15)] border border-white/20
                         ${theme.bg} ${theme.text}
-                        ${isLarge ? 'scale-110 min-w-[100px]' : 'scale-[0.85] md:scale-95 min-w-[85px]'}
+                        ${isLarge ? 'scale-110 min-w-[100px]' : 'min-w-[85px]'}
                         transition-all hover:scale-105 cursor-default
                     `}>
-                        {/* Linha 1: Nome + % */}
                         <div className="flex items-center justify-between gap-2 px-0.5">
                              <div className="flex items-center gap-1">
                                 <div className={`w-1 h-1 rounded-full ${theme.dot}`} />
@@ -121,25 +135,71 @@ export default function HouseView() {
                             </div>
                             <span className="text-[8px] font-black opacity-90">{diag.progress}%</span>
                         </div>
-
-                        {/* Linha 2: Barra de Progresso (Mais Visível) */}
                         <div className="w-full h-1.5 bg-black/15 rounded-full overflow-hidden border border-white/5">
-                            <div 
-                                className={`h-full transition-all duration-1000 ${theme.progress}`}
-                                style={{ width: `${diag.progress}%` }}
-                            />
+                            <div className={`h-full transition-all duration-1000 ${theme.progress}`} style={{ width: `${diag.progress}%` }} />
                         </div>
-
-                        {/* Linha 3: Status Textual */}
                         <div className="px-0.5">
-                            <span className="text-[7px] font-black uppercase tracking-[0.1em] opacity-80">
-                                {theme.label}
-                            </span>
+                            <span className="text-[7px] font-black uppercase tracking-[0.1em] opacity-80">{theme.label}</span>
                         </div>
+                    </div>
+
+                    {/* MOBILE MARKER (Visível apenas em telas pequenas) */}
+                    <div className={`
+                        md:hidden flex items-center gap-1 px-2 py-0.5 rounded-full border shadow-sm
+                        ${isSelected ? theme.bg + ' ' + theme.text + ' scale-110 ring-4 ring-white/30' : theme.light}
+                        transition-all duration-300
+                    `}>
+                        <div className={`w-1 h-1 rounded-full ${isSelected ? theme.dot : theme.bg}`} />
+                        <span className="text-[8px] font-black uppercase tracking-tight whitespace-nowrap">{diag.name}</span>
                     </div>
                 </div>
             )
         })
+    }
+
+    const renderMobileList = () => {
+        return (
+            <div className="md:hidden mt-4 space-y-3 px-1 animate-in fade-in slide-in-from-bottom-2 duration-700">
+                {diagnostics.map(diag => {
+                    const theme = getStatusTheme(diag.status)
+                    const isSelected = selectedSector === diag.name
+
+                    return (
+                        <div 
+                            key={diag.id}
+                            className={`
+                                p-3 rounded-2xl border transition-all duration-300
+                                ${isSelected ? 'bg-white border-[#B13A2B] shadow-md -translate-y-1' : 'bg-white/50 border-gray-100'}
+                            `}
+                            onClick={() => setSelectedSector(diag.name === selectedSector ? null : diag.name)}
+                        >
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                    <div className={`w-1.5 h-1.5 rounded-full ${theme.bg}`} />
+                                    <span className="text-[11px] font-black text-[#1b1c1a] uppercase tracking-tight">{diag.name}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-lg border ${theme.light}`}>
+                                        {theme.label}
+                                    </span>
+                                    <span className="text-xs font-black text-[#1b1c1a]">{diag.progress}%</span>
+                                </div>
+                            </div>
+
+                            <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden border border-gray-50">
+                                <div 
+                                    className={`h-full transition-all duration-1000 ${theme.bg.replace('bg-', 'bg-')}`}
+                                    style={{ 
+                                        width: `${diag.progress}%`,
+                                        backgroundColor: theme.bg.includes('#') ? theme.bg.replace('bg-[', '').replace(']', '') : undefined
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    )
+                })}
+            </div>
+        )
     }
 
     const renderModal = () => {
@@ -204,11 +264,13 @@ export default function HouseView() {
     return (
         <section className="animate-in fade-in slide-in-from-bottom-3 duration-700 delay-150">
             <div 
-                onClick={() => setIsExpanded(true)}
-                className="relative bg-white border border-[#eceef0] rounded-[2.5rem] overflow-hidden shadow-sm shadow-gray-200/30 group transition-all duration-500 hover:border-[#B13A2B]/20 cursor-pointer active:scale-[0.99]"
+                className="relative bg-white border border-[#eceef0] rounded-[2.5rem] overflow-hidden shadow-sm shadow-gray-200/30 group transition-all duration-500 hover:border-[#B13A2B]/20"
             >
                 {/* PLANTA COM OVERLAYS */}
-                <div className="relative w-full aspect-[2.2/1] md:aspect-[3.2/1] overflow-hidden bg-[#F8F7F4]">
+                <div 
+                    onClick={() => setIsExpanded(true)}
+                    className="relative w-full aspect-[2.2/1] md:aspect-[3.2/1] overflow-hidden bg-[#F8F7F4] cursor-pointer active:scale-[0.99] transition-all"
+                >
                     <Image 
                         src="/assets/house_view.jpg" 
                         alt="Planta da Casa NaBrasa" 
@@ -219,7 +281,7 @@ export default function HouseView() {
                     
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
                     
-                    {/* Macro Sector Badges Over Image */}
+                    {/* Macro Sector Overlays */}
                     {!loading && renderOverlays(false)}
 
                     {loading && (
@@ -240,20 +302,34 @@ export default function HouseView() {
                     </div>
                 </div>
 
-                {/* RODAPÉ SIMPLIFICADO */}
-                <div className="px-6 py-4 bg-white flex items-center justify-between border-t border-gray-50">
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:bg-[#B13A2B]/10 group-hover:text-[#B13A2B] transition-all">
-                            <MapIcon className="w-4 h-4" />
+                {/* CONTEÚDO MOBILE / DESKTOP RODAPÉ */}
+                <div className="px-5 py-4 bg-white border-t border-gray-50">
+                    {/* LISTA MOBILE (Visível apenas em telas pequenas) */}
+                    {renderMobileList()}
+
+                    {/* RODAPÉ DESKTOP (Escondido em telas pequenas) */}
+                    <div className="hidden md:flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:bg-[#B13A2B]/10 group-hover:text-[#B13A2B] transition-all">
+                                <MapIcon className="w-4 h-4" />
+                            </div>
+                            <div>
+                                <p className="text-[11px] font-black text-[#1b1c1a] tracking-tight leading-none mb-1">Status por Setores</p>
+                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none">Leitura agregada da unidade</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-[11px] font-black text-[#1b1c1a] tracking-tight leading-none mb-1">Status por Setores</p>
-                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest leading-none">Leitura agregada da unidade</p>
-                        </div>
+                        
+                        <button 
+                            onClick={() => setIsExpanded(true)}
+                            className="flex items-center gap-1.5 text-[10px] font-black text-[#B13A2B] uppercase tracking-tighter group-hover:translate-x-1 transition-transform"
+                        >
+                            Explorar Planta <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
                     </div>
-                    
-                    <div className="flex items-center gap-1.5 text-[10px] font-black text-[#B13A2B] uppercase tracking-tighter group-hover:translate-x-1 transition-transform">
-                        Ver Planta <ChevronRight className="w-3.5 h-3.5" />
+
+                    {/* DICA MOBILE */}
+                    <div className="md:hidden flex items-center justify-center gap-2 mt-4 text-[9px] font-bold text-gray-400 uppercase tracking-widest animate-pulse">
+                        <Info className="w-3 h-3" /> Toque nos setores para detalhes
                     </div>
                 </div>
             </div>
