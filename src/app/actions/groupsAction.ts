@@ -13,7 +13,7 @@ const CUTOFF_OPENING = 11
 const CUTOFF_CLOSING = 23
 const STUCK_SESSION_HOURS = 4
 
-export type AreaStatus = 'completed' | 'pending' | 'delayed'
+export type AreaStatus = 'completed' | 'pending' | 'delayed' | 'attention' | 'critical' | 'none'
 
 export interface AreaDiagnostic {
     id: string
@@ -78,7 +78,9 @@ export async function getAreasDiagnosticAction() {
             
             // Status Logic
             let status: AreaStatus = 'pending'
-            if (totalRoutines === 0 || progress === 100) {
+            if (totalRoutines === 0) {
+                status = 'none'
+            } else if (progress === 100) {
                 status = 'completed'
             } else {
                 const stuckTime = new Date(now.getTime() - STUCK_SESSION_HOURS * 60 * 60 * 1000)
@@ -89,7 +91,9 @@ export async function getAreasDiagnosticAction() {
                 const hasClosingPending = groupRoutines.some(r => r.name.toLowerCase().includes('fechamento')) && brHour >= CUTOFF_CLOSING && !groupSessions.some(s => s.status === 'completed' && activeRoutines.find(ar => ar.id === s.routine_id)?.name.toLowerCase().includes('fechamento'))
 
                 if (hasStuckSession || hasOpeningPending || hasClosingPending) {
-                    status = 'delayed'
+                    status = progress < 30 ? 'critical' : 'delayed'
+                } else if (progress > 0) {
+                    status = 'attention'
                 }
             }
 
