@@ -43,6 +43,7 @@ interface OperatorHomeProps {
     cmvStatus: any;
     weeklyFocus: WeeklyFocus | null;
     userRole: string | null;
+    userName?: string | null;
     monthlyScore: number;
     monthlyPoints: number;
     monthlyAvailable: number;
@@ -82,6 +83,7 @@ export default function OperatorHome({
     cmvStatus,
     weeklyFocus,
     userRole,
+    userName,
     monthlyScore,
     monthlyPoints,
     monthlyAvailable,
@@ -112,8 +114,8 @@ export default function OperatorHome({
 
     return (
         <div className="space-y-4 md:space-y-6 pb-20 md:pb-6">
-            {/* COZINHA CENTRAL (Apenas role kitchen) */}
-            {(userRole === 'kitchen' || userRole === 'admin') && (
+            {/* COZINHA CENTRAL (Apenas role kitchen ou nome específico) */}
+            {(userRole === 'kitchen' || userRole === 'admin' || userName === 'Cozinha Central') && (
                 <div className="mb-4">
                     <KitchenCard />
                 </div>

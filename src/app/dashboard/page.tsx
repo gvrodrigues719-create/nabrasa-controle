@@ -141,6 +141,7 @@ function DashboardContent() {
 
                             // ── Props de contexto e ação ─────────────────────
                             userRole={userRole}
+                            userName={userName}
                             userId={userId}
                             isDemoMode={isDemoMode}
                             onViewGlobalClick={() => setIsHealthDrawerOpen(true)}
