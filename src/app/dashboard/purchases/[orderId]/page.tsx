@@ -156,11 +156,44 @@ export default function OrderDetailPage() {
                                 </p>
                             </div>
                         </div>
-                        <OrderStatusBadge status={order.status} size="sm" />
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => router.push(`/dashboard/purchases/${orderId}/print`)}
+                                className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors"
+                                title="Ver folha do pedido"
+                            >
+                                <FileText className="w-5 h-5" />
+                            </button>
+                            <OrderStatusBadge status={order.status} size="sm" />
+                        </div>
                     </div>
                 </div>
 
                 <div className="max-w-md mx-auto px-4 py-5 space-y-5 pb-40">
+
+                    {/* Resumo do Pedido (Pricing) */}
+                    {localItems.length > 0 && (
+                        <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-bold text-gray-500">Total estimado</span>
+                                <span className="text-sm font-black text-gray-900">
+                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                                        localItems.reduce((acc, item) => acc + (item.requested_qty * (item.unit_price || 0)), 0)
+                                    )}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between text-[10px] text-gray-400">
+                                <span>{localItems.length} itens</span>
+                                <span>{localItems.reduce((acc, item) => acc + item.requested_qty, 0)} unidades</span>
+                            </div>
+                            {localItems.some(item => !item.unit_price) && (
+                                <div className="mt-3 pt-3 border-t border-gray-50 flex items-start gap-2">
+                                    <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                                    <p className="text-[10px] text-amber-600">Existem itens sem preço neste pedido. O total estimado pode estar impreciso.</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Status timeline hint */}
                     {order.status === 'rascunho' && (

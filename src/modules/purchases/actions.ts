@@ -255,11 +255,26 @@ export async function addItemToOrderAction(
         if (order.status !== 'rascunho') throw new Error('Pedido não pode ser alterado neste status')
         if (order.created_by !== user.id && user.role !== 'admin') throw new Error('Sem permissão')
 
-        // Upsert: se já existe, atualiza a qty
+        // Buscar o default_unit_price do item
+        const { data: item } = await supabase
+            .from('purchase_items')
+            .select('default_unit_price')
+            .eq('id', itemId)
+            .single()
+
+        const defaultPrice = item?.default_unit_price ?? null
+
+        // Upsert: se já existe, atualiza a qty e mantém o preço se não existir
         const { error } = await supabase
             .from('purchase_order_items')
             .upsert(
-                { order_id: orderId, item_id: itemId, requested_qty: requestedQty },
+                { 
+                    order_id: orderId, 
+                    item_id: itemId, 
+                    requested_qty: requestedQty,
+                    unit_price: defaultPrice,
+                    price_source: defaultPrice ? 'catalog' : 'manual'
+                },
                 { onConflict: 'order_id,item_id' }
             )
         if (error) throw error
