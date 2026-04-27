@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, RefreshCw, ChefHat, Inbox, Timer, PackageCheck, AlertTriangle, Send } from 'lucide-react'
+import { ArrowLeft, RefreshCw, ChefHat, Inbox, Timer, PackageCheck, AlertTriangle, Send, Calculator } from 'lucide-react'
 import { getOrdersForKitchenAction } from '@/modules/purchases/actions'
 import type { PurchaseOrder } from '@/modules/purchases/types'
 import { KitchenOrderCard } from './components/KitchenOrderCard'
@@ -51,13 +51,22 @@ export default function KitchenPage() {
                             <p className="text-[11px] text-gray-400 mt-1 font-bold">Pedidos de abastecimento para separar</p>
                         </div>
                     </div>
-                    <button
-                        onClick={() => fetchOrders(true)}
-                        disabled={refreshing}
-                        className="p-2.5 hover:bg-gray-100 rounded-xl transition-colors bg-gray-50"
-                    >
-                        <RefreshCw className={`w-4 h-4 text-orange-600 ${refreshing ? 'animate-spin' : ''}`} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => router.push('/dashboard/kitchen/planning')}
+                            className="flex items-center gap-2 px-4 py-2 bg-orange-50 text-orange-700 rounded-xl text-sm font-bold hover:bg-orange-100 transition-colors"
+                        >
+                            <Calculator className="w-4 h-4" />
+                            Planejamento
+                        </button>
+                        <button
+                            onClick={() => fetchOrders(true)}
+                            disabled={refreshing}
+                            className="p-2.5 hover:bg-gray-100 rounded-xl transition-colors bg-gray-50"
+                        >
+                            <RefreshCw className={`w-4 h-4 text-orange-600 ${refreshing ? 'animate-spin' : ''}`} />
+                        </button>
+                    </div>
                 </div>
             </div>
 

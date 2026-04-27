@@ -139,6 +139,13 @@ export async function getOperatorDailyTasksAction(userId: string) {
             if (!sessionMap.has(key) || s.status === 'in_progress') sessionMap.set(key, s)
         })
 
+        // 5. Buscar Tarefas Operacionais (Produção, etc.)
+        const { data: opTasks } = await supabase
+            .from('operational_tasks')
+            .select('*')
+            .in('status', ['pending', 'in_progress'])
+            .or(`responsible_id.eq.${userId},responsible_id.is.null`)
+
         const todayTasks: any[] = []
         const inProgressTasks: any[] = []
         const otherTasks: any[] = []
@@ -183,6 +190,31 @@ export async function getOperatorDailyTasksAction(userId: string) {
                     otherTasks.push(task)
                 }
             })
+        })
+
+        // Adicionar tarefas operacionais à lista
+        opTasks?.forEach(task => {
+            const isMyTask = task.responsible_id === userId
+            const formattedTask = {
+                id: task.id,
+                name: task.title,
+                description: task.description,
+                type: 'other',
+                status: task.status,
+                isMyArea: isMyTask,
+                url: task.type === 'production' 
+                    ? `/dashboard/kitchen/order/${task.production_order_id}` 
+                    : `/dashboard/tasks/${task.id}`,
+                startedAt: task.created_at
+            }
+
+            if (task.status === 'in_progress') {
+                inProgressTasks.push(formattedTask)
+            } else if (isMyTask) {
+                todayTasks.push(formattedTask)
+            } else if (isTester || userRole === 'admin' || userRole === 'manager') {
+                otherTasks.push(formattedTask)
+            }
         })
 
         return {

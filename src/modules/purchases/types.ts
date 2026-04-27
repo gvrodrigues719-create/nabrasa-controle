@@ -112,6 +112,107 @@ export type PurchaseEventType =
     | 'note_added'
     | 'kitchen_notes_updated'
     | 'order_cancelled'
+    | 'production_suggested'
+    | 'production_approved'
+    | 'production_completed'
+
+// ── Produção e Planejamento ──────────────────────────────────────────────────
+
+export interface Recipe {
+    id: string
+    product_id: string
+    ingredient_id: string
+    quantity: number
+    unit: string
+    yield_percentage: number
+    product?: PurchaseItem
+    ingredient?: PurchaseItem
+}
+
+export interface InventoryBalance {
+    id: string
+    item_id: string
+    location_id: string
+    quantity: number
+    reserved_qty: number
+    type: 'raw' | 'semi_finished' | 'finished'
+    updated_at: string
+    item?: PurchaseItem
+}
+
+export interface ProductionSuggestion {
+    id: string
+    purchase_order_id: string | null
+    planning_batch_id: string | null
+    item_id: string
+    source_location_id: string | null
+    destination_location_id: string | null
+    requested_qty: number
+    ready_stock_qty: number
+    scheduled_qty: number
+    suggested_qty: number
+    approved_qty: number | null
+    adjustment_reason: AdjustmentReason | null
+    adjustment_notes: string | null
+    adjusted_by: string | null
+    status: 'pending' | 'approved' | 'dismissed'
+    calculated_at: string
+    created_at: string
+    updated_at: string
+    item?: PurchaseItem
+}
+
+export type AdjustmentReason =
+    | 'estoque físico diferente'
+    | 'produção estratégica'
+    | 'validade próxima'
+    | 'pedido ajustado'
+    | 'falta de insumo'
+    | 'decisão do gestor'
+    | 'outro'
+
+export interface ProductionOrder {
+    id: string
+    status: 'pending' | 'in_progress' | 'completed' | 'canceled'
+    location_id: string
+    notes: string | null
+    created_by: string
+    approved_at: string | null
+    completed_at: string | null
+    created_at: string
+    updated_at: string
+    items?: ProductionOrderItem[]
+}
+
+export interface ProductionOrderItem {
+    id: string
+    production_order_id: string
+    item_id: string
+    source_suggestion_id: string | null
+    planned_qty: number
+    approved_qty: number
+    produced_qty: number
+    lost_qty: number
+    unit: string | null
+    status: 'pending' | 'produced' | 'rejected'
+    item?: PurchaseItem
+}
+
+export interface OperationalTask {
+    id: string
+    type: 'production' | 'delivery' | 'maintenance' | 'other'
+    title: string
+    description: string | null
+    area: string | null
+    responsible_id: string | null
+    deadline: string | null
+    status: 'pending' | 'in_progress' | 'completed' | 'canceled'
+    conclusion_criteria: string | null
+    evidence_url: string | null
+    production_order_id: string | null
+    created_at: string
+    updated_at: string
+}
 
 // ── Configurações de exibição dos status ──────────────────────────────────────
 

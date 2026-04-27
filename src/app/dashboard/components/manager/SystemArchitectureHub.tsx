@@ -104,9 +104,10 @@ export default function SystemArchitectureHub() {
                     accentColor="text-emerald-500"
                     mainModules={[
                         { label: 'CMV & Compras', href: '/dashboard/admin/cmv', status: 'ativo parcial' },
-                        { label: 'Perdas', href: '/dashboard/admin/cmv?tab=losses', status: 'ativo parcial' }
+                        { label: 'Perdas', href: '/dashboard/admin/cmv?tab=losses', status: 'ativo parcial' },
+                        { label: 'Planejamento Cozinha', href: '/dashboard/kitchen/planning', status: 'ativo' }
                     ]}
-                    extraModule={{ label: 'Ficha Técnica', status: 'em desenvolvimento' }}
+                    extraModule={{ label: 'Ficha Técnica', status: 'ativo parcial' }}
                 />
 
                 {/* 3. Vendas, Delivery e Atendimento */}
