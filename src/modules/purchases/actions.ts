@@ -591,6 +591,44 @@ export async function markOrderAsSeparatedAction(
     }
 }
 
+export async function reopenOrderForSeparationAction(
+    orderId: string
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { supabase, user } = await getCurrentUser()
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
+
+        const { data: order } = await supabase
+            .from('purchase_orders')
+            .select('status')
+            .eq('id', orderId)
+            .single()
+        if (!order) throw new Error('Pedido não encontrado')
+        
+        // Só permite reabrir se estiver 'separado'. 
+        // Se já foi 'entregue', 'recebido' ou 'divergente', a loja já está com o pedido.
+        if (order.status !== 'separado') throw new Error('Somente pedidos separados e ainda não recebidos podem ser reabertos')
+
+        const prevStatus = order.status
+
+        const { error } = await supabase
+            .from('purchase_orders')
+            .update({ status: 'em_separacao' })
+            .eq('id', orderId)
+        if (error) throw error
+
+        await _logEvent(supabase, orderId, user.id, 'status_changed', { 
+            from: prevStatus, 
+            to: 'em_separacao',
+            reason: 'Reaberto pela cozinha para edição'
+        })
+
+        return { success: true }
+    } catch (e: unknown) {
+        return { success: false, error: (e as Error).message }
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // RECEBIMENTO — GERENTE
 // ─────────────────────────────────────────────────────────────────────────────

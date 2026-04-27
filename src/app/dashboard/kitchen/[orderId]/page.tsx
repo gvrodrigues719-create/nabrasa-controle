@@ -8,7 +8,8 @@ import {
     updateSeparatedQtyAction,
     markOrderAsSeparatedAction,
     updateKitchenStatusAction,
-    updateKitchenOrderNotesAction
+    updateKitchenOrderNotesAction,
+    reopenOrderForSeparationAction
 } from '@/modules/purchases/actions'
 import type { PurchaseOrder, PurchaseOrderItem } from '@/modules/purchases/types'
 import { OrderStatusBadge } from '../../purchases/components/OrderStatusBadge'
@@ -104,6 +105,18 @@ export default function KitchenOrderDetailPage() {
             toast.error(res.error ?? 'Erro ao finalizar separação')
             setFinalizing(false)
         }
+    }
+    async function handleReopen() {
+        if (!confirm('Deseja reabrir este pedido para edição? O status voltará para "Em separação".')) return
+        setLoading(true)
+        const res = await reopenOrderForSeparationAction(orderId)
+        if (res.success) {
+            toast.success('Pedido reaberto para edição!')
+            await fetchOrder()
+        } else {
+            toast.error(res.error ?? 'Erro ao reabrir pedido')
+        }
+        setLoading(false)
     }
 
     function updateItem(orderItemId: string, field: 'separatedQty' | 'separationNotes', value: string | number) {
@@ -229,6 +242,27 @@ export default function KitchenOrderDetailPage() {
                             className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-[0.98] shadow-sm shadow-amber-200"
                         >
                             Iniciar Separação Física
+                        </button>
+                    </div>
+                )}
+
+                {/* Reopen action for Separated */}
+                {order.status === 'separado' && (
+                    <div className="bg-emerald-50 border border-emerald-100 rounded-3xl p-5 shadow-sm">
+                        <div className="flex items-start gap-4 mb-4">
+                            <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-1" />
+                            <div>
+                                <p className="text-sm font-black text-emerald-900">Separação Finalizada</p>
+                                <p className="text-xs text-emerald-700 mt-1 leading-relaxed">
+                                    Este pedido já foi marcado como separado. Se precisar fazer algum ajuste, você pode reabri-lo para edição.
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={handleReopen}
+                            className="w-full py-3.5 bg-white border border-emerald-200 text-emerald-600 hover:bg-emerald-50 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-[0.98]"
+                        >
+                            Reabrir para edição
                         </button>
                     </div>
                 )}
