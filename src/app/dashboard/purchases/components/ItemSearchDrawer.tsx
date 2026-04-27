@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Search, X, Filter, ChevronRight } from 'lucide-react'
 import type { PurchaseItem } from '@/modules/purchases/types'
-import { ITEM_CATEGORIES } from '@/modules/purchases/types'
 import { getPurchaseItemsAction } from '@/modules/purchases/actions'
 
 interface ItemSearchDrawerProps {
@@ -13,6 +12,129 @@ interface ItemSearchDrawerProps {
     excludeItemIds?: string[]
 }
 
+const CATEGORY_GROUPS = [
+  {
+    key: 'todos',
+    label: 'Todos',
+    rawCategories: [],
+    color: {
+      active: 'bg-slate-900 text-white',
+      inactive: 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+      dot: 'bg-slate-500'
+    }
+  },
+  {
+    key: 'proteinas',
+    label: 'Proteínas',
+    rawCategories: ['PROTEÍNAS', 'ESPETOS'],
+    color: {
+      active: 'bg-red-600 text-white',
+      inactive: 'bg-red-50 text-red-700 hover:bg-red-100',
+      dot: 'bg-red-500'
+    }
+  },
+  {
+    key: 'hortifruti',
+    label: 'Hortifruti',
+    rawCategories: ['HORTIFRUTI'],
+    color: {
+      active: 'bg-green-600 text-white',
+      inactive: 'bg-green-50 text-green-700 hover:bg-green-100',
+      dot: 'bg-green-500'
+    }
+  },
+  {
+    key: 'laticinios',
+    label: 'Laticínios',
+    rawCategories: ['LATICÍNIOS E OVOS'],
+    color: {
+      active: 'bg-yellow-500 text-white',
+      inactive: 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100',
+      dot: 'bg-yellow-400'
+    }
+  },
+  {
+    key: 'graos_secos',
+    label: 'Grãos e Secos',
+    rawCategories: ['MERCEARIA', 'COZINHA CENTRAL - BASES'],
+    color: {
+      active: 'bg-amber-600 text-white',
+      inactive: 'bg-amber-50 text-amber-700 hover:bg-amber-100',
+      dot: 'bg-amber-500'
+    }
+  },
+  {
+    key: 'molhos_condimentos',
+    label: 'Molhos e Condimentos',
+    rawCategories: ['COZINHA CENTRAL - MOLHOS', 'CONDIMENTOS', 'TEMPEROS'],
+    color: {
+      active: 'bg-orange-600 text-white',
+      inactive: 'bg-orange-50 text-orange-700 hover:bg-orange-100',
+      dot: 'bg-orange-500'
+    }
+  },
+  {
+    key: 'descartaveis',
+    label: 'Descartáveis',
+    rawCategories: ['DESCARTÁVEIS'],
+    color: {
+      active: 'bg-sky-600 text-white',
+      inactive: 'bg-sky-50 text-sky-700 hover:bg-sky-100',
+      dot: 'bg-sky-500'
+    }
+  },
+  {
+    key: 'limpeza',
+    label: 'Limpeza',
+    rawCategories: ['LIMPEZA', 'INSUMOS OPERACIONAIS'],
+    color: {
+      active: 'bg-cyan-600 text-white',
+      inactive: 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100',
+      dot: 'bg-cyan-500'
+    }
+  },
+  {
+    key: 'bebidas',
+    label: 'Bebidas',
+    rawCategories: ['BEBIDAS', 'DESTILADOS E VINHOS'],
+    color: {
+      active: 'bg-blue-600 text-white',
+      inactive: 'bg-blue-50 text-blue-700 hover:bg-blue-100',
+      dot: 'bg-blue-500'
+    }
+  },
+  {
+    key: 'funcionario',
+    label: 'Funcionário',
+    rawCategories: ['FUNCIONÁRIO'],
+    color: {
+      active: 'bg-purple-600 text-white',
+      inactive: 'bg-purple-50 text-purple-700 hover:bg-purple-100',
+      dot: 'bg-purple-500'
+    }
+  },
+  {
+    key: 'outros',
+    label: 'Outros',
+    rawCategories: ['ENTRADAS', 'LANCHES', 'SOBREMESAS', 'CONGELADOS'],
+    color: {
+      active: 'bg-zinc-600 text-white',
+      inactive: 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200',
+      dot: 'bg-zinc-500'
+    }
+  }
+]
+
+function normalizeCategory(cat: string) {
+    return cat.trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "")
+}
+
+function getCategoryGroup(rawCat: string) {
+    const normalized = normalizeCategory(rawCat)
+    const found = CATEGORY_GROUPS.find(g => g.key !== 'todos' && g.rawCategories.map(normalizeCategory).includes(normalized))
+    return found || CATEGORY_GROUPS.find(g => g.key === 'outros')!
+}
+
 export function ItemSearchDrawer({
     isOpen,
     onClose,
@@ -20,7 +142,7 @@ export function ItemSearchDrawer({
     excludeItemIds = [],
 }: ItemSearchDrawerProps) {
     const [search, setSearch] = useState('')
-    const [selectedCategory, setSelectedCategory] = useState<string>('')
+    const [selectedGroupKey, setSelectedGroupKey] = useState<string>('todos')
     const [items, setItems] = useState<PurchaseItem[]>([])
     const [loading, setLoading] = useState(false)
     const searchRef = useRef<HTMLInputElement>(null)
@@ -35,13 +157,22 @@ export function ItemSearchDrawer({
             setTimeout(() => searchRef.current?.focus(), 300)
         } else {
             setSearch('')
-            setSelectedCategory('')
+            setSelectedGroupKey('todos')
         }
     }, [isOpen])
 
     const filtered = items.filter(item => {
         if (excludeItemIds.includes(item.id)) return false
-        if (selectedCategory && item.category !== selectedCategory) return false
+        
+        if (selectedGroupKey !== 'todos') {
+            const normalizedItemCat = normalizeCategory(item.category)
+            const group = CATEGORY_GROUPS.find(g => g.key === selectedGroupKey)
+            if (group) {
+                const groupRaws = group.rawCategories.map(normalizeCategory)
+                if (!groupRaws.includes(normalizedItemCat)) return false
+            }
+        }
+        
         if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false
         return true
     })
@@ -102,25 +233,20 @@ export function ItemSearchDrawer({
 
                     {/* Category filters */}
                     <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-hide">
-                        <button
-                            onClick={() => setSelectedCategory('')}
-                            className={`shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${!selectedCategory
-                                ? 'bg-gray-900 text-white'
-                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-                        >
-                            Todos
-                        </button>
-                        {ITEM_CATEGORIES.map(cat => (
-                            <button
-                                key={cat}
-                                onClick={() => setSelectedCategory(selectedCategory === cat ? '' : cat)}
-                                className={`shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${selectedCategory === cat
-                                    ? 'bg-orange-600 text-white'
-                                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-                            >
-                                {cat}
-                            </button>
-                        ))}
+                        {CATEGORY_GROUPS.map(g => {
+                            const isActive = selectedGroupKey === g.key
+                            return (
+                                <button
+                                    key={g.key}
+                                    onClick={() => setSelectedGroupKey(isActive && g.key !== 'todos' ? 'todos' : g.key)}
+                                    className={`shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
+                                        isActive ? g.color.active : g.color.inactive
+                                    }`}
+                                >
+                                    {g.label}
+                                </button>
+                            )
+                        })}
                     </div>
                 </div>
 
@@ -145,21 +271,27 @@ export function ItemSearchDrawer({
                                     <div className="px-5 py-2 bg-gray-50/80">
                                         <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{category}</span>
                                     </div>
-                                    {catItems.map(item => (
-                                        <button
-                                            key={item.id}
-                                            onClick={() => { onSelectItem(item); onClose() }}
-                                            className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-orange-50 transition-colors border-b border-gray-50 active:bg-orange-100 group"
-                                        >
-                                            <div className="text-left">
-                                                <p className="text-sm font-bold text-gray-900">{item.name}</p>
-                                                <p className="text-[10px] text-gray-400 mt-0.5">
-                                                    {item.order_unit} · {item.origin === 'cozinha_central' ? 'Cozinha Central' : 'Fornecedor Externo'}
-                                                </p>
-                                            </div>
-                                            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-orange-500 transition-colors shrink-0" />
-                                        </button>
-                                    ))}
+                                    {catItems.map(item => {
+                                        const group = getCategoryGroup(item.category)
+                                        return (
+                                            <button
+                                                key={item.id}
+                                                onClick={() => { onSelectItem(item); onClose() }}
+                                                className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-orange-50 transition-colors border-b border-gray-50 active:bg-orange-100 group"
+                                            >
+                                                <div className="text-left">
+                                                    <p className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                                                        <span className={`w-2 h-2 rounded-full ${group.color.dot}`} />
+                                                        {item.name}
+                                                    </p>
+                                                    <p className="text-[10px] text-gray-400 mt-0.5 ml-4">
+                                                        {item.order_unit} · {item.origin === 'cozinha_central' ? 'Cozinha Central' : 'Fornecedor Externo'}
+                                                    </p>
+                                                </div>
+                                                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-orange-500 transition-colors shrink-0" />
+                                            </button>
+                                        )
+                                    })}
                                 </div>
                             ))}
                         </div>
