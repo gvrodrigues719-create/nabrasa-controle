@@ -140,6 +140,24 @@ export async function createPurchaseOrderAction(explicitStoreId?: string): Promi
     }
 }
 
+export async function getKitchenPendingCountAction(): Promise<{ success: boolean; data?: number; error?: string }> {
+    try {
+        const { supabase, user } = await getCurrentUser()
+        if (!['admin', 'kitchen', 'manager'].includes(user.role)) throw new Error('Sem permissão')
+
+        const { count, error } = await supabase
+            .from('purchase_orders')
+            .select('*', { count: 'exact', head: true })
+            .in('status', ['enviado', 'em_analise', 'em_separacao', 'separado'])
+        
+        if (error) throw error
+
+        return { success: true, data: count ?? 0 }
+    } catch (e: unknown) {
+        return { success: false, error: (e as Error).message }
+    }
+}
+
 export async function getOrdersForStoreAction(opts?: {
     status?: OrderStatus[]
     limit?: number

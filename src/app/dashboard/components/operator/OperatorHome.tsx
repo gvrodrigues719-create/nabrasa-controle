@@ -16,6 +16,7 @@ import ContinueRoutineCard from './ContinueRoutineCard'
 import MyAreaTodayCard from './MyAreaTodayCard'
 import PriorityActionCard from './PriorityActionCard'
 import { ActiveSession, DashboardActions } from '../../hooks/useDashboardData'
+import KitchenCard from '../KitchenCard'
 
 
 interface OperatorHomeProps {
@@ -111,6 +112,13 @@ export default function OperatorHome({
 
     return (
         <div className="space-y-4 md:space-y-6 pb-20 md:pb-6">
+            {/* COZINHA CENTRAL (Apenas role kitchen) */}
+            {(userRole === 'kitchen' || userRole === 'admin') && (
+                <div className="mb-4">
+                    <KitchenCard />
+                </div>
+            )}
+
             {/* 0. AÇÃO PRIORITÁRIA — ONDA 1 */}
             <div className="space-y-2">
                 {loadingWave1 ? (

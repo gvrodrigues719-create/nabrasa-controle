@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 
 import Link from 'next/link'
+import KitchenCard from '../KitchenCard'
 
 interface ManagerQuickActionsProps {
     lateCount: number
@@ -72,6 +73,9 @@ export default function ManagerQuickActions({ lateCount, pendingOrdersCount = 0 
                         <ChevronRight className="w-5 h-5" />
                     </div>
                 </Link>
+
+                {/* Cozinha Central */}
+                <KitchenCard />
             </div>
         </section>
     )
