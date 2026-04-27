@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Minus, Plus, Trash2, MessageSquare, X } from 'lucide-react'
+import { Minus, Plus, Trash2, MessageSquare } from 'lucide-react'
 import type { PurchaseOrderItem } from '@/modules/purchases/types'
 
 interface OrderItemRowProps {
@@ -11,6 +11,10 @@ interface OrderItemRowProps {
     onRemove?: (orderItemId: string) => void
     showSeparated?: boolean
     showReceived?: boolean
+}
+
+function qtyEqual(a: number | null | undefined, b: number | null | undefined): boolean {
+    return Math.abs(Number(a ?? 0) - Number(b ?? 0)) < 0.0001
 }
 
 export function OrderItemRow({
@@ -25,6 +29,9 @@ export function OrderItemRow({
     const [showNotes, setShowNotes] = useState(false)
     const allowsDecimal = item?.allows_decimal ?? false
     const unit = item?.order_unit ?? 'un'
+
+    const hasSepNotes = !!orderItem.separation_notes
+    const hasRecvNotes = !!orderItem.received_notes
 
     function handleDecrement() {
         const step = allowsDecimal ? 0.5 : 1
@@ -42,8 +49,11 @@ export function OrderItemRow({
         if (!isNaN(val) && val > 0) onQtyChange?.(orderItem.id, val)
     }
 
+    const sepDiff = showSeparated && orderItem.separated_qty != null && !qtyEqual(orderItem.requested_qty, orderItem.separated_qty)
+    const recvDiff = showReceived && orderItem.received_qty != null && !qtyEqual(orderItem.separated_qty ?? orderItem.requested_qty, orderItem.received_qty)
+
     return (
-        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+        <div className={`bg-white rounded-2xl border p-4 shadow-sm ${sepDiff || recvDiff ? 'border-amber-200' : 'border-gray-100'}`}>
             <div className="flex items-start justify-between gap-3">
                 {/* Item info */}
                 <div className="min-w-0 flex-1">
@@ -52,7 +62,7 @@ export function OrderItemRow({
                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-md">
                             {item?.category ?? ''}
                         </span>
-                        {orderItem.notes && (
+                        {(hasSepNotes || hasRecvNotes) && (
                             <button
                                 onClick={() => setShowNotes(v => !v)}
                                 className="flex items-center gap-1 text-[10px] font-bold text-amber-600"
@@ -62,10 +72,22 @@ export function OrderItemRow({
                             </button>
                         )}
                     </div>
-                    {showNotes && orderItem.notes && (
-                        <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mt-2 border border-amber-100">
-                            {orderItem.notes}
-                        </p>
+
+                    {showNotes && (
+                        <div className="mt-2 space-y-1">
+                            {hasSepNotes && (
+                                <p className="text-xs text-orange-700 bg-orange-50 rounded-lg px-3 py-1.5 border border-orange-100">
+                                    <span className="font-black text-[10px] uppercase tracking-widest block mb-0.5">Obs. fábrica:</span>
+                                    {orderItem.separation_notes}
+                                </p>
+                            )}
+                            {hasRecvNotes && (
+                                <p className="text-xs text-blue-700 bg-blue-50 rounded-lg px-3 py-1.5 border border-blue-100">
+                                    <span className="font-black text-[10px] uppercase tracking-widest block mb-0.5">Obs. recebimento:</span>
+                                    {orderItem.received_notes}
+                                </p>
+                            )}
+                        </div>
                     )}
                 </div>
 
@@ -96,6 +118,7 @@ export function OrderItemRow({
                         </div>
                     ) : (
                         <div className="text-right">
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Pedido original</p>
                             <span className="text-lg font-black text-gray-900">{orderItem.requested_qty}</span>
                             <span className="text-xs text-gray-400 ml-1">{unit}</span>
                         </div>
@@ -103,11 +126,9 @@ export function OrderItemRow({
 
                     {showSeparated && (
                         <div className="text-right">
-                            <span className="text-xs text-gray-400">Separado: </span>
-                            <span className={`text-xs font-black ${orderItem.separated_qty != null
-                                ? orderItem.separated_qty === orderItem.requested_qty
-                                    ? 'text-emerald-600'
-                                    : 'text-amber-600'
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Separado pela fábrica</p>
+                            <span className={`text-sm font-black ${orderItem.separated_qty != null
+                                ? sepDiff ? 'text-amber-600' : 'text-emerald-600'
                                 : 'text-gray-300'}`}>
                                 {orderItem.separated_qty != null ? `${orderItem.separated_qty} ${unit}` : '—'}
                             </span>
@@ -116,11 +137,9 @@ export function OrderItemRow({
 
                     {showReceived && (
                         <div className="text-right">
-                            <span className="text-xs text-gray-400">Recebido: </span>
-                            <span className={`text-xs font-black ${orderItem.received_qty != null
-                                ? orderItem.received_qty === orderItem.separated_qty
-                                    ? 'text-emerald-600'
-                                    : 'text-red-500'
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Recebido na loja</p>
+                            <span className={`text-sm font-black ${orderItem.received_qty != null
+                                ? recvDiff ? 'text-red-500' : 'text-emerald-600'
                                 : 'text-gray-300'}`}>
                                 {orderItem.received_qty != null ? `${orderItem.received_qty} ${unit}` : '—'}
                             </span>

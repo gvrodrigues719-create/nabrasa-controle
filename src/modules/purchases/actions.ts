@@ -479,7 +479,7 @@ export async function getOrdersForKitchenAction(): Promise<{
                 users!created_by(name),
                 purchase_order_items(count)
             `)
-            .in('status', ['enviado', 'em_analise', 'em_separacao', 'separado'])
+            .in('status', ['enviado', 'em_analise', 'em_separacao', 'separado', 'divergente'])
             .order('sent_at', { ascending: true })
         if (error) throw error
 
@@ -534,7 +534,7 @@ export async function updateSeparatedQtyAction(
     orderId: string,
     orderItemId: string,
     separatedQty: number,
-    notes?: string
+    separationNotes?: string
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const { supabase, user } = await getCurrentUser()
@@ -542,14 +542,17 @@ export async function updateSeparatedQtyAction(
 
         const { error } = await supabase
             .from('purchase_order_items')
-            .update({ separated_qty: separatedQty, notes: notes ?? null })
+            .update({
+                separated_qty: separatedQty,
+                separation_notes: separationNotes ?? null,
+            })
             .eq('id', orderItemId)
         if (error) throw error
 
         await _logEvent(supabase, orderId, user.id, 'separation_updated', {
             order_item_id: orderItemId,
             separated_qty: separatedQty,
-            notes,
+            separation_notes: separationNotes ?? null,
         })
 
         return { success: true }
@@ -592,41 +595,75 @@ export async function markOrderAsSeparatedAction(
 // RECEBIMENTO — GERENTE
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Comparação segura para decimais */
+function qtyEqual(a: number | null | undefined, b: number | null | undefined): boolean {
+    return Math.abs(Number(a ?? 0) - Number(b ?? 0)) < 0.0001
+}
+
 export async function confirmReceivedAction(
     orderId: string,
-    receivedItems: Array<{ orderItemId: string; receivedQty: number; notes?: string }>
+    receivedItems: Array<{ orderItemId: string; receivedQty: number; receivedNotes?: string }>
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const { supabase, user } = await getCurrentUser()
         if (!['admin', 'manager'].includes(user.role)) throw new Error('Sem permissão')
 
-        // Atualizar cada item com a qtd recebida
+        // 1. Gravar received_qty e received_notes de cada item
         for (const ri of receivedItems) {
             const { error } = await supabase
                 .from('purchase_order_items')
-                .update({ received_qty: ri.receivedQty, notes: ri.notes ?? null })
+                .update({
+                    received_qty: ri.receivedQty,
+                    received_notes: ri.receivedNotes ?? null,
+                })
                 .eq('id', ri.orderItemId)
             if (error) throw error
         }
 
-        // Determinar se houve divergência
-        const hasDivergence = receivedItems.some(ri => {
-            // Pegar a qty separada e comparar — simplificado: a lógica completa fica na UI
-            return ri.notes && ri.notes.length > 0
+        // 2. Buscar todos os itens atualizados para calcular divergência no servidor
+        const { data: allItems, error: fetchErr } = await supabase
+            .from('purchase_order_items')
+            .select('requested_qty, separated_qty, received_qty, separation_notes, received_notes, item_id, purchase_items(name)')
+            .eq('order_id', orderId)
+        if (fetchErr) throw fetchErr
+
+        // 3. Determinar divergência: qualquer diferença numérica em qualquer etapa
+        const divergentItems = (allItems ?? []).filter((item: any) => {
+            const sepDiff = !qtyEqual(item.requested_qty, item.separated_qty)
+            const recvDiff = !qtyEqual(item.separated_qty ?? item.requested_qty, item.received_qty)
+            return sepDiff || recvDiff
         })
 
-        const newStatus = hasDivergence ? 'divergente' : 'recebido'
+        const hasDivergence = divergentItems.length > 0
+        const newStatus: OrderStatus = hasDivergence ? 'divergente' : 'recebido'
 
-        const { error } = await supabase
+        // 4. Atualizar status do pedido
+        const { error: orderErr } = await supabase
             .from('purchase_orders')
             .update({ status: newStatus, received_at: new Date().toISOString() })
             .eq('id', orderId)
-        if (error) throw error
+        if (orderErr) throw orderErr
 
-        await _logEvent(supabase, orderId, user.id,
-            hasDivergence ? 'divergence_registered' : 'order_received',
-            { received_items: receivedItems }
-        )
+        // 5. Registrar evento com payload detalhado
+        if (hasDivergence) {
+            const divergencePayload = divergentItems.map((item: any) => ({
+                item_name: item.purchase_items?.name ?? item.item_id,
+                requested_qty: item.requested_qty,
+                separated_qty: item.separated_qty,
+                received_qty: item.received_qty,
+                separation_diff: Number(item.separated_qty ?? 0) - Number(item.requested_qty ?? 0),
+                receiving_diff: Number(item.received_qty ?? 0) - Number(item.separated_qty ?? item.requested_qty ?? 0),
+                separation_notes: item.separation_notes,
+                received_notes: item.received_notes,
+            }))
+            await _logEvent(supabase, orderId, user.id, 'divergence_registered', {
+                divergent_items: divergencePayload,
+            })
+        } else {
+            await _logEvent(supabase, orderId, user.id, 'order_received', {
+                item_count: (allItems ?? []).length,
+            })
+        }
 
         return { success: true }
     } catch (e: unknown) {
@@ -634,38 +671,17 @@ export async function confirmReceivedAction(
     }
 }
 
+/** @deprecated Use confirmReceivedAction — divergência agora é calculada automaticamente no servidor */
 export async function confirmReceivedWithDivergenceAction(
     orderId: string,
     notes: string,
     receivedItems: Array<{ orderItemId: string; receivedQty: number; notes?: string }>
 ): Promise<{ success: boolean; error?: string }> {
-    try {
-        const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager'].includes(user.role)) throw new Error('Sem permissão')
-
-        for (const ri of receivedItems) {
-            const { error } = await supabase
-                .from('purchase_order_items')
-                .update({ received_qty: ri.receivedQty, notes: ri.notes ?? null })
-                .eq('id', ri.orderItemId)
-            if (error) throw error
-        }
-
-        const { error } = await supabase
-            .from('purchase_orders')
-            .update({ status: 'divergente', received_at: new Date().toISOString(), notes })
-            .eq('id', orderId)
-        if (error) throw error
-
-        await _logEvent(supabase, orderId, user.id, 'divergence_registered', {
-            notes,
-            received_items: receivedItems,
-        })
-
-        return { success: true }
-    } catch (e: unknown) {
-        return { success: false, error: (e as Error).message }
-    }
+    // Delegate to the unified action, mapping old 'notes' to 'receivedNotes'
+    return confirmReceivedAction(
+        orderId,
+        receivedItems.map(ri => ({ orderItemId: ri.orderItemId, receivedQty: ri.receivedQty, receivedNotes: ri.notes }))
+    )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -760,7 +776,7 @@ export async function updateOrderItemPriceAction(
 
         if (error) throw error
 
-        await _logEvent(supabase, orderId, user.id, 'item_price_updated' as any, { item_id: orderItemId, unit_price: unitPrice })
+        await _logEvent(supabase, orderId, user.id, 'item_price_updated', { item_id: orderItemId, unit_price: unitPrice })
 
         return { success: true }
     } catch (e: unknown) {

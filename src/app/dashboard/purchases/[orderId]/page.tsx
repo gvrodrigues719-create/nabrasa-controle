@@ -28,11 +28,17 @@ const EVENT_LABELS: Record<string, string> = {
     item_removed: 'Item removido',
     item_qty_updated: 'Quantidade alterada',
     item_price_updated: 'Preço alterado',
+    separation_updated: 'Separação atualizada',
     order_submitted: 'Pedido enviado para a Cozinha Central',
+    order_separated: 'Separação finalizada',
     status_changed: 'Status alterado',
     order_cancelled: 'Pedido cancelado',
     order_received: 'Pedido recebido',
+    receiving_started: 'Recebimento iniciado',
+    received_qty_updated: 'Quantidade recebida registrada',
     divergence_registered: 'Divergência registrada',
+    kitchen_notes_updated: 'Observação da cozinha atualizada',
+    note_added: 'Observação adicionada',
 }
 
 export default function OrderDetailPage() {

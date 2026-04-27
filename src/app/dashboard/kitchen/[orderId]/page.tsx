@@ -20,7 +20,7 @@ interface SeparationState {
     orderItemId: string
     separatedQty: number
     requestedQty: number
-    notes: string
+    separationNotes: string
     itemName: string
     unit: string
     allowsDecimal: boolean
@@ -43,12 +43,13 @@ export default function KitchenOrderDetailPage() {
         const res = await getOrderDetailAction(orderId)
         if (res.success && res.data) {
             setOrder(res.data)
+            setKitchenNotes(res.data.kitchen_notes ?? '')
             setSepState(
                 (res.data.items ?? []).map(oi => ({
                     orderItemId: oi.id,
                     separatedQty: oi.separated_qty ?? oi.requested_qty,
                     requestedQty: oi.requested_qty,
-                    notes: oi.notes ?? '',
+                    separationNotes: oi.separation_notes ?? '',
                     itemName: oi.item?.name ?? 'Item',
                     unit: oi.item?.order_unit ?? 'un',
                     allowsDecimal: oi.item?.allows_decimal ?? false,
@@ -76,7 +77,7 @@ export default function KitchenOrderDetailPage() {
 
     async function handleSaveItem(s: SeparationState) {
         setSaving(s.orderItemId)
-        const res = await updateSeparatedQtyAction(orderId, s.orderItemId, s.separatedQty, s.notes || undefined)
+        const res = await updateSeparatedQtyAction(orderId, s.orderItemId, s.separatedQty, s.separationNotes || undefined)
         if (!res.success) toast.error(res.error ?? 'Erro ao salvar')
         setSaving(null)
     }
@@ -91,7 +92,7 @@ export default function KitchenOrderDetailPage() {
         setFinalizing(true)
         // Save all items first
         for (const s of sepState) {
-            await updateSeparatedQtyAction(orderId, s.orderItemId, s.separatedQty, s.notes || undefined)
+            await updateSeparatedQtyAction(orderId, s.orderItemId, s.separatedQty, s.separationNotes || undefined)
         }
         await updateKitchenOrderNotesAction(orderId, kitchenNotes)
         
@@ -105,14 +106,18 @@ export default function KitchenOrderDetailPage() {
         }
     }
 
-    function updateItem(orderItemId: string, field: 'separatedQty' | 'notes', value: string | number) {
+    function updateItem(orderItemId: string, field: 'separatedQty' | 'separationNotes', value: string | number) {
         setSepState(prev => prev.map(s =>
             s.orderItemId === orderItemId ? { ...s, [field]: value } : s
         ))
     }
 
     const canSeparate = order && ['enviado', 'em_analise', 'em_separacao'].includes(order.status)
-    const hasDivergence = sepState.some(s => s.separatedQty !== s.requestedQty)
+    const hasDivergence = sepState.some(s => {
+        const diff = Math.abs(Number(s.separatedQty ?? 0) - Number(s.requestedQty ?? 0))
+        return diff >= 0.0001
+    })
+    const isReadOnly = !canSeparate
 
     if (loading) {
         return (
@@ -197,6 +202,14 @@ export default function KitchenOrderDetailPage() {
                     </div>
                 </div>
 
+                {/* Loja notes */}
+                {order.notes && (
+                    <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
+                        <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-1">Observação da Loja</p>
+                        <p className="text-sm text-blue-800">{order.notes}</p>
+                    </div>
+                )}
+
                 {/* Start separation banner */}
                 {(order.status === 'enviado' || order.status === 'em_analise') && (
                     <div className="bg-amber-50 border border-amber-100 rounded-3xl p-5 shadow-sm">
@@ -220,13 +233,14 @@ export default function KitchenOrderDetailPage() {
                     </div>
                 )}
 
+                {/* Divergence banner (during separation) */}
                 {hasDivergence && order.status === 'em_separacao' && (
                     <div className="bg-red-50 border border-red-100 rounded-3xl p-5 flex items-start gap-4 shadow-sm">
                         <AlertCircle className="w-6 h-6 text-red-500 shrink-0 mt-1" />
                         <div>
-                            <p className="text-sm font-black text-red-900">Atenção: Divergência Detectada</p>
+                            <p className="text-sm font-black text-red-900">Atenção: Divergência de Separação</p>
                             <p className="text-xs text-red-700 mt-1 leading-relaxed">
-                                Você está separando quantidades diferentes das solicitadas. Justifique cada alteração no campo de observações.
+                                Você está separando quantidades diferentes das solicitadas. Justifique cada alteração no campo de observação da fábrica.
                             </p>
                         </div>
                     </div>
@@ -244,28 +258,21 @@ export default function KitchenOrderDetailPage() {
 
                     <div className="space-y-4">
                         {sepState.map(s => {
-                            const isDiff = s.separatedQty !== s.requestedQty
+                            const sepDiff = Math.abs(Number(s.separatedQty ?? 0) - Number(s.requestedQty ?? 0)) >= 0.0001
                             const isSaving = saving === s.orderItemId
-                            const isReadOnly = !canSeparate
 
                             return (
                                 <div
                                     key={s.orderItemId}
-                                    className={`bg-white rounded-3xl border p-5 shadow-sm transition-all duration-300 ${isDiff ? 'border-amber-200 ring-2 ring-amber-50' : 'border-gray-100'}`}
+                                    className={`bg-white rounded-3xl border p-5 shadow-sm transition-all duration-300 ${sepDiff ? 'border-amber-200 ring-2 ring-amber-50' : 'border-gray-100'}`}
                                 >
                                     <div className="flex items-start justify-between mb-4">
                                         <div>
                                             <p className="text-base font-black text-gray-900 mb-1">{s.itemName}</p>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Solicitado</span>
-                                                <span className="text-xs font-black text-gray-600 bg-gray-50 px-2 py-0.5 rounded-lg border border-gray-100">
-                                                    {s.requestedQty} {s.unit}
-                                                </span>
-                                            </div>
                                         </div>
-                                        {isDiff ? (
+                                        {sepDiff ? (
                                             <span className="shrink-0 text-[10px] font-black text-amber-600 bg-amber-50 border border-amber-100 px-3 py-1.5 rounded-2xl">
-                                                Divergente
+                                                Divergência de separação
                                             </span>
                                         ) : (
                                             <span className="shrink-0 text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-2xl">
@@ -274,11 +281,17 @@ export default function KitchenOrderDetailPage() {
                                         )}
                                     </div>
 
-                                    {/* Separation Control */}
+                                    {/* Pedido original — read only */}
+                                    <div className="mb-4 bg-gray-50 rounded-2xl px-4 py-2.5">
+                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Pedido original</p>
+                                        <p className="text-lg font-black text-gray-700">{s.requestedQty} <span className="text-xs font-bold text-gray-400">{s.unit}</span></p>
+                                    </div>
+
+                                    {/* Separation controls */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2 px-1">
-                                                Quantidade Separada
+                                                Separado pela fábrica
                                             </label>
                                             <div className={`flex items-center gap-3 bg-gray-50 border rounded-2xl px-4 py-2.5 transition-all ${isReadOnly ? 'opacity-60' : 'focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100'}`}>
                                                 <input
@@ -303,14 +316,14 @@ export default function KitchenOrderDetailPage() {
 
                                         <div>
                                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2 px-1">
-                                                Observação
+                                                Observação da fábrica
                                             </label>
                                             <div className={`flex items-start gap-3 bg-gray-50 border rounded-2xl px-4 py-2 transition-all ${isReadOnly ? 'opacity-60' : 'focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100'}`}>
                                                 <MessageSquare className="w-4 h-4 text-gray-300 mt-3 shrink-0" />
                                                 <textarea
-                                                    value={s.notes}
+                                                    value={s.separationNotes}
                                                     disabled={isReadOnly}
-                                                    onChange={e => updateItem(s.orderItemId, 'notes', e.target.value)}
+                                                    onChange={e => updateItem(s.orderItemId, 'separationNotes', e.target.value)}
                                                     onBlur={() => !isReadOnly && handleSaveItem(s)}
                                                     placeholder="Motivo da alteração..."
                                                     rows={1}
@@ -324,6 +337,28 @@ export default function KitchenOrderDetailPage() {
                         })}
                     </div>
                 </section>
+
+                {/* Kitchen notes */}
+                {(canSeparate || order.kitchen_notes) && (
+                    <section>
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="h-1 flex-1 bg-gray-100 rounded-full" />
+                            <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Observação da Cozinha</h2>
+                            <div className="h-1 flex-1 bg-gray-100 rounded-full" />
+                        </div>
+                        <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+                            <textarea
+                                value={kitchenNotes}
+                                onChange={e => setKitchenNotes(e.target.value)}
+                                onBlur={handleSaveKitchenNotes}
+                                disabled={!canSeparate}
+                                placeholder="Observações gerais da fábrica para a loja..."
+                                rows={3}
+                                className="w-full text-sm text-gray-700 bg-transparent border-none focus:outline-none resize-none placeholder-gray-300 disabled:opacity-60"
+                            />
+                        </div>
+                    </section>
+                )}
             </div>
 
             {/* Bottom action bar */}

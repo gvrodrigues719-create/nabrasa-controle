@@ -122,6 +122,24 @@ export default function KitchenPage() {
                     </div>
                 ) : (
                     <div className="space-y-8">
+                        {/* Divergências para apurar */}
+                        {divergentes.length > 0 && (
+                            <section>
+                                <div className="flex items-center gap-3 mb-4">
+                                    <div className="h-1 flex-1 bg-red-100 rounded-full" />
+                                    <span className="text-[10px] font-black text-red-500 uppercase tracking-widest whitespace-nowrap">
+                                        Divergências para apurar · {divergentes.length}
+                                    </span>
+                                    <div className="h-1 flex-1 bg-red-100 rounded-full" />
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {divergentes.map(o => (
+                                        <KitchenOrderCard key={o.id} order={o} onUpdate={() => fetchOrders(true)} />
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+
                         {/* Novos */}
                         {enviados.length > 0 && (
                             <section>

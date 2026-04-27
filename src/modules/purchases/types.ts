@@ -70,7 +70,10 @@ export interface PurchaseOrderItem {
     requested_qty: number
     separated_qty: number | null
     received_qty: number | null
+    /** @deprecated use separation_notes or received_notes for new flows */
     notes: string | null
+    separation_notes?: string | null
+    received_notes?: string | null
     unit_price?: number | null
     price_source?: string | null
     price_updated_by?: string | null
@@ -99,8 +102,11 @@ export type PurchaseEventType =
     | 'item_added'
     | 'item_removed'
     | 'item_qty_updated'
+    | 'item_price_updated'
     | 'separation_updated'
     | 'order_separated'
+    | 'receiving_started'
+    | 'received_qty_updated'
     | 'order_received'
     | 'divergence_registered'
     | 'note_added'
@@ -195,7 +201,7 @@ export const EDITABLE_STATUSES: OrderStatus[] = ['rascunho']
 
 // Status que a cozinha pode atuar sobre
 export const KITCHEN_ACTIONABLE_STATUSES: OrderStatus[] = [
-    'enviado', 'em_analise', 'em_separacao', 'separado'
+    'enviado', 'em_analise', 'em_separacao', 'separado', 'divergente'
 ]
 
 // Status finais (não há mais ação possível)
