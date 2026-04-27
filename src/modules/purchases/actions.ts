@@ -155,7 +155,7 @@ export async function createPurchaseOrderAction(explicitStoreId?: string): Promi
 export async function getOrdersForStoreAction(opts?: {
     status?: OrderStatus[]
     limit?: number
-}): Promise<{ success: boolean; data?: PurchaseOrder[]; error?: string }> {
+}): Promise<{ success: boolean; data?: PurchaseOrder[]; storeName?: string; error?: string }> {
     try {
         const { supabase, user } = await getCurrentUser()
 
@@ -187,7 +187,13 @@ export async function getOrdersForStoreAction(opts?: {
             item_count: row.purchase_order_items?.[0]?.count ?? 0,
         })) as PurchaseOrder[]
 
-        return { success: true, data: orders }
+        let storeName = 'Todas as Lojas'
+        if (user.primary_group_id) {
+            const { data: storeInfo } = await supabase.from('groups').select('name').eq('id', user.primary_group_id).single()
+            if (storeInfo) storeName = storeInfo.name
+        }
+
+        return { success: true, data: orders, storeName }
     } catch (e: unknown) {
         return { success: false, error: (e as Error).message }
     }

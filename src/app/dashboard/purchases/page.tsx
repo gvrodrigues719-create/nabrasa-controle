@@ -21,7 +21,8 @@ const STATUS_FILTERS: { label: string; values: OrderStatus[] }[] = [
 
 export default function PurchasesPage() {
     const router = useRouter()
-    const [orders, setOrders] = useState<PurchaseOrder[]>([])
+    const [allOrders, setAllOrders] = useState<PurchaseOrder[]>([])
+    const [storeName, setStoreName] = useState<string>('Loja')
     const [loading, setLoading] = useState(true)
     const [creating, setCreating] = useState(false)
     const [activeFilter, setActiveFilter] = useState(0)
@@ -29,13 +30,18 @@ export default function PurchasesPage() {
 
     useEffect(() => {
         setLoading(true)
-        const filterValues = STATUS_FILTERS[activeFilter].values
-        getOrdersForStoreAction(filterValues.length ? { status: filterValues } : undefined)
+        getOrdersForStoreAction()
             .then(res => {
-                setOrders(res.data ?? [])
+                setAllOrders(res.data ?? [])
+                if (res.storeName) setStoreName(res.storeName)
                 setLoading(false)
             })
-    }, [activeFilter, refreshKey])
+    }, [refreshKey])
+
+    const filterValues = STATUS_FILTERS[activeFilter].values
+    const orders = filterValues.length > 0
+        ? allOrders.filter(o => filterValues.includes(o.status))
+        : allOrders
 
     async function handleNewOrder() {
         setCreating(true)
@@ -63,7 +69,7 @@ export default function PurchasesPage() {
                         </button>
                         <div>
                             <h1 className="text-sm font-black text-gray-900 leading-none">Pedidos de Abastecimento</h1>
-                            <p className="text-[10px] text-gray-400 mt-0.5">Gerenciar pedidos da loja</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">{storeName} — pedidos para a Cozinha Central</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -92,7 +98,7 @@ export default function PurchasesPage() {
             <div className="max-w-md mx-auto px-4 py-5 space-y-5 pb-28">
 
                 {/* Status filter chips */}
-                <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide">
+                <div className="flex gap-2 overflow-x-auto sm:flex-wrap pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide">
                     {STATUS_FILTERS.map((f, i) => (
                         <button
                             key={i}
@@ -106,6 +112,27 @@ export default function PurchasesPage() {
                     ))}
                 </div>
 
+                {!loading && (
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                            <span className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Rascunhos</span>
+                            <span className="block text-2xl font-black text-gray-900 leading-none">{allOrders.filter(o => o.status === 'rascunho').length}</span>
+                        </div>
+                        <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                            <span className="block text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Enviados</span>
+                            <span className="block text-2xl font-black text-gray-900 leading-none">{allOrders.filter(o => ['enviado', 'em_analise', 'em_separacao'].includes(o.status)).length}</span>
+                        </div>
+                        <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                            <span className="block text-[10px] font-black text-orange-400 uppercase tracking-widest mb-1">Aguardando</span>
+                            <span className="block text-2xl font-black text-gray-900 leading-none">{allOrders.filter(o => ['separado', 'em_entrega'].includes(o.status)).length}</span>
+                        </div>
+                        <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                            <span className="block text-[10px] font-black text-red-400 uppercase tracking-widest mb-1">Divergentes</span>
+                            <span className="block text-2xl font-black text-gray-900 leading-none">{allOrders.filter(o => o.status === 'divergente').length}</span>
+                        </div>
+                    </div>
+                )}
+
                 {loading ? (
                     <div className="space-y-3">
                         {[1, 2, 3].map(i => (
@@ -113,7 +140,7 @@ export default function PurchasesPage() {
                         ))}
                     </div>
                 ) : orders.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
                         <div className="w-16 h-16 bg-orange-50 rounded-3xl flex items-center justify-center mb-4">
                             <ShoppingCart className="w-8 h-8 text-orange-400" />
                         </div>
