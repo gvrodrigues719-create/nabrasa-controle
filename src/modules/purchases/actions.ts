@@ -588,31 +588,6 @@ export async function markOrderAsSeparatedAction(
     }
 }
 
-export async function updateKitchenOrderNotesAction(
-    orderId: string,
-    notes: string
-): Promise<{ success: boolean; error?: string }> {
-    try {
-        const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
-
-        const { error } = await supabase
-            .from('purchase_orders')
-            .update({ kitchen_notes: notes })
-            .eq('id', orderId)
-        
-        if (error) throw error
-
-        await _logEvent(supabase, orderId, user.id, 'note_added', {
-            kitchen_notes: notes
-        })
-
-        return { success: true }
-    } catch (e: unknown) {
-        return { success: false, error: (e as Error).message }
-    }
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // RECEBIMENTO — GERENTE
 // ─────────────────────────────────────────────────────────────────────────────
@@ -786,6 +761,29 @@ export async function updateOrderItemPriceAction(
         if (error) throw error
 
         await _logEvent(supabase, orderId, user.id, 'item_price_updated' as any, { item_id: orderItemId, unit_price: unitPrice })
+
+        return { success: true }
+    } catch (e: unknown) {
+        return { success: false, error: (e as Error).message }
+    }
+}
+
+export async function updateKitchenOrderNotesAction(orderId: string, notes: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { supabase, user } = await getCurrentUser()
+
+        if (!['admin', 'kitchen'].includes(user.role)) {
+            throw new Error('Sem permissão para editar observações da cozinha')
+        }
+
+        const { error } = await supabase
+            .from('purchase_orders')
+            .update({ kitchen_notes: notes })
+            .eq('id', orderId)
+
+        if (error) throw error
+
+        await _logEvent(supabase, orderId, user.id, 'kitchen_notes_updated' as any, { notes })
 
         return { success: true }
     } catch (e: unknown) {

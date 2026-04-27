@@ -148,18 +148,9 @@ export default function OrderPrintPage() {
                     {/* Notes */}
                     <div className="flex-1 flex flex-col gap-3">
                         <div className="border border-gray-300 p-4 rounded-md">
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Observações da Loja Solicitante</p>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Observações</p>
                             {order.notes ? (
                                 <p className="text-xs text-gray-700 whitespace-pre-wrap">{order.notes}</p>
-                            ) : (
-                                <p className="text-xs text-gray-400 italic">Nenhuma observação registrada.</p>
-                            )}
-                        </div>
-
-                        <div className="border border-gray-300 p-4 rounded-md">
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Observações da Cozinha Central</p>
-                            {order.kitchen_notes ? (
-                                <p className="text-xs text-gray-700 whitespace-pre-wrap">{order.kitchen_notes}</p>
                             ) : (
                                 <p className="text-xs text-gray-400 italic">Nenhuma observação registrada.</p>
                             )}

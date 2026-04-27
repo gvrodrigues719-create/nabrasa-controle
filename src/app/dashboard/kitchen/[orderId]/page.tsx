@@ -37,7 +37,6 @@ export default function KitchenOrderDetailPage() {
     const [saving, setSaving] = useState<string | null>(null) 
     const [finalizing, setFinalizing] = useState(false)
     const [kitchenNotes, setKitchenNotes] = useState('')
-    const [savingNotes, setSavingNotes] = useState(false)
 
     const fetchOrder = useCallback(async () => {
         setLoading(true)
@@ -83,16 +82,10 @@ export default function KitchenOrderDetailPage() {
         setSaving(null)
     }
 
-    async function handleSaveNotes() {
+    async function handleSaveKitchenNotes() {
         if (!order) return
-        setSavingNotes(true)
         const res = await updateKitchenOrderNotesAction(orderId, kitchenNotes)
-        if (res.success) {
-            toast.success('Observação salva')
-        } else {
-            toast.error(res.error ?? 'Erro ao salvar observação')
-        }
-        setSavingNotes(false)
+        if (!res.success) toast.error(res.error ?? 'Erro ao salvar observação geral')
     }
 
     async function handleFinalize() {
@@ -101,7 +94,6 @@ export default function KitchenOrderDetailPage() {
         for (const s of sepState) {
             await updateSeparatedQtyAction(orderId, s.orderItemId, s.separatedQty, s.notes || undefined)
         }
-        // Save notes
         await updateKitchenOrderNotesAction(orderId, kitchenNotes)
         
         const res = await markOrderAsSeparatedAction(orderId)
@@ -332,26 +324,6 @@ export default function KitchenOrderDetailPage() {
                             )
                         })}
                     </div>
-                </section>
-
-                {/* Kitchen Notes */}
-                <section className="bg-white rounded-3xl border border-gray-100 p-5 shadow-sm">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-3 px-1">
-                        Observação da Cozinha Central
-                    </label>
-                    <div className={`flex items-start gap-3 bg-gray-50 border rounded-2xl px-4 py-3 transition-all ${!canSeparate ? 'opacity-60' : 'focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100'}`}>
-                        <MessageSquare className="w-4 h-4 text-gray-300 mt-2 shrink-0" />
-                        <textarea
-                            value={kitchenNotes}
-                            disabled={!canSeparate}
-                            onChange={e => setKitchenNotes(e.target.value)}
-                            onBlur={handleSaveNotes}
-                            placeholder="Adicione observações gerais sobre o pedido (faltas, atrasos, etc)..."
-                            rows={3}
-                            className="w-full text-sm text-gray-700 bg-transparent border-none focus:outline-none py-1 resize-none placeholder-gray-400"
-                        />
-                    </div>
-                    {savingNotes && <p className="text-[10px] text-gray-400 font-bold mt-2 ml-2">Salvando observação...</p>}
                 </section>
             </div>
 

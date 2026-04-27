@@ -51,7 +51,6 @@ export interface PurchaseOrder {
     created_by: string
     status: OrderStatus
     notes: string | null
-    kitchen_notes?: string | null
     created_at: string
     updated_at: string
     sent_at: string | null
@@ -104,6 +103,7 @@ export type PurchaseEventType =
     | 'order_received'
     | 'divergence_registered'
     | 'note_added'
+    | 'kitchen_notes_updated'
     | 'order_cancelled'
 
 // ── Configurações de exibição dos status ──────────────────────────────────────
