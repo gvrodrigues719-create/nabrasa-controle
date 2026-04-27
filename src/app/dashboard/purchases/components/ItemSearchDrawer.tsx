@@ -125,6 +125,16 @@ const CATEGORY_GROUPS = [
   }
 ]
 
+function normalizeText(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 function normalizeCategory(cat: string) {
     return cat.trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, "")
 }
@@ -175,7 +185,17 @@ export function ItemSearchDrawer({
             }
         }
         
-        if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false
+        if (search) {
+            const normalizedSearch = normalizeText(search)
+            const queryTerms = normalizedSearch.split(' ').filter(Boolean)
+            const normalizedItemName = normalizeText(item.name)
+            const normalizedItemCat = normalizeText(item.category)
+
+            return queryTerms.every(term => 
+                normalizedItemName.includes(term) || 
+                normalizedItemCat.includes(term)
+            )
+        }
         return true
     })
 
@@ -197,6 +217,19 @@ export function ItemSearchDrawer({
                 return copy
             }
             return { ...prev, [item.id]: { item, qty: newQty } }
+        })
+    }
+
+    function handleManualQtyChange(item: PurchaseItem, val: string) {
+        const numericVal = item.allows_decimal ? parseFloat(val.replace(',', '.')) : parseInt(val)
+        
+        setSelectedItems(prev => {
+            if (isNaN(numericVal) || numericVal <= 0) {
+                const copy = { ...prev }
+                delete copy[item.id]
+                return copy
+            }
+            return { ...prev, [item.id]: { item, qty: numericVal } }
         })
     }
 
@@ -316,9 +349,13 @@ export function ItemSearchDrawer({
                                                     >
                                                         <span className="text-lg font-bold leading-none mb-0.5">-</span>
                                                     </button>
-                                                    <span className="w-8 text-center text-sm font-black text-gray-900">
-                                                        {qty > 0 ? qty : 0}
-                                                    </span>
+                                                    <input
+                                                        type="number"
+                                                        value={qty > 0 ? qty : ''}
+                                                        placeholder="0"
+                                                        onChange={(e) => handleManualQtyChange(item, e.target.value)}
+                                                        className="w-10 text-center text-sm font-black text-gray-900 bg-transparent border-none focus:outline-none"
+                                                    />
                                                     <button 
                                                         onClick={() => handleQtyChange(item, 1)}
                                                         className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-md active:bg-gray-200 transition-colors"

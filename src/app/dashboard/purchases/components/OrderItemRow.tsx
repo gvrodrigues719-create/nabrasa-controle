@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Minus, Plus, Trash2, MessageSquare } from 'lucide-react'
 import type { PurchaseOrderItem } from '@/modules/purchases/types'
 
@@ -33,20 +33,40 @@ export function OrderItemRow({
     const hasSepNotes = !!orderItem.separation_notes
     const hasRecvNotes = !!orderItem.received_notes
 
+    const [inputValue, setInputValue] = useState(orderItem.requested_qty.toString())
+
+    useEffect(() => {
+        setInputValue(orderItem.requested_qty.toString())
+    }, [orderItem.requested_qty])
+
     function handleDecrement() {
         const step = allowsDecimal ? 0.5 : 1
         const newQty = Math.max(step, orderItem.requested_qty - step)
+        setInputValue(newQty.toString())
         onQtyChange?.(orderItem.id, newQty)
     }
 
     function handleIncrement() {
         const step = allowsDecimal ? 0.5 : 1
-        onQtyChange?.(orderItem.id, orderItem.requested_qty + step)
+        const newQty = orderItem.requested_qty + step
+        setInputValue(newQty.toString())
+        onQtyChange?.(orderItem.id, newQty)
     }
 
     function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-        const val = allowsDecimal ? parseFloat(e.target.value) : parseInt(e.target.value)
-        if (!isNaN(val) && val > 0) onQtyChange?.(orderItem.id, val)
+        const val = e.target.value
+        setInputValue(val)
+    }
+
+    function handleBlur() {
+        const numericVal = allowsDecimal ? parseFloat(inputValue.replace(',', '.')) : parseInt(inputValue)
+        if (!isNaN(numericVal) && numericVal > 0) {
+            onQtyChange?.(orderItem.id, numericVal)
+            setInputValue(numericVal.toString())
+        } else {
+            // Revert to original if invalid
+            setInputValue(orderItem.requested_qty.toString())
+        }
     }
 
     const sepDiff = showSeparated && orderItem.separated_qty != null && !qtyEqual(orderItem.requested_qty, orderItem.separated_qty)
@@ -103,8 +123,9 @@ export function OrderItemRow({
                             </button>
                             <input
                                 type="number"
-                                value={orderItem.requested_qty}
+                                value={inputValue}
                                 onChange={handleInputChange}
+                                onBlur={handleBlur}
                                 min={allowsDecimal ? 0.5 : 1}
                                 step={allowsDecimal ? 0.5 : 1}
                                 className="w-12 text-center text-sm font-black text-gray-900 bg-transparent border-none focus:outline-none"
