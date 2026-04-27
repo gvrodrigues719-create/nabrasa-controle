@@ -16,7 +16,12 @@ import type {
 async function getCurrentUser() {
     const supabase = getAdminSupabase()
     const profile = await getServerAuthContext()
-    return { supabase, user: profile as UserProfile }
+    const user = profile as UserProfile
+    // Workaround: if the DB check constraint hasn't been updated yet, 'Cozinha Central' comes as 'operator'
+    if (user.role === 'operator' && user.name === 'Cozinha Central') {
+        user.role = 'kitchen'
+    }
+    return { supabase, user }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

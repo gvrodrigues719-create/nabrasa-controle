@@ -13,5 +13,5 @@ export type UserProfile = { id: string; role: string; name: string; primary_grou
  */
 export function getUserStoreId(user: UserProfile, explicitStoreId?: string): string | null {
     if (user.role === 'admin' && explicitStoreId) return explicitStoreId
-    return user.unit_id ?? user.primary_group_id ?? null
+    return user.unit_id ?? null
 }

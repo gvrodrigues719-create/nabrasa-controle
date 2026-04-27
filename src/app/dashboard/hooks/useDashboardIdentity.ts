@@ -21,7 +21,9 @@ export function useDashboardIdentity() {
             if (op?.name) {
                 setUserName(op.name.split(' ')[0])
                 setFullName(op.name)
-                setUserRole(op.role || 'operator')
+                let role = op.role || 'operator'
+                if (role === 'operator' && op.name === 'Cozinha Central') role = 'kitchen'
+                setUserRole(role)
                 setUserId(op.userId)
                 currentUserId = op.userId
             } else {
@@ -31,7 +33,9 @@ export function useDashboardIdentity() {
                     currentUserId = user.id
                     const { data: profile } = await supabase.from('users').select('role, name').eq('id', user.id).single()
                     if (profile) {
-                        setUserRole(profile.role || 'operator')
+                        let role = profile.role || 'operator'
+                        if (role === 'operator' && profile.name === 'Cozinha Central') role = 'kitchen'
+                        setUserRole(role)
                         setUserName(profile.name?.split(' ')[0] || 'você')
                         setFullName(profile.name || '')
                     }

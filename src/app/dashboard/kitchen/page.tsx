@@ -13,14 +13,17 @@ export default function KitchenPage() {
     const [orders, setOrders] = useState<PurchaseOrder[]>([])
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
+    const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
     async function fetchOrders(showRefresh = false) {
         if (showRefresh) setRefreshing(true)
         else setLoading(true)
+        setErrorMsg(null)
         const res = await getOrdersForKitchenAction()
         if (res.success) {
             setOrders(res.data ?? [])
         } else {
+            setErrorMsg(res.error ?? 'Erro ao carregar pedidos')
             toast.error(res.error ?? 'Erro ao carregar pedidos')
         }
         setLoading(false)
@@ -100,6 +103,14 @@ export default function KitchenPage() {
                         {[1, 2, 3].map(i => (
                             <div key={i} className="h-32 bg-white rounded-3xl border border-gray-100 animate-pulse shadow-sm" />
                         ))}
+                    </div>
+                ) : errorMsg ? (
+                    <div className="flex flex-col items-center justify-center py-24 text-center">
+                        <div className="w-20 h-20 bg-red-50 rounded-[32px] flex items-center justify-center mb-6">
+                            <AlertTriangle className="w-10 h-10 text-red-500" />
+                        </div>
+                        <h3 className="text-lg font-black text-gray-900 mb-2">Acesso Negado</h3>
+                        <p className="text-sm text-gray-500 max-w-[280px]">Usuário sem permissão para acessar a Cozinha Central. Verifique o cadastro do perfil.</p>
                     </div>
                 ) : orders.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 text-center">
