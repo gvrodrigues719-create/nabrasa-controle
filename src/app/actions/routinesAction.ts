@@ -116,7 +116,7 @@ export async function getOperatorDailyTasksAction(userId: string) {
         const userData = await supabase.from('users').select('name, role, primary_group_id').eq('id', userId).maybeSingle().then(res => res.data)
         const primaryGroupId = userData?.primary_group_id
         const userRole = userData?.role
-        const isTester = isTestOperator(userData)
+        const isTester = await isTestOperator(userData)
 
         const [routinesRes, groupsRes, itemsRes] = await Promise.all([
             supabase.from('routines').select('*').eq('active', true),
@@ -205,6 +205,6 @@ export async function getOperatorDailyTasksAction(userId: string) {
     }
 }
 
-export function isTestOperator(user: any) {
+export async function isTestOperator(user: any) {
     return user?.name?.toLowerCase().includes('operador teste')
 }

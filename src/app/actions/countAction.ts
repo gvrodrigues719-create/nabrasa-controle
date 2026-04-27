@@ -13,7 +13,7 @@ export async function initCountSessionAction(routineId: string, groupId: string,
     const { data: userData } = await supabase.from('users').select('name, role, primary_group_id').eq('id', userId).single()
     const { data: group } = await supabase.from('groups').select('name').eq('id', groupId).single()
 
-    const isTester = isTestOperator(userData)
+    const isTester = await isTestOperator(userData)
     const isManager = userData?.role === 'admin' || userData?.role === 'manager'
     const isMyArea = userData?.primary_group_id === groupId
 
