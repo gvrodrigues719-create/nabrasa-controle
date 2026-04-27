@@ -159,7 +159,7 @@ export default function OrderDetailPage() {
                         </div>
                         <div className="flex items-center gap-2">
                             <button
-                                onClick={() => router.push(`/dashboard/purchases/${orderId}/print`)}
+                                onClick={() => window.open(`/print/purchases/${orderId}`, '_blank')}
                                 className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-colors"
                                 title="Ver folha do pedido"
                             >

@@ -145,7 +145,7 @@ export default function KitchenOrderDetailPage() {
                     <div className="flex items-center gap-2">
                         <OrderStatusBadge status={order.status} size="sm" />
                         <button
-                            onClick={() => router.push(`/dashboard/purchases/${order.id}/print`)}
+                            onClick={() => window.open(`/print/purchases/${order.id}`, '_blank')}
                             className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-600 hidden sm:flex items-center gap-2"
                             title="Imprimir folha do pedido"
                         >
@@ -153,7 +153,7 @@ export default function KitchenOrderDetailPage() {
                             <span className="text-[11px] font-bold">Imprimir</span>
                         </button>
                         <button
-                            onClick={() => router.push(`/dashboard/purchases/${order.id}/print`)}
+                            onClick={() => window.open(`/print/purchases/${order.id}`, '_blank')}
                             className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-600 sm:hidden"
                             title="Imprimir folha do pedido"
                         >

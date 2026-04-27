@@ -8,7 +8,7 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Printer, ArrowLeft } from 'lucide-react'
 
-export default function OrderPrintPage() {
+export default function IndependentOrderPrintPage() {
     const params = useParams()
     const router = useRouter()
     const orderId = params.orderId as string
@@ -39,7 +39,7 @@ export default function OrderPrintPage() {
     const hasMissingPrices = items.some(item => !item.unit_price)
 
     return (
-        <div className="screen-shell min-h-screen bg-gray-100 p-4 sm:p-8">
+        <div className="min-h-screen bg-white">
             <style jsx global>{`
                 @page { size: A4 portrait; margin: 8mm; }
                 @media print {
@@ -50,11 +50,6 @@ export default function OrderPrintPage() {
                         background: white !important; 
                         -webkit-print-color-adjust: exact; 
                         print-color-adjust: exact; 
-                    }
-                    .screen-shell {
-                        background: white !important;
-                        min-height: auto !important;
-                        padding: 0 !important;
                     }
                     .print-hidden { display: none !important; }
                     .print-sheet {
@@ -81,11 +76,12 @@ export default function OrderPrintPage() {
                     }
                 }
             `}</style>
+            
             {/* Action Bar (Hidden on print) */}
-            <div className="max-w-4xl mx-auto mb-6 flex items-center justify-between print-hidden">
+            <div className="max-w-4xl mx-auto p-4 flex items-center justify-between print-hidden">
                 <button
                     onClick={() => router.back()}
-                    className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-200 transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4" />
                     Voltar
@@ -100,7 +96,7 @@ export default function OrderPrintPage() {
             </div>
 
             {/* A4 Document Area */}
-            <div className="print-sheet max-w-4xl mx-auto bg-white sm:shadow-lg sm:border border-gray-200 p-6 sm:p-8 text-gray-900 font-sans">
+            <div className="print-sheet max-w-4xl mx-auto bg-white p-6 sm:p-8 text-gray-900 font-sans">
                 
                 {/* Header */}
                 <div className="flex justify-between items-start border-b border-gray-900 pb-3 mb-4">
