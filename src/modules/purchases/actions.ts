@@ -156,9 +156,10 @@ export async function getOrdersForStoreAction(opts?: {
                 purchase_order_items(count)
             `)
 
+        const storeId = getUserStoreId(user)
         // Gerente só vê seus pedidos; admin e kitchen vêem todos
         if (!['admin', 'kitchen'].includes(user.role)) {
-            query = query.eq('store_id', user.primary_group_id!)
+            if (storeId) query = query.eq('store_id', storeId)
         }
 
         if (opts?.status?.length) query = query.in('status', opts.status)
@@ -176,8 +177,8 @@ export async function getOrdersForStoreAction(opts?: {
         })) as PurchaseOrder[]
 
         let storeName = 'Todas as Lojas'
-        if (user.primary_group_id) {
-            const { data: storeInfo } = await supabase.from('groups').select('name').eq('id', user.primary_group_id).single()
+        if (storeId) {
+            const { data: storeInfo } = await supabase.from('groups').select('name').eq('id', storeId).single()
             if (storeInfo) storeName = storeInfo.name
         }
 

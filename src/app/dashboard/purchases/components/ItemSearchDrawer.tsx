@@ -8,7 +8,7 @@ import { getPurchaseItemsAction } from '@/modules/purchases/actions'
 interface ItemSearchDrawerProps {
     isOpen: boolean
     onClose: () => void
-    onSelectItem: (item: PurchaseItem) => void
+    onAddItems: (items: { item: PurchaseItem, qty: number }[]) => void
     excludeItemIds?: string[]
 }
 
@@ -55,7 +55,7 @@ const CATEGORY_GROUPS = [
   },
   {
     key: 'graos_secos',
-    label: 'Grãos e Secos',
+    label: 'Mercearia',
     rawCategories: ['MERCEARIA', 'COZINHA CENTRAL - BASES'],
     color: {
       active: 'bg-amber-600 text-white',
@@ -65,7 +65,7 @@ const CATEGORY_GROUPS = [
   },
   {
     key: 'molhos_condimentos',
-    label: 'Molhos e Condimentos',
+    label: 'Molhos',
     rawCategories: ['COZINHA CENTRAL - MOLHOS', 'CONDIMENTOS', 'TEMPEROS'],
     color: {
       active: 'bg-orange-600 text-white',
@@ -138,13 +138,14 @@ function getCategoryGroup(rawCat: string) {
 export function ItemSearchDrawer({
     isOpen,
     onClose,
-    onSelectItem,
+    onAddItems,
     excludeItemIds = [],
 }: ItemSearchDrawerProps) {
     const [search, setSearch] = useState('')
     const [selectedGroupKey, setSelectedGroupKey] = useState<string>('todos')
     const [items, setItems] = useState<PurchaseItem[]>([])
     const [loading, setLoading] = useState(false)
+    const [selectedItems, setSelectedItems] = useState<Record<string, { item: PurchaseItem, qty: number }>>({})
     const searchRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
@@ -158,6 +159,7 @@ export function ItemSearchDrawer({
         } else {
             setSearch('')
             setSelectedGroupKey('todos')
+            setSelectedItems({})
         }
     }, [isOpen])
 
@@ -182,6 +184,24 @@ export function ItemSearchDrawer({
         acc[item.category].push(item)
         return acc
     }, {})
+
+    function handleQtyChange(item: PurchaseItem, delta: number) {
+        setSelectedItems(prev => {
+            const current = prev[item.id]?.qty || 0
+            const step = item.allows_decimal ? 0.5 : 1
+            const newQty = current + (delta * step)
+            
+            if (newQty <= 0) {
+                const copy = { ...prev }
+                delete copy[item.id]
+                return copy
+            }
+            return { ...prev, [item.id]: { item, qty: newQty } }
+        })
+    }
+
+    const selectedArray = Object.values(selectedItems)
+    const totalSelected = selectedArray.length
 
     return (
         <>
@@ -273,13 +293,13 @@ export function ItemSearchDrawer({
                                     </div>
                                     {catItems.map(item => {
                                         const group = getCategoryGroup(item.category)
+                                        const qty = selectedItems[item.id]?.qty || 0
                                         return (
-                                            <button
+                                            <div
                                                 key={item.id}
-                                                onClick={() => { onSelectItem(item); onClose() }}
-                                                className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-orange-50 transition-colors border-b border-gray-50 active:bg-orange-100 group"
+                                                className={`w-full flex items-center justify-between px-5 py-3.5 transition-colors border-b border-gray-50 ${qty > 0 ? 'bg-orange-50/50' : 'hover:bg-gray-50'}`}
                                             >
-                                                <div className="text-left">
+                                                <div className="text-left flex-1" onClick={() => qty === 0 && handleQtyChange(item, 1)}>
                                                     <p className="text-sm font-bold text-gray-900 flex items-center gap-2">
                                                         <span className={`w-2 h-2 rounded-full ${group.color.dot}`} />
                                                         {item.name}
@@ -288,8 +308,25 @@ export function ItemSearchDrawer({
                                                         {item.order_unit} · {item.origin === 'cozinha_central' ? 'Cozinha Central' : 'Fornecedor Externo'}
                                                     </p>
                                                 </div>
-                                                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-orange-500 transition-colors shrink-0" />
-                                            </button>
+                                                
+                                                <div className="flex items-center gap-3 shrink-0 ml-4 bg-white rounded-lg border border-gray-200 p-1">
+                                                    <button 
+                                                        onClick={() => handleQtyChange(item, -1)}
+                                                        className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-md active:bg-gray-200 transition-colors"
+                                                    >
+                                                        <span className="text-lg font-bold leading-none mb-0.5">-</span>
+                                                    </button>
+                                                    <span className="w-8 text-center text-sm font-black text-gray-900">
+                                                        {qty > 0 ? qty : 0}
+                                                    </span>
+                                                    <button 
+                                                        onClick={() => handleQtyChange(item, 1)}
+                                                        className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-100 rounded-md active:bg-gray-200 transition-colors"
+                                                    >
+                                                        <span className="text-lg font-bold leading-none mb-0.5">+</span>
+                                                    </button>
+                                                </div>
+                                            </div>
                                         )
                                     })}
                                 </div>
@@ -297,6 +334,24 @@ export function ItemSearchDrawer({
                         </div>
                     )}
                 </div>
+
+                {/* Footer fixed */}
+                {totalSelected > 0 && (
+                    <div className="absolute bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-100 shadow-[0_-8px_24px_rgba(0,0,0,0.05)] rounded-b-3xl">
+                        <div className="flex items-center justify-between mb-3 px-2">
+                            <span className="text-sm font-black text-gray-900">{totalSelected} ite{totalSelected > 1 ? 'ns' : 'm'} selecionado{totalSelected > 1 ? 's' : ''}</span>
+                        </div>
+                        <button
+                            onClick={() => {
+                                onAddItems(selectedArray)
+                                onClose()
+                            }}
+                            className="w-full bg-[#B13A2B] hover:bg-[#8F2E21] text-white py-3.5 rounded-2xl text-sm font-black uppercase tracking-widest transition-all active:scale-[0.98]"
+                        >
+                            Adicionar ao pedido
+                        </button>
+                    </div>
+                )}
             </div>
         </>
     )

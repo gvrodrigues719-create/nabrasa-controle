@@ -77,7 +77,7 @@ export async function getServerAuthContext() {
 
     const { data: profile } = await adminClient
         .from('users')
-        .select('id, name, role, primary_group_id')
+        .select('id, name, role, primary_group_id, unit_id')
         .eq('id', userId)
         .single()
 
@@ -85,5 +85,5 @@ export async function getServerAuthContext() {
         throw new Error('Perfil não encontrado.')
     }
 
-    return profile as { id: string; name: string; role: string; primary_group_id: string | null }
+    return profile as { id: string; name: string; role: string; primary_group_id: string | null; unit_id: string | null }
 }

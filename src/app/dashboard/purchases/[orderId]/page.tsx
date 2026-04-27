@@ -22,6 +22,17 @@ import { ItemSearchDrawer } from '../components/ItemSearchDrawer'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import toast from 'react-hot-toast'
+const EVENT_LABELS: Record<string, string> = {
+    order_created: 'Pedido criado',
+    item_added: 'Item adicionado',
+    item_removed: 'Item removido',
+    item_qty_updated: 'Quantidade alterada',
+    order_submitted: 'Pedido enviado para a Cozinha Central',
+    status_changed: 'Status alterado',
+    order_cancelled: 'Pedido cancelado',
+    order_received: 'Pedido recebido',
+    divergence_registered: 'Divergência registrada',
+}
 
 export default function OrderDetailPage() {
     const params = useParams()
@@ -54,27 +65,22 @@ export default function OrderDetailPage() {
 
     useEffect(() => { fetchOrder() }, [fetchOrder])
 
-    async function handleSelectItem(item: PurchaseItem) {
-        const defaultQty = item.allows_decimal ? 1.0 : 1
-        const res = await addItemToOrderAction(orderId, item.id, defaultQty)
-        if (res.success) {
-            // Optimistic add
-            setLocalItems(prev => [...prev, {
-                id: `temp-${Date.now()}`,
-                order_id: orderId,
-                item_id: item.id,
-                requested_qty: defaultQty,
-                separated_qty: null,
-                received_qty: null,
-                notes: null,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                item,
-            }])
-            await fetchOrder()
-        } else {
-            toast.error(res.error ?? 'Erro ao adicionar item')
+    async function handleSelectItems(items: { item: PurchaseItem, qty: number }[]) {
+        setLoading(true)
+        let addedCount = 0
+        for (const { item, qty } of items) {
+            const res = await addItemToOrderAction(orderId, item.id, qty)
+            if (res.success) {
+                addedCount++
+            } else {
+                toast.error(`Erro ao adicionar ${item.name}: ${res.error}`)
+            }
         }
+        if (addedCount > 0) {
+            toast.success(`${addedCount} ite${addedCount > 1 ? 'ns' : 'm'} adicionado${addedCount > 1 ? 's' : ''}`)
+            await fetchOrder()
+        }
+        setLoading(false)
     }
 
     async function handleQtyChange(orderItemId: string, newQty: number) {
@@ -271,7 +277,7 @@ export default function OrderDetailPage() {
                                     <div key={ev.id} className={`px-4 py-3 flex items-start gap-3 ${i > 0 ? 'border-t border-gray-50' : ''}`}>
                                         <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mt-2 shrink-0" />
                                         <div className="min-w-0">
-                                            <p className="text-xs font-bold text-gray-700">{ev.event_type.replace(/_/g, ' ')}</p>
+                                            <p className="text-xs font-bold text-gray-700">{EVENT_LABELS[ev.event_type] || ev.event_type.replace(/_/g, ' ')}</p>
                                             <p className="text-[10px] text-gray-400 mt-0.5">
                                                 {ev.user_name} · {formatDistanceToNow(new Date(ev.created_at), { addSuffix: true, locale: ptBR })}
                                             </p>
@@ -292,14 +298,18 @@ export default function OrderDetailPage() {
                                 <button
                                     onClick={handleSubmit}
                                     disabled={submitting || localItems.length === 0}
-                                    className="w-full flex items-center justify-center gap-2 bg-[#B13A2B] hover:bg-[#8F2E21] disabled:opacity-50 text-white py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-[0.98]"
+                                    className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${
+                                        localItems.length === 0 || submitting
+                                        ? 'bg-gray-100 text-gray-400'
+                                        : 'bg-[#B13A2B] hover:bg-[#8F2E21] text-white active:scale-[0.98]'
+                                    }`}
                                 >
                                     {submitting ? (
-                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
                                     ) : (
-                                        <Send className="w-4 h-4" />
+                                        localItems.length > 0 && <Send className="w-4 h-4" />
                                     )}
-                                    Enviar para Cozinha Central
+                                    {localItems.length === 0 ? 'Adicione itens para enviar' : 'Enviar para Cozinha Central'}
                                 </button>
                                 <button
                                     onClick={() => setShowCancelConfirm(true)}
@@ -334,7 +344,7 @@ export default function OrderDetailPage() {
             <ItemSearchDrawer
                 isOpen={showItemDrawer}
                 onClose={() => setShowItemDrawer(false)}
-                onSelectItem={handleSelectItem}
+                onAddItems={handleSelectItems}
                 excludeItemIds={existingItemIds}
             />
 

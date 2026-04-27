@@ -21,7 +21,7 @@ export default function ClientDashboardLayout({
     const router = useRouter()
     const pathname = usePathname()
 
-    const isExecutionPage = pathname?.includes('/routines/') || pathname?.includes('/checklist/') || pathname?.includes('/count/')
+    const isExecutionPage = pathname?.includes('/routines/') || pathname?.includes('/checklist/') || pathname?.includes('/count/') || pathname?.includes('/purchases') || pathname?.includes('/kitchen')
     const showBottomNav = !isExecutionPage
 
     useEffect(() => {
