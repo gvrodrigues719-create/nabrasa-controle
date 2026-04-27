@@ -54,7 +54,6 @@ export default function KitchenOrderDetailPage() {
                     allowsDecimal: oi.item?.allows_decimal ?? false,
                 }))
             )
-            setKitchenNotes(res.data.kitchen_notes ?? '')
         } else {
             toast.error('Pedido não encontrado')
             router.push('/dashboard/kitchen')
