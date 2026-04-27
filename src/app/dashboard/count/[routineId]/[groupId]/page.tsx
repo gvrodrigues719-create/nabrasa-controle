@@ -4,10 +4,10 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getSafeReturnTo } from '@/lib/navigation'
-import { ArrowLeft, Loader2, Save, Check, ShieldAlert, CloudOff, AlertTriangle, ChevronDown, Edit3, Lock, X, User, CheckCircle2, Trophy } from 'lucide-react'
+import { ArrowLeft, Loader2, Save, Check, ShieldAlert, CloudOff, AlertTriangle, ChevronDown, Edit3, Lock, X, User, CheckCircle2, Trophy, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import React, { use } from 'react'
-import { initCountSessionAction, syncCountSessionAction } from '@/app/actions/countAction'
+import { initCountSessionAction, syncCountSessionAction, deleteCountSessionAction } from '@/app/actions/countAction'
 import { getActiveOperator } from '@/app/actions/pinAuth'
 import { getOperatorSummaryAction } from '@/app/actions/gamificationAction'
 import { CountItem } from '@/modules/count/types'
@@ -33,6 +33,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     const [operator, setOperator] = useState<{ name: string, role: string } | null>(null)
     const [rankPosition, setRankPosition] = useState<number | null>(null)
     const [weeklyPoints, setWeeklyPoints] = useState<number>(0)
+    const [isDeleting, setIsDeleting] = useState(false)
     
     const searchParams = useSearchParams()
     const returnTo = searchParams.get('returnTo')
@@ -193,6 +194,25 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         localStorage.removeItem(ZEROED_KEY)
         setShowSummary(false)
         setShowFinished(true)
+    }
+
+    const handleDeleteSession = async () => {
+        if (!sessionId) return
+        const confirmed = window.confirm("Atenção: Você tem certeza que deseja excluir esta contagem em andamento? Todo o progresso deste local será perdido.")
+        if (!confirmed) return
+        
+        setIsDeleting(true)
+        const res = await deleteCountSessionAction(sessionId)
+        if (res.error) {
+            toast.error(res.error)
+            setIsDeleting(false)
+            return
+        }
+        
+        toast.success("Contagem excluída com sucesso.")
+        localStorage.removeItem(LOCAL_KEY)
+        localStorage.removeItem(ZEROED_KEY)
+        router.push(backUrl)
     }
 
     if (loadingInit) return <div className="min-h-screen flex items-center justify-center bg-[#F8F7F4]"><Loader2 className="w-10 h-10 text-[#B13A2B] animate-spin" /></div>
@@ -427,7 +447,10 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                     })}
 
                     {/* FLOAT BAR */}
-                    <div className="fixed bottom-0 left-0 right-0 p-5 bg-white border-t border-[#e9e8e5] shadow-[0_-8px_30px_rgb(0,0,0,0.06)] z-50 flex space-x-4 max-w-md mx-auto rounded-t-[32px]">
+                    <div className="fixed bottom-0 left-0 right-0 p-5 bg-white border-t border-[#e9e8e5] shadow-[0_-8px_30px_rgb(0,0,0,0.06)] z-50 flex space-x-3 max-w-md mx-auto rounded-t-[32px]">
+                        <button onClick={handleDeleteSession} disabled={isDeleting} className="p-5 bg-red-50 text-red-600 rounded-2xl active:scale-95 transition hover:bg-red-100 border border-red-100/50">
+                            {isDeleting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Trash2 className="w-6 h-6" />}
+                        </button>
                         <button onClick={handleManualSave} className="p-5 bg-[#F8F7F4] text-[#58413e] rounded-2xl active:scale-95 transition hover:bg-gray-100 border border-[#eeedea]">
                             <Save className="w-6 h-6" />
                         </button>

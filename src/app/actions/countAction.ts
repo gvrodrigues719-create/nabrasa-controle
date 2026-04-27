@@ -176,3 +176,22 @@ export async function syncCountSessionAction(sessionId: string, currentCounts: R
 
     return { success: true }
 }
+
+export async function deleteCountSessionAction(sessionId: string): Promise<{ success: boolean; error?: string }> {
+    const { data: sess } = await supabase
+        .from('count_sessions')
+        .select('status, user_id')
+        .eq('id', sessionId)
+        .single()
+        
+    if (!sess) return { success: false, error: 'Sessão não encontrada.' }
+    if (sess.status === 'completed') return { success: false, error: 'Não é possível excluir uma contagem já finalizada.' }
+
+    // Apaga os itens
+    await supabase.from('count_session_items').delete().eq('session_id', sessionId)
+    // Apaga a sessão
+    const { error } = await supabase.from('count_sessions').delete().eq('id', sessionId)
+
+    if (error) return { success: false, error: `Erro ao excluir: ${error.message}` }
+    return { success: true }
+}
