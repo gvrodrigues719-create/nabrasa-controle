@@ -84,10 +84,10 @@ function DashboardContent() {
 
     // ── REDIRECIONAMENTO COZINHA CENTRAL ────────────────────────────────────
     useEffect(() => {
-        if (!loadingIdentity && fullName === 'Cozinha Central') {
+        if (!loadingIdentity && (userRole === 'kitchen' || fullName === 'Cozinha Central')) {
             router.push('/dashboard/kitchen')
         }
-    }, [loadingIdentity, fullName, router])
+    }, [loadingIdentity, userRole, fullName, router])
 
     if (loadingIdentity) {
         return (
