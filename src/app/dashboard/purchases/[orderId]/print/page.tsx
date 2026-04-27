@@ -68,10 +68,12 @@ export default function OrderPrintPage() {
                     table { 
                         width: 100% !important;
                         table-layout: fixed;
+                        border-collapse: collapse !important;
                         page-break-inside: auto; 
                     }
                     tr { page-break-inside: avoid; page-break-after: auto; }
                     thead { display: table-header-group; }
+                    tfoot { display: table-footer-group; }
                     .item-cell {
                         white-space: normal;
                         word-break: normal;
@@ -103,7 +105,7 @@ export default function OrderPrintPage() {
                 {/* Header */}
                 <div className="flex justify-between items-start border-b border-gray-900 pb-3 mb-4">
                     <div>
-                        <h1 className="text-xl font-black uppercase tracking-tight text-gray-900">
+                        <h1 className="text-[20px] font-black uppercase tracking-tight text-gray-900">
                             Pedido de Abastecimento
                         </h1>
                         <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-0.5">
@@ -138,7 +140,7 @@ export default function OrderPrintPage() {
 
                 {/* Items Table */}
                 <div className="mb-4">
-                    <table className="w-full text-left border-collapse border border-gray-300 text-[11px]">
+                    <table className="w-full text-left border-collapse border border-gray-300">
                         <colgroup>
                             <col style={{ width: '60%' }} />
                             <col style={{ width: '8%' }} />
@@ -148,11 +150,11 @@ export default function OrderPrintPage() {
                         </colgroup>
                         <thead>
                             <tr className="bg-gray-50 border-b border-gray-300">
-                                <th className="border-r border-gray-300 py-1.5 px-2 font-black text-gray-600 uppercase tracking-wider">Item</th>
-                                <th className="border-r border-gray-300 py-1.5 px-2 font-black text-gray-600 uppercase tracking-wider text-right">Qtd</th>
-                                <th className="border-r border-gray-300 py-1.5 px-2 font-black text-gray-600 uppercase tracking-wider text-center">Un</th>
-                                <th className="border-r border-gray-300 py-1.5 px-2 font-black text-gray-600 uppercase tracking-wider text-right">Preço Un</th>
-                                <th className="py-1.5 px-2 font-black text-gray-600 uppercase tracking-wider text-right">Total</th>
+                                <th className="border-r border-gray-300 py-1.5 px-2 text-[10px] sm:text-[11px] font-black text-gray-600 uppercase tracking-wider">Item</th>
+                                <th className="border-r border-gray-300 py-1.5 px-2 text-[10px] sm:text-[11px] font-black text-gray-600 uppercase tracking-wider text-right">Qtd</th>
+                                <th className="border-r border-gray-300 py-1.5 px-2 text-[10px] sm:text-[11px] font-black text-gray-600 uppercase tracking-wider text-center">Un</th>
+                                <th className="border-r border-gray-300 py-1.5 px-2 text-[10px] sm:text-[11px] font-black text-gray-600 uppercase tracking-wider text-right">Preço Un</th>
+                                <th className="py-1.5 px-2 text-[10px] sm:text-[11px] font-black text-gray-600 uppercase tracking-wider text-right">Total</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -160,17 +162,17 @@ export default function OrderPrintPage() {
                                 const unitPrice = oi.unit_price || 0
                                 const rowTotal = oi.requested_qty * unitPrice
                                 return (
-                                    <tr key={oi.id} className="border-b border-gray-300 last:border-b-0 break-inside-avoid">
-                                        <td className="item-cell border-r border-gray-300 py-1 px-2 font-bold text-gray-900">{oi.item?.name}</td>
-                                        <td className="border-r border-gray-300 py-1 px-2 font-black text-gray-900 text-right">{oi.requested_qty}</td>
-                                        <td className="border-r border-gray-300 py-1 px-2 text-[10px] text-gray-500 text-center">{oi.item?.order_unit}</td>
-                                        <td className="border-r border-gray-300 py-1 px-2 text-gray-600 text-right">
+                                    <tr key={oi.id} className="border-b border-gray-300 last:border-b-0 break-inside-avoid text-[11px] sm:text-[12px]">
+                                        <td className="item-cell border-r border-gray-300 py-1.5 px-2 font-bold text-gray-900 text-[12px]">{oi.item?.name}</td>
+                                        <td className="border-r border-gray-300 py-1.5 px-2 font-black text-gray-900 text-right">{oi.requested_qty}</td>
+                                        <td className="border-r border-gray-300 py-1.5 px-2 text-gray-500 text-center">{oi.item?.order_unit}</td>
+                                        <td className="border-r border-gray-300 py-1.5 px-2 text-gray-600 text-right">
                                             {oi.unit_price 
                                                 ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(unitPrice)
                                                 : '-'
                                             }
                                         </td>
-                                        <td className="py-1 px-2 font-bold text-gray-900 text-right">
+                                        <td className="py-1.5 px-2 font-bold text-gray-900 text-right">
                                             {oi.unit_price 
                                                 ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(rowTotal)
                                                 : '-'
@@ -184,7 +186,7 @@ export default function OrderPrintPage() {
                 </div>
 
                 {/* Summary & Notes Row */}
-                <div className="flex flex-col sm:flex-row gap-4 break-inside-avoid">
+                <div className="flex flex-col sm:flex-row gap-4">
                     {/* Notes */}
                     <div className="flex-1 flex flex-col gap-3">
                         <div className="border border-gray-300 p-3 rounded-sm bg-gray-50/50">
@@ -216,21 +218,21 @@ export default function OrderPrintPage() {
                     <div className="w-full sm:w-64 border border-gray-300 p-3 rounded-sm bg-gray-50/30">
                         <div className="flex justify-between items-center mb-1">
                             <span className="text-[9px] font-bold text-gray-500 uppercase">Número de itens</span>
-                            <span className="text-xs font-bold text-gray-900">{items.length}</span>
+                            <span className="text-[12px] font-bold text-gray-900">{items.length}</span>
                         </div>
                         <div className="flex justify-between items-center mb-1">
                             <span className="text-[9px] font-bold text-gray-500 uppercase">Soma das quantidades</span>
-                            <span className="text-xs font-bold text-gray-900">{totalQty}</span>
+                            <span className="text-[12px] font-bold text-gray-900">{totalQty}</span>
                         </div>
                         <div className="flex justify-between items-center mb-1">
                             <span className="text-[9px] font-bold text-gray-500 uppercase">Total de produtos</span>
-                            <span className="text-xs font-bold text-gray-900">
+                            <span className="text-[12px] font-bold text-gray-900">
                                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalOrder)}
                             </span>
                         </div>
                         <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-300">
                             <span className="text-[10px] font-black text-gray-900 uppercase">Total do Pedido</span>
-                            <span className="text-sm font-black text-gray-900">
+                            <span className="text-[14px] font-black text-gray-900">
                                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalOrder)}
                             </span>
                         </div>
