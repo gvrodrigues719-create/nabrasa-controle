@@ -26,7 +26,7 @@ function DashboardContent() {
     const isDemoMode = searchParams.get('demo') === 'true' || searchParams.get('demo') === '1'
 
     // ── IDENTIDADE ──────────────────────────────────────────────────────────
-    const { userRole, userName, userId, loadingIdentity } = useDashboardIdentity()
+    const { userRole, userName, fullName, userId, loadingIdentity } = useDashboardIdentity()
 
     const isManager = userRole === 'admin' || userRole === 'manager'
 
@@ -142,6 +142,7 @@ function DashboardContent() {
                             // ── Props de contexto e ação ─────────────────────
                             userRole={userRole}
                             userName={userName}
+                            fullName={fullName}
                             userId={userId}
                             isDemoMode={isDemoMode}
                             onViewGlobalClick={() => setIsHealthDrawerOpen(true)}

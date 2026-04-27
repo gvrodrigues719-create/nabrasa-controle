@@ -7,6 +7,7 @@ import { getActiveOperator } from '@/app/actions/pinAuth'
 export function useDashboardIdentity() {
     const [userRole, setUserRole] = useState<string | null>(null)
     const [userName, setUserName] = useState<string>('')
+    const [fullName, setFullName] = useState<string>('')
     const [userId, setUserId] = useState<string>('')
     const [primaryAreaName, setPrimaryAreaName] = useState<string | null>(null)
     const [loadingIdentity, setLoadingIdentity] = useState(true)
@@ -19,6 +20,7 @@ export function useDashboardIdentity() {
             let currentUserId = ''
             if (op?.name) {
                 setUserName(op.name.split(' ')[0])
+                setFullName(op.name)
                 setUserRole(op.role || 'operator')
                 setUserId(op.userId)
                 currentUserId = op.userId
@@ -31,6 +33,7 @@ export function useDashboardIdentity() {
                     if (profile) {
                         setUserRole(profile.role || 'operator')
                         setUserName(profile.name?.split(' ')[0] || 'você')
+                        setFullName(profile.name || '')
                     }
                 }
             }
@@ -52,5 +55,5 @@ export function useDashboardIdentity() {
         loadIdentity()
     }, [])
 
-    return { userRole, userName, userId, loadingIdentity, primaryAreaName }
+    return { userRole, userName, fullName, userId, loadingIdentity, primaryAreaName }
 }
