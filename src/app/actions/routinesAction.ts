@@ -113,13 +113,14 @@ export async function getOperatorDailyTasksAction(userId: string) {
         const startOfDayBR = `${brDate}T03:00:00Z`
 
         // 2. Buscar setor do usuário
-        const { data: userData } = await supabase.from('users').select('primary_group_id').eq('id', userId).maybeSingle()
+        const { data: userData } = await supabase.from('users').select('name, primary_group_id').eq('id', userId).maybeSingle()
         const primaryGroupId = userData?.primary_group_id
+        const isTester = userData?.name === 'Operador Teste'
 
-        // 3. Buscar todas as rotinas ativas e seus grupos
-        const [routinesRes, groupsRes] = await Promise.all([
+        const [routinesRes, groupsRes, itemsRes] = await Promise.all([
             supabase.from('routines').select('*').eq('active', true),
-            supabase.from('routine_groups').select('routine_id, group_id, groups:group_id(name)')
+            supabase.from('routine_groups').select('routine_id, group_id, groups:group_id(name)'),
+            supabase.from('items').select('group_id').eq('active', true)
         ])
 
         if (routinesRes.error) throw routinesRes.error
@@ -148,15 +149,21 @@ export async function getOperatorDailyTasksAction(userId: string) {
                 const session = sessionMap.get(`${routine.id}-${rg.group_id}`)
                 const isCompleted = session?.status === 'completed'
                 const isInProgress = session?.status === 'in_progress'
-                const isMyArea = rg.group_id === primaryGroupId
+                const isMyArea = isTester || rg.group_id === primaryGroupId
                 const groupName = (rg.groups as any)?.name || 'Setor'
                 const type = routine.routine_type === 'checklist' ? 'checklist' : 'count'
+
+                // REGRA: Se for contagem, só exibe se houver itens ativos no grupo
+                if (type === 'count') {
+                    const activeItemCount = itemsRes.data?.filter(i => i.group_id === rg.group_id).length || 0
+                    if (activeItemCount === 0) return
+                }
 
                 const task = {
                     id: `${routine.id}-${rg.group_id}`,
                     routineId: routine.id,
                     groupId: rg.group_id,
-                    name: routine.name,
+                    name: type === 'count' ? `Contagem — ${groupName}` : routine.name,
                     groupName: groupName,
                     type,
                     frequency: routine.frequency,
