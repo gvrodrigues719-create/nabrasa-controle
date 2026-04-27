@@ -3,13 +3,13 @@
 
 -- 1. purchase_items
 ALTER TABLE purchase_items
-ADD COLUMN sku text,
-ADD COLUMN gtin text,
-ADD COLUMN default_unit_price numeric(12,2);
+ADD COLUMN IF NOT EXISTS sku text,
+ADD COLUMN IF NOT EXISTS gtin text,
+ADD COLUMN IF NOT EXISTS default_unit_price numeric(12,2);
 
 -- 2. purchase_order_items
 ALTER TABLE purchase_order_items
-ADD COLUMN unit_price numeric(12,2),
-ADD COLUMN price_source text DEFAULT 'manual',
-ADD COLUMN price_updated_by uuid REFERENCES users(id),
-ADD COLUMN price_updated_at timestamptz;
+ADD COLUMN IF NOT EXISTS unit_price numeric(12,2),
+ADD COLUMN IF NOT EXISTS price_source text DEFAULT 'manual',
+ADD COLUMN IF NOT EXISTS price_updated_by uuid REFERENCES users(id),
+ADD COLUMN IF NOT EXISTS price_updated_at timestamptz;

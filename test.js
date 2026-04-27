@@ -1,1 +1,1 @@
-import { createClient } from '@supabase/supabase-js'; const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY); supabase.from('users').select('*').limit(1).then(console.log);  
+import * as dotenv from 'dotenv'; dotenv.config({ path: '.env.local' }); import { createClient } from '@supabase/supabase-js'; const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY); supabase.from('users').select('id, name, unit_id, primary_group_id').eq('name', 'Guilherme Gerente').then(r = 

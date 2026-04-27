@@ -137,6 +137,18 @@ export function OrderItemRow({
                     </button>
                 )}
             </div>
+
+            {/* Price and Subtotal */}
+            {orderItem.unit_price != null && (
+                <div className="mt-3 pt-3 border-t border-gray-50 flex items-center justify-between">
+                    <div className="text-[10px] font-bold text-gray-400">
+                        Preço un: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(orderItem.unit_price)}
+                    </div>
+                    <div className="text-xs font-black text-gray-900">
+                        Subtotal: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(orderItem.requested_qty * orderItem.unit_price)}
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

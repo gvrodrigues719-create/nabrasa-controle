@@ -27,6 +27,7 @@ const EVENT_LABELS: Record<string, string> = {
     item_added: 'Item adicionado',
     item_removed: 'Item removido',
     item_qty_updated: 'Quantidade alterada',
+    item_price_updated: 'Preço alterado',
     order_submitted: 'Pedido enviado para a Cozinha Central',
     status_changed: 'Status alterado',
     order_cancelled: 'Pedido cancelado',

@@ -255,29 +255,39 @@ export async function addItemToOrderAction(
         if (order.status !== 'rascunho') throw new Error('Pedido não pode ser alterado neste status')
         if (order.created_by !== user.id && user.role !== 'admin') throw new Error('Sem permissão')
 
-        // Buscar o default_unit_price do item
-        const { data: item } = await supabase
-            .from('purchase_items')
-            .select('default_unit_price')
-            .eq('id', itemId)
-            .single()
-
-        const defaultPrice = item?.default_unit_price ?? null
-
-        // Upsert: se já existe, atualiza a qty e mantém o preço se não existir
-        const { error } = await supabase
+        const { data: existing } = await supabase
             .from('purchase_order_items')
-            .upsert(
-                { 
-                    order_id: orderId, 
-                    item_id: itemId, 
+            .select('id')
+            .eq('order_id', orderId)
+            .eq('item_id', itemId)
+            .maybeSingle()
+
+        if (existing) {
+            const { error } = await supabase
+                .from('purchase_order_items')
+                .update({ requested_qty: requestedQty })
+                .eq('id', existing.id)
+            if (error) throw error
+        } else {
+            const { data: item } = await supabase
+                .from('purchase_items')
+                .select('default_unit_price')
+                .eq('id', itemId)
+                .single()
+
+            const defaultPrice = item?.default_unit_price ?? null
+
+            const { error } = await supabase
+                .from('purchase_order_items')
+                .insert({
+                    order_id: orderId,
+                    item_id: itemId,
                     requested_qty: requestedQty,
                     unit_price: defaultPrice,
                     price_source: defaultPrice ? 'catalog' : 'manual'
-                },
-                { onConflict: 'order_id,item_id' }
-            )
-        if (error) throw error
+                })
+            if (error) throw error
+        }
 
         await _logEvent(supabase, orderId, user.id, 'item_added', { item_id: itemId, requested_qty: requestedQty })
 
@@ -700,4 +710,37 @@ async function _logEvent(
         event_type: eventType,
         payload,
     })
+}
+
+export async function updateOrderItemPriceAction(
+    orderId: string,
+    orderItemId: string,
+    unitPrice: number
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { supabase, user } = await getCurrentUser()
+
+        if (!['admin', 'kitchen'].includes(user.role)) {
+            throw new Error('Sem permissão para editar preços')
+        }
+
+        const { error } = await supabase
+            .from('purchase_order_items')
+            .update({
+                unit_price: unitPrice,
+                price_source: 'manual',
+                price_updated_by: user.id,
+                price_updated_at: new Date().toISOString()
+            })
+            .eq('id', orderItemId)
+            .eq('order_id', orderId)
+
+        if (error) throw error
+
+        await _logEvent(supabase, orderId, user.id, 'item_price_updated' as any, { item_id: orderItemId, unit_price: unitPrice })
+
+        return { success: true }
+    } catch (e: unknown) {
+        return { success: false, error: (e as Error).message }
+    }
 }
