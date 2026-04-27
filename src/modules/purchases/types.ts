@@ -30,8 +30,6 @@ export interface PurchaseItem {
      * (sem mín/máx, ou mín > máx). Admin deve revisar antes de usar.
      */
     pending_review: boolean
-    sku?: string | null
-    gtin?: string | null
     default_unit_price?: number | null
     created_at: string
     updated_at: string
@@ -53,6 +51,7 @@ export interface PurchaseOrder {
     created_by: string
     status: OrderStatus
     notes: string | null
+    kitchen_notes?: string | null
     created_at: string
     updated_at: string
     sent_at: string | null

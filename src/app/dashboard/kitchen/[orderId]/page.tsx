@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, CheckCircle2, ChefHat, MessageSquare, AlertCircle, Timer, ClipboardList, Store } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, ChefHat, MessageSquare, AlertCircle, Timer, ClipboardList, Store, Printer } from 'lucide-react'
 import {
     getOrderDetailAction,
     updateSeparatedQtyAction,
     markOrderAsSeparatedAction,
     updateKitchenStatusAction,
+    updateKitchenOrderNotesAction
 } from '@/modules/purchases/actions'
 import type { PurchaseOrder, PurchaseOrderItem } from '@/modules/purchases/types'
 import { OrderStatusBadge } from '../../purchases/components/OrderStatusBadge'
@@ -35,6 +36,8 @@ export default function KitchenOrderDetailPage() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState<string | null>(null) 
     const [finalizing, setFinalizing] = useState(false)
+    const [kitchenNotes, setKitchenNotes] = useState('')
+    const [savingNotes, setSavingNotes] = useState(false)
 
     const fetchOrder = useCallback(async () => {
         setLoading(true)
@@ -52,6 +55,7 @@ export default function KitchenOrderDetailPage() {
                     allowsDecimal: oi.item?.allows_decimal ?? false,
                 }))
             )
+            setKitchenNotes(res.data.kitchen_notes ?? '')
         } else {
             toast.error('Pedido não encontrado')
             router.push('/dashboard/kitchen')
@@ -79,12 +83,27 @@ export default function KitchenOrderDetailPage() {
         setSaving(null)
     }
 
+    async function handleSaveNotes() {
+        if (!order) return
+        setSavingNotes(true)
+        const res = await updateKitchenOrderNotesAction(orderId, kitchenNotes)
+        if (res.success) {
+            toast.success('Observação salva')
+        } else {
+            toast.error(res.error ?? 'Erro ao salvar observação')
+        }
+        setSavingNotes(false)
+    }
+
     async function handleFinalize() {
         setFinalizing(true)
         // Save all items first
         for (const s of sepState) {
             await updateSeparatedQtyAction(orderId, s.orderItemId, s.separatedQty, s.notes || undefined)
         }
+        // Save notes
+        await updateKitchenOrderNotesAction(orderId, kitchenNotes)
+        
         const res = await markOrderAsSeparatedAction(orderId)
         if (res.success) {
             toast.success('Pedido marcado como separado!')
@@ -132,7 +151,24 @@ export default function KitchenOrderDetailPage() {
                             </p>
                         </div>
                     </div>
-                    <OrderStatusBadge status={order.status} size="sm" />
+                    <div className="flex items-center gap-2">
+                        <OrderStatusBadge status={order.status} size="sm" />
+                        <button
+                            onClick={() => router.push(`/dashboard/purchases/${order.id}/print`)}
+                            className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-600 hidden sm:flex items-center gap-2"
+                            title="Imprimir folha do pedido"
+                        >
+                            <Printer className="w-4 h-4" />
+                            <span className="text-[11px] font-bold">Imprimir</span>
+                        </button>
+                        <button
+                            onClick={() => router.push(`/dashboard/purchases/${order.id}/print`)}
+                            className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-600 sm:hidden"
+                            title="Imprimir folha do pedido"
+                        >
+                            <Printer className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -296,6 +332,26 @@ export default function KitchenOrderDetailPage() {
                             )
                         })}
                     </div>
+                </section>
+
+                {/* Kitchen Notes */}
+                <section className="bg-white rounded-3xl border border-gray-100 p-5 shadow-sm">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-3 px-1">
+                        Observação da Cozinha Central
+                    </label>
+                    <div className={`flex items-start gap-3 bg-gray-50 border rounded-2xl px-4 py-3 transition-all ${!canSeparate ? 'opacity-60' : 'focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100'}`}>
+                        <MessageSquare className="w-4 h-4 text-gray-300 mt-2 shrink-0" />
+                        <textarea
+                            value={kitchenNotes}
+                            disabled={!canSeparate}
+                            onChange={e => setKitchenNotes(e.target.value)}
+                            onBlur={handleSaveNotes}
+                            placeholder="Adicione observações gerais sobre o pedido (faltas, atrasos, etc)..."
+                            rows={3}
+                            className="w-full text-sm text-gray-700 bg-transparent border-none focus:outline-none py-1 resize-none placeholder-gray-400"
+                        />
+                    </div>
+                    {savingNotes && <p className="text-[10px] text-gray-400 font-bold mt-2 ml-2">Salvando observação...</p>}
                 </section>
             </div>
 

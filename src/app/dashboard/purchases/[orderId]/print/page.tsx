@@ -39,7 +39,13 @@ export default function OrderPrintPage() {
     const hasMissingPrices = items.some(item => !item.unit_price)
 
     return (
-        <div className="min-h-screen bg-gray-100 print:bg-white p-4 sm:p-8">
+        <div className="min-h-screen bg-gray-100 print:bg-white p-4 sm:p-8 print:p-0">
+            <style jsx global>{`
+                @media print {
+                    @page { size: A4 portrait; margin: 10mm; }
+                    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                }
+            `}</style>
             {/* Action Bar (Hidden on print) */}
             <div className="max-w-4xl mx-auto mb-6 flex items-center justify-between print:hidden">
                 <button
@@ -59,7 +65,7 @@ export default function OrderPrintPage() {
             </div>
 
             {/* A4 Document Area */}
-            <div className="max-w-4xl mx-auto bg-white sm:shadow-lg sm:border border-gray-200 print:shadow-none print:border-none p-8 sm:p-10 text-gray-900 font-sans">
+            <div className="max-w-4xl mx-auto bg-white sm:shadow-lg sm:border border-gray-200 print:shadow-none print:border-none sm:p-10 p-8 print:p-0 text-gray-900 font-sans">
                 
                 {/* Header */}
                 <div className="flex justify-between items-start border-b border-gray-900 pb-4 mb-6">
@@ -102,12 +108,11 @@ export default function OrderPrintPage() {
                     <table className="w-full text-left border-collapse border border-gray-300">
                         <thead>
                             <tr className="bg-gray-50 border-b border-gray-300">
-                                <th className="border-r border-gray-300 py-2 px-3 text-[10px] font-black text-gray-600 uppercase tracking-wider w-[40%]">Item</th>
-                                <th className="border-r border-gray-300 py-2 px-3 text-[10px] font-black text-gray-600 uppercase tracking-wider">Cód/SKU</th>
-                                <th className="border-r border-gray-300 py-2 px-3 text-[10px] font-black text-gray-600 uppercase tracking-wider text-right">Qtd</th>
-                                <th className="border-r border-gray-300 py-2 px-3 text-[10px] font-black text-gray-600 uppercase tracking-wider">Un</th>
-                                <th className="border-r border-gray-300 py-2 px-3 text-[10px] font-black text-gray-600 uppercase tracking-wider text-right">Preço Un</th>
-                                <th className="py-2 px-3 text-[10px] font-black text-gray-600 uppercase tracking-wider text-right">Total</th>
+                                <th className="border-r border-gray-300 py-2 px-3 text-[10px] font-black text-gray-600 uppercase tracking-wider w-[55%]">Item</th>
+                                <th className="border-r border-gray-300 py-2 px-3 text-[10px] font-black text-gray-600 uppercase tracking-wider text-right w-[10%]">Qtd</th>
+                                <th className="border-r border-gray-300 py-2 px-3 text-[10px] font-black text-gray-600 uppercase tracking-wider text-center w-[10%]">Un</th>
+                                <th className="border-r border-gray-300 py-2 px-3 text-[10px] font-black text-gray-600 uppercase tracking-wider text-right w-[12.5%]">Preço Un</th>
+                                <th className="py-2 px-3 text-[10px] font-black text-gray-600 uppercase tracking-wider text-right w-[12.5%]">Total</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -115,13 +120,10 @@ export default function OrderPrintPage() {
                                 const unitPrice = oi.unit_price || 0
                                 const rowTotal = oi.requested_qty * unitPrice
                                 return (
-                                    <tr key={oi.id} className="border-b border-gray-300 last:border-b-0">
+                                    <tr key={oi.id} className="border-b border-gray-300 last:border-b-0 break-inside-avoid">
                                         <td className="border-r border-gray-300 py-2 px-3 text-xs font-bold text-gray-900">{oi.item?.name}</td>
-                                        <td className="border-r border-gray-300 py-2 px-3 text-[10px] text-gray-500 font-mono">
-                                            {oi.item?.sku || oi.item?.gtin || '-'}
-                                        </td>
                                         <td className="border-r border-gray-300 py-2 px-3 text-xs font-black text-gray-900 text-right">{oi.requested_qty}</td>
-                                        <td className="border-r border-gray-300 py-2 px-3 text-[10px] text-gray-500">{oi.item?.order_unit}</td>
+                                        <td className="border-r border-gray-300 py-2 px-3 text-[10px] text-gray-500 text-center">{oi.item?.order_unit}</td>
                                         <td className="border-r border-gray-300 py-2 px-3 text-xs text-gray-600 text-right">
                                             {oi.unit_price 
                                                 ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(unitPrice)
@@ -142,17 +144,29 @@ export default function OrderPrintPage() {
                 </div>
 
                 {/* Summary & Notes Row */}
-                <div className="flex flex-col sm:flex-row gap-6">
+                <div className="flex flex-col sm:flex-row gap-6 break-inside-avoid">
                     {/* Notes */}
-                    <div className="flex-1 border border-gray-300 p-4 rounded-md">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Observações</p>
-                        {order.notes ? (
-                            <p className="text-xs text-gray-700 whitespace-pre-wrap">{order.notes}</p>
-                        ) : (
-                            <p className="text-xs text-gray-400 italic">Nenhuma observação registrada.</p>
-                        )}
+                    <div className="flex-1 flex flex-col gap-3">
+                        <div className="border border-gray-300 p-4 rounded-md">
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Observações da Loja Solicitante</p>
+                            {order.notes ? (
+                                <p className="text-xs text-gray-700 whitespace-pre-wrap">{order.notes}</p>
+                            ) : (
+                                <p className="text-xs text-gray-400 italic">Nenhuma observação registrada.</p>
+                            )}
+                        </div>
+
+                        <div className="border border-gray-300 p-4 rounded-md">
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Observações da Cozinha Central</p>
+                            {order.kitchen_notes ? (
+                                <p className="text-xs text-gray-700 whitespace-pre-wrap">{order.kitchen_notes}</p>
+                            ) : (
+                                <p className="text-xs text-gray-400 italic">Nenhuma observação registrada.</p>
+                            )}
+                        </div>
+
                         {hasMissingPrices && (
-                            <p className="text-[10px] text-gray-500 font-bold mt-4">
+                            <p className="text-[10px] text-gray-500 font-bold mt-1">
                                 * Nota: Itens sem preço não somam no total estimado.
                             </p>
                         )}
