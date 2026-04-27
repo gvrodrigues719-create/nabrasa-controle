@@ -30,6 +30,8 @@ function ProfileContent() {
         participation,
         rankPosition, 
         recentActivities, 
+        topRanking,
+        lastSealing,
         loadingData 
     } = useDashboardData(userId, isDemoMode)
 
@@ -129,7 +131,64 @@ function ProfileContent() {
                         </div>
                     </section>
 
-                    {/* 3. RECENT OPERATIONAL HISTORY — Before progress */}
+                    {/* 3. RANKING & RECOGNITION (Moved from Home) */}
+                    {topRanking && topRanking.length > 0 && (
+                        <section>
+                            <header className="flex items-center justify-between mb-4 px-1">
+                                <h3 className="text-[10px] font-black text-[#8c716c] uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <Trophy className="w-3.5 h-3.5 text-amber-500" /> Destaque e Reconhecimento
+                                </h3>
+                            </header>
+                            <div className="bg-white rounded-[2.5rem] border border-gray-100 overflow-hidden divide-y divide-gray-50 shadow-sm">
+                                {topRanking.slice(0, 3).map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-5 hover:bg-gray-50/50 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-[11px] font-black ${
+                                                idx === 0 ? 'bg-amber-100 text-amber-700' :
+                                                idx === 1 ? 'bg-gray-100 text-gray-700' :
+                                                'bg-orange-50 text-orange-700'
+                                            }`}>
+                                                {idx + 1}º
+                                            </div>
+                                            <span className="text-sm font-black text-[#1b1c1a]">{item.name}</span>
+                                        </div>
+                                        <div className="flex items-baseline gap-1 opacity-60">
+                                            <span className="text-[12px] font-black text-[#1b1c1a]">{item.points}</span>
+                                            <span className="text-[9px] font-bold text-[#8c716c] uppercase">Pts</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
+
+                    {/* 4. MERIT & ACHIEVEMENTS (Moved from Home) */}
+                    {lastSealing && (
+                        <section>
+                            <header className="flex items-center justify-between mb-4 px-1">
+                                <h3 className="text-[10px] font-black text-[#8c716c] uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Conquistas Recentes
+                                </h3>
+                            </header>
+                            <div className="p-5 rounded-[2.5rem] bg-emerald-50/40 border border-emerald-100/50 flex items-center justify-between transition-all hover:bg-emerald-50">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center border border-emerald-100 shadow-sm">
+                                        <ShieldCheck className="w-6 h-6 text-emerald-600" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest leading-none mb-1.5">Mérito Profissional</span>
+                                        <p className="text-[13px] font-black text-[#1b1c1a] leading-tight">{lastSealing.reason}</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <span className="text-lg font-black text-emerald-700">+{lastSealing.points}</span>
+                                    <p className="text-[9px] font-bold text-emerald-600/60 uppercase leading-none mt-1">Pontos</p>
+                                </div>
+                            </div>
+                        </section>
+                    )}
+
+                    {/* 5. RECENT OPERATIONAL HISTORY */}
                     <section>
                         <header className="flex items-center justify-between mb-4 px-1">
                             <h3 className="text-[10px] font-black text-[#8c716c] uppercase tracking-[0.2em] flex items-center gap-2">
@@ -177,11 +236,11 @@ function ProfileContent() {
                         </div>
                     </section>
 
-                    {/* 4. PROGRESS & RECOGNITION */}
+                    {/* 6. PROGRESS & RANK POSITION */}
                     <section>
                         <header className="flex items-center justify-between mb-4 px-1">
                             <h3 className="text-[10px] font-black text-[#8c716c] uppercase tracking-[0.2em] flex items-center gap-2">
-                                <Medal className="w-3.5 h-3.5" /> Progresso Mensal & Posição
+                                <Medal className="w-3.5 h-3.5" /> Score de Conformidade
                             </h3>
                         </header>
 
@@ -191,7 +250,7 @@ function ProfileContent() {
                                 <div className="flex items-center justify-between mb-5">
                                     <div className="flex items-center gap-2 text-[#B13A2B]">
                                         <Star className="w-4 h-4 fill-current" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Score de conformidade</span>
+                                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Consolidação Mensal</span>
                                     </div>
                                     <div className="px-3 py-1 bg-white/10 rounded-full text-[10px] font-black uppercase tracking-widest">
                                         #{rankPosition || '--'} no Ranking
@@ -239,11 +298,11 @@ function ProfileContent() {
                         </div>
                     </section>
 
-                    {/* 5. MERIT & ACHIEVEMENTS — Not just a catalog */}
+                    {/* 7. REWARDS & BENEFITS */}
                     <section>
                         <header className="flex items-center justify-between mb-4 px-1">
                             <h3 className="text-[10px] font-black text-[#8c716c] uppercase tracking-[0.2em] flex items-center gap-2">
-                                <Award className="w-3.5 h-3.5" /> Mérito & Conquistas
+                                <Gift className="w-3.5 h-3.5" /> Benefícios & Méritos
                             </h3>
                         </header>
 
@@ -254,20 +313,20 @@ function ProfileContent() {
                                         <Gift className="w-6 h-6" />
                                     </div>
                                     <div className="flex-1">
-                                        <h4 className="text-sm font-black tracking-tight mb-1">Próxima Liberação</h4>
+                                        <h4 className="text-sm font-black tracking-tight mb-1">Área de Benefícios</h4>
                                         <p className="text-[10px] text-gray-500 font-medium leading-relaxed mb-3">
-                                            Continue mantendo sua consistência para liberar novos benefícios exclusivos de mérito.
+                                            Use seus créditos conquistados para resgatar benefícios e mimos exclusivos.
                                         </p>
                                         <div className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-2xl border border-gray-100">
-                                            <span className="text-xs font-bold text-gray-700">Mimo Especial</span>
-                                            <span className="text-[10px] font-black text-gray-400">40 CR</span>
+                                            <span className="text-xs font-bold text-gray-700">Saldo Atual</span>
+                                            <span className="text-[10px] font-black text-amber-600">{(userPoints ? Math.floor(userPoints/10) : 0)} CR</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <button 
                                     onClick={() => setIsRewardsDrawerOpen(true)}
-                                    className="w-full py-4 bg-[#1b1c1a] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-[#2d2e2c] transition-all"
+                                    className="w-full py-4 bg-[#1b1c1a] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:bg-[#2d2e2c] transition-all shadow-lg shadow-black/10"
                                 >
                                     Abrir Área de Resgate <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                                 </button>

@@ -19,13 +19,29 @@ import { ActiveSession, DashboardActions } from '../../hooks/useDashboardData'
 
 
 interface OperatorHomeProps {
+    // ── Wave 1 — Critical (fast) ──────────────────────────────────────────
+    routinesCount: number;
+    countsPending: number;
+    checklistsPending: number;
+    lateCount: number;
+    activeSession: ActiveSession | null;
+    myAreaStats: {
+        name: string;
+        pendingCount: number;
+        delayCount: number;
+        nextActionLabel: string;
+        nextActionUrl?: string;
+    } | null;
+    actions: DashboardActions;
+    loadingWave1?: boolean;
+
+    // ── Wave 2 — Secondary (background) ──────────────────────────────────
     healthScore: number;
     activeLeaks: Leak[];
     weeklyLeaks: Leak[];
     cmvStatus: any;
     weeklyFocus: WeeklyFocus | null;
     userRole: string | null;
-    routinesCount: number;
     monthlyScore: number;
     monthlyPoints: number;
     monthlyAvailable: number;
@@ -36,24 +52,14 @@ interface OperatorHomeProps {
     rankPosition: number | null;
     lastSealing: any;
     topRanking: any[];
-    isDemoMode: boolean;
     notices?: any[];
     birthdays?: any[];
-    lateCount?: number;
-    countsPending: number;
-    checklistsPending: number;
-    userId: string;
-    activeSession: ActiveSession | null;
-    myAreaStats: {
-        name: string;
-        pendingCount: number;
-        delayCount: number;
-        nextActionLabel: string;
-        nextActionUrl?: string;
-    } | null;
-    actions: DashboardActions;
-    onViewGlobalClick: () => void;
+    loadingWave2?: boolean;
 
+    // ── Contexto ─────────────────────────────────────────────────────────
+    isDemoMode: boolean;
+    userId: string;
+    onViewGlobalClick: () => void;
     onReportLoss: () => void;
     onOpenRewards: () => void;
     onOpenAI: () => void;
@@ -61,13 +67,20 @@ interface OperatorHomeProps {
 }
 
 export default function OperatorHome({
+    routinesCount,
+    countsPending,
+    checklistsPending,
+    lateCount = 0,
+    activeSession,
+    myAreaStats,
+    actions,
+    loadingWave1 = false,
     healthScore,
     activeLeaks,
     weeklyLeaks,
     cmvStatus,
     weeklyFocus,
     userRole,
-    routinesCount,
     monthlyScore,
     monthlyPoints,
     monthlyAvailable,
@@ -81,15 +94,9 @@ export default function OperatorHome({
     isDemoMode,
     notices = [],
     birthdays = [],
-    lateCount = 0,
-    countsPending = 0,
-    checklistsPending = 0,
+    loadingWave2 = false,
     userId,
-    activeSession,
-    myAreaStats,
-    actions,
     onViewGlobalClick,
-
     onReportLoss,
     onOpenRewards,
     onOpenAI,
@@ -97,24 +104,37 @@ export default function OperatorHome({
 }: OperatorHomeProps) {
     const [isRaffleOpen, setIsRaffleOpen] = useState(false)
 
+    // Skeleton shimmer helper
+    const SkeletonCard = ({ h = 'h-24' }: { h?: string }) => (
+        <div className={`${h} rounded-3xl bg-gray-100 animate-pulse`} />
+    )
+
     return (
         <div className="space-y-4 md:space-y-6 pb-20 md:pb-6">
-            {/* 0. AÇÃO PRIORITÁRIA (COMANDO PRINCIPAL) */}
+            {/* 0. AÇÃO PRIORITÁRIA — ONDA 1 */}
             <div className="space-y-2">
-                <PriorityActionCard 
-                    action={actions.primary} 
-                    loading={!actions} 
-                />
+                {loadingWave1 ? (
+                    <SkeletonCard h="h-28" />
+                ) : (
+                    <PriorityActionCard
+                        action={actions.primary}
+                        loading={false}
+                    />
+                )}
 
-                {/* 0.1 CONTINUIDADE — CONTINUAR DE ONDE PAREI (COMPACTO) */}
-                <ContinueRoutineCard session={activeSession} isDemoMode={isDemoMode} />
+                {/* 0.1 CONTINUIDADE */}
+                {!loadingWave1 && (
+                    <ContinueRoutineCard session={activeSession} isDemoMode={isDemoMode} />
+                )}
             </div>
 
-            {/* 1. ALERTAS — ATRASOS CRÍTICOS (CRÍTICO EM CIMA) */}
-            <OperationalAlertBanner lateCount={lateCount} isDemoMode={isDemoMode} />
+            {/* 1. ALERTAS — ONDA 1 */}
+            {!loadingWave1 && (
+                <OperationalAlertBanner lateCount={lateCount} isDemoMode={isDemoMode} />
+            )}
 
-            {/* DESTAQUE DO MÊS (SE RANK 1) */}
-            {rankPosition === 1 && highlightScore > 0 && (
+            {/* DESTAQUE DO MÊS — ONDA 2 */}
+            {!loadingWave2 && rankPosition === 1 && highlightScore > 0 && (
                 <div className="mx-1 p-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 shadow-lg shadow-orange-200/50 flex items-center justify-between overflow-hidden relative group animate-in slide-in-from-top duration-500">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 blur-3xl rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-1000" />
                     <div className="flex items-center gap-4 relative z-10">
@@ -130,8 +150,11 @@ export default function OperatorHome({
                 </div>
             )}
 
-            {/* 2. EXECUÇÃO — CHECKLISTS E ROTINAS (CORAÇÃO DA OPERAÇÃO) */}
-            <ExecutionBlock
+            {/* 2. EXECUÇÃO — ONDA 1 */}
+            {loadingWave1 ? (
+                <SkeletonCard h="h-40" />
+            ) : (
+                <ExecutionBlock
                 routinesCount={routinesCount}
                 countsPending={countsPending}
                 checklistsPending={checklistsPending}
@@ -139,16 +162,22 @@ export default function OperatorHome({
                 recommendedActions={actions.recommended}
                 isDemoMode={isDemoMode}
             />
+            )}
 
-            {/* 2.2 RESPONSABILIDADE — SUA ÁREA HOJE */}
-            <MyAreaTodayCard 
-                stats={myAreaStats} 
-                primaryAction={actions.area}
-            />
+            {/* 2.2 SUA ÁREA — ONDA 1 */}
+            {loadingWave1 ? (
+                <SkeletonCard h="h-28" />
+            ) : (
+                <MyAreaTodayCard 
+                    stats={myAreaStats} 
+                    primaryAction={actions.area}
+                />
+            )}
 
-            {/* 2.3 PROGRESSO E RECONHECIMENTO (NOVO — POLÍTICA TOP 3) */}
+            {/* 2.3 MINHA EVOLUÇÃO — ONDA 1 (compact, dados da onda 1) */}
             <WeeklyProgressBar 
-                weeklyPoints={monthlyPoints} // Usando pontos mensais como referência de progresso atual
+                variant="compact"
+                weeklyPoints={monthlyPoints}
                 totalPoints={totalPoints}
                 rankPosition={rankPosition}
                 lastSealing={lastSealing}
@@ -160,42 +189,52 @@ export default function OperatorHome({
                 showFullTeamRanking={false}
             />
 
-            {/* 3. MURAL — AVISOS DA CASA (Mural como preview) */}
-            <div id="mural">
-                <OperationalNoticeCard notices={notices} birthdays={birthdays} userId={userId} isDemoMode={isDemoMode} />
-            </div>
-
-            {/* 4. HERO — SAÚDE DA OPERAÇÃO (EFICIÊNCIA) */}
-            <OperationHeroCard
-                score={healthScore}
-                activeLeaks={activeLeaks}
-                weeklyLeaks={weeklyLeaks}
-                cmvCurrent={cmvStatus?.current}
-                cmvTarget={cmvStatus?.target}
-                cmvStatus={cmvStatus?.status}
-                focus={weeklyFocus}
-                userRole={userRole}
-                onViewGlobalClick={onViewGlobalClick}
-                onUpdateFocus={onUpdateFocus}
-            />
-
-            {/* 5. VISÃO DA CASA — MAPA OPERACIONAL */}
+            {/* 2.4 VISÃO DA CASA — ONDA 1 (self-contained, busca seus próprios dados) */}
             <HouseView />
 
-            {/* 6. APOIO — IA (AJUDA DA OPERAÇÃO) */}
-            <button
-                onClick={onOpenAI}
-                className="w-full flex items-center gap-3 p-4 rounded-2xl bg-[#fffcf0] border border-[#fef3c7] shadow-sm active:scale-[0.98] transition-all text-left cursor-pointer group animate-in fade-in duration-700"
-            >
-                <div className="w-10 h-10 rounded-xl bg-white/50 flex items-center justify-center text-amber-500 group-hover:bg-amber-50 transition-colors border border-amber-100/50">
-                    <LifeBuoy className="w-5 h-5" />
-                </div>
-                <div className="flex-1">
-                    <p className="text-sm font-bold text-amber-950">Ajuda da Operação</p>
-                    <p className="text-[10px] text-amber-900/40 font-medium tracking-tight">Dúvidas sobre estoque, perdas e organização</p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-amber-200 group-hover:text-amber-500 transition-colors" />
-            </button>
+            {/* 3. MURAL — ONDA 2 */}
+            <div id="mural">
+                {loadingWave2 ? (
+                    <SkeletonCard h="h-32" />
+                ) : (
+                    <OperationalNoticeCard notices={notices} birthdays={birthdays} userId={userId} isDemoMode={isDemoMode} />
+                )}
+            </div>
+
+            {/* 4. HERO — ONDA 2 */}
+            {loadingWave2 ? (
+                <SkeletonCard h="h-52" />
+            ) : (
+                <OperationHeroCard
+                    score={healthScore}
+                    activeLeaks={activeLeaks}
+                    weeklyLeaks={weeklyLeaks}
+                    cmvCurrent={cmvStatus?.current}
+                    cmvTarget={cmvStatus?.target}
+                    cmvStatus={cmvStatus?.status}
+                    focus={weeklyFocus}
+                    userRole={userRole}
+                    onViewGlobalClick={onViewGlobalClick}
+                    onUpdateFocus={onUpdateFocus}
+                />
+            )}
+
+            {/* 6. APOIO — IA — ONDA 2 */}
+            {!loadingWave2 && (
+                <button
+                    onClick={onOpenAI}
+                    className="w-full flex items-center gap-3 p-4 rounded-2xl bg-[#fffcf0] border border-[#fef3c7] shadow-sm active:scale-[0.98] transition-all text-left cursor-pointer group animate-in fade-in duration-700"
+                >
+                    <div className="w-10 h-10 rounded-xl bg-white/50 flex items-center justify-center text-amber-500 group-hover:bg-amber-50 transition-colors border border-amber-100/50">
+                        <LifeBuoy className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1">
+                        <p className="text-sm font-bold text-amber-950">Ajuda da Operação</p>
+                        <p className="text-[10px] text-amber-900/40 font-medium tracking-tight">Dúvidas sobre estoque, perdas e organização</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-amber-200 group-hover:text-amber-500 transition-colors" />
+                </button>
+            )}
 
             <RaffleDrawer 
                 isOpen={isRaffleOpen} 

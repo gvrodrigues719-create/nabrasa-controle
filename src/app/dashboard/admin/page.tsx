@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { LayoutGrid, Package, CalendarSync, History, TrendingUp, ClipboardCheck, Bell, Activity } from 'lucide-react'
+import { LayoutGrid, Package, CalendarSync, History, TrendingUp, ClipboardCheck, Bell, Activity, ShoppingCart } from 'lucide-react'
 
 export default function AdminHome() {
     const router = useRouter()
@@ -79,6 +79,16 @@ export default function AdminHome() {
                 <div>
                     <h3 className="font-bold text-gray-900 text-lg">Mural & Comunicados</h3>
                     <p className="text-sm text-gray-500">Postar avisos e gerenciar o mural da casa</p>
+                </div>
+            </button>
+
+            <button onClick={() => router.push('/dashboard/admin/purchases')} className="w-full bg-orange-50 border border-orange-100 p-5 rounded-2xl flex items-center text-left hover:bg-orange-100 hover:border-orange-200 transition-all shadow-sm space-x-4 active:scale-95">
+                <div className="bg-orange-100 p-3 rounded-xl">
+                    <ShoppingCart className="w-6 h-6 text-orange-600" />
+                </div>
+                <div>
+                    <h3 className="font-bold text-gray-900 text-lg">Compras &amp; Abastecimento</h3>
+                    <p className="text-sm text-gray-500">Catálogo, pedidos e histórico de abastecimento</p>
                 </div>
             </button>
 

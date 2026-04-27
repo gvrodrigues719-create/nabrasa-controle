@@ -14,6 +14,7 @@ interface Props {
     isManagerView?: boolean
     showTop3Recognition?: boolean
     showFullTeamRanking?: boolean
+    variant?: 'compact' | 'full'
 }
 
 export default function WeeklyProgressBar({
@@ -27,6 +28,7 @@ export default function WeeklyProgressBar({
     isManagerView = false,
     showTop3Recognition = true,
     showFullTeamRanking = false,
+    variant = 'full',
 }: Props) {
     // POLÍTICA: Operador vê apenas Top 3. Manager vê o que estiver disponível (geralmente Full).
     const displayRanking = isManagerView && showFullTeamRanking 
@@ -34,6 +36,34 @@ export default function WeeklyProgressBar({
         : topRanking?.slice(0, 3) || []
 
     const hasRanking = displayRanking && displayRanking.length > 0
+
+    if (variant === 'compact') {
+        return (
+            <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 flex items-center justify-between animate-in fade-in duration-500 hover:border-[#B13A2B]/10 transition-all">
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[#F8F7F4] flex items-center justify-center text-[#B13A2B]">
+                        <TrendingUp className="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em] leading-none mb-1">Minha Evolução</h3>
+                        <div className="flex items-baseline gap-1.5">
+                            <span className="text-sm font-black text-[#1b1c1a]">{weeklyPoints} pts</span>
+                            <span className="text-[10px] font-bold text-gray-400">na semana</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="text-right">
+                    <p className="text-[9px] font-black text-[#1b1c1a]/60 uppercase tracking-tight mb-0.5">
+                        Posição: {rankPosition ? `${rankPosition}º` : '--'}
+                    </p>
+                    <p className="text-[9px] font-bold text-amber-600 uppercase tracking-tight">
+                        Créditos: {coinBalance}
+                    </p>
+                </div>
+            </div>
+        )
+    }
  
     return (
         <div className="bg-[#f4faf4] rounded-[2.5rem] p-6 shadow-sm border border-[#e6f2e6] flex flex-col gap-6 animate-in fade-in duration-700">

@@ -1,0 +1,229 @@
+// ── Módulo de Compras e Abastecimento — Tipos TypeScript ──────────────────────
+
+export type OrderStatus =
+    | 'rascunho'
+    | 'enviado'
+    | 'em_analise'
+    | 'em_separacao'
+    | 'separado'
+    | 'em_entrega'
+    | 'entregue'
+    | 'recebido'
+    | 'divergente'
+    | 'cancelado'
+
+export type ItemOrigin = 'cozinha_central' | 'fornecedor_externo'
+
+export interface PurchaseItem {
+    id: string
+    name: string
+    category: string
+    order_unit: string
+    count_unit: string
+    allows_decimal: boolean
+    min_stock: number | null
+    max_stock: number | null
+    origin: ItemOrigin
+    is_active: boolean
+    /**
+     * Sinaliza itens importados com dados incompletos ou inconsistentes
+     * (sem mín/máx, ou mín > máx). Admin deve revisar antes de usar.
+     */
+    pending_review: boolean
+    created_at: string
+    updated_at: string
+}
+
+export interface StoreItemParameter {
+    id: string
+    store_id: string
+    item_id: string
+    min_stock: number | null
+    max_stock: number | null
+    is_active: boolean
+    purchase_items?: PurchaseItem
+}
+
+export interface PurchaseOrder {
+    id: string
+    store_id: string
+    created_by: string
+    status: OrderStatus
+    notes: string | null
+    created_at: string
+    updated_at: string
+    sent_at: string | null
+    received_at: string | null
+    // joined
+    store_name?: string
+    creator_name?: string
+    items?: PurchaseOrderItem[]
+    item_count?: number
+}
+
+export interface PurchaseOrderItem {
+    id: string
+    order_id: string
+    item_id: string
+    requested_qty: number
+    separated_qty: number | null
+    received_qty: number | null
+    notes: string | null
+    created_at: string
+    updated_at: string
+    // joined
+    item?: PurchaseItem
+}
+
+export interface PurchaseOrderEvent {
+    id: string
+    order_id: string
+    user_id: string | null
+    event_type: PurchaseEventType
+    payload: Record<string, unknown> | null
+    created_at: string
+    // joined
+    user_name?: string
+}
+
+export type PurchaseEventType =
+    | 'order_created'
+    | 'order_submitted'
+    | 'status_changed'
+    | 'item_added'
+    | 'item_removed'
+    | 'item_qty_updated'
+    | 'separation_updated'
+    | 'order_separated'
+    | 'order_received'
+    | 'divergence_registered'
+    | 'note_added'
+    | 'order_cancelled'
+
+// ── Configurações de exibição dos status ──────────────────────────────────────
+
+export interface StatusConfig {
+    label: string
+    color: string          // bg color class (Tailwind)
+    textColor: string      // text color class
+    borderColor: string    // border color class
+    dotColor: string       // dot/indicator color
+}
+
+export const ORDER_STATUS_CONFIG: Record<OrderStatus, StatusConfig> = {
+    rascunho: {
+        label: 'Rascunho',
+        color: 'bg-gray-100',
+        textColor: 'text-gray-600',
+        borderColor: 'border-gray-200',
+        dotColor: 'bg-gray-400',
+    },
+    enviado: {
+        label: 'Enviado',
+        color: 'bg-blue-50',
+        textColor: 'text-blue-700',
+        borderColor: 'border-blue-100',
+        dotColor: 'bg-blue-500',
+    },
+    em_analise: {
+        label: 'Em Análise',
+        color: 'bg-indigo-50',
+        textColor: 'text-indigo-700',
+        borderColor: 'border-indigo-100',
+        dotColor: 'bg-indigo-500',
+    },
+    em_separacao: {
+        label: 'Em Separação',
+        color: 'bg-amber-50',
+        textColor: 'text-amber-700',
+        borderColor: 'border-amber-100',
+        dotColor: 'bg-amber-500',
+    },
+    separado: {
+        label: 'Separado',
+        color: 'bg-orange-50',
+        textColor: 'text-orange-700',
+        borderColor: 'border-orange-100',
+        dotColor: 'bg-orange-500',
+    },
+    em_entrega: {
+        label: 'Em Entrega',
+        color: 'bg-violet-50',
+        textColor: 'text-violet-700',
+        borderColor: 'border-violet-100',
+        dotColor: 'bg-violet-500',
+    },
+    entregue: {
+        label: 'Entregue',
+        color: 'bg-teal-50',
+        textColor: 'text-teal-700',
+        borderColor: 'border-teal-100',
+        dotColor: 'bg-teal-500',
+    },
+    recebido: {
+        label: 'Recebido',
+        color: 'bg-emerald-50',
+        textColor: 'text-emerald-700',
+        borderColor: 'border-emerald-100',
+        dotColor: 'bg-emerald-500',
+    },
+    divergente: {
+        label: 'Divergente',
+        color: 'bg-red-50',
+        textColor: 'text-red-700',
+        borderColor: 'border-red-100',
+        dotColor: 'bg-red-500',
+    },
+    cancelado: {
+        label: 'Cancelado',
+        color: 'bg-rose-50',
+        textColor: 'text-rose-800',
+        borderColor: 'border-rose-100',
+        dotColor: 'bg-rose-700',
+    },
+}
+
+// Status que permitem edição pelo gerente (apenas rascunho)
+export const EDITABLE_STATUSES: OrderStatus[] = ['rascunho']
+
+// Status que a cozinha pode atuar sobre
+export const KITCHEN_ACTIONABLE_STATUSES: OrderStatus[] = [
+    'enviado', 'em_analise', 'em_separacao', 'separado'
+]
+
+// Status finais (não há mais ação possível)
+export const TERMINAL_STATUSES: OrderStatus[] = ['recebido', 'divergente', 'cancelado']
+
+// Categorias de itens padrão
+export const ITEM_CATEGORIES = [
+    'Proteínas',
+    'Hortifrutigranjeiros',
+    'Laticínios',
+    'Grãos e Secos',
+    'Molhos e Condimentos',
+    'Descartáveis',
+    'Limpeza',
+    'Bebidas',
+    'Funcionário',
+    'Outros',
+] as const
+
+export type ItemCategory = typeof ITEM_CATEGORIES[number]
+
+/**
+ * Regras de unidade padrão por categoria (aplicadas na importação).
+ * Regra geral: 'un'. Exceção: 'Funcionário' → 'kg' (permite decimal).
+ */
+export function getDefaultUnit(category: string): { order_unit: string; allows_decimal: boolean } {
+    if (category === 'Funcionário') return { order_unit: 'kg', allows_decimal: true }
+    return { order_unit: 'un', allows_decimal: false }
+}
+
+/**
+ * Valida se um item importado precisa de revisão pelo admin.
+ */
+export function needsReview(min: number | null, max: number | null): boolean {
+    if (min === null && max === null) return true  // sem parâmetros
+    if (min !== null && max !== null && min > max) return true  // inconsistência
+    return false
+}
