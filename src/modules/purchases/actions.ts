@@ -1,6 +1,8 @@
 'use server'
 
 import { createServerClient } from '@/lib/supabase/server'
+import type { UserProfile } from './utils'
+import { getUserStoreId } from './utils'
 import type {
     PurchaseItem,
     PurchaseOrder,
@@ -16,8 +18,6 @@ async function getServerSupabase() {
     return createServerClient()
 }
 
-type UserProfile = { id: string; role: string; name: string; primary_group_id: string | null }
-
 async function getCurrentUser() {
     const supabase = await getServerSupabase()
     const { data: { user } } = await supabase.auth.getUser()
@@ -31,21 +31,10 @@ async function getCurrentUser() {
     return { supabase, user: profile as UserProfile }
 }
 
-/**
- * Resolve o store_id de um usuário.
- * Gerente/Operator → primary_group_id
- * Admin → deve passar storeId explicitamente (retorna null para seleção manual)
- * 
- * Centralizar aqui facilita mudança futura (ex: múltiplas lojas por gerente).
- */
-export function getUserStoreId(user: UserProfile, explicitStoreId?: string): string | null {
-    if (user.role === 'admin' && explicitStoreId) return explicitStoreId
-    return user.primary_group_id ?? null
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // CATÁLOGO DE ITENS
 // ─────────────────────────────────────────────────────────────────────────────
+
 
 export async function getPurchaseItemsAction(opts?: {
     category?: string
