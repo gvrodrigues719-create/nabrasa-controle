@@ -6,6 +6,7 @@ import OperationalAlertBanner from './OperationalAlertBanner'
 import WeeklyProgressBar from '../WeeklyProgressBar'
 import OperationalNoticeCard from './OperationalNoticeCard'
 import { LifeBuoy, ArrowRight, Trophy, Sparkles } from 'lucide-react'
+import Link from 'next/link'
 import { WeeklyFocus } from '@/app/actions/weeklyFocusAction'
 import { Leak } from '@/app/actions/efficiencyAction'
 import RaffleCard from './RaffleCard'
@@ -35,6 +36,7 @@ interface OperatorHomeProps {
     } | null;
     actions: DashboardActions;
     loadingWave1?: boolean;
+    isTester?: boolean;
 
     // ── Wave 2 — Secondary (background) ──────────────────────────────────
     healthScore: number;
@@ -78,6 +80,7 @@ export default function OperatorHome({
     myAreaStats,
     actions,
     loadingWave1 = false,
+    isTester = false,
     healthScore,
     activeLeaks,
     weeklyLeaks,
@@ -138,6 +141,29 @@ export default function OperatorHome({
                 {!loadingWave1 && (
                     <ContinueRoutineCard session={activeSession} isDemoMode={isDemoMode} />
                 )}
+
+                {/* MODO TESTE DE CONTAGENS — EXCLUSIVO PARA O TESTER */}
+                {isTester && !loadingWave1 && (
+                    <div className="mx-1 p-5 rounded-[2rem] bg-indigo-50 border border-indigo-100 shadow-sm animate-in slide-in-from-bottom-2 duration-500">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+                                <Sparkles className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-black text-indigo-950">Modo teste de contagens</h3>
+                                <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">Acesso liberado para toda a unidade</p>
+                            </div>
+                        </div>
+                        
+                        <Link 
+                            href={isDemoMode ? "/moc-demo/routines" : "/dashboard/routines?returnTo=/dashboard"}
+                            className="flex items-center justify-center w-full bg-indigo-600 text-white font-black py-4 rounded-2xl text-sm shadow-md active:scale-95 transition-all group"
+                        >
+                            Ver todas as contagens
+                            <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                    </div>
+                )}
             </div>
 
             {/* 1. ALERTAS — ONDA 1 */}
@@ -173,6 +199,7 @@ export default function OperatorHome({
                 onReportLoss={onReportLoss}
                 recommendedActions={actions.recommended}
                 isDemoMode={isDemoMode}
+                isTester={isTester}
             />
             )}
 

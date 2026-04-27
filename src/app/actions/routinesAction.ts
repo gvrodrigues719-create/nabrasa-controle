@@ -151,7 +151,6 @@ export async function getOperatorDailyTasksAction(userId: string) {
                 const isCompleted = session?.status === 'completed'
                 const isInProgress = session?.status === 'in_progress'
                 const isMyArea = rg.group_id === primaryGroupId
-                const isTester = userData?.name === 'Operador Teste'
                 const groupName = (rg.groups as any)?.name || 'Setor'
                 const type = routine.routine_type === 'checklist' ? 'checklist' : 'count'
 
@@ -191,7 +190,8 @@ export async function getOperatorDailyTasksAction(userId: string) {
             data: {
                 today: todayTasks,
                 inProgress: inProgressTasks,
-                others: otherTasks
+                others: otherTasks,
+                isTester
             },
             counts: {
                 todayCount: todayTasks.length,

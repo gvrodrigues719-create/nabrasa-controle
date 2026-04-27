@@ -59,6 +59,7 @@ export function useWave1Data(userId: string, isDemoMode: boolean) {
     const [currentGroupId, setCurrentGroupId] = useState<string | undefined>()
     const [monthlyPoints, setMonthlyPoints] = useState<number>(0)
     const [rankPosition, setRankPosition] = useState<number | null>(null)
+    const [isTester, setIsTester] = useState(false)
     const [loadingWave1, setLoadingWave1] = useState(true)
 
     useEffect(() => {
@@ -132,6 +133,15 @@ export function useWave1Data(userId: string, isDemoMode: boolean) {
                         groupName: s.groups?.name || 'Setor',
                         type: countSessionRes?.data ? 'count' : 'checklist'
                     })
+
+                    // REGRA: Se for contagem, verificar se o grupo tem itens ativos
+                    if (countSessionRes?.data) {
+                        const { data: activeItems } = await supabase.from('items').select('id').eq('group_id', s.group_id).eq('active', true).limit(1)
+                        if (!activeItems || activeItems.length === 0) {
+                            setActiveSession(null)
+                            setCurrentGroupId(undefined)
+                        }
+                    }
                 } else {
                     setActiveSession(null)
                     setCurrentGroupId(undefined)
@@ -164,6 +174,7 @@ export function useWave1Data(userId: string, isDemoMode: boolean) {
                     countsPendingTemp = td.counts.pendingCounts
                     checklistsPendingTemp = td.counts.pendingChecklists
                     areaPendingCount = td.counts.todayCount
+                    setIsTester(!!td.data.isTester)
                 }
 
                 // Demo override
@@ -239,6 +250,7 @@ export function useWave1Data(userId: string, isDemoMode: boolean) {
     return {
         routinesCount, countsPending, checklistsPending,
         lateCount, activeSession, myAreaStats, actions,
-        currentGroupId, monthlyPoints, rankPosition, loadingWave1
+        currentGroupId, monthlyPoints, rankPosition, loadingWave1,
+        isTester
     }
 }

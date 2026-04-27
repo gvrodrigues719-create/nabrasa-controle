@@ -44,7 +44,8 @@ function DashboardContent() {
         currentGroupId,
         monthlyPoints,
         rankPosition,
-        loadingWave1
+        loadingWave1,
+        isTester
     } = useWave1Data(userId, isDemoMode)
 
     // ── ONDA 2 — Blocos complementares (carrega em background) ─────────────
@@ -140,6 +141,7 @@ function DashboardContent() {
                             myAreaStats={myAreaStats}
                             actions={actions}
                             loadingWave1={loadingWave1}
+                            isTester={isTester}
 
                             // ── ONDA 2 — carregam depois, cards mostram skeleton ─
                             healthScore={healthScore}

@@ -22,6 +22,7 @@ export default function ActiveRoutinesPage() {
     const [todayTasks, setTodayTasks] = useState<any[]>([])
     const [inProgressTasks, setInProgressTasks] = useState<any[]>([])
     const [otherTasks, setOtherTasks] = useState<any[]>([])
+    const [isTester, setIsTester] = useState(false)
     const [loading, setLoading] = useState(true)
     
     // Identity state
@@ -89,6 +90,7 @@ export default function ActiveRoutinesPage() {
                     setTodayTasks(tasksRes.data.today)
                     setInProgressTasks(tasksRes.data.inProgress)
                     setOtherTasks(tasksRes.data.others)
+                    setIsTester(!!tasksRes.data.isTester)
                 }
             }
 
@@ -189,7 +191,9 @@ export default function ActiveRoutinesPage() {
                 {!loading && otherTasks.length > 0 && (
                     <section>
                         <div className="flex items-center justify-between px-1 mb-4">
-                            <h2 className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest">Outras rotinas da unidade</h2>
+                            <h2 className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest">
+                                {isTester ? 'Todas as contagens da unidade' : 'Outras rotinas da unidade'}
+                            </h2>
                         </div>
                         <div className="grid grid-cols-1 gap-3">
                             {otherTasks.map(t => (

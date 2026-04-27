@@ -13,6 +13,7 @@ interface Props {
     onReportLoss: () => void
     recommendedActions: DashboardAction[]
     isDemoMode?: boolean
+    isTester?: boolean
 }
 
 export default function ExecutionBlock({ 
@@ -21,7 +22,8 @@ export default function ExecutionBlock({
     checklistsPending, 
     onReportLoss, 
     recommendedActions,
-    isDemoMode 
+    isDemoMode,
+    isTester
 }: Props) {
     const topRecommended = recommendedActions[0]
     const baseUrl = isDemoMode ? '/moc-demo' : '/dashboard'
@@ -49,11 +51,11 @@ export default function ExecutionBlock({
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="text-[12px] font-bold text-[#1b1c1a]">
-                                    {routinesCount} {routinesCount === 1 ? 'tarefa' : 'tarefas'} hoje
+                                    {isTester ? 'Modo teste' : `${routinesCount} ${routinesCount === 1 ? 'tarefa' : 'tarefas'} hoje`}
                                 </span>
                                 <span className="w-0.5 h-0.5 rounded-full bg-gray-300" />
                                 <p className="text-[10px] font-medium text-gray-500 uppercase tracking-tighter">
-                                    {[
+                                    {isTester ? 'Todas as contagens liberadas' : [
                                         countsPending > 0 ? `${countsPending} ${countsPending === 1 ? 'contagem' : 'contagens'}` : null,
                                         checklistsPending > 0 ? `${checklistsPending} ${checklistsPending === 1 ? 'checklist' : 'checklists'}` : null
                                     ].filter(Boolean).join(' • ')}
@@ -61,7 +63,7 @@ export default function ExecutionBlock({
                             </div>
                         </div>
                         <div className="flex items-center gap-1 text-[10px] font-bold text-[#B13A2B] uppercase tracking-tighter hover:underline">
-                            Ver lista <ArrowRight className="w-2.5 h-2.5" />
+                            {isTester ? 'Ver contagens' : 'Ver lista'} <ArrowRight className="w-2.5 h-2.5" />
                         </div>
                     </Link>
                 )}
