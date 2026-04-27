@@ -1,8 +1,9 @@
 'use client'
 
-import { Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { Suspense, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Header from './components/operator/Header'
+import { ChefHat } from 'lucide-react'
 
 // Hooks — Two-Wave Loading Strategy
 import { useDashboardIdentity } from './hooks/useDashboardIdentity'
@@ -22,6 +23,7 @@ import ManagerHome from './components/manager/ManagerHome'
 import OperatorHome from './components/operator/OperatorHome'
 
 function DashboardContent() {
+    const router = useRouter()
     const searchParams = useSearchParams()
     const isDemoMode = searchParams.get('demo') === 'true' || searchParams.get('demo') === '1'
 
@@ -80,9 +82,37 @@ function DashboardContent() {
         setIsRewardsDrawerOpen
     } = useDashboardUI(userRole)
 
-    // Só bloqueia na identidade — a mais rápida das três fases
-    // Wave 1 e Wave 2 renderizam progressivamente dentro do OperatorHome
-    const blockingLoading = loadingIdentity
+    // ── REDIRECIONAMENTO COZINHA CENTRAL ────────────────────────────────────
+    useEffect(() => {
+        if (!loadingIdentity && fullName === 'Cozinha Central') {
+            router.push('/dashboard/kitchen')
+        }
+    }, [loadingIdentity, fullName, router])
+
+    if (loadingIdentity) {
+        return (
+            <div className="min-h-screen bg-[#F8F7F4] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 rounded-full border-4 border-[#B13A2B]/10 border-t-[#B13A2B] animate-spin" />
+                    <span className="text-sm font-bold text-gray-400">Identificando acesso...</span>
+                </div>
+            </div>
+        )
+    }
+
+    // Se for cozinha, não renderiza nada na home principal (o redirect já foi disparado)
+    if (userRole === 'kitchen' || fullName === 'Cozinha Central') {
+        return (
+            <div className="min-h-screen bg-[#F8F7F4] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 rounded-[18px] bg-orange-50 flex items-center justify-center animate-bounce">
+                        <ChefHat className="w-6 h-6 text-orange-600" />
+                    </div>
+                    <span className="text-sm font-bold text-gray-500">Direcionando para Cozinha Central...</span>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <RewardProvider userId={userId}>
@@ -97,15 +127,7 @@ function DashboardContent() {
                 />
 
                 <div className="px-5">
-                    {blockingLoading ? (
-                        // Spinner mínimo — apenas enquanto não há identidade (≈ 200–400ms)
-                        <div className="flex flex-col items-center justify-center py-20">
-                            <div className="w-8 h-8 border-4 border-[#B13A2B] border-t-transparent rounded-full animate-spin" />
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-4">
-                                Abrindo turno...
-                            </p>
-                        </div>
-                    ) : viewMode === 'manager' ? (
+                    {isManager && viewMode === 'manager' ? (
                         <ManagerHome />
                     ) : (
                         <OperatorHome
@@ -160,8 +182,7 @@ function DashboardContent() {
                 <LossRegistrationDrawer isOpen={isLossDrawerOpen} onClose={() => setIsLossDrawerOpen(false)} userId={userId} currentGroupId={currentGroupId} />
                 <HouseHealthDrawer isOpen={isHealthDrawerOpen} onClose={() => setIsHealthDrawerOpen(false)} userRole={userRole} />
                 <OperationAIDrawer isOpen={isAIDrawerOpen} onClose={() => setIsAIDrawerOpen(false)} userId={userId} userName={userName} />
-                <RewardsDrawer isOpen={isRewardsDrawerOpen} onClose={() => setIsRewardsDrawerOpen(false)} initialBalance={isDemoMode ? 120 : 0} />
-
+                <RewardsDrawer isOpen={isRewardsDrawerOpen} onClose={() => setIsRewardsDrawerOpen(false)} initialBalance={userPoints ?? 0} />
             </div>
         </RewardProvider>
     )
@@ -169,11 +190,7 @@ function DashboardContent() {
 
 export default function DashboardPage() {
     return (
-        <Suspense fallback={
-            <div className="min-h-screen bg-[#F8F7F4] flex items-center justify-center">
-                <div className="w-8 h-8 border-4 border-[#B13A2B] border-t-transparent rounded-full animate-spin" />
-            </div>
-        }>
+        <Suspense fallback={<div className="min-h-screen bg-[#F8F7F4] flex items-center justify-center animate-pulse" />}>
             <DashboardContent />
         </Suspense>
     )
