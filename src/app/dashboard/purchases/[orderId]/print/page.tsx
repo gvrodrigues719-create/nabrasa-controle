@@ -39,23 +39,44 @@ export default function OrderPrintPage() {
     const hasMissingPrices = items.some(item => !item.unit_price)
 
     return (
-        <div className="min-h-screen bg-gray-100 print:bg-white p-4 sm:p-8 print:p-0">
+        <div className="screen-shell min-h-screen bg-gray-100 p-4 sm:p-8">
             <style jsx global>{`
                 @page { size: A4 portrait; margin: 8mm; }
                 @media print {
-                    html, body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    html, body { 
+                        width: 100% !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        background: white !important; 
+                        -webkit-print-color-adjust: exact; 
+                        print-color-adjust: exact; 
+                    }
+                    .screen-shell {
+                        background: white !important;
+                        min-height: auto !important;
+                        padding: 0 !important;
+                    }
                     .print-hidden { display: none !important; }
                     .print-sheet {
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
                         box-shadow: none !important;
                         border: none !important;
-                        padding: 0 !important;
-                        margin: 0 !important;
-                        width: 100% !important;
-                        max-width: none !important;
                     }
-                    table { page-break-inside: auto; }
+                    table { 
+                        width: 100% !important;
+                        table-layout: fixed;
+                        page-break-inside: auto; 
+                    }
                     tr { page-break-inside: avoid; page-break-after: auto; }
                     thead { display: table-header-group; }
+                    .item-cell {
+                        white-space: normal;
+                        word-break: normal;
+                        overflow-wrap: anywhere;
+                    }
                 }
             `}</style>
             {/* Action Bar (Hidden on print) */}
@@ -140,7 +161,7 @@ export default function OrderPrintPage() {
                                 const rowTotal = oi.requested_qty * unitPrice
                                 return (
                                     <tr key={oi.id} className="border-b border-gray-300 last:border-b-0 break-inside-avoid">
-                                        <td className="border-r border-gray-300 py-1 px-2 font-bold text-gray-900">{oi.item?.name}</td>
+                                        <td className="item-cell border-r border-gray-300 py-1 px-2 font-bold text-gray-900">{oi.item?.name}</td>
                                         <td className="border-r border-gray-300 py-1 px-2 font-black text-gray-900 text-right">{oi.requested_qty}</td>
                                         <td className="border-r border-gray-300 py-1 px-2 text-[10px] text-gray-500 text-center">{oi.item?.order_unit}</td>
                                         <td className="border-r border-gray-300 py-1 px-2 text-gray-600 text-right">

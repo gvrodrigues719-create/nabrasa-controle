@@ -51,6 +51,7 @@ export interface PurchaseOrder {
     created_by: string
     status: OrderStatus
     notes: string | null
+    kitchen_notes?: string | null
     created_at: string
     updated_at: string
     sent_at: string | null
