@@ -1,6 +1,6 @@
 'use server'
 
-import { createServerClient } from '@/lib/supabase/server'
+import { getAdminSupabase } from '@/lib/supabase/admin'
 import { getServerAuthContext } from '@/lib/server-auth-context'
 import type { UserProfile } from './utils'
 import { getUserStoreId } from './utils'
@@ -13,14 +13,8 @@ import type {
     PurchaseEventType,
 } from './types'
 
-// ── Helper: Supabase client server-side ──────────────────────────────────────
-
-async function getServerSupabase() {
-    return createServerClient()
-}
-
 async function getCurrentUser() {
-    const supabase = await getServerSupabase()
+    const supabase = getAdminSupabase()
     const profile = await getServerAuthContext()
     return { supabase, user: profile as UserProfile }
 }
