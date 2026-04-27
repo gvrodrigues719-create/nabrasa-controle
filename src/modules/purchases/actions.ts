@@ -1,6 +1,7 @@
 'use server'
 
 import { createServerClient } from '@/lib/supabase/server'
+import { getAuthenticatedUserId } from '@/lib/auth-utils'
 import type { UserProfile } from './utils'
 import { getUserStoreId } from './utils'
 import type {
@@ -20,12 +21,12 @@ async function getServerSupabase() {
 
 async function getCurrentUser() {
     const supabase = await getServerSupabase()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Não autenticado')
+    const userId = await getAuthenticatedUserId()
+    if (!userId) throw new Error('Não autenticado')
     const { data: profile } = await supabase
         .from('users')
         .select('id, role, name, primary_group_id')
-        .eq('id', user.id)
+        .eq('id', userId)
         .single()
     if (!profile) throw new Error('Perfil não encontrado')
     return { supabase, user: profile as UserProfile }
@@ -129,7 +130,7 @@ export async function createPurchaseOrderAction(explicitStoreId?: string): Promi
             // Gerente sem loja vinculada — orientar ajuste de cadastro
             return {
                 success: false,
-                error: 'Sua conta não tem uma loja vinculada. Peça ao administrador para configurar seu cadastro em Administração → Usuários.',
+                error: 'Usuário sem loja vinculada. Ajuste o cadastro antes de criar pedidos.',
             }
         }
 
