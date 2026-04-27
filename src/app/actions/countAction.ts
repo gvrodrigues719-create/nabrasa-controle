@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { getCycleAnchorDate } from '@/modules/count/helpers'
+import { isTestOperator } from './routinesAction'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,7 +10,16 @@ const supabase = createClient(
 )
 
 export async function initCountSessionAction(routineId: string, groupId: string, userId: string) {
+    const { data: userData } = await supabase.from('users').select('name, role, primary_group_id').eq('id', userId).single()
     const { data: group } = await supabase.from('groups').select('name').eq('id', groupId).single()
+
+    const isTester = isTestOperator(userData)
+    const isManager = userData?.role === 'admin' || userData?.role === 'manager'
+    const isMyArea = userData?.primary_group_id === groupId
+
+    if (!isTester && !isManager && !isMyArea) {
+        return { blocked: 'Você não tem permissão para realizar contagens fora da sua área designada.' }
+    }
 
     const { data: routineRow } = await supabase
         .from('routines')

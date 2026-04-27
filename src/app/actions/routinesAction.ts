@@ -113,9 +113,10 @@ export async function getOperatorDailyTasksAction(userId: string) {
         const startOfDayBR = `${brDate}T03:00:00Z`
 
         // 2. Buscar setor do usuário
-        const { data: userData } = await supabase.from('users').select('name, primary_group_id').eq('id', userId).maybeSingle()
+        const userData = await supabase.from('users').select('name, role, primary_group_id').eq('id', userId).maybeSingle().then(res => res.data)
         const primaryGroupId = userData?.primary_group_id
-        const isTester = userData?.name === 'Operador Teste'
+        const userRole = userData?.role
+        const isTester = isTestOperator(userData)
 
         const [routinesRes, groupsRes, itemsRes] = await Promise.all([
             supabase.from('routines').select('*').eq('active', true),
@@ -149,7 +150,8 @@ export async function getOperatorDailyTasksAction(userId: string) {
                 const session = sessionMap.get(`${routine.id}-${rg.group_id}`)
                 const isCompleted = session?.status === 'completed'
                 const isInProgress = session?.status === 'in_progress'
-                const isMyArea = isTester || rg.group_id === primaryGroupId
+                const isMyArea = rg.group_id === primaryGroupId
+                const isTester = userData?.name === 'Operador Teste'
                 const groupName = (rg.groups as any)?.name || 'Setor'
                 const type = routine.routine_type === 'checklist' ? 'checklist' : 'count'
 
@@ -177,7 +179,8 @@ export async function getOperatorDailyTasksAction(userId: string) {
                     inProgressTasks.push(task)
                 } else if (isMyArea && !isCompleted) {
                     todayTasks.push(task)
-                } else if (!isCompleted) {
+                } else if (!isCompleted && (isTester || userRole === 'admin' || userRole === 'manager')) {
+                    // Para o Operador Teste ou Gestores, todas as outras rotinas da unidade devem ser visíveis e acessíveis
                     otherTasks.push(task)
                 }
             })
@@ -200,4 +203,8 @@ export async function getOperatorDailyTasksAction(userId: string) {
     } catch (e: any) {
         return { success: false, error: e.message }
     }
+}
+
+export function isTestOperator(user: any) {
+    return user?.name?.toLowerCase().includes('operador teste')
 }
