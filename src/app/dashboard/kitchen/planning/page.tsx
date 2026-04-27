@@ -199,7 +199,7 @@ export default function ProductionPlanningPage() {
                                                     Temos <span className="font-black text-gray-900">{s.ready_stock_qty}</span> pronto. 
                                                     {s.scheduled_qty > 0 && <> Já existem <span className="font-black text-orange-600">{s.scheduled_qty}</span> em produção. </>}
                                                     Sugiro produzir <span className="font-black text-orange-600">{s.suggested_qty}</span>.
-                                                    {status_color === 'red' && (
+                                                    {statusColor === 'red' && (
                                                         <span className="text-rose-600 block mt-2 bg-rose-50 p-2 rounded-xl border border-rose-100">
                                                             <AlertCircle className="w-4 h-4 inline mr-2" />
                                                             Falta comprar: <span className="font-black">{missingW.join(', ')}</span>
