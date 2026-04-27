@@ -1,7 +1,7 @@
 'use server'
 
 import { createServerClient } from '@/lib/supabase/server'
-import { getAuthenticatedUserId } from '@/lib/auth-utils'
+import { getServerAuthContext } from '@/lib/server-auth-context'
 import type { UserProfile } from './utils'
 import { getUserStoreId } from './utils'
 import type {
@@ -21,14 +21,7 @@ async function getServerSupabase() {
 
 async function getCurrentUser() {
     const supabase = await getServerSupabase()
-    const userId = await getAuthenticatedUserId()
-    if (!userId) throw new Error('Não autenticado')
-    const { data: profile } = await supabase
-        .from('users')
-        .select('id, role, name, primary_group_id')
-        .eq('id', userId)
-        .single()
-    if (!profile) throw new Error('Perfil não encontrado')
+    const profile = await getServerAuthContext()
     return { supabase, user: profile as UserProfile }
 }
 
