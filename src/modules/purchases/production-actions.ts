@@ -40,7 +40,7 @@ export async function getProductionPlanningDataAction(locationId?: string) {
                 requested_qty,
                 purchase_orders!inner(id, status, order_type, destination_location_id)
             `)
-            .eq('purchase_orders.status', 'enviado')
+            .in('purchase_orders.status', ['enviado', 'em_separacao'])
             .eq('purchase_orders.order_type', 'internal_replenishment')
             // Se quiser filtrar por source_location_id futuramente: .eq('purchase_orders.source_location_id', locId)
         
