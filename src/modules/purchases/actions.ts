@@ -611,6 +611,40 @@ export async function addItemByKitchenAction(
     }
 }
 
+export async function removeItemByKitchenAction(
+    orderId: string,
+    orderItemId: string
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { supabase, user } = await getCurrentUser()
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
+
+        const { data: order } = await supabase
+            .from('purchase_orders')
+            .select('status')
+            .eq('id', orderId)
+            .single()
+
+        if (!order) throw new Error('Pedido não encontrado')
+        if (!['enviado', 'em_analise', 'em_separacao'].includes(order.status)) {
+            throw new Error('Não é possível remover itens deste pedido no status atual')
+        }
+
+        const { error } = await supabase
+            .from('purchase_order_items')
+            .delete()
+            .eq('id', orderItemId)
+        
+        if (error) throw error
+
+        await _logEvent(supabase, orderId, user.id, 'item_removed_by_kitchen' as any, { order_item_id: orderItemId })
+
+        return { success: true }
+    } catch (e: unknown) {
+        return { success: false, error: (e as Error).message }
+    }
+}
+
 export async function updateSeparatedQtyAction(
     orderId: string,
     orderItemId: string,

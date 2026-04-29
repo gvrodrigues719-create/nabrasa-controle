@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, CheckCircle2, ChefHat, MessageSquare, AlertCircle, Timer, ClipboardList, Store, Printer, Plus } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, ChefHat, MessageSquare, AlertCircle, Timer, ClipboardList, Store, Printer, Plus, Trash2 } from 'lucide-react'
 import {
     getOrderDetailAction,
     updateSeparatedQtyAction,
@@ -10,7 +10,8 @@ import {
     updateKitchenStatusAction,
     updateKitchenOrderNotesAction,
     reopenOrderForSeparationAction,
-    addItemByKitchenAction
+    addItemByKitchenAction,
+    removeItemByKitchenAction
 } from '@/modules/purchases/actions'
 import type { PurchaseOrder, PurchaseOrderItem } from '@/modules/purchases/types'
 import { OrderStatusBadge } from '../../purchases/components/OrderStatusBadge'
@@ -109,6 +110,19 @@ export default function KitchenOrderDetailPage() {
         setLoading(false)
         setIsAddingItem(false)
         toast.success('Itens adicionados com sucesso!')
+    }
+
+    async function handleRemoveItem(orderItemId: string, itemName: string) {
+        if (!confirm(`Deseja remover "${itemName}" do pedido?`)) return
+        setLoading(true)
+        const res = await removeItemByKitchenAction(orderId, orderItemId)
+        if (res.success) {
+            toast.success('Item removido!')
+            await fetchOrder()
+        } else {
+            toast.error(res.error ?? 'Erro ao remover item')
+        }
+        setLoading(false)
     }
 
     async function handleFinalize() {
@@ -347,27 +361,45 @@ export default function KitchenOrderDetailPage() {
                             return (
                                 <div
                                     key={s.orderItemId}
-                                    className={`bg-white rounded-3xl border p-5 shadow-sm transition-all duration-300 ${sepDiff ? 'border-amber-200 ring-2 ring-amber-50' : 'border-gray-100'}`}
+                                    className={`bg-white rounded-[32px] border p-6 shadow-sm transition-all duration-300 ${sepDiff ? 'border-orange-200 ring-4 ring-orange-50' : 'border-gray-100'} space-y-6`}
                                 >
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div>
-                                            <p className="text-base font-black text-gray-900 mb-1">{s.itemName}</p>
+                                    <div className="flex items-start justify-between">
+                                        <div className="space-y-1">
+                                            <h3 className="text-lg font-black text-gray-900 tracking-tight">
+                                                {s.itemName}
+                                            </h3>
+                                            <div className="flex items-center gap-2">
+                                                <div className="px-2 py-0.5 bg-gray-50 rounded-lg border border-gray-100">
+                                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                                        Pedido Original
+                                                    </span>
+                                                </div>
+                                                <span className="text-sm font-bold text-gray-600">
+                                                    {s.requestedQty} {s.unit}
+                                                </span>
+                                            </div>
                                         </div>
-                                        {sepDiff ? (
-                                            <span className="shrink-0 text-[10px] font-black text-amber-600 bg-amber-50 border border-amber-100 px-3 py-1.5 rounded-2xl">
-                                                Divergência de separação
-                                            </span>
-                                        ) : (
-                                            <span className="shrink-0 text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-2xl">
-                                                Conferido
-                                            </span>
-                                        )}
-                                    </div>
 
-                                    {/* Pedido original — read only */}
-                                    <div className="mb-4 bg-gray-50 rounded-2xl px-4 py-2.5">
-                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Pedido original</p>
-                                        <p className="text-lg font-black text-gray-700">{s.requestedQty} <span className="text-xs font-bold text-gray-400">{s.unit}</span></p>
+                                        <div className="flex items-center gap-2">
+                                            {sepDiff && (
+                                                <div className="px-3 py-1 bg-orange-50 border border-orange-100 rounded-full flex items-center gap-2">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+                                                    <span className="text-[9px] font-black text-orange-600 uppercase tracking-widest">
+                                                        Divergência de separação
+                                                    </span>
+                                                </div>
+                                            )}
+                                            
+                                            {canSeparate && (
+                                                <button
+                                                    onClick={() => handleRemoveItem(s.orderItemId, s.itemName)}
+                                                    className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                                    title="Remover item"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {/* Separation controls */}
