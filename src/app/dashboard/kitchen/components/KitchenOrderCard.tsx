@@ -1,10 +1,10 @@
 'use client'
 
-import { ChevronRight, Store, Clock, Package, Boxes } from 'lucide-react'
+import { ChevronRight, Store, Clock, Package, Boxes, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import type { PurchaseOrder } from '@/modules/purchases/types'
 import { OrderStatusBadge } from '../../purchases/components/OrderStatusBadge'
-import { updateKitchenStatusAction } from '@/modules/purchases/actions'
+import { updateKitchenStatusAction, deletePurchaseOrderAction } from '@/modules/purchases/actions'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import toast from 'react-hot-toast'
@@ -32,6 +32,22 @@ export function KitchenOrderCard({ order, onUpdate }: KitchenOrderCardProps) {
             onUpdate()
         } else {
             toast.error(res.error ?? 'Erro ao atualizar status')
+        }
+        setActing(false)
+    }
+
+    async function handleDelete(e: React.MouseEvent) {
+        e.preventDefault()
+        e.stopPropagation()
+        if (!confirm('Deseja realmente EXCLUIR este pedido permanentemente? Esta ação não pode ser desfeita.')) return
+        
+        setActing(true)
+        const res = await deletePurchaseOrderAction(order.id)
+        if (res.success) {
+            toast.success('Pedido excluído!')
+            onUpdate()
+        } else {
+            toast.error(res.error ?? 'Erro ao excluir pedido')
         }
         setActing(false)
     }
@@ -69,6 +85,14 @@ export function KitchenOrderCard({ order, onUpdate }: KitchenOrderCardProps) {
                     </div>
                 </div>
                 <div className="flex flex-col items-end gap-3 shrink-0">
+                    <button
+                        onClick={handleDelete}
+                        disabled={acting}
+                        className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        title="Excluir pedido"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
                     <div className="w-8 h-8 bg-gray-50 flex items-center justify-center rounded-xl border border-gray-100 group-hover:bg-orange-600 group-hover:text-white group-hover:border-orange-600 transition-all duration-300">
                         <ChevronRight className="w-4 h-4" />
                     </div>

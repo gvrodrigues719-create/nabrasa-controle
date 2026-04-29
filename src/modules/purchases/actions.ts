@@ -460,6 +460,30 @@ export async function cancelOrderAction(
     }
 }
 
+export async function deletePurchaseOrderAction(
+    orderId: string
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { supabase, user } = await getCurrentUser()
+
+        // Permissão: admin pode tudo, kitchen pode se for da cozinha central
+        if (!['admin', 'kitchen'].includes(user.role)) {
+            throw new Error('Sem permissão para excluir pedidos')
+        }
+
+        const { error } = await supabase
+            .from('purchase_orders')
+            .delete()
+            .eq('id', orderId)
+        
+        if (error) throw error
+
+        return { success: true }
+    } catch (e: unknown) {
+        return { success: false, error: (e as Error).message }
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // COZINHA CENTRAL
 // ─────────────────────────────────────────────────────────────────────────────
@@ -523,6 +547,63 @@ export async function updateKitchenStatusAction(
             from: prevStatus,
             to: newStatus,
         })
+
+        return { success: true }
+    } catch (e: unknown) {
+        return { success: false, error: (e as Error).message }
+    }
+}
+
+export async function addItemByKitchenAction(
+    orderId: string,
+    itemId: string,
+    qty: number
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { supabase, user } = await getCurrentUser()
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
+
+        const { data: order } = await supabase
+            .from('purchase_orders')
+            .select('status')
+            .eq('id', orderId)
+            .single()
+
+        if (!order) throw new Error('Pedido não encontrado')
+        // Permite adicionar se estiver enviado, em analise ou em separacao
+        if (!['enviado', 'em_analise', 'em_separacao'].includes(order.status)) {
+            throw new Error('Não é possível adicionar itens a este pedido no status atual')
+        }
+
+        const { data: existing } = await supabase
+            .from('purchase_order_items')
+            .select('id')
+            .eq('order_id', orderId)
+            .eq('item_id', itemId)
+            .maybeSingle()
+
+        if (existing) {
+            // Se já existe, atualiza a quantidade separada
+            const { error } = await supabase
+                .from('purchase_order_items')
+                .update({ separated_qty: qty })
+                .eq('id', existing.id)
+            if (error) throw error
+        } else {
+            // Se não existe, cria com requested_qty = 0 e separated_qty = qty
+            const { error } = await supabase
+                .from('purchase_order_items')
+                .insert({
+                    order_id: orderId,
+                    item_id: itemId,
+                    requested_qty: 0,
+                    separated_qty: qty,
+                    separation_notes: 'Adicionado pela cozinha central'
+                })
+            if (error) throw error
+        }
+
+        await _logEvent(supabase, orderId, user.id, 'item_added_by_kitchen' as any, { item_id: itemId, qty })
 
         return { success: true }
     } catch (e: unknown) {

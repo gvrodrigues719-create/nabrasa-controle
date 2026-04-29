@@ -2,17 +2,19 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, CheckCircle2, ChefHat, MessageSquare, AlertCircle, Timer, ClipboardList, Store, Printer } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, ChefHat, MessageSquare, AlertCircle, Timer, ClipboardList, Store, Printer, Plus } from 'lucide-react'
 import {
     getOrderDetailAction,
     updateSeparatedQtyAction,
     markOrderAsSeparatedAction,
     updateKitchenStatusAction,
     updateKitchenOrderNotesAction,
-    reopenOrderForSeparationAction
+    reopenOrderForSeparationAction,
+    addItemByKitchenAction
 } from '@/modules/purchases/actions'
 import type { PurchaseOrder, PurchaseOrderItem } from '@/modules/purchases/types'
 import { OrderStatusBadge } from '../../purchases/components/OrderStatusBadge'
+import { ItemSearchDrawer } from '../../purchases/components/ItemSearchDrawer'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import toast from 'react-hot-toast'
@@ -38,6 +40,14 @@ export default function KitchenOrderDetailPage() {
     const [saving, setSaving] = useState<string | null>(null) 
     const [finalizing, setFinalizing] = useState(false)
     const [kitchenNotes, setKitchenNotes] = useState('')
+    const [search, setSearch] = useState('')
+    const [isAddingItem, setIsAddingItem] = useState(false)
+
+    const filteredItems = useMemo(() => {
+        if (!search) return sepState
+        const term = search.toLowerCase()
+        return sepState.filter(s => s.itemName.toLowerCase().includes(term))
+    }, [sepState, search])
 
     const fetchOrder = useCallback(async () => {
         setLoading(true)
@@ -87,6 +97,18 @@ export default function KitchenOrderDetailPage() {
         if (!order) return
         const res = await updateKitchenOrderNotesAction(orderId, kitchenNotes)
         if (!res.success) toast.error(res.error ?? 'Erro ao salvar observação geral')
+    }
+
+    async function handleAddItems(items: { item: any, qty: number }[]) {
+        setLoading(true)
+        for (const i of items) {
+            const res = await addItemByKitchenAction(orderId, i.item.id, i.qty)
+            if (!res.success) toast.error(`Erro ao adicionar ${i.item.name}: ${res.error}`)
+        }
+        await fetchOrder()
+        setLoading(false)
+        setIsAddingItem(false)
+        toast.success('Itens adicionados com sucesso!')
     }
 
     async function handleFinalize() {
@@ -282,16 +304,43 @@ export default function KitchenOrderDetailPage() {
 
                 {/* Items List */}
                 <section>
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="h-1 flex-1 bg-gray-100 rounded-full" />
-                        <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                            Lista de Itens · {sepState.length}
-                        </h2>
-                        <div className="h-1 flex-1 bg-gray-100 rounded-full" />
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-3 flex-1">
+                            <div className="h-1 flex-1 bg-gray-100 rounded-full" />
+                            <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">
+                                Lista de Itens · {sepState.length}
+                            </h2>
+                            <div className="h-1 flex-1 bg-gray-100 rounded-full md:hidden" />
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                            {canSeparate && (
+                                <button
+                                    onClick={() => setIsAddingItem(true)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-orange-700 transition-all shadow-sm shrink-0"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Incluir Item
+                                </button>
+                            )}
+                            <div className="relative w-full md:max-w-xs">
+                                <input
+                                    type="text"
+                                    placeholder="Filtrar itens..."
+                                    value={search}
+                                    onChange={e => setSearch(e.target.value)}
+                                    className="w-full pl-4 pr-4 py-2 bg-white border border-gray-100 rounded-xl text-[11px] font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500/10 placeholder-gray-300 transition-all shadow-sm"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     <div className="space-y-4">
-                        {sepState.map(s => {
+                        {filteredItems.length === 0 ? (
+                            <div className="py-12 text-center bg-white rounded-3xl border border-dashed border-gray-200">
+                                <p className="text-sm text-gray-400 font-bold">Nenhum item encontrado para "{search}"</p>
+                            </div>
+                        ) : filteredItems.map(s => {
                             const sepDiff = Math.abs(Number(s.separatedQty ?? 0) - Number(s.requestedQty ?? 0)) >= 0.0001
                             const isSaving = saving === s.orderItemId
 
@@ -416,6 +465,13 @@ export default function KitchenOrderDetailPage() {
                     </div>
                 </div>
             )}
+            {/* Add Item Drawer */}
+            <ItemSearchDrawer
+                isOpen={isAddingItem}
+                onClose={() => setIsAddingItem(false)}
+                onAddItems={handleAddItems}
+                excludeItemIds={sepState.map(s => s.orderItemId)}
+            />
         </div>
     )
 }

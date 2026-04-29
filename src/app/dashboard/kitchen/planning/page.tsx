@@ -30,7 +30,13 @@ export default function ProductionPlanningPage() {
     const [submitting, setSubmitting] = useState(false)
     const [data, setData] = useState<ProductionSuggestion[]>([])
     const [search, setSearch] = useState('')
+    const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
     const [selectedItemForReason, setSelectedItemForReason] = useState<string | null>(null)
+
+    const categories = useMemo(() => {
+        const cats = data.map(s => s.item?.category).filter(Boolean) as string[]
+        return Array.from(new Set(cats)).sort()
+    }, [data])
 
     async function fetchData() {
         setLoading(true)
@@ -48,12 +54,21 @@ export default function ProductionPlanningPage() {
     }, [])
 
     const filteredData = useMemo(() => {
-        if (!search) return data
-        const terms = search.toLowerCase().split(' ')
-        return data.filter(s => 
-            terms.every(term => s.item?.name.toLowerCase().includes(term))
-        )
-    }, [data, search])
+        let result = data
+        
+        if (selectedCategory) {
+            result = result.filter(s => s.item?.category === selectedCategory)
+        }
+
+        if (search) {
+            const terms = search.toLowerCase().split(' ')
+            result = result.filter(s => 
+                terms.every(term => s.item?.name.toLowerCase().includes(term))
+            )
+        }
+
+        return result
+    }, [data, search, selectedCategory])
 
     const handleQtyChange = (itemId: string, val: string) => {
         const num = parseFloat(val) || 0
@@ -134,25 +149,56 @@ export default function ProductionPlanningPage() {
             <main className="max-w-5xl mx-auto px-4 py-6 space-y-6">
                 
                 {/* Search & Actions Bar */}
-                <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-3xl border border-orange-100/50 shadow-sm">
-                    <div className="relative w-full md:max-w-md">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input 
-                            type="text"
-                            placeholder="Buscar por produto (ex: mig, pic exec)..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="w-full pl-11 pr-4 py-3 bg-gray-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-orange-500/20 transition-all font-medium"
-                        />
+                <div className="flex flex-col gap-4 bg-white p-4 rounded-[32px] border border-orange-100/50 shadow-sm">
+                    <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                        <div className="relative w-full md:max-w-md">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input 
+                                type="text"
+                                placeholder="Buscar por produto (ex: mig, pic exec)..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="w-full pl-11 pr-4 py-3 bg-gray-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-orange-500/20 transition-all font-medium"
+                            />
+                        </div>
+                        
+                        <button 
+                            onClick={fetchData}
+                            className="flex items-center justify-center gap-2 px-5 py-3 bg-white border border-orange-200 text-orange-700 rounded-2xl text-sm font-bold hover:bg-orange-50 transition-colors shrink-0"
+                        >
+                            <Calculator className="w-4 h-4" />
+                            Recalcular
+                        </button>
                     </div>
-                    
-                    <button 
-                        onClick={fetchData}
-                        className="flex items-center justify-center gap-2 px-5 py-3 bg-white border border-orange-200 text-orange-700 rounded-2xl text-sm font-bold hover:bg-orange-50 transition-colors"
-                    >
-                        <Calculator className="w-4 h-4" />
-                        Recalcular
-                    </button>
+
+                    {/* Category Pills */}
+                    {categories.length > 0 && (
+                        <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar border-t border-gray-50 pt-4 mt-1">
+                            <button
+                                onClick={() => setSelectedCategory(null)}
+                                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                                    selectedCategory === null 
+                                    ? 'bg-orange-600 text-white shadow-md shadow-orange-100' 
+                                    : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
+                                }`}
+                            >
+                                Todos
+                            </button>
+                            {categories.map(cat => (
+                                <button
+                                    key={cat}
+                                    onClick={() => setSelectedCategory(cat)}
+                                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                                        selectedCategory === cat 
+                                        ? 'bg-orange-600 text-white shadow-md shadow-orange-100' 
+                                        : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
+                                    }`}
+                                >
+                                    {cat}
+                                </button>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {loading ? (
