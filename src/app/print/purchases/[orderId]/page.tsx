@@ -33,9 +33,20 @@ export default function IndependentOrderPrintPage() {
 
     if (!order) return <div className="p-10 text-center text-sm font-bold text-red-500">Pedido não encontrado</div>
 
-    const items = order.items ?? []
-    const totalQty = items.reduce((acc, item) => acc + item.requested_qty, 0)
-    const totalOrder = items.reduce((acc, item) => acc + (item.requested_qty * (item.unit_price || 0)), 0)
+    const items = (order.items ?? []).map(oi => {
+        // Se o pedido já saiu de 'enviado', priorizamos a quantidade separada (o que a cozinha editou)
+        // Se a quantidade separada for null (ainda não mexeram), usamos a solicitada
+        const isKitchenFlow = !['rascunho', 'enviado'].includes(order.status)
+        const displayQty = (isKitchenFlow && oi.separated_qty !== null) ? oi.separated_qty : oi.requested_qty
+        
+        return {
+            ...oi,
+            displayQty
+        }
+    })
+
+    const totalQty = items.reduce((acc, item) => acc + item.displayQty, 0)
+    const totalOrder = items.reduce((acc, item) => acc + (item.displayQty * (item.unit_price || 0)), 0)
     const hasMissingPrices = items.some(item => !item.unit_price)
 
     return (
@@ -156,11 +167,11 @@ export default function IndependentOrderPrintPage() {
                         <tbody>
                             {items.map((oi) => {
                                 const unitPrice = oi.unit_price || 0
-                                const rowTotal = oi.requested_qty * unitPrice
+                                const rowTotal = oi.displayQty * unitPrice
                                 return (
                                     <tr key={oi.id} className="border-b border-gray-300 last:border-b-0 break-inside-avoid text-[11px] sm:text-[12px]">
                                         <td className="item-cell border-r border-gray-300 py-1.5 px-2 font-bold text-gray-900 text-[12px]">{oi.item?.name}</td>
-                                        <td className="border-r border-gray-300 py-1.5 px-2 font-black text-gray-900 text-right">{oi.requested_qty}</td>
+                                        <td className="border-r border-gray-300 py-1.5 px-2 font-black text-gray-900 text-right">{oi.displayQty}</td>
                                         <td className="border-r border-gray-300 py-1.5 px-2 text-gray-500 text-center">{oi.item?.order_unit}</td>
                                         <td className="border-r border-gray-300 py-1.5 px-2 text-gray-600 text-right">
                                             {oi.unit_price 
