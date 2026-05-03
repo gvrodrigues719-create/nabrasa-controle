@@ -19,6 +19,8 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
 
     const [loadingInit, setLoadingInit] = useState(true)
     const [sessionId, setSessionId] = useState<string | null>(null)
+    const sessionIdRef = useRef<string | null>(null)
+    const [initFailed, setInitFailed] = useState(false)
     const [items, setItems] = useState<CountItem[]>([])
     const [counts, setCounts] = useState<Record<string, string>>({})
     const [zeroed, setZeroed] = useState<Record<string, boolean>>({})
@@ -79,8 +81,18 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
             return
         }
 
+        if (res.error) {
+            console.error(`[CountPage] Falha ao inicializar sesso: ${res.error}`);
+            setInitFailed(true)
+            setLoadingInit(false)
+            return
+        }
+
         if (res.groupName) setGroupName(res.groupName)
-        if (res.sessionId) setSessionId(res.sessionId)
+        if (res.sessionId) {
+            setSessionId(res.sessionId)
+            sessionIdRef.current = res.sessionId
+        }
         if (res.items) setItems(res.items)
 
         const stored = localStorage.getItem(LOCAL_KEY)
@@ -93,6 +105,16 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
 
         const merged = { ...res.dbCounts, ...localDict }
         setCounts(merged)
+
+        // Recuperao Automtica: Se temos mais dados locais do que no banco, dispara um sync imediato
+        const localItemsCount = Object.keys(localDict).length + Object.keys(localZeroed).length;
+        const dbItemsCount = Object.keys(res.dbCounts || {}).length + Object.keys(res.dbZeroed || {}).length;
+        
+        if (localItemsCount > dbItemsCount && res.sessionId) {
+            console.log('[CountPage] Detectada discrepncia local/DB. Sincronizando recuperao...');
+            toast("Recuperando dados salvos localmente...", { icon: '🔄' });
+            syncCountSessionAction(res.sessionId, merged, false, mergedZeroed);
+        }
 
         setLoadingInit(false)
     }
@@ -150,9 +172,15 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         }
 
         syncTimeoutRef.current = setTimeout(async () => {
-            if (!sessionId) return
-            const res = await syncCountSessionAction(sessionId, currentCounts, false, currentZeroed || zeroed)
+            const sid = sessionIdRef.current;
+            if (!sid) {
+                console.error('[CountPage] Falha crítica: Tentativa de sync sem sessionId.');
+                toast.error('Erro de sincronização. Recarregue a página.', { id: 'sync-sid-error' });
+                return;
+            }
+            const res = await syncCountSessionAction(sid, currentCounts, false, currentZeroed || zeroed)
             if (res.error) {
+                console.error(`[CountPage] Erro de rede ao sincronizar: ${res.error}`);
                 setSyncStatus('offline')
                 toast.error(res.error, { id: 'sync-err' })
                 return
@@ -197,13 +225,21 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
 
         try {
             setSyncMessage('Finalizando grupo...')
-            const res = await syncCountSessionAction(sessionId, counts, true, zeroed)
+            const res = await syncCountSessionAction(sessionIdRef.current, counts, true, zeroed)
             
             if (res.error) {
-                console.warn(`[BlindCount] Falha na finalização: ${res.error}`);
+                console.warn(`[CountPage] Falha na finalização: ${res.error}`);
                 setSyncStatus('offline') // Destrava o botão
                 toast.error(res.error, { duration: 5000 })
                 return
+            }
+
+            // Verificação de Integridade: Confirma se o banco recebeu tudo
+            if (res.savedCount !== undefined && res.savedCount < items.length) {
+                console.error(`[CountPage] Erro de integridade: Salvos ${res.savedCount} de ${items.length} itens.`);
+                setSyncStatus('offline');
+                toast.error('Alguns itens não foram salvos. Tente finalizar novamente.', { duration: 6000 });
+                return;
             }
 
             setSyncMessage('Sucesso!')
@@ -239,6 +275,24 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     }
 
     if (loadingInit) return <div className="min-h-screen flex items-center justify-center bg-[#F8F7F4]"><Loader2 className="w-10 h-10 text-[#B13A2B] animate-spin" /></div>
+
+    if (initFailed) return (
+        <div className="p-8 flex flex-col items-center justify-center min-h-screen bg-white text-center space-y-6">
+            <div className="p-6 bg-amber-50 rounded-3xl">
+                <AlertTriangle className="w-16 h-16 text-amber-600" />
+            </div>
+            <div>
+                <h2 className="text-2xl font-black text-[#1b1c1a]">Erro de Conexão</h2>
+                <p className="text-sm text-[#8c716c] font-medium mt-2">Não conseguimos iniciar sua sessão de contagem. Verifique sua internet e tente novamente.</p>
+            </div>
+            <button onClick={() => { setInitFailed(false); initSession(); }} className="w-full max-w-xs py-4 bg-[#B13A2B] text-white rounded-2xl font-black text-lg shadow-xl active:scale-95 transition">
+                Tentar Novamente
+            </button>
+            <button onClick={() => router.push(backUrl)} className="w-full max-w-xs py-2 text-[#8c716c] font-bold text-sm uppercase tracking-widest">
+                Voltar
+            </button>
+        </div>
+    )
 
     if (blocked) return (
         <div className="p-8 flex flex-col items-center justify-center min-h-screen bg-white text-center space-y-6">
