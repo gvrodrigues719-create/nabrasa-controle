@@ -94,10 +94,20 @@ export default function RawSessionsPage() {
                 <button onClick={() => router.push('/dashboard/admin/reports')} className="p-2 bg-white rounded-xl shadow-sm border border-gray-200 text-gray-600">
                     <ArrowLeft className="w-5 h-5" />
                 </button>
-                <div>
+                <div className="flex-1">
+                    <div className="flex items-center space-x-2">
+                        <h2 className="text-xl font-black text-gray-900 tracking-tight">Todas as Contagens</h2>
+                        <span className="text-[10px] font-bold text-indigo-400 bg-indigo-50 px-1.5 py-0.5 rounded">v1.0.5</span>
+                    </div>
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Auditoria em Tempo Real</p>
-                    <h2 className="text-xl font-black text-gray-900 tracking-tight">Todas as Contagens</h2>
                 </div>
+                <button 
+                    onClick={loadSessions} 
+                    disabled={loading}
+                    className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-200 active:scale-90 transition-all disabled:opacity-50"
+                >
+                    <Clock className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                </button>
             </div>
 
             <div className="relative">
