@@ -105,6 +105,26 @@ export default function ReportsPage() {
                 </div>
             </div>
 
+            {/* Atalho Master para Auditoria */}
+            <div className="bg-indigo-600 p-6 rounded-[32px] shadow-lg shadow-indigo-200 space-y-4">
+                <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-white/20 rounded-xl">
+                        <History className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                        <h3 className="text-white font-black text-lg tracking-tight">Auditoria Master</h3>
+                        <p className="text-indigo-100 text-[10px] font-bold uppercase tracking-widest">Acesso total às contagens</p>
+                    </div>
+                </div>
+                <button 
+                    onClick={() => router.push('/dashboard/admin/history/sessions')}
+                    className="w-full py-4 bg-white text-indigo-600 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl active:scale-95 transition"
+                >
+                    Ver Todas as Sessões em Tempo Real
+                </button>
+                <p className="text-center text-[10px] text-indigo-200 font-medium">Use para encontrar contagens feitas fora de ciclos oficiais.</p>
+            </div>
+
             {routines.map(r => {
                 const allDone = r.total_groups > 0 && r.completed_groups >= r.total_groups
                 const hasReport = !!r.report_id
