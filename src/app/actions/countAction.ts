@@ -100,91 +100,151 @@ export async function initCountSessionAction(routineId: string, groupId: string,
 }
 
 export async function syncCountSessionAction(sessionId: string, currentCounts: Record<string, string>, complete: boolean = false, zeroedMap: Record<string, boolean> = {}) {
-    const upserts = Object.keys(currentCounts).map(itemId => {
-        const qty = currentCounts[itemId]
-        return {
-            session_id: sessionId,
-            item_id: itemId,
-            counted_quantity: qty === '' ? null : parseFloat(qty.replace(',', '.')),
-            is_zeroed: !!zeroedMap[itemId]
+    console.log(`[CountAction] Iniciando sync para sessão ${sessionId}. Complete: ${complete}`);
+    
+    try {
+        // 1. Upsert dos dados atuais
+        const upserts = Object.keys(currentCounts).map(itemId => {
+            const qty = currentCounts[itemId]
+            return {
+                session_id: sessionId,
+                item_id: itemId,
+                counted_quantity: qty === '' ? null : parseFloat(qty.replace(',', '.')),
+                is_zeroed: !!zeroedMap[itemId]
+            }
+        })
+
+        if (upserts.length > 0) {
+            const { error: upsErr } = await supabase.from('count_session_items').upsert(upserts, { onConflict: 'session_id,item_id' })
+            if (upsErr) {
+                console.error(`[CountAction] Erro no Upsert: ${upsErr.message}`, { sessionId, upsertsCount: upserts.length });
+                return { error: `Erro ao salvar itens: ${upsErr.message}` }
+            }
         }
-    })
 
-    if (upserts.length > 0) {
-        const { error: upsErr } = await supabase.from('count_session_items').upsert(upserts, { onConflict: 'session_id,item_id' })
-        if (upsErr) return { error: `Upsert Error: ${upsErr.message}` }
-    }
+        // 2. Verificação de Consistência (SÓ SE FOR FINALIZAR)
+        if (complete) {
+            console.log(`[CountAction] Validando consistência para finalização da sessão ${sessionId}`);
+            
+            // Busca a sessão para saber o group_id
+            const { data: sessData, error: sessErr } = await supabase.from('count_sessions').select('group_id, routine_id, user_id').eq('id', sessionId).single()
+            if (sessErr || !sessData) {
+                console.error(`[CountAction] Erro ao buscar sessão: ${sessErr?.message}`);
+                return { error: 'Não foi possível validar a sessão para finalização.' }
+            }
 
-    const payload: any = { updated_at: new Date().toISOString() }
-    if (complete) {
-        payload.status = 'completed'
-        payload.completed_at = new Date().toISOString()
-    }
+            const groupId = sessData.group_id
+            
+            // Busca itens ativos do grupo
+            const { data: activeItems, error: itemsErr } = await supabase.from('items').select('id, name').eq('group_id', groupId).eq('active', true)
+            if (itemsErr) return { error: `Erro ao buscar itens do grupo: ${itemsErr.message}` }
 
-    const { error: updErr } = await supabase.from('count_sessions').update(payload).eq('id', sessionId)
-    if (updErr) return { error: `Update Error: ${updErr.message}` }
+            // Busca o que já foi salvo no banco (incluindo o upsert que acabamos de fazer)
+            const { data: savedItems, error: savedErr } = await supabase.from('count_session_items').select('item_id, counted_quantity, is_zeroed').eq('session_id', sessionId)
+            if (savedErr) return { error: `Erro ao conferir itens salvos: ${savedErr.message}` }
 
-    // --- GAMIFICAÇÃO (Camada Secundária e Resiliente) ---
-    if (complete) {
-        // Rodamos a gamificação de forma "fire and forget" controlada ou apenas com catch isolado
-        // para garantir que falhas aqui NÃO afetem o retorno de sucesso da contagem.
-        try {
-            const { data: sess } = await supabase
-                .from('count_sessions')
-                .select('user_id, routine_id')
-                .eq('id', sessionId)
-                .single()
+            const savedIds = new Set(savedItems.filter(si => si.counted_quantity !== null || si.is_zeroed).map(si => si.item_id))
+            const missingItems = activeItems.filter(ai => !savedIds.has(ai.id))
 
-            if (sess?.user_id) {
-                const { recordPointsAction, recordSealingEventAction, checkAndRewardRoutineCompletionAction } = await import('./gamificationAction')
-                
-                // 1. Pontua conclusão de grupo (+50)
-                await recordPointsAction(
-                    sess.user_id,
-                    'count_group_completion',
-                    sessionId,
-                    50,
-                    'Setor conferido com sucesso.'
-                )
-
-                // 2. VD-03: Sessão fechada sem abandono (sempre que chega ao complete)
-                await recordSealingEventAction(sess.user_id, 'session_clean_close', sessionId)
-
-                // 3. Verifica completude da rotina e pontua (+100) — retorna {duplicated: true} se já foi pontuado
-                const routineReward = await checkAndRewardRoutineCompletionAction(sessionId)
-
-                // 4. VD-04: Rotina sem ruptura — só dispara quando a rotina acabou de ser completada
-                // Garante: não duplica (amarrado ao momento único de conclusão da rotina)
-                if (routineReward.success && !routineReward.duplicated && sess.routine_id) {
-                    const { data: completedSessionIds } = await supabase
-                        .from('count_sessions')
-                        .select('id')
-                        .eq('routine_id', sess.routine_id)
-                        .eq('status', 'completed')
-
-                    const ids = completedSessionIds?.map(s => s.id) || []
-
-                    if (ids.length > 0) {
-                        const { data: zeroedInRoutine } = await supabase
-                            .from('count_session_items')
-                            .select('id')
-                            .eq('is_zeroed', true)
-                            .in('session_id', ids)
-                            .limit(1)
-
-                        if (!zeroedInRoutine || zeroedInRoutine.length === 0) {
-                            await recordSealingEventAction(sess.user_id, 'routine_zero_rupture', sess.routine_id)
-                        }
-                    }
+            if (missingItems.length > 0) {
+                console.warn(`[CountAction] Bloqueio de finalização: ${missingItems.length} itens faltantes na sessão ${sessionId}`);
+                const missingNames = missingItems.slice(0, 3).map(m => m.name).join(', ')
+                return { 
+                    error: `Inconsistência: Faltam ${missingItems.length} itens para completar este grupo (${missingNames}${missingItems.length > 3 ? '...' : ''}). Por favor, revise a contagem.` 
                 }
             }
-        } catch (gamErr) {
-            // Logamos o erro mas não interrompemos o fluxo
-            console.error('[Gamification] Falha silenciosa na integração:', gamErr)
-        }
-    }
 
-    return { success: true }
+            console.log(`[CountAction] Consistência OK para sessão ${sessionId}. ${activeItems.length} itens validados.`);
+        }
+
+        const payload: any = { updated_at: new Date().toISOString() }
+        if (complete) {
+            payload.status = 'completed'
+            payload.completed_at = new Date().toISOString()
+        }
+
+        const { error: updErr } = await supabase.from('count_sessions').update(payload).eq('id', sessionId)
+        if (updErr) {
+            console.error(`[CountAction] Erro ao atualizar status da sessão ${sessionId}: ${updErr.message}`);
+            return { error: `Erro ao atualizar status: ${updErr.message}` }
+        }
+
+        // --- GAMIFICAÇÃO (Camada Secundária e Resiliente) ---
+        if (complete) {
+            // Rodamos a gamificação de forma protegida
+            // Usamos timeout manual para não deixar a action pendurada se a gamificação travar
+            const gamificationPromise = (async () => {
+                try {
+                    const { data: sess } = await supabase
+                        .from('count_sessions')
+                        .select('user_id, routine_id')
+                        .eq('id', sessionId)
+                        .single()
+
+                    if (sess?.user_id) {
+                        const { recordPointsAction, recordSealingEventAction, checkAndRewardRoutineCompletionAction } = await import('./gamificationAction')
+                        
+                        // 1. Pontua conclusão de grupo (+50)
+                        await recordPointsAction(
+                            sess.user_id,
+                            'count_group_completion',
+                            sessionId,
+                            50,
+                            'Setor conferido com sucesso.'
+                        )
+
+                        // 2. VD-03: Sessão fechada sem abandono
+                        await recordSealingEventAction(sess.user_id, 'session_clean_close', sessionId)
+
+                        // 3. Verifica completude da rotina
+                        const routineReward = await checkAndRewardRoutineCompletionAction(sessionId)
+
+                        // 4. VD-04: Rotina sem ruptura
+                        if (routineReward.success && !routineReward.duplicated && sess.routine_id) {
+                            const { data: completedSessionIds } = await supabase
+                                .from('count_sessions')
+                                .select('id')
+                                .eq('routine_id', sess.routine_id)
+                                .eq('status', 'completed')
+
+                            const ids = completedSessionIds?.map(s => s.id) || []
+
+                            if (ids.length > 0) {
+                                const { data: zeroedInRoutine } = await supabase
+                                    .from('count_session_items')
+                                    .select('id')
+                                    .eq('is_zeroed', true)
+                                    .in('session_id', ids)
+                                    .limit(1)
+
+                                if (!zeroedInRoutine || zeroedInRoutine.length === 0) {
+                                    await recordSealingEventAction(sess.user_id, 'routine_zero_rupture', sess.routine_id)
+                                }
+                            }
+                        }
+                    }
+                } catch (gamErr) {
+                    console.error('[Gamification] Falha silenciosa na integração:', gamErr)
+                }
+            })()
+
+            // Damos no máximo 5 segundos para a gamificação rodar antes de retornar sucesso ao usuário
+            // Isso evita o spinner infinito se a gamificação travar, mas permite que ela tente rodar.
+            // Nota: Em Server Actions, se retornarmos, o processo pode ser encerrado.
+            // Para ser 100% fire-and-forget em Next.js/Vercel precisaríamos de Background Jobs.
+            // Aqui vamos aguardar um pouco pra garantir os pontos, mas com limite.
+            await Promise.race([
+                gamificationPromise,
+                new Promise(resolve => setTimeout(resolve, 5000))
+            ])
+        }
+
+        console.log(`[CountAction] Sync finalizado com sucesso para ${sessionId}`);
+        return { success: true }
+    } catch (err: any) {
+        console.error(`[CountAction] Erro fatal em syncCountSessionAction:`, err);
+        return { error: `Erro interno inesperado: ${err.message || 'Contate o suporte.'}` }
+    }
 }
 
 export async function deleteCountSessionAction(sessionId: string): Promise<{ success: boolean; error?: string }> {

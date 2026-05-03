@@ -34,6 +34,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     const [rankPosition, setRankPosition] = useState<number | null>(null)
     const [weeklyPoints, setWeeklyPoints] = useState<number>(0)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [syncMessage, setSyncMessage] = useState('Salvando...')
     
     const searchParams = useSearchParams()
     const returnTo = searchParams.get('returnTo')
@@ -141,6 +142,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     const debouncedSync = (currentCounts: Record<string, string>, currentZeroed?: Record<string, boolean>) => {
         if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current)
         setSyncStatus('saving')
+        setSyncMessage('Salvando...')
 
         if (!navigator.onLine) {
             setSyncStatus('offline')
@@ -183,17 +185,38 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
 
     const executeCompleteGroup = async () => {
         setSyncStatus('saving')
-        if (!sessionId) return
-        const res = await syncCountSessionAction(sessionId, counts, true, zeroed)
-        if (res.error) {
-            setSyncStatus('offline')
-            toast.error(res.error)
+        setSyncMessage('Validando itens...')
+        console.log(`[BlindCount] Iniciando finalização do grupo. SessionId: ${sessionId}`);
+
+        if (!sessionId) {
+            console.error('[BlindCount] Tentativa de finalizar sem sessionId válido.');
+            toast.error('Erro de sessão. Recarregue a página.')
+            setSyncStatus('synced')
             return
         }
-        localStorage.removeItem(LOCAL_KEY)
-        localStorage.removeItem(ZEROED_KEY)
-        setShowSummary(false)
-        setShowFinished(true)
+
+        try {
+            setSyncMessage('Finalizando grupo...')
+            const res = await syncCountSessionAction(sessionId, counts, true, zeroed)
+            
+            if (res.error) {
+                console.warn(`[BlindCount] Falha na finalização: ${res.error}`);
+                setSyncStatus('offline') // Destrava o botão
+                toast.error(res.error, { duration: 5000 })
+                return
+            }
+
+            setSyncMessage('Sucesso!')
+            console.log('[BlindCount] Grupo finalizado com sucesso.');
+            localStorage.removeItem(LOCAL_KEY)
+            localStorage.removeItem(ZEROED_KEY)
+            setShowSummary(false)
+            setShowFinished(true)
+        } catch (e: any) {
+            console.error('[BlindCount] Erro inesperado em executeCompleteGroup:', e);
+            setSyncStatus('offline')
+            toast.error('Ocorreu um erro técnico ao finalizar. Verifique sua conexão e tente novamente.')
+        }
     }
 
     const handleDeleteSession = async () => {
@@ -311,7 +334,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                         <span className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest">Progresso do Local</span>
                         <div className="flex items-center space-x-1.5 font-black text-[10px]">
                             {syncStatus === 'synced' ? <><Check className="w-3 h-3 text-green-500" /><span className="text-green-600 uppercase tracking-tighter">Sincronizado</span></> :
-                                syncStatus === 'saving' ? <><Loader2 className="w-3 h-3 text-[#b13a2b] animate-spin" /><span className="text-[#b13a2b] uppercase tracking-tighter">Salvando...</span></> :
+                                syncStatus === 'saving' ? <><Loader2 className="w-3 h-3 text-[#b13a2b] animate-spin" /><span className="text-[#b13a2b] uppercase tracking-tighter">{syncMessage}</span></> :
                                     <><CloudOff className="w-3 h-3 text-amber-500" /><span className="text-amber-500 uppercase tracking-tighter">Modo Offline</span></>
                             }
                         </div>
@@ -353,9 +376,14 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                         <button
                             onClick={executeCompleteGroup}
                             disabled={syncStatus === 'saving'}
-                            className="w-full py-5 bg-[#1b1c1a] text-white rounded-2xl font-black text-lg flex justify-center items-center active:scale-95 transition shadow-xl disabled:opacity-50"
+                            className="w-full py-5 bg-[#1b1c1a] text-white rounded-2xl font-black text-lg flex justify-center items-center active:scale-95 transition shadow-xl disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                            {syncStatus === 'saving' ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Finalizar Este Grupo'}
+                            {syncStatus === 'saving' ? (
+                                <div className="flex items-center space-x-2">
+                                    <Loader2 className="w-6 h-6 animate-spin" />
+                                    <span className="text-base uppercase tracking-tight">{syncMessage}</span>
+                                </div>
+                            ) : 'Finalizar Este Grupo'}
                         </button>
                         <button
                             onClick={() => setShowSummary(false)}
