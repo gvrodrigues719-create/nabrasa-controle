@@ -3,16 +3,18 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Loader2, ArrowLeft, Clock, User, MapPin, CheckCircle2, AlertCircle, ChevronRight, Search } from 'lucide-react'
+import { Loader2, ArrowLeft, Clock, User, MapPin, ChevronRight, AlertCircle, Search } from 'lucide-react'
 
 type Session = {
     id: string
     status: string
     started_at: string
     completed_at: string | null
-    groups: { name: string }
-    users: { name: string }
+    user_id: string
+    group_id: string
     routine_id: string
+    group_name?: string
+    user_name?: string
 }
 
 export default function RawSessionsPage() {
@@ -20,6 +22,7 @@ export default function RawSessionsPage() {
     const [loading, setLoading] = useState(true)
     const [sessions, setSessions] = useState<Session[]>([])
     const [searchTerm, setSearchTerm] = useState('')
+    const [fetchError, setFetchError] = useState<string | null>(null)
 
     useEffect(() => {
         loadSessions()
@@ -27,18 +30,47 @@ export default function RawSessionsPage() {
 
     const loadSessions = async () => {
         setLoading(true)
-        const { data, error } = await supabase
-            .from('count_sessions')
-            .select('id, status, started_at, completed_at, groups!group_id(name), users!user_id(name), routine_id')
-            .order('started_at', { ascending: false })
-            .limit(100)
+        setFetchError(null)
+        
+        try {
+            // 1. Busca sessões puras (sem joins para evitar erro 406)
+            const { data, error } = await supabase
+                .from('count_sessions')
+                .select('id, status, started_at, completed_at, user_id, group_id, routine_id')
+                .order('started_at', { ascending: false })
+                .limit(100)
 
-        if (error) {
-            console.error('[RawSessions] Erro ao carregar:', error)
-        } else {
-            setSessions(data as any[])
+            if (error) throw error
+            if (!data) return
+
+            const rawSessions = data as Session[]
+
+            // 2. Coleta IDs únicos de usuários e grupos
+            const userIds = Array.from(new Set(rawSessions.map(s => s.user_id)))
+            const groupIds = Array.from(new Set(rawSessions.map(s => s.group_id)))
+
+            // 3. Busca nomes de grupos
+            const { data: groupsData } = await supabase.from('groups').select('id, name').in('id', groupIds)
+            const groupMap = Object.fromEntries((groupsData || []).map(g => [g.id, g.name]))
+
+            // 4. Busca nomes de usuários
+            const { data: usersData } = await supabase.from('users').select('id, name').in('id', userIds)
+            const userMap = Object.fromEntries((usersData || []).map(u => [u.id, u.name]))
+
+            // 5. Mescla os dados
+            const enriched = rawSessions.map(s => ({
+                ...s,
+                group_name: groupMap[s.group_id] || 'Local desconhecido',
+                user_name: userMap[s.user_id] || 'Operador desconhecido'
+            }))
+
+            setSessions(enriched)
+        } catch (err: any) {
+            console.error('[RawSessions] Erro fatal:', err)
+            setFetchError(err.message || 'Erro desconhecido ao carregar sessões')
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
     }
 
     const formatDate = (d: string | null) => {
@@ -52,8 +84,8 @@ export default function RawSessionsPage() {
     }
 
     const filtered = sessions.filter(s => 
-        s.groups.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.users.name.toLowerCase().includes(searchTerm.toLowerCase())
+        (s.group_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (s.user_name || '').toLowerCase().includes(searchTerm.toLowerCase())
     )
 
     return (
@@ -79,15 +111,26 @@ export default function RawSessionsPage() {
                 />
             </div>
 
+            {fetchError && (
+                <div className="p-6 bg-red-50 border border-red-100 rounded-2xl space-y-3">
+                    <div className="flex items-center space-x-2 text-red-600 font-bold uppercase text-[10px] tracking-widest">
+                        <AlertCircle className="w-4 h-4" />
+                        <span>Erro de Sincronização</span>
+                    </div>
+                    <p className="text-sm text-red-800 font-medium">{fetchError}</p>
+                    <button onClick={loadSessions} className="px-4 py-2 bg-red-600 text-white text-xs font-black rounded-lg uppercase tracking-widest">Tentar Novamente</button>
+                </div>
+            )}
+
             {loading ? (
                 <div className="flex flex-col items-center justify-center p-20 space-y-4">
                     <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Carregando sessões...</p>
                 </div>
-            ) : filtered.length === 0 ? (
+            ) : filtered.length === 0 && !fetchError ? (
                 <div className="text-center p-20 bg-white rounded-[32px] border border-dashed border-gray-200">
                     <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500 font-medium">Nenhuma contagem encontrada.</p>
+                    <p className="text-gray-500 font-medium text-sm">Nenhuma contagem encontrada no momento.</p>
                 </div>
             ) : (
                 <div className="space-y-3">
@@ -103,7 +146,7 @@ export default function RawSessionsPage() {
                                         <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
                                             <MapPin className="w-4 h-4 text-indigo-600" />
                                         </div>
-                                        <span className="font-black text-gray-900">{session.groups.name}</span>
+                                        <span className="font-black text-gray-900">{session.group_name}</span>
                                     </div>
                                     <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${
                                         session.status === 'completed' 
@@ -117,7 +160,7 @@ export default function RawSessionsPage() {
                                 <div className="flex items-center space-x-6 text-xs font-bold text-gray-400 uppercase tracking-widest">
                                     <div className="flex items-center space-x-1.5">
                                         <User className="w-3.5 h-3.5" />
-                                        <span>{(session.users as any)?.name?.split(' ')[0] || '—'}</span>
+                                        <span>{(session.user_name || '').split(' ')[0]}</span>
                                     </div>
                                     <div className="flex items-center space-x-1.5">
                                         <Clock className="w-3.5 h-3.5" />
@@ -131,9 +174,11 @@ export default function RawSessionsPage() {
                 </div>
             )}
 
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 bg-gray-900 text-white rounded-full shadow-2xl text-[10px] font-black uppercase tracking-widest z-50">
-                Total de {filtered.length} sessões encontradas
-            </div>
+            {!loading && !fetchError && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 bg-gray-900 text-white rounded-full shadow-2xl text-[10px] font-black uppercase tracking-widest z-50">
+                    Total de {filtered.length} sessões encontradas
+                </div>
+            )}
         </div>
     )
 }

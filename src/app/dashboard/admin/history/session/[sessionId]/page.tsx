@@ -9,7 +9,8 @@ type SessionItem = {
     item_id: string
     counted_quantity: number | null
     is_zeroed: boolean
-    items: { name: string, unit: string }
+    item_name?: string
+    item_unit?: string
 }
 
 type Session = {
@@ -17,8 +18,10 @@ type Session = {
     status: string
     started_at: string
     completed_at: string | null
-    groups: { name: string }
-    users: { name: string }
+    user_id: string
+    group_id: string
+    group_name?: string
+    user_name?: string
 }
 
 export default function SessionDetailPage({ params }: { params: Promise<{ sessionId: string }> }) {
@@ -27,6 +30,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ sessio
     const [loading, setLoading] = useState(true)
     const [session, setSession] = useState<Session | null>(null)
     const [items, setItems] = useState<SessionItem[]>([])
+    const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
     useEffect(() => {
         loadData()
@@ -34,26 +38,59 @@ export default function SessionDetailPage({ params }: { params: Promise<{ sessio
 
     const loadData = async () => {
         setLoading(true)
+        setErrorMsg(null)
         
-        // 1. Dados da Sessão
-        const { data: sData } = await supabase
-            .from('count_sessions')
-            .select('id, status, started_at, completed_at, groups!group_id(name), users!user_id(name)')
-            .eq('id', sessionId)
-            .single()
-        
-        if (sData) setSession(sData as any)
+        try {
+            // 1. Dados da Sessão (Puro)
+            const { data: sData, error: sErr } = await supabase
+                .from('count_sessions')
+                .select('id, status, started_at, completed_at, group_id, user_id')
+                .eq('id', sessionId)
+                .single()
+            
+            if (sErr) throw sErr
+            if (!sData) throw new Error('Sessão não encontrada')
 
-        // 2. Itens Contados
-        const { data: iData } = await supabase
-            .from('count_session_items')
-            .select('item_id, counted_quantity, is_zeroed, items(name, unit)')
-            .eq('session_id', sessionId)
-            .order('items(name)')
-        
-        if (iData) setItems(iData as any[])
+            const rawSession = sData as Session
 
-        setLoading(false)
+            // 2. Resolve nomes (Puro)
+            const { data: gData } = await supabase.from('groups').select('name').eq('id', rawSession.group_id).single()
+            const { data: uData } = await supabase.from('users').select('name').eq('id', rawSession.user_id).single()
+
+            setSession({
+                ...rawSession,
+                group_name: gData?.name || 'Local desconhecido',
+                user_name: uData?.name || 'Operador desconhecido'
+            })
+
+            // 3. Itens Contados (Puro)
+            const { data: iData, error: iErr } = await supabase
+                .from('count_session_items')
+                .select('item_id, counted_quantity, is_zeroed')
+                .eq('session_id', sessionId)
+            
+            if (iErr) throw iErr
+
+            const rawItems = iData as SessionItem[]
+
+            // 4. Resolve nomes dos itens
+            const itemIds = rawItems.map(ri => ri.item_id)
+            const { data: itemsRef } = await supabase.from('items').select('id, name, unit').in('id', itemIds)
+            const itemMap = Object.fromEntries((itemsRef || []).map(ir => [ir.id, { name: ir.name, unit: ir.unit }]))
+
+            const enrichedItems = rawItems.map(ri => ({
+                ...ri,
+                item_name: itemMap[ri.item_id]?.name || 'Item desconhecido',
+                item_unit: itemMap[ri.item_id]?.unit || 'un'
+            }))
+
+            setItems(enrichedItems.sort((a, b) => (a.item_name || '').localeCompare(b.item_name || '')))
+        } catch (err: any) {
+            console.error('[SessionDetail] Erro:', err)
+            setErrorMsg(err.message)
+        } finally {
+            setLoading(false)
+        }
     }
 
     const formatDate = (d: string | null) => {
@@ -65,7 +102,15 @@ export default function SessionDetailPage({ params }: { params: Promise<{ sessio
     }
 
     if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><Loader2 className="w-10 h-10 text-indigo-600 animate-spin" /></div>
-    if (!session) return <div className="p-8 text-center">Sessão não encontrada.</div>
+    
+    if (errorMsg || !session) return (
+        <div className="p-10 text-center space-y-4">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
+            <h2 className="text-lg font-bold text-gray-900">Erro ao carregar detalhes</h2>
+            <p className="text-gray-500">{errorMsg || 'Sessão não encontrada.'}</p>
+            <button onClick={() => router.back()} className="px-6 py-2 bg-gray-900 text-white rounded-xl font-bold uppercase text-xs tracking-widest">Voltar</button>
+        </div>
+    )
 
     return (
         <div className="bg-gray-50 min-h-screen pb-10">
@@ -90,10 +135,10 @@ export default function SessionDetailPage({ params }: { params: Promise<{ sessio
                                 <MapPin className="w-6 h-6 text-indigo-600" />
                             </div>
                             <div>
-                                <h3 className="text-xl font-black text-gray-900">{session.groups.name}</h3>
+                                <h3 className="text-xl font-black text-gray-900">{session.group_name}</h3>
                                 <div className="flex items-center space-x-1.5 text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
                                     <User className="w-3.5 h-3.5" />
-                                    <span>{session.users.name}</span>
+                                    <span>{session.user_name}</span>
                                 </div>
                             </div>
                         </div>
@@ -136,8 +181,8 @@ export default function SessionDetailPage({ params }: { params: Promise<{ sessio
                                         {idx + 1}
                                     </div>
                                     <div>
-                                        <p className="text-sm font-bold text-gray-900 leading-tight">{item.items.name}</p>
-                                        <p className="text-[10px] font-black text-gray-400 uppercase mt-0.5">{item.items.unit}</p>
+                                        <p className="text-sm font-bold text-gray-900 leading-tight">{item.item_name}</p>
+                                        <p className="text-[10px] font-black text-gray-400 uppercase mt-0.5">{item.item_unit}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
@@ -145,7 +190,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ sessio
                                         <span className="text-xs font-black text-red-500 uppercase tracking-widest">Zerado</span>
                                     ) : (
                                         <p className="text-lg font-black text-gray-900">
-                                            {item.counted_quantity} <span className="text-[10px] text-gray-400 font-bold uppercase ml-0.5">{item.items.unit}</span>
+                                            {item.counted_quantity} <span className="text-[10px] text-gray-400 font-bold uppercase ml-0.5">{item.item_unit}</span>
                                         </p>
                                     )}
                                 </div>
