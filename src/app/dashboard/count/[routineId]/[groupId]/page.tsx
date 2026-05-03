@@ -224,8 +224,11 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         }
 
         try {
+            const sid = sessionIdRef.current;
+            if (!sid) throw new Error('Session ID is missing');
+
             setSyncMessage('Finalizando grupo...')
-            const res = await syncCountSessionAction(sessionIdRef.current, counts, true, zeroed)
+            const res = await syncCountSessionAction(sid, counts, true, zeroed)
             
             if (res.error) {
                 console.warn(`[CountPage] Falha na finalização: ${res.error}`);
@@ -256,12 +259,13 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     }
 
     const handleDeleteSession = async () => {
-        if (!sessionId) return
+        const sid = sessionIdRef.current;
+        if (!sid) return
         const confirmed = window.confirm("Atenção: Você tem certeza que deseja excluir esta contagem em andamento? Todo o progresso deste local será perdido.")
         if (!confirmed) return
         
         setIsDeleting(true)
-        const res = await deleteCountSessionAction(sessionId)
+        const res = await deleteCountSessionAction(sid)
         if (res.error) {
             toast.error(res.error)
             setIsDeleting(false)
