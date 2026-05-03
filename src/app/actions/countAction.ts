@@ -117,7 +117,12 @@ export async function initCountSessionAction(routineId: string, groupId: string,
     }
 }
 
-export async function syncCountSessionAction(sessionId: string, currentCounts: Record<string, string>, complete: boolean = false, zeroedMap: Record<string, boolean> = {}) {
+export async function syncCountSessionAction(
+    sessionId: string, 
+    currentCounts: Record<string, string>, 
+    complete: boolean = false, 
+    zeroedMap: Record<string, boolean> = {}
+): Promise<{ success?: boolean, error?: string, savedCount?: number }> {
     console.log(`[CountAction] Iniciando sync para sessão ${sessionId}. Complete: ${complete}`);
     
     try {
