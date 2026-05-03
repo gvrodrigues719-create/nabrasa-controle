@@ -96,10 +96,10 @@ export default function RawSessionsPage() {
                 </button>
                 <div className="flex-1">
                     <div className="flex items-center space-x-2">
-                        <h2 className="text-xl font-black text-gray-900 tracking-tight">Todas as Contagens</h2>
-                        <span className="text-[10px] font-bold text-indigo-400 bg-indigo-50 px-1.5 py-0.5 rounded">v1.0.5</span>
+                        <h2 className="text-xl font-black text-gray-900 tracking-tight">Auditoria Master</h2>
+                        <span className="text-[10px] font-bold text-indigo-400 bg-indigo-50 px-1.5 py-0.5 rounded">v1.0.5-audit</span>
                     </div>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Auditoria em Tempo Real</p>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tempo Real & Histórico</p>
                 </div>
                 <button 
                     onClick={loadSessions} 
