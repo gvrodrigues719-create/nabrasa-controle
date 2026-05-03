@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Loader2, FileSearch, CheckCircle2, ChevronRight, Calculator } from 'lucide-react'
+import { ArrowLeft, Loader2, FileSearch, CheckCircle2, ChevronRight, Calculator, History } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 type RoutineResult = {
