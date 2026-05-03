@@ -102,6 +102,7 @@ export default function ReportsPage() {
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">Auditoria & Relatórios</h2>
+                    <p className="text-[10px] text-gray-300">v1.0.4-audit</p>
                 </div>
             </div>
 
