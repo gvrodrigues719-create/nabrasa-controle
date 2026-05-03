@@ -45,7 +45,7 @@ export function useDashboardIdentity() {
             if (currentUserId) {
                 const { data: profile } = await supabase
                     .from('users')
-                    .select('primary_group_id')
+                    .select('*')
                     .eq('id', currentUserId)
                     .single()
                 

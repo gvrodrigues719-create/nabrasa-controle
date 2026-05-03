@@ -36,7 +36,7 @@ export default function RawSessionsPage() {
             // 1. Busca sessões puras (sem joins para evitar erro 406)
             const { data, error } = await supabase
                 .from('count_sessions')
-                .select('id, status, started_at, completed_at, user_id, group_id, routine_id')
+                .select('*')
                 .order('started_at', { ascending: false })
                 .limit(100)
 
