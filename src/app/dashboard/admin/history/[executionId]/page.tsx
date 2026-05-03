@@ -23,12 +23,14 @@ export default function ExecutionDetailPage({ params }: { params: Promise<{ exec
     const load = async () => {
         setLoading(true)
 
+        try {
         // Dados do ciclo
-        const { data: exec } = await supabase
+        const { data: exec, error: execErr } = await supabase
             .from('routine_executions')
             .select('*, routines(name), users(name)')
             .eq('id', executionId)
             .maybeSingle()
+        if (execErr) console.error('[HistoryDetail] execution fetch error:', execErr)
         if (exec) setExecution(exec)
 
         // Sessões de contagem vinculadas ao execution_id
@@ -58,14 +60,19 @@ export default function ExecutionDetailPage({ params }: { params: Promise<{ exec
         }
 
         // Logs de auditoria
-        const { data: auditLogs } = await supabase
+        const { data: auditLogs, error: logsErr } = await supabase
             .from('audit_logs')
             .select('*, users(name)')
             .eq('execution_id', executionId)
             .order('action_at')
+        if (logsErr) console.error('[HistoryDetail] audit_logs fetch error:', logsErr)
         if (auditLogs) setLogs(auditLogs)
 
-        setLoading(false)
+        } catch (err) {
+            console.error('[HistoryDetail] Unexpected load error:', err)
+        } finally {
+            setLoading(false)
+        }
     }
 
     const formatDate = (d: string | null) => {
@@ -151,8 +158,8 @@ export default function ExecutionDetailPage({ params }: { params: Promise<{ exec
                     </div>
                     <div className="text-center pt-2 border-t border-gray-50">
                         <p className="text-xs text-gray-400">Acurácia</p>
-                        <p className={`text-2xl font-extrabold ${report.accuracy_percentage >= 95 ? 'text-green-600' : 'text-amber-500'}`}>
-                            {report.accuracy_percentage?.toFixed(1)}%
+                        <p className={`text-2xl font-extrabold ${(report.accuracy_percentage ?? 0) >= 95 ? 'text-green-600' : 'text-amber-500'}`}>
+                            {report.accuracy_percentage != null ? `${report.accuracy_percentage.toFixed(1)}%` : '—'}
                         </p>
                     </div>
                     <button onClick={() => router.push(`/dashboard/admin/reports/${report.id}`)} className="w-full py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 transition">
