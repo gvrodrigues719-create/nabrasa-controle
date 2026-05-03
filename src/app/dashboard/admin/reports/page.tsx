@@ -40,18 +40,25 @@ export default function ReportsPage() {
                     .select('id', { count: 'exact' })
                     .eq('routine_id', r.id)
 
-                // Grupos concluídos desde o último snapshot_started_at
-                // (não filtra por "hoje" para não perder contagens de ciclos anteriores ou de testes)
+                // Grupos concluídos
                 let cGroups = 0
+                let query = supabase
+                    .from('count_sessions')
+                    .select('id', { count: 'exact' })
+                    .eq('routine_id', r.id)
+                    .eq('status', 'completed')
+                
                 if (r.snapshot_started_at) {
-                    const { count } = await supabase
-                        .from('count_sessions')
-                        .select('id', { count: 'exact' })
-                        .eq('routine_id', r.id)
-                        .eq('status', 'completed')
-                        .gte('started_at', r.snapshot_started_at)
-                    cGroups = count || 0
+                    query = query.gte('started_at', r.snapshot_started_at)
+                } else {
+                    // Se não houver snapshot, pega o que foi feito hoje para dar feedback imediato
+                    const today = new Date()
+                    today.setHours(0, 0, 0, 0)
+                    query = query.gte('started_at', today.toISOString())
                 }
+
+                const { count } = await query
+                cGroups = count || 0
 
                 // Relatório mais recente da rotina
                 const { data: report } = await supabase

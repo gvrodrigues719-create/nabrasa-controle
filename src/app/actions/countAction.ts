@@ -34,10 +34,10 @@ export async function initCountSessionAction(routineId: string, groupId: string,
         .select('id, status, user_id, execution_id, users(name)')
         .eq('routine_id', routineId)
         .eq('group_id', groupId)
-        .gte('started_at', cycleStart)
+        .neq('status', 'completed')
         .order('started_at', { ascending: false })
         .limit(1)
-        .single()
+        .maybeSingle()
 
     if (existingSession) {
         if (existingSession.status === 'completed') {
