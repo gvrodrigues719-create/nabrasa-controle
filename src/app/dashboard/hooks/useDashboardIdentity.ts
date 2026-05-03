@@ -43,14 +43,16 @@ export function useDashboardIdentity() {
             }
 
             if (currentUserId) {
+                // Especificamos a FK 'primary_group_id' para evitar erro 406 (ambiguidade)
                 const { data: profile } = await supabase
                     .from('users')
-                    .select('primary_group_id, groups(name)')
+                    .select('primary_group_id, groups!primary_group_id(name)')
                     .eq('id', currentUserId)
                     .single()
                 
                 if (profile?.groups) {
-                    setPrimaryAreaName((profile.groups as any).name)
+                    const g = profile.groups as any;
+                    setPrimaryAreaName(Array.isArray(g) ? g[0]?.name : g?.name)
                 }
             }
 

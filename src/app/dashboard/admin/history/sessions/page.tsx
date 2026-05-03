@@ -29,7 +29,7 @@ export default function RawSessionsPage() {
         setLoading(true)
         const { data, error } = await supabase
             .from('count_sessions')
-            .select('id, status, started_at, completed_at, groups(name), users(name), routine_id')
+            .select('id, status, started_at, completed_at, groups!group_id(name), users!user_id(name), routine_id')
             .order('started_at', { ascending: false })
             .limit(100)
 
@@ -117,7 +117,7 @@ export default function RawSessionsPage() {
                                 <div className="flex items-center space-x-6 text-xs font-bold text-gray-400 uppercase tracking-widest">
                                     <div className="flex items-center space-x-1.5">
                                         <User className="w-3.5 h-3.5" />
-                                        <span>{session.users.name.split(' ')[0]}</span>
+                                        <span>{(session.users as any)?.name?.split(' ')[0] || '—'}</span>
                                     </div>
                                     <div className="flex items-center space-x-1.5">
                                         <Clock className="w-3.5 h-3.5" />

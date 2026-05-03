@@ -38,7 +38,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ sessio
         // 1. Dados da Sessão
         const { data: sData } = await supabase
             .from('count_sessions')
-            .select('id, status, started_at, completed_at, groups(name), users(name)')
+            .select('id, status, started_at, completed_at, groups!group_id(name), users!user_id(name)')
             .eq('id', sessionId)
             .single()
         
