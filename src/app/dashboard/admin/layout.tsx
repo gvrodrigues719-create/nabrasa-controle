@@ -10,21 +10,38 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const router = useRouter()
 
     useEffect(() => {
-        supabase.auth.getUser().then(({ data: { user } }) => {
+        async function checkAuth() {
+            // 1. Tenta pegar o operador via PIN (Sessão Operacional)
+            const { getActiveOperator } = await import('@/app/actions/pinAuth')
+            const op = await getActiveOperator()
+
+            if (op) {
+                if (op.role === 'admin' || op.role === 'manager') {
+                    setLoading(false)
+                    return
+                } else {
+                    router.push('/dashboard')
+                    return
+                }
+            }
+
+            // 2. Se não houver PIN, tenta Supabase Auth (E-mail/Senha)
+            const { data: { user } } = await supabase.auth.getUser()
+            
             if (!user) {
                 router.push('/login')
                 return
             }
 
-            supabase.from('users').select('role').eq('id', user.id).single()
-                .then(({ data }) => {
-                    if (data && (data.role === 'admin' || data.role === 'manager')) {
-                        setLoading(false)
-                    } else {
-                        router.push('/dashboard')
-                    }
-                })
-        })
+            const { data: profile } = await supabase.from('users').select('role').eq('id', user.id).single()
+            if (profile && (profile.role === 'admin' || profile.role === 'manager')) {
+                setLoading(false)
+            } else {
+                router.push('/dashboard')
+            }
+        }
+
+        checkAuth()
     }, [router])
 
     if (loading) {
