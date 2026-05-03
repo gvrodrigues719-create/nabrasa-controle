@@ -34,63 +34,78 @@ export default function ExecutionDetailPage({ params }: { params: Promise<{ exec
 
     const load = async () => {
         setLoading(true)
+        console.log(`[HistoryDetail] Carregando execução ${executionId}...`);
 
-        // Dados do ciclo
-        const { data: exec } = await supabase
-            .from('routine_executions')
-            .select('*, routines(name), users(name)')
-            .eq('id', executionId)
-            .maybeSingle()
-        if (exec) {
-            setExecution(exec)
-            if (exec.revenue) setRevenueInput(String(exec.revenue))
+        try {
+            // Dados do ciclo
+            const { data: exec, error: execErr } = await supabase
+                .from('routine_executions')
+                .select('*, routines(name), users(name)')
+                .eq('id', executionId)
+                .maybeSingle()
+            
+            if (execErr) throw new Error(`Erro ao carregar execução: ${execErr.message}`);
+            if (exec) {
+                setExecution(exec)
+                if (exec.revenue) setRevenueInput(String(exec.revenue))
+            }
+
+            const target = await getCMVTarget()
+            setCmvTarget(target)
+
+            // Sessões de contagem vinculadas ao execution_id
+            const { data: sess, error: sessErr } = await supabase
+                .from('count_sessions')
+                .select('id, status, started_at, completed_at, groups(name), users(name)')
+                .eq('execution_id', executionId)
+                .order('started_at')
+            if (sessErr) console.error('[HistoryDetail] Erro ao carregar sessões:', sessErr);
+            if (sess) setSessions(sess)
+
+            // Compras do ciclo
+            const { data: stockEntries, error: stockErr } = await supabase
+                .from('stock_entries')
+                .select('converted_quantity, converted_unit_cost')
+                .eq('execution_id', executionId)
+            if (stockErr) console.error('[HistoryDetail] Erro ao carregar compras:', stockErr);
+            if (stockEntries) setPurchases(stockEntries)
+
+            // Auditoria vinculada ao execution_id
+            const { data: rep, error: repErr } = await supabase
+                .from('audit_reports')
+                .select('*, users!audit_reports_approved_by_fkey(name)')
+                .eq('execution_id', executionId)
+                .maybeSingle()
+            
+            if (repErr) console.error('[HistoryDetail] Erro ao carregar relatório:', repErr);
+            if (rep) {
+                setReport(rep)
+                const { data: items, error: itemsErr } = await supabase
+                    .from('audit_report_items')
+                    .select('*, items(name, unit)')
+                    .eq('audit_report_id', rep.id)
+                    .neq('divergence', 0)
+                    .order('financial_impact', { ascending: true })
+                    .limit(20)
+                if (itemsErr) console.error('[HistoryDetail] Erro ao carregar itens da auditoria:', itemsErr);
+                if (items) setReportItems(items)
+            }
+
+            // Logs de auditoria
+            const { data: auditLogs, error: logErr } = await supabase
+                .from('audit_logs')
+                .select('*, users(name)')
+                .eq('execution_id', executionId)
+                .order('action_at')
+            if (logErr) console.error('[HistoryDetail] Erro ao carregar logs:', logErr);
+            if (auditLogs) setLogs(auditLogs)
+
+        } catch (err: any) {
+            console.error('[HistoryDetail] Falha fatal no load:', err);
+            toast.error('Erro ao carregar detalhes do ciclo.');
+        } finally {
+            setLoading(false)
         }
-
-        const target = await getCMVTarget()
-        setCmvTarget(target)
-
-        // Sessões de contagem vinculadas ao execution_id
-        const { data: sess } = await supabase
-            .from('count_sessions')
-            .select('id, status, started_at, completed_at, groups(name), users(name)')
-            .eq('execution_id', executionId)
-            .order('started_at')
-        if (sess) setSessions(sess)
-
-        // Compras do ciclo
-        const { data: stockEntries } = await supabase
-            .from('stock_entries')
-            .select('converted_quantity, converted_unit_cost')
-            .eq('execution_id', executionId)
-        if (stockEntries) setPurchases(stockEntries)
-
-        // Auditoria vinculada ao execution_id
-        const { data: rep } = await supabase
-            .from('audit_reports')
-            .select('*, users!audit_reports_approved_by_fkey(name)')
-            .eq('execution_id', executionId)
-            .maybeSingle()
-        if (rep) {
-            setReport(rep)
-            const { data: items } = await supabase
-                .from('audit_report_items')
-                .select('*, items(name, unit)')
-                .eq('audit_report_id', rep.id)
-                .neq('divergence', 0)
-                .order('financial_impact', { ascending: true })
-                .limit(20)
-            if (items) setReportItems(items)
-        }
-
-        // Logs de auditoria
-        const { data: auditLogs } = await supabase
-            .from('audit_logs')
-            .select('*, users(name)')
-            .eq('execution_id', executionId)
-            .order('action_at')
-        if (auditLogs) setLogs(auditLogs)
-
-        setLoading(false)
     }
 
     const formatDate = (d: string | null) => {
@@ -421,8 +436,8 @@ export default function ExecutionDetailPage({ params }: { params: Promise<{ exec
                     </div>
                     <div className="text-center pt-2 border-t border-gray-50">
                         <p className="text-xs text-gray-400">Acurácia</p>
-                        <p className={`text-2xl font-extrabold ${report.accuracy_percentage >= 95 ? 'text-green-600' : 'text-amber-500'}`}>
-                            {report.accuracy_percentage?.toFixed(1)}%
+                        <p className={`text-2xl font-extrabold ${(report.accuracy_percentage ?? 0) >= 95 ? 'text-green-600' : 'text-amber-500'}`}>
+                            {report.accuracy_percentage != null ? `${report.accuracy_percentage.toFixed(1)}%` : '—'}
                         </p>
                     </div>
                     <button onClick={() => router.push(`/dashboard/admin/reports/${report.id}`)} className="w-full py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-600 flex items-center justify-center gap-2 hover:bg-gray-50 transition">

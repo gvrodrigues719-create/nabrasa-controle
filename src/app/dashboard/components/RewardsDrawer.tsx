@@ -67,18 +67,18 @@ export default function RewardsDrawer({ isOpen, onClose, initialBalance = 120 }:
                         <h2 className="text-[14px] font-black uppercase tracking-[0.2em] text-white">Recompensas</h2>
                     </div>
                     <p className="text-sm font-medium text-white/50 mb-6">
-                        Troque suas Moedas NB conquistadas nas execuções perfeitas por prêmios reais.
+                        Troque seus créditos conquistados na operação por benefícios reais.
                     </p>
 
                     {/* SALDO CARD DENTRO DO HEADER */}
                     <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-3xl p-6 shadow-xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 blur-3xl rounded-full transform translate-x-1/2 -translate-y-1/2" />
-                        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#1b1c1a]/60">Saldo Atual</p>
+                        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[#1b1c1a]/60">Saldo de Créditos</p>
                         <div className="flex items-baseline gap-2 mt-1">
                             <span className="text-5xl font-black text-[#1b1c1a] tracking-tighter" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
                                 {balance}
                             </span>
-                            <span className="text-xl font-black text-[#1b1c1a]/50">Moedas NB</span>
+                            <span className="text-xl font-black text-[#1b1c1a]/50">CR</span>
                         </div>
                     </div>
                 </div>
@@ -122,7 +122,7 @@ export default function RewardsDrawer({ isOpen, onClose, initialBalance = 120 }:
                                         <div className="flex-1 min-w-0">
                                             <h4 className="text-sm font-bold text-[#1b1c1a] truncate">{item.title}</h4>
                                             <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-[13px] font-black text-[#8c716c]">{item.price} Moedas NB</span>
+                                                <span className="text-[13px] font-black text-[#8c716c]">{item.price} CR</span>
                                                 <span className="text-[10px] uppercase font-bold tracking-widest text-[#c0b3b1]">
                                                     {status === 'solicitado' ? 'Já Solicitado' : status === 'bloqueado' ? 'Falta Saldo' : 'Liberado'}
                                                 </span>
@@ -187,23 +187,23 @@ export default function RewardsDrawer({ isOpen, onClose, initialBalance = 120 }:
                                 Confirmar Resgate
                             </h2>
                             <p className="text-base text-[#58413e] mb-8">
-                                Você está prestes a gastar suas moedas. Após confirmar, a gerência será notificada.
+                                Você está prestes a usar seus créditos. Após confirmar, a gerência será notificada.
                             </p>
 
                             <div className="bg-white border text-center border-[#e9e8e5] rounded-[24px] p-6 mb-8 shadow-sm">
                                 <p className="text-sm font-bold text-[#8c716c] mb-1">{confirmingItem.title}</p>
                                 <p className="text-4xl font-black text-[#1b1c1a] tracking-tighter" style={{ fontFamily: 'var(--font-manrope), sans-serif' }}>
-                                    -{confirmingItem.price} <span className="text-lg opacity-50">Moedas NB</span>
+                                    -{confirmingItem.price} <span className="text-lg opacity-50">CR</span>
                                 </p>
                             </div>
 
                             <div className="flex justify-between items-center px-4 mb-4 text-sm font-bold">
-                                <span className="text-[#8c716c]">Saldo Atual:</span>
-                                <span className="text-[#1b1c1a]">{balance} Moedas NB</span>
+                                <span className="text-[#8c716c]">Saldo de Créditos:</span>
+                                <span className="text-[#1b1c1a]">{balance} CR</span>
                             </div>
                             <div className="flex justify-between items-center px-4 text-sm font-bold">
                                 <span className="text-[#8c716c]">Saldo Final:</span>
-                                <span className="text-emerald-600">{balance - confirmingItem.price} Moedas NB</span>
+                                <span className="text-emerald-600">{balance - confirmingItem.price} CR</span>
                             </div>
                         </div>
 

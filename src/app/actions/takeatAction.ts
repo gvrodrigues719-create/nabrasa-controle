@@ -84,8 +84,12 @@ export async function getTakeatDataAction(startDate: string, endDate: string): P
     // 2. Validação de Intervalo (3 dias)
     const start = new Date(startDate)
     const end = new Date(endDate)
-    const diffDays = Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
     
+    if (end < start) {
+      return { success: false, error: 'Data final deve ser maior ou igual à data inicial.', code: 'INVALID_RANGE' }
+    }
+
+    const diffDays = Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
     if (diffDays > 3) {
       return { success: false, error: 'A API Takeat permite no máximo 3 dias por consulta.', code: 'INVALID_RANGE' }
     }
@@ -102,8 +106,8 @@ export async function getTakeatDataAction(startDate: string, endDate: string): P
     // 4. Chamada Real ao Endpoint
     console.info(`[TakeatAction] Buscando sessões: ${startDate} até ${endDate}`)
     
-    const startUTC = brasiliaToUTC(startDate)
-    const endUTC = brasiliaToUTC(endDate)
+    const startUTC = brasiliaToUTC(startDate, 'start')
+    const endUTC = brasiliaToUTC(endDate, 'end')
 
     const sessions = await getTableSessions(token, {
       start_date: startUTC,
@@ -120,7 +124,6 @@ export async function getTakeatDataAction(startDate: string, endDate: string): P
         summary
       }
     }
-
   } catch (err: any) {
     console.error('[TakeatAction] Erro inesperado:', err.message)
     return { 
@@ -128,6 +131,25 @@ export async function getTakeatDataAction(startDate: string, endDate: string): P
       error: `Erro ao buscar dados: ${err.message}`, 
       code: 'FETCH_ERROR' 
     }
+  }
+}
+
+/**
+ * Health-Check: Testa as credenciais e a conectividade com a API Takeat.
+ */
+export async function testTakeatConnectivityAction() {
+  try {
+    const email = process.env.TAKEAT_EMAIL
+    const password = process.env.TAKEAT_PASSWORD
+    if (!email || !password) return { success: false, error: 'Credenciais ausentes (.env)' }
+
+    const res = await authenticate({ email, password })
+    if (res.token) {
+      return { success: true, message: 'Conectado com sucesso à Takeat!' }
+    }
+    return { success: false, error: 'Token não recebido' }
+  } catch (err: any) {
+    return { success: false, error: err.message }
   }
 }
 

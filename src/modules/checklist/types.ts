@@ -6,7 +6,7 @@ export type ChecklistContext = 'opening' | 'closing' | 'daily' | 'receiving' | '
 /**
  * Tipos de resposta suportados pela engine de checklist
  */
-export type ChecklistItemType = 'boolean' | 'number' | 'text' | 'choice' | 'temperature';
+export type ChecklistItemType = 'boolean' | 'number' | 'text' | 'choice' | 'temperature' | 'numeric_if_yes' | 'info_only';
 
 /**
  * Definição de um item (pergunta/tarefa) dentro de um template
@@ -19,9 +19,23 @@ export interface ChecklistTemplateItem {
     response_type: ChecklistItemType;
     required: boolean;
     evidence_required: boolean;
-    options?: string[]; // Somente para o tipo 'choice'
+    options?: string[];
     display_order: number;
+    criticality: 'critical' | 'important' | 'standard';
+    generates_issue: boolean;
+    generates_alert: boolean;
+    help_text?: string;
 }
+
+/**
+ * Prioridade operacional de um checklist
+ */
+export type ChecklistPriority = 'low' | 'medium' | 'high';
+
+/**
+ * Frequência de atribuição
+ */
+export type ChecklistFrequency = 'daily' | 'weekly' | 'manual';
 
 /**
  * Modelo de um Checklist (Template)
@@ -31,8 +45,28 @@ export interface ChecklistTemplate {
     name: string;
     description?: string;
     context: ChecklistContext;
+    priority: ChecklistPriority;
+    frequency: ChecklistFrequency;
     active: boolean;
-    items: ChecklistTemplateItem[];
+    evidence_required_default: boolean;
+    unit_id?: string;
+    area?: string;
+    momento?: string;
+    turno?: string;
+    requires_signature: boolean;
+    items?: ChecklistTemplateItem[];
+}
+
+export interface ChecklistAttributionRule {
+    id: string;
+    template_id: string;
+    target_position?: string;
+    target_shift?: string;
+    target_sector?: string;
+    target_unit_id?: string;
+    weekdays?: number[]; // [0-6]
+    is_active: boolean;
+    created_at: string;
 }
 
 /**
@@ -46,16 +80,29 @@ export type ChecklistSessionStatus = 'in_progress' | 'completed' | 'canceled';
 export interface ChecklistSession {
     id: string;
     template_id: string;
-    routine_id?: string; // Vínculo opcional com a rotina principal do MOC
+    routine_id?: string; 
     user_id: string;
-    group_id?: string;   // Vínculo opcional com área/setor/frente
+    group_id?: string;   
+    attribution_rule_id?: string;
+    attribution_source: 'manual' | 'automatic';
+    created_by?: string;
     status: ChecklistSessionStatus;
+    scheduled_for?: string; 
     started_at: string;
     completed_at?: string;
     
-    // Regra de fechamento: progresso de itens obrigatórios
+    // Novas propriedades de preservação e assinatura
+    signature_name?: string;
+    signature_role?: string;
+    template_snapshot?: any; // Snapshot dos itens no momento da execução
+
+    // Metadados de progresso
     mandatory_total: number;
     mandatory_filled: number;
+
+    // Relacionais
+    checklist_templates?: Partial<ChecklistTemplate>;
+    users?: { name: string; position?: string; shift?: string };
 }
 
 /**
@@ -66,8 +113,11 @@ export interface ChecklistResponse {
     session_id: string;
     item_id: string;
     value: string | number | boolean | null;
+    numeric_value?: number | null;
     observation?: string;
     evidence_url?: string | null;
-    is_na: boolean; // Not Applicable
+    corrected_now: boolean;
+    needs_manager_attention: boolean;
+    is_na: boolean;
     created_at: string;
 }

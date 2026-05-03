@@ -51,7 +51,17 @@ export async function verifyCriticalPin(userId: string, pin: string) {
 export async function adminUpdateUserAction(
     managerId: string,
     managerPin: string,
-    targetUser: { id?: string, name: string, email: string, role: string, active: boolean, newPin?: string }
+    targetUser: { 
+        id?: string, 
+        name: string, 
+        email: string, 
+        role: string, 
+        active: boolean, 
+        newPin?: string,
+        birth_day?: number,
+        birth_month?: number,
+        avatar_url?: string
+    }
 ) {
     const { data: isValid } = await supabase.rpc('verify_user_pin', { p_user_id: managerId, p_pin: managerPin })
     if (!isValid) throw new Error("Seu PIN gerencial está Incorreto.")
@@ -79,14 +89,20 @@ export async function adminUpdateUserAction(
             email: targetUser.email,
             name: targetUser.name,
             role: targetUser.role,
-            active: targetUser.active
+            active: targetUser.active,
+            birth_day: targetUser.birth_day || null,
+            birth_month: targetUser.birth_month || null,
+            avatar_url: targetUser.avatar_url || null
         }, { onConflict: 'id' })
         if (upsErr) throw new Error('Erro ao configurar perfil: ' + upsErr.message)
     } else {
         const { error: updErr } = await supabase.from('users').update({
             name: targetUser.name,
             role: targetUser.role,
-            active: targetUser.active
+            active: targetUser.active,
+            birth_day: targetUser.birth_day || null,
+            birth_month: targetUser.birth_month || null,
+            avatar_url: targetUser.avatar_url || null
         }).eq('id', finalUserId)
 
         if (updErr) throw new Error(updErr.message)

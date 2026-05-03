@@ -12,11 +12,14 @@ interface Props {
     onClose: () => void
     userId?: string
     userName?: string
+    isDemoMode?: boolean
 }
 
-export default function OperationAIDrawer({ isOpen, onClose, userId, userName }: Props) {
+export default function OperationAIDrawer({ isOpen, onClose, userId, userName, isDemoMode }: Props) {
     const endOfMessagesRef = useRef<HTMLDivElement>(null)
     const [input, setInput] = useState('')
+    const [demoMessages, setDemoMessages] = useState<any[]>([])
+    const [isDemoTyping, setIsDemoTyping] = useState(false)
 
     // No SDK 6.x, useChat é mais modular e o transporte é explícito.
     // UIMessage agora usa 'parts' em vez de 'content'.
@@ -24,16 +27,22 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName }:
         transport: new DefaultChatTransport({ 
             api: '/api/copilot/chat',
         }),
-        messages: [
-            { 
-                id: '1', 
-                role: 'assistant', 
-                parts: [{ type: 'text', text: `Olá${userName ? ' ' + userName : ''}! Sou seu assistente de operação. Como posso te ajudar hoje? Posso tirar dúvidas sobre seu CMV, organização de estoque, validade ou checar suas listas de hoje.` }]
-            }
-        ]
     })
 
-    const isLoading = status !== 'ready' && status !== 'error'
+    const WELCOME_MESSAGE_ID = 'welcome-msg'
+    // Mensagem visual de boas-vindas, não entra no useChat para não sujar o histórico do servidor
+    const welcomeMessage = { 
+        id: WELCOME_MESSAGE_ID, 
+        role: 'assistant' as const, 
+        parts: [{ type: 'text' as const, text: `Olá${userName ? ' ' + userName : ''}! Sou seu assistente de operação. Como posso te ajudar hoje? Posso tirar dúvidas sobre seu CMV, organização de estoque, validade ou checar suas listas de hoje.` }] 
+    }
+
+    // Na renderização, exibimos a boas-vindas + mensagens reais
+    const allMessages = isDemoMode 
+        ? [welcomeMessage, ...demoMessages]
+        : [welcomeMessage, ...messages]
+
+    const isLoading = isDemoMode ? isDemoTyping : (status !== 'ready' && status !== 'error')
 
     const suggestedQuestions = [
         "O que falta para mim hoje?",
@@ -49,31 +58,94 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName }:
     }, [messages, isOpen])
 
     const handleFeedback = async (messageId: string, isHelpful: boolean) => {
-        if (!userId) return
-        toast.success(isHelpful ? "Obrigado pelo feedback!" : "Registrado. Vamos melhorar.")
-        // MVP: Registra no banco de forma silenciosa para auditoria
-        await supabase.from('copilot_feedback').insert([{
-            message_id: messageId,
-            user_id: userId,
-            is_helpful: isHelpful
-        }])
+        if (!userId || messageId === WELCOME_MESSAGE_ID) return
+        
+        try {
+            // Bug C fix: O ID do SDK não é UUID. Salvar no feedback_text como referência.
+            await supabase.from('copilot_feedback').insert([{
+                user_id: userId,
+                is_helpful: isHelpful,
+                feedback_text: `sdk_msg_id:${messageId}`
+            }])
+            toast.success(isHelpful ? "Obrigado pelo feedback!" : "Registrado. Vamos melhorar.")
+        } catch (e) {
+            console.error('Feedback error:', e)
+        }
     }
 
-    const onSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
+    const onSubmit = (e?: React.FormEvent) => {
+        if (e) e.preventDefault()
         if (!input.trim() || isLoading) return
         
-        // No SDK 6, sendMessage pode aceitar um objeto com 'text'
-        sendMessage({ 
-            text: input 
-        }, {
-            body: { userId }
-        })
-        setInput('')
+        const messageText = input.trim()
+        setInput('') // Limpa imediatamente para feedback visual e evitar duplo envio
+
+        if (isDemoMode) {
+            const userMsg = { id: Date.now().toString(), role: 'user', parts: [{ type: 'text', text: messageText }] }
+            setDemoMessages(prev => [...prev, userMsg])
+            setIsDemoTyping(true)
+
+            // Mock "Impressive" logic
+            setTimeout(() => {
+                let response = "Analisando o contexto do turno de hoje, vejo que sua consistência está excelente (92%). Continue assim para garantir o bônus de performance!"
+                
+                const lower = messageText.toLowerCase()
+                if (lower.includes('falta') || lower.includes('pendente')) {
+                    response = "Você tem 2 contagens pendentes na Cozinha e o Checklist de Abertura ainda não foi finalizado. Recomendo priorizar as proteínas para evitar divergências no CMv do almoço."
+                } else if (lower.includes('cmv') || lower.includes('meta')) {
+                    response = "Seu CMV atual está em 32.2%, ligeiramente acima da meta de 30%. O desvio principal está no grupo de 'Carnes Nobres'. Verifique se houve registro de quebras no último turno."
+                } else if (lower.includes('organizar') || lower.includes('estoque')) {
+                    response = "Para organizar o estoque seco, use a regra PEPS. Itens pesados devem ficar nas prateleiras inferiores e as etiquetas de validade sempre voltadas para frente."
+                }
+
+                const botMsg = { id: (Date.now() + 1).toString(), role: 'assistant', parts: [{ type: 'text', text: response }] }
+                setDemoMessages(prev => [...prev, botMsg])
+                setIsDemoTyping(false)
+            }, 1500)
+            return
+        }
+
+        try {
+            sendMessage({ 
+                text: messageText 
+            }, {
+                body: { userId }
+            })
+        } catch (error) {
+            console.error('Failed to send message:', error)
+            toast.error("Erro ao enviar mensagem.")
+        }
     }
 
     const handleSuggestedClick = (q: string) => {
-        sendMessage({ text: q }, { body: { userId } })
+        if (isLoading) return
+        if (isDemoMode) {
+            setInput(q)
+            // We can't call onSubmit directly because it expects an event or undefined
+            // So we handle it inside handleSuggestedClick
+            const messageText = q
+            const userMsg = { id: Date.now().toString(), role: 'user', parts: [{ type: 'text', text: messageText }] }
+            setDemoMessages(prev => [...prev, userMsg])
+            setIsDemoTyping(true)
+            setInput('')
+            
+            setTimeout(() => {
+                let response = "Analisando seus dados operacionais no NaBrasa..."
+                if (q.includes('falta')) response = "Você tem 2 contagens pendentes na Cozinha e o Checklist de Abertura ainda não foi finalizado."
+                if (q.includes('fracionados')) response = "Itens fracionados devem ser contados por peso real ou estimativa visual em décimos (0.1 a 0.9). Nunca arredonde para cima se o balde estiver vazio."
+                if (q.includes('geladeira')) response = "Organize por tipo de bebida e data de validade. As mais próximas do vencimento devem ficar na frente (FIFO)."
+                
+                const botMsg = { id: (Date.now() + 1).toString(), role: 'assistant', parts: [{ type: 'text', text: response }] }
+                setDemoMessages(prev => [...prev, botMsg])
+                setIsDemoTyping(false)
+            }, 1200)
+            return
+        }
+        try {
+            sendMessage({ text: q }, { body: { userId } })
+        } catch (error) {
+            console.error('Failed to send suggested message:', error)
+        }
     }
 
     if (!isOpen) return null
@@ -101,14 +173,14 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName }:
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-8 space-y-6">
-                    {messages.map((msg, i) => {
+                    {allMessages.map((msg, i) => {
                         const isAssistant = msg.role === 'assistant'
-                        const isFirstAssistantObj = isAssistant && i === 0
+                        const isWelcome = msg.id === WELCOME_MESSAGE_ID
 
                         // No SDK 6, iteramos pelas partes da mensagem
                         const messageText = msg.parts
-                            .filter(part => part.type === 'text')
-                            .map(part => (part as any).text)
+                            .filter((part: any) => part.type === 'text')
+                            .map((part: any) => part.text)
                             .join('')
 
                         return (
@@ -123,11 +195,11 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName }:
                                     </div>
                                     
                                     {/* Feedback de resposta (só pro assistente e se não for a do topo) */}
-                                    {isAssistant && !isFirstAssistantObj && !isLoading && (
+                                    {isAssistant && !isWelcome && !isLoading && (
                                         <div className="flex items-center gap-2 pl-2 mt-1">
                                             <span className="text-[10px] font-bold text-[#c0b3b1] uppercase tracking-wider">Ajudou?</span>
-                                            <button onClick={() => handleFeedback(msg.id, true)} className="hover:text-amber-600 text-[#c0b3b1] transition-colors"><ThumbsUp className="w-3 h-3" /></button>
-                                            <button onClick={() => handleFeedback(msg.id, false)} className="hover:text-red-600 text-[#c0b3b1] transition-colors"><ThumbsDown className="w-3 h-3" /></button>
+                                            <button onClick={() => handleFeedback(msg.id!, true)} className="hover:text-amber-600 text-[#c0b3b1] transition-colors"><ThumbsUp className="w-3 h-3" /></button>
+                                            <button onClick={() => handleFeedback(msg.id!, false)} className="hover:text-red-600 text-[#c0b3b1] transition-colors"><ThumbsDown className="w-3 h-3" /></button>
                                         </div>
                                     )}
                                 </div>
@@ -144,7 +216,7 @@ export default function OperationAIDrawer({ isOpen, onClose, userId, userName }:
                         </div>
                     )}
 
-                    {messages.length === 1 && (
+                    {messages.length === 0 && (
                         <div className="space-y-3 pt-4">
                             <p className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest px-1">Sugestões vivas</p>
                             <div className="flex flex-wrap gap-2">

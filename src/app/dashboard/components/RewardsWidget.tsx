@@ -33,7 +33,7 @@ export default function RewardsWidget({ balance, onClick }: Props) {
                         {balance}
                     </div>
                     <div className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40 mt-1">
-                        Moedas NB
+                        CR
                     </div>
                 </div>
             </div>

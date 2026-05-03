@@ -2,11 +2,12 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
-import { ArrowLeft, Loader2, Save, Check, ShieldAlert, CloudOff, AlertTriangle, ChevronDown, Edit3, Lock, X, User, CheckCircle2, Trophy } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { getSafeReturnTo } from '@/lib/navigation'
+import { ArrowLeft, Loader2, Save, Check, ShieldAlert, CloudOff, AlertTriangle, ChevronDown, Edit3, Lock, X, User, CheckCircle2, Trophy, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import React, { use } from 'react'
-import { initCountSessionAction, syncCountSessionAction } from '@/app/actions/countAction'
+import { initCountSessionAction, syncCountSessionAction, deleteCountSessionAction } from '@/app/actions/countAction'
 import { getActiveOperator } from '@/app/actions/pinAuth'
 import { getOperatorSummaryAction } from '@/app/actions/gamificationAction'
 import { CountItem } from '@/modules/count/types'
@@ -18,6 +19,8 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
 
     const [loadingInit, setLoadingInit] = useState(true)
     const [sessionId, setSessionId] = useState<string | null>(null)
+    const sessionIdRef = useRef<string | null>(null)
+    const [initFailed, setInitFailed] = useState(false)
     const [items, setItems] = useState<CountItem[]>([])
     const [counts, setCounts] = useState<Record<string, string>>({})
     const [zeroed, setZeroed] = useState<Record<string, boolean>>({})
@@ -32,6 +35,13 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     const [operator, setOperator] = useState<{ name: string, role: string } | null>(null)
     const [rankPosition, setRankPosition] = useState<number | null>(null)
     const [weeklyPoints, setWeeklyPoints] = useState<number>(0)
+    const [isDeleting, setIsDeleting] = useState(false)
+    const [syncMessage, setSyncMessage] = useState('Salvando...')
+    
+    const searchParams = useSearchParams()
+    const returnTo = searchParams.get('returnTo')
+    const defaultBack = `/dashboard/routines/${routineId}`
+    const backUrl = getSafeReturnTo(returnTo, defaultBack)
 
     const LOCAL_KEY = `count_${routineId}_${groupId}`
     const ZEROED_KEY = `zeroed_${routineId}_${groupId}`
@@ -71,8 +81,18 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
             return
         }
 
+        if (res.error) {
+            console.error(`[CountPage] Falha ao inicializar sesso: ${res.error}`);
+            setInitFailed(true)
+            setLoadingInit(false)
+            return
+        }
+
         if (res.groupName) setGroupName(res.groupName)
-        if (res.sessionId) setSessionId(res.sessionId)
+        if (res.sessionId) {
+            setSessionId(res.sessionId)
+            sessionIdRef.current = res.sessionId
+        }
         if (res.items) setItems(res.items)
 
         const stored = localStorage.getItem(LOCAL_KEY)
@@ -85,6 +105,16 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
 
         const merged = { ...res.dbCounts, ...localDict }
         setCounts(merged)
+
+        // Recuperao Automtica: Se temos mais dados locais do que no banco, dispara um sync imediato
+        const localItemsCount = Object.keys(localDict).length + Object.keys(localZeroed).length;
+        const dbItemsCount = Object.keys(res.dbCounts || {}).length + Object.keys(res.dbZeroed || {}).length;
+        
+        if (localItemsCount > dbItemsCount && res.sessionId) {
+            console.log('[CountPage] Detectada discrepncia local/DB. Sincronizando recuperao...');
+            toast("Recuperando dados salvos localmente...", { icon: '🔄' });
+            syncCountSessionAction(res.sessionId, merged, false, mergedZeroed);
+        }
 
         setLoadingInit(false)
     }
@@ -134,6 +164,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     const debouncedSync = (currentCounts: Record<string, string>, currentZeroed?: Record<string, boolean>) => {
         if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current)
         setSyncStatus('saving')
+        setSyncMessage('Salvando...')
 
         if (!navigator.onLine) {
             setSyncStatus('offline')
@@ -141,9 +172,15 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         }
 
         syncTimeoutRef.current = setTimeout(async () => {
-            if (!sessionId) return
-            const res = await syncCountSessionAction(sessionId, currentCounts, false, currentZeroed || zeroed)
+            const sid = sessionIdRef.current;
+            if (!sid) {
+                console.error('[CountPage] Falha crítica: Tentativa de sync sem sessionId.');
+                toast.error('Erro de sincronização. Recarregue a página.', { id: 'sync-sid-error' });
+                return;
+            }
+            const res = await syncCountSessionAction(sid, currentCounts, false, currentZeroed || zeroed)
             if (res.error) {
+                console.error(`[CountPage] Erro de rede ao sincronizar: ${res.error}`);
                 setSyncStatus('offline')
                 toast.error(res.error, { id: 'sync-err' })
                 return
@@ -176,20 +213,82 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
 
     const executeCompleteGroup = async () => {
         setSyncStatus('saving')
-        if (!sessionId) return
-        const res = await syncCountSessionAction(sessionId, counts, true, zeroed)
-        if (res.error) {
-            setSyncStatus('offline')
-            toast.error(res.error)
+        setSyncMessage('Validando itens...')
+        console.log(`[BlindCount] Iniciando finalização do grupo. SessionId: ${sessionId}`);
+
+        if (!sessionId) {
+            console.error('[BlindCount] Tentativa de finalizar sem sessionId válido.');
+            toast.error('Erro de sessão. Recarregue a página.')
+            setSyncStatus('synced')
             return
         }
+
+        try {
+            const sid = sessionIdRef.current;
+            if (!sid) throw new Error('Session ID is missing');
+
+            setSyncMessage('Finalizando grupo...')
+            const res = await syncCountSessionAction(sid, counts, true, zeroed)
+            
+            if (res.error) {
+                console.warn(`[CountPage] Falha na finalização: ${res.error}`);
+                setSyncStatus('offline') // Destrava o botão
+                toast.error(res.error, { duration: 5000 })
+                return
+            }
+
+            setSyncMessage('Sucesso!')
+            console.log('[BlindCount] Grupo finalizado com sucesso.');
+            localStorage.removeItem(LOCAL_KEY)
+            localStorage.removeItem(ZEROED_KEY)
+            setShowSummary(false)
+            setShowFinished(true)
+        } catch (e: any) {
+            console.error('[BlindCount] Erro inesperado em executeCompleteGroup:', e);
+            setSyncStatus('offline')
+            toast.error('Ocorreu um erro técnico ao finalizar. Verifique sua conexão e tente novamente.')
+        }
+    }
+
+    const handleDeleteSession = async () => {
+        const sid = sessionIdRef.current;
+        if (!sid) return
+        const confirmed = window.confirm("Atenção: Você tem certeza que deseja excluir esta contagem em andamento? Todo o progresso deste local será perdido.")
+        if (!confirmed) return
+        
+        setIsDeleting(true)
+        const res = await deleteCountSessionAction(sid)
+        if (res.error) {
+            toast.error(res.error)
+            setIsDeleting(false)
+            return
+        }
+        
+        toast.success("Contagem excluída com sucesso.")
         localStorage.removeItem(LOCAL_KEY)
         localStorage.removeItem(ZEROED_KEY)
-        setShowSummary(false)
-        setShowFinished(true)
+        router.push(backUrl)
     }
 
     if (loadingInit) return <div className="min-h-screen flex items-center justify-center bg-[#F8F7F4]"><Loader2 className="w-10 h-10 text-[#B13A2B] animate-spin" /></div>
+
+    if (initFailed) return (
+        <div className="p-8 flex flex-col items-center justify-center min-h-screen bg-white text-center space-y-6">
+            <div className="p-6 bg-amber-50 rounded-3xl">
+                <AlertTriangle className="w-16 h-16 text-amber-600" />
+            </div>
+            <div>
+                <h2 className="text-2xl font-black text-[#1b1c1a]">Erro de Conexão</h2>
+                <p className="text-sm text-[#8c716c] font-medium mt-2">Não conseguimos iniciar sua sessão de contagem. Verifique sua internet e tente novamente.</p>
+            </div>
+            <button onClick={() => { setInitFailed(false); initSession(); }} className="w-full max-w-xs py-4 bg-[#B13A2B] text-white rounded-2xl font-black text-lg shadow-xl active:scale-95 transition">
+                Tentar Novamente
+            </button>
+            <button onClick={() => router.push(backUrl)} className="w-full max-w-xs py-2 text-[#8c716c] font-bold text-sm uppercase tracking-widest">
+                Voltar
+            </button>
+        </div>
+    )
 
     if (blocked) return (
         <div className="p-8 flex flex-col items-center justify-center min-h-screen bg-white text-center space-y-6">
@@ -200,7 +299,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                 <h2 className="text-2xl font-black text-[#1b1c1a]">Acesso Bloqueado</h2>
                 <p className="text-sm text-[#8c716c] font-medium mt-2">{blocked}</p>
             </div>
-            <button onClick={() => router.push(`/dashboard/routines/${routineId}`)} className="w-full max-w-xs py-4 bg-[#1b1c1a] text-white rounded-2xl font-black text-lg shadow-xl active:scale-95 transition">
+            <button onClick={() => router.push(backUrl)} className="w-full max-w-xs py-4 bg-[#1b1c1a] text-white rounded-2xl font-black text-lg shadow-xl active:scale-95 transition">
                 Voltar
             </button>
         </div>
@@ -236,10 +335,10 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                 </div>
 
                 <button 
-                    onClick={() => router.push(`/dashboard/routines/${routineId}`)} 
+                    onClick={() => router.push(backUrl)} 
                     className="w-full max-w-sm py-5 bg-[#1b1c1a] text-white rounded-2xl font-black text-lg shadow-xl active:scale-95 transition"
                 >
-                    Próximo Grupo
+                    {returnTo === '/dashboard' ? 'Voltar para Home' : 'Próximo Grupo'}
                 </button>
             </div>
         )
@@ -250,7 +349,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
             {/* OPERATIONAL HEADER */}
             <div className="bg-white border-b border-[#e9e8e5] sticky top-0 z-40 shadow-sm">
                 <div className="p-4 md:p-5 flex justify-between items-center bg-white">
-                    <button onClick={() => router.push(`/dashboard/routines/${routineId}`)} className="p-2.5 bg-white rounded-xl shadow-sm border border-[#e9e8e5] text-[#58413e] hover:bg-gray-50 active:scale-95 transition-all">
+                    <button onClick={() => router.push(backUrl)} className="p-2.5 bg-white rounded-xl shadow-sm border border-[#e9e8e5] text-[#58413e] hover:bg-gray-50 active:scale-95 transition-all">
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     
@@ -285,7 +384,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                         <span className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest">Progresso do Local</span>
                         <div className="flex items-center space-x-1.5 font-black text-[10px]">
                             {syncStatus === 'synced' ? <><Check className="w-3 h-3 text-green-500" /><span className="text-green-600 uppercase tracking-tighter">Sincronizado</span></> :
-                                syncStatus === 'saving' ? <><Loader2 className="w-3 h-3 text-[#b13a2b] animate-spin" /><span className="text-[#b13a2b] uppercase tracking-tighter">Salvando...</span></> :
+                                syncStatus === 'saving' ? <><Loader2 className="w-3 h-3 text-[#b13a2b] animate-spin" /><span className="text-[#b13a2b] uppercase tracking-tighter">{syncMessage}</span></> :
                                     <><CloudOff className="w-3 h-3 text-amber-500" /><span className="text-amber-500 uppercase tracking-tighter">Modo Offline</span></>
                             }
                         </div>
@@ -327,9 +426,14 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                         <button
                             onClick={executeCompleteGroup}
                             disabled={syncStatus === 'saving'}
-                            className="w-full py-5 bg-[#1b1c1a] text-white rounded-2xl font-black text-lg flex justify-center items-center active:scale-95 transition shadow-xl disabled:opacity-50"
+                            className="w-full py-5 bg-[#1b1c1a] text-white rounded-2xl font-black text-lg flex justify-center items-center active:scale-95 transition shadow-xl disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                            {syncStatus === 'saving' ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Finalizar Este Grupo'}
+                            {syncStatus === 'saving' ? (
+                                <div className="flex items-center space-x-2">
+                                    <Loader2 className="w-6 h-6 animate-spin" />
+                                    <span className="text-base uppercase tracking-tight">{syncMessage}</span>
+                                </div>
+                            ) : 'Finalizar Este Grupo'}
                         </button>
                         <button
                             onClick={() => setShowSummary(false)}
@@ -421,7 +525,10 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                     })}
 
                     {/* FLOAT BAR */}
-                    <div className="fixed bottom-0 left-0 right-0 p-5 bg-white border-t border-[#e9e8e5] shadow-[0_-8px_30px_rgb(0,0,0,0.06)] z-50 flex space-x-4 max-w-md mx-auto rounded-t-[32px]">
+                    <div className="fixed bottom-0 left-0 right-0 p-5 bg-white border-t border-[#e9e8e5] shadow-[0_-8px_30px_rgb(0,0,0,0.06)] z-50 flex space-x-3 max-w-md mx-auto rounded-t-[32px]">
+                        <button onClick={handleDeleteSession} disabled={isDeleting} className="p-5 bg-red-50 text-red-600 rounded-2xl active:scale-95 transition hover:bg-red-100 border border-red-100/50">
+                            {isDeleting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Trash2 className="w-6 h-6" />}
+                        </button>
                         <button onClick={handleManualSave} className="p-5 bg-[#F8F7F4] text-[#58413e] rounded-2xl active:scale-95 transition hover:bg-gray-100 border border-[#eeedea]">
                             <Save className="w-6 h-6" />
                         </button>

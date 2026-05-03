@@ -1,17 +1,21 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { X, Search, ChevronRight, Plus, Minus, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { X, Search, ChevronRight, Plus, Minus, AlertTriangle, CheckCircle2, Camera, Trash2, Loader2 as LoaderIcon } from 'lucide-react'
 import { getGlobalItemsAction, recordLossAction } from '@/app/actions/lossAction'
+import { useReward } from '../context/RewardContext'
+import CameraCapture from '@/components/CameraCapture'
+import { supabase } from '@/lib/supabase/client'
 
 interface Props {
     isOpen: boolean
     onClose: () => void
     userId: string
     currentGroupId?: string
+    isDemoMode?: boolean
 }
 
-export default function LossRegistrationDrawer({ isOpen, onClose, userId, currentGroupId }: Props) {
+export default function LossRegistrationDrawer({ isOpen, onClose, userId, currentGroupId, isDemoMode }: Props) {
     const [step, setStep] = useState<'search' | 'form' | 'success'>('search')
     const [searchQuery, setSearchQuery] = useState('')
     const [items, setItems] = useState<any[]>([])
@@ -21,6 +25,12 @@ export default function LossRegistrationDrawer({ isOpen, onClose, userId, curren
     const [observation, setObservation] = useState('')
     const [loading, setLoading] = useState(false)
     const [searching, setSearching] = useState(false)
+    const [isCameraOpen, setIsCameraOpen] = useState(false)
+    const [evidenceBlob, setEvidenceBlob] = useState<Blob | null>(null)
+    const [evidencePreview, setEvidencePreview] = useState<string | null>(null)
+    const [uploadingPhoto, setUploadingPhoto] = useState(false)
+
+    const { showReward } = useReward()
 
     // Debounce busca de itens
     useEffect(() => {
@@ -32,6 +42,21 @@ export default function LossRegistrationDrawer({ isOpen, onClose, userId, curren
 
         const timer = setTimeout(async () => {
             setSearching(true)
+            
+            if (isDemoMode) {
+                // Mock search
+                const mockItems = [
+                    { id: 'm1', name: 'Picanha Maturada', unit: 'KG', group_id: currentGroupId },
+                    { id: 'm2', name: 'Cerveja NaBrasa 600ml', unit: 'UN', group_id: 'Geral' },
+                    { id: 'm3', name: 'Tomate Italiano', unit: 'KG', group_id: currentGroupId },
+                    { id: 'm4', name: 'Óleo de Soja 900ml', unit: 'UN', group_id: currentGroupId },
+                ].filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                
+                setItems(mockItems)
+                setSearching(false)
+                return
+            }
+
             const res = await getGlobalItemsAction(searchQuery, currentGroupId)
             if (res.success) setItems(res.data || [])
             setSearching(false)
@@ -49,20 +74,82 @@ export default function LossRegistrationDrawer({ isOpen, onClose, userId, curren
 
     const handleSubmit = async () => {
         setLoading(true)
+        let finalUrl = ''
+
+        // 1. Upload da foto se existir
+        if (evidenceBlob) {
+            setUploadingPhoto(true)
+            try {
+                const fileName = `loss_${userId}_${Date.now()}.jpg`
+                const filePath = `losses/${userId}/${fileName}`
+                
+                const { data: uploadData, error: uploadErr } = await supabase.storage
+                    .from('checklist-evidences')
+                    .upload(filePath, evidenceBlob, { contentType: 'image/jpeg' })
+
+                if (uploadErr) throw uploadErr
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('checklist-evidences')
+                    .getPublicUrl(uploadData.path)
+                
+                finalUrl = publicUrl
+            } catch (err: any) {
+                console.error("Erro upload foto perda:", err)
+            } finally {
+                setUploadingPhoto(false)
+            }
+        }
+
+        if (isDemoMode) {
+            // Mock success
+            await new Promise(r => setTimeout(r, 1000))
+            setLoading(false)
+            setStep('success')
+            showReward({
+                amount: 10,
+                label: 'Perda registrada (Demo)',
+                type: 'points'
+            })
+            setTimeout(() => handleClose(), 2000)
+            return
+        }
+
+        // 2. Registro da perda
         const res = await recordLossAction({
             itemId: selectedItem.id,
             userId,
             quantity,
             category,
-            observation
+            observation,
+            evidenceUrl: finalUrl
         })
         setLoading(false)
 
         if (res.success) {
             setStep('success')
+            
+            // Disparar Reward Toast
+            showReward({
+                amount: 10,
+                label: 'Perda registrada corretamente',
+                type: 'points'
+            })
+
+            if (finalUrl) {
+                // Pequeno delay para mostrar um segundo reward se houver bonus de foto no futuro
+                setTimeout(() => {
+                    showReward({
+                        amount: 5,
+                        label: 'Bônus de Auditoria (Foto)',
+                        type: 'coins'
+                    })
+                }, 1000)
+            }
+
             setTimeout(() => {
                 handleClose()
-            }, 2000)
+            }, 2500)
         } else {
             alert('Erro ao salvar: ' + res.error)
         }
@@ -221,6 +308,38 @@ export default function LossRegistrationDrawer({ isOpen, onClose, userId, curren
                                 />
                             </div>
 
+                            {/* FOTO OPCIONAL (NOVO) */}
+                            <div>
+                                <label className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest mb-2 block">Evidência (Opcional)</label>
+                                {!evidencePreview ? (
+                                    <button 
+                                        onClick={() => setIsCameraOpen(true)}
+                                        className="w-full py-4 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-gray-50 active:scale-95 transition-all text-gray-400 group"
+                                    >
+                                        <Camera className="w-6 h-6 group-hover:text-[#B13A2B] transition-colors" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest group-hover:text-[#B13A2B]">Tirar foto da perda</span>
+                                    </button>
+                                ) : (
+                                    <div className="relative rounded-2xl overflow-hidden border border-gray-100 shadow-sm group">
+                                        <img src={evidencePreview} className="w-full h-32 object-cover" alt="Preview" />
+                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button 
+                                                onClick={() => {
+                                                    setEvidencePreview(null)
+                                                    setEvidenceBlob(null)
+                                                }}
+                                                className="bg-red-500 text-white p-3 rounded-full active:scale-90 transition-transform"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                        <div className="absolute bottom-2 left-2 px-2 py-1 bg-white/90 rounded-md">
+                                            <span className="text-[8px] font-black text-gray-900 uppercase">Foto Pronta</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
                             {/* Submit Button */}
                             <button
                                 onClick={handleSubmit}
@@ -244,6 +363,18 @@ export default function LossRegistrationDrawer({ isOpen, onClose, userId, curren
                     )}
                 </div>
             </div>
+
+            {/* CÂMERA OVERLAY */}
+            {isCameraOpen && (
+                <CameraCapture 
+                    onCapture={(blob) => {
+                        setEvidenceBlob(blob)
+                        setEvidencePreview(URL.createObjectURL(blob))
+                        setIsCameraOpen(false)
+                    }}
+                    onClose={() => setIsCameraOpen(false)}
+                />
+            )}
         </div>
     )
 }

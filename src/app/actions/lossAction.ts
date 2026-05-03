@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
+import { getAuthenticatedUserId } from '@/lib/auth-utils'
 import { revalidatePath } from 'next/cache'
 
 const supabase = createClient(
@@ -14,6 +15,7 @@ export type LossInput = {
     quantity: number
     category: 'quebra' | 'estragado' | 'preparo' | 'vencido' | 'outro'
     observation?: string
+    evidenceUrl?: string
 }
 
 /**
@@ -21,12 +23,16 @@ export type LossInput = {
  */
 export async function recordLossAction(data: LossInput) {
     try {
+        // SEGURANÇA: Resolver usuário no servidor (Anti-spoofing)
+        const authId = await getAuthenticatedUserId()
+        if (!authId) throw new Error('Operação não autorizada: Usuário não autenticado.')
+
         // 1. Inserir registro de perda
         const { data: loss, error: lErr } = await supabase
             .from('inventory_losses')
             .insert([{
                 item_id: data.itemId,
-                user_id: data.userId,
+                user_id: authId, // Usar ID do servidor
                 quantity: data.quantity,
                 category: data.category,
                 observation: data.observation || null
@@ -40,17 +46,24 @@ export async function recordLossAction(data: LossInput) {
         // Usamos import dinâmico para evitar dependência circular se houver
         const { recordPointsAction } = await import('./gamificationAction')
         await recordPointsAction(
-            data.userId,
-            'loss_report' as any, // Cast para aceitar novo tipo
+            authId, // Usar ID do servidor
+            'loss_report' as any,
             loss.id,
-            10, // 10 pontos por relatar erro proativamente
+            10,
             `Relato de perda: ${data.category}`
         )
 
         revalidatePath('/dashboard')
-        return { success: true }
+        console.log(`[ACTION] Loss registered | Item: ${data.itemId} | User: ${authId} | Qty: ${data.quantity}`)
+        return { 
+            success: true, 
+            rewards: { 
+                points: 10, 
+                label: 'Relato de honestidade'
+            } 
+        }
     } catch (err: any) {
-        console.error('[LossAction] Erro ao registrar perda:', err.message)
+        console.error(`[AUTH_FAIL] recordLossAction | User: ${data.userId} | Item: ${data.itemId} | Error: ${err.message}`)
         return { success: false, error: err.message }
     }
 }

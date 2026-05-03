@@ -168,20 +168,20 @@ export function aggregatePeriodSummary(
 // -------------------------------------------------------------------
 // HELPER — converte data de Brasília para UTC-0 (para enviar à API)
 // -------------------------------------------------------------------
-export function brasiliaToUTC(dateStr: string): string {
-  // Se a entrada for apenas "YYYY-MM-DD", assume meia-noite em Brasília (UTC-3)
-  // Para converter para UTC-0, adicionamos 3 horas.
+export function brasiliaToUTC(dateStr: string, boundary: 'start' | 'end' = 'start'): string {
   const date = new Date(dateStr)
   
-  // Garantir que estamos tratando como a data local se for apenas YYYY-MM-DD
   if (dateStr.length === 10) {
-    // Adiciona o timezone offset ou apenas define as horas explicitamente
-    // Para simplificar: Date(dateStr) em um sistema BR já cria em UTC-3 ou similar.
-    // Mas a API quer UTC-0 puro.
-    // Se hoje é 2024-01-01 00:00 BRT, isso é 2024-01-01 03:00 UTC.
-    date.setHours(date.getHours() + 3)
+    if (boundary === 'start') {
+      // 00:00:00 Brasília = 03:00:00 UTC
+      date.setHours(3, 0, 0, 0)
+    } else {
+      // 23:59:59 Brasília = 02:59:59 UTC do dia seguinte
+      date.setHours(3 + 24, 0, 0, 0)
+      date.setMilliseconds(-1)
+    }
   }
 
-  return date.toISOString().split('.')[0] + 'Z' // Garante formato ISO sem milisegundos e com Z
+  return date.toISOString().split('.')[0] + 'Z'
 }
 

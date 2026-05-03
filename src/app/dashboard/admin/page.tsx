@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { LayoutGrid, Package, CalendarSync, History, TrendingUp, ClipboardCheck } from 'lucide-react'
+import { LayoutGrid, Package, CalendarSync, History, TrendingUp, ClipboardCheck, Bell, Activity, ShoppingCart } from 'lucide-react'
 
 export default function AdminHome() {
     const router = useRouter()
@@ -51,13 +51,44 @@ export default function AdminHome() {
                 </div>
             </button>
 
-            <button onClick={() => router.push('/dashboard/admin/checklists')} className="w-full bg-white border border-gray-200 p-5 rounded-2xl flex items-center text-left hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm space-x-4 active:scale-95">
-                <div className="bg-red-100 p-3 rounded-xl">
-                    <ClipboardCheck className="w-6 h-6 text-[#B13A2B]" />
+            <button onClick={() => router.push('/dashboard/admin/auditoria')} className="w-full bg-white border border-gray-200 p-5 rounded-2xl flex items-center text-left hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm space-x-4 active:scale-95">
+                <div className="bg-red-50 p-3 rounded-xl">
+                    <Activity className="w-6 h-6 text-[#B13A2B]" />
                 </div>
                 <div>
-                    <h3 className="font-bold text-gray-900 text-lg">Auditoria & Ranking</h3>
-                    <p className="text-sm text-gray-500">Conferir checklists concluídos e fotos de evidência</p>
+                    <h3 className="font-bold text-gray-900 text-lg">Auditoria Operacional</h3>
+                    <p className="text-sm text-gray-500">Conformidade, histórico e ranking da equipe</p>
+                </div>
+            </button>
+
+            <button onClick={() => router.push('/dashboard/admin/templates')} className="w-full bg-white border border-gray-200 p-5 rounded-2xl flex items-center text-left hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm space-x-4 active:scale-95">
+                <div className="bg-gray-50 p-3 rounded-xl">
+                    <ClipboardCheck className="w-6 h-6 text-gray-600" />
+                </div>
+                <div>
+                    <h3 className="font-bold text-gray-900 text-lg">Templates de Checklist</h3>
+                    <p className="text-sm text-gray-500">Criar, editar e organizar checklists</p>
+                </div>
+            </button>
+
+            {/* --- NOVO: MURAL --- */}
+            <button onClick={() => router.push('/dashboard/admin/communication')} className="w-full bg-white border border-gray-200 p-5 rounded-2xl flex items-center text-left hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm space-x-4 active:scale-95">
+                <div className="bg-amber-100 p-3 rounded-xl">
+                    <Bell className="w-6 h-6 text-amber-600" />
+                </div>
+                <div>
+                    <h3 className="font-bold text-gray-900 text-lg">Mural & Comunicados</h3>
+                    <p className="text-sm text-gray-500">Postar avisos e gerenciar o mural da casa</p>
+                </div>
+            </button>
+
+            <button onClick={() => router.push('/dashboard/admin/purchases')} className="w-full bg-orange-50 border border-orange-100 p-5 rounded-2xl flex items-center text-left hover:bg-orange-100 hover:border-orange-200 transition-all shadow-sm space-x-4 active:scale-95">
+                <div className="bg-orange-100 p-3 rounded-xl">
+                    <ShoppingCart className="w-6 h-6 text-orange-600" />
+                </div>
+                <div>
+                    <h3 className="font-bold text-gray-900 text-lg">Compras &amp; Abastecimento</h3>
+                    <p className="text-sm text-gray-500">Catálogo, pedidos e histórico de abastecimento</p>
                 </div>
             </button>
 

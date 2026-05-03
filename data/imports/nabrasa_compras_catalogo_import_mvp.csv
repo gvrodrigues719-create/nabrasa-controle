@@ -1,0 +1,222 @@
+﻿import_code,category,item_name,order_unit,count_unit,allow_decimal,min_stock,max_stock,source_type,active,review_status,review_notes,import_note,original_sheet_row
+IMP-0001,ESPETOS,ESPETO CORAÇÃO C/5 UN,un,un,false,15,30,cozinha_central,true,ok,,Unidade padrão un definida para MVP,5
+IMP-0002,ESPETOS,ESPETO DE BABY BEEF - 5UN,un,un,false,25,80,cozinha_central,true,ok,,Unidade padrão un definida para MVP,6
+IMP-0003,ESPETOS,ESPETO FRANGO c/ 5 UN.,un,un,false,30,75,cozinha_central,true,ok,,Unidade padrão un definida para MVP,7
+IMP-0004,ESPETOS,ESPETO KAFTA C/ QUEIJO c/ 5 UN.,un,un,false,10,20,cozinha_central,true,ok,,Unidade padrão un definida para MVP,8
+IMP-0005,ESPETOS,ESPETO LINGUIÇA MINEIRA c/ 6 UN.,un,un,false,10,18,cozinha_central,true,ok,,Unidade padrão un definida para MVP,9
+IMP-0006,ESPETOS,ESPETO MISTO c/ 5 UN.,un,un,false,5,30,cozinha_central,true,ok,,Unidade padrão un definida para MVP,10
+IMP-0007,ESPETOS,ESPETO QUEIJO COALHO c/ 5 UN.,un,un,false,2,16,cozinha_central,true,ok,,Unidade padrão un definida para MVP,11
+IMP-0008,ESPETOS,ESPETO SALSICHÃO c/ 5 UN.,un,un,false,5,20,cozinha_central,true,ok,,Unidade padrão un definida para MVP,12
+IMP-0009,ESPETOS,ESPETO SUÍNO c/ 5 UN.,un,un,false,3,15,cozinha_central,true,ok,,Unidade padrão un definida para MVP,13
+IMP-0010,ESPETOS,ESPETO VEGETARIANO c/ 1 UN.,un,un,false,2,5,cozinha_central,true,ok,,Unidade padrão un definida para MVP,14
+IMP-0011,ESPETOS,QUEIJO COALHO FESTIVAL c/ 10UN,un,un,false,5,10,cozinha_central,true,ok,,Unidade padrão un definida para MVP,15
+IMP-0012,PROTEÍNAS,CHORIZO,un,un,false,5,10,cozinha_central,true,ok,,Unidade padrão un definida para MVP,19
+IMP-0013,PROTEÍNAS,COSTELA,un,un,false,7,12,cozinha_central,true,ok,,Unidade padrão un definida para MVP,20
+IMP-0014,PROTEÍNAS,COSTELINHA SUÍNA,un,un,false,1,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,21
+IMP-0015,PROTEÍNAS,"FILÉ MIGNON EXECUTIVO - 0,18KG",un,un,false,66,80,cozinha_central,true,ok,,Unidade padrão un definida para MVP,22
+IMP-0016,PROTEÍNAS,"FILÉ MIGNON REFEIÇÃO - 0,55KG 5 uni",un,un,false,5,14,cozinha_central,true,ok,,Unidade padrão un definida para MVP,23
+IMP-0017,PROTEÍNAS,GALETO +/- 1KG,un,un,false,50,180,cozinha_central,true,ok,,Unidade padrão un definida para MVP,24
+IMP-0018,PROTEÍNAS,"HAMBÚRGUER BOV150g WESSEL 6,3kg CX42u",un,un,false,25,60,cozinha_central,true,ok,,Unidade padrão un definida para MVP,25
+IMP-0019,PROTEÍNAS,"PICANHA EXECUTIVO - 0,16KG",un,un,false,5,15,cozinha_central,true,ok,,Unidade padrão un definida para MVP,26
+IMP-0020,PROTEÍNAS,"PICANHA FATIADA - 0,65KG 5 uni",un,un,false,5,15,cozinha_central,true,ok,,Unidade padrão un definida para MVP,27
+IMP-0021,PROTEÍNAS,"TÁBUA CORAÇÃO DE ALCATRA - 0,25KG 3uni",un,un,false,6,10,cozinha_central,true,ok,,Unidade padrão un definida para MVP,28
+IMP-0022,ENTRADAS,LINGUIÇA DE PERNIL PEQUENA C/10 UN,un,un,false,,,cozinha_central,true,revisar,min_max_pendente,Unidade padrão un definida para MVP,32
+IMP-0023,ENTRADAS,LINGUIÇA PROVOLONE ROLO,un,un,false,4,1,cozinha_central,true,revisar,min_maior_que_max,Unidade padrão un definida para MVP,33
+IMP-0024,ENTRADAS,LINGUIÇA TOSCANA NABRASA 160GR- C/7 UN,un,un,false,42,10,cozinha_central,true,revisar,min_maior_que_max,Unidade padrão un definida para MVP,34
+IMP-0025,ENTRADAS,MEIO PÃO DE ALHO,un,un,false,12,4,cozinha_central,true,revisar,min_maior_que_max,Unidade padrão un definida para MVP,35
+IMP-0026,ENTRADAS,PALMITO,un,un,false,3,2,cozinha_central,true,revisar,min_maior_que_max,Unidade padrão un definida para MVP,36
+IMP-0027,ENTRADAS,PASTEL GRANDE CAMARÃO - 2UN,un,un,false,16,4,cozinha_central,true,revisar,min_maior_que_max,Unidade padrão un definida para MVP,37
+IMP-0028,ENTRADAS,PASTEL GRANDE CATUPIRY - 2UN,un,un,false,16,2,cozinha_central,true,revisar,min_maior_que_max,Unidade padrão un definida para MVP,38
+IMP-0029,ENTRADAS,PASTEL GRANDE COSTELA - 2UN,un,un,false,10,2,cozinha_central,true,revisar,min_maior_que_max,Unidade padrão un definida para MVP,39
+IMP-0030,ENTRADAS,PÃO DE ALHO,un,un,false,24,40,cozinha_central,true,ok,,Unidade padrão un definida para MVP,40
+IMP-0031,LANCHES,"BACON DEF TIRAS (HAMBÚRGUER) - 0,25KG",un,un,false,2,9,cozinha_central,true,ok,,Unidade padrão un definida para MVP,45
+IMP-0032,LANCHES,MAIONESE TEMPERADA,un,un,false,1,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,46
+IMP-0033,LANCHES,CEBOLA CARAMELIZADA SPICY,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,47
+IMP-0034,LANCHES,PÃO BRIOCHE TRAD HB 48UN GERG. MESCLADO,un,un,false,31,132,cozinha_central,true,ok,,Unidade padrão un definida para MVP,48
+IMP-0035,LANCHES,QUEIJO CHEDDAR VIGOR MOLHO,un,un,false,1,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,49
+IMP-0036,LANCHES,"KETCHUP 1,033kg Heinz",un,un,false,1,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,50
+IMP-0037,LANCHES,MOLHO AMERICANO ZAFRAN,un,un,false,1,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,51
+IMP-0038,LANCHES,"MOSTARDA 1,1KG JUNIOR",un,un,false,1,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,52
+IMP-0039,LANCHES,"MAIONESE DE BACON 1,1KG JUNIOR",un,un,false,1,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,53
+IMP-0040,LANCHES,"QUEIJO CHEDDAR FATIADO - 2,27KG 150 FATIAS",un,un,false,40,150,cozinha_central,true,ok,,Unidade padrão un definida para MVP,54
+IMP-0041,LANCHES,"QUEIJO PROC PRATO 2,24KG VIGOR 160 FATIAS",un,un,false,40,160,cozinha_central,true,ok,,Unidade padrão un definida para MVP,55
+IMP-0042,LANCHES,PICKLES PEPINO RODELAS 440G HANKS,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,56
+IMP-0043,SOBREMESAS,PUDIM DE LEITE,un,un,false,6,14,cozinha_central,true,ok,,Unidade padrão un definida para MVP,59
+IMP-0044,COZINHA CENTRAL - MOLHOS,CONFIT PIMENTA BIQUINHO,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,65
+IMP-0045,COZINHA CENTRAL - MOLHOS,MOLHO A CAMPANHA  - 2.3Kg,un,un,false,4,8,cozinha_central,true,ok,,Unidade padrão un definida para MVP,66
+IMP-0046,COZINHA CENTRAL - MOLHOS,MOLHO GORGONZOLA - POTE 500ML,un,un,false,2,5,cozinha_central,true,ok,,Unidade padrão un definida para MVP,67
+IMP-0047,COZINHA CENTRAL - MOLHOS,"MOLHO PESTO POTE - 0,5L",un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,68
+IMP-0048,COZINHA CENTRAL - BASES,ALHO TRITURADO,un,un,false,4,14,cozinha_central,true,ok,,Unidade padrão un definida para MVP,71
+IMP-0049,COZINHA CENTRAL - BASES,CROUTONS,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,72
+IMP-0050,COZINHA CENTRAL - BASES,"FAROFA 2,5 KG",un,un,false,6,14,cozinha_central,true,ok,,Unidade padrão un definida para MVP,73
+IMP-0051,COZINHA CENTRAL - BASES,FARINHA CRUA 1KG,un,un,false,2,4,cozinha_central,true,ok,,Unidade padrão un definida para MVP,74
+IMP-0052,COZINHA CENTRAL - BASES,FEIJÃO COZIDO - 3KG,un,un,false,6,18,cozinha_central,true,ok,,Unidade padrão un definida para MVP,75
+IMP-0053,COZINHA CENTRAL - BASES,ALHO FRITO 1KG,un,un,false,1,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,76
+IMP-0054,LATICÍNIOS E OVOS,LEITE INTEGRAL,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,80
+IMP-0055,LATICÍNIOS E OVOS,Margarina Vegetal 80% 14kg Elogiata,un,un,false,1,1,cozinha_central,true,ok,,Unidade padrão un definida para MVP,81
+IMP-0056,LATICÍNIOS E OVOS,OVO BRANCO,un,un,false,30,60,cozinha_central,true,ok,,Unidade padrão un definida para MVP,82
+IMP-0057,LATICÍNIOS E OVOS,"QUEIJO PARMESÃO RALADO - 0,2KG",un,un,false,1,4,cozinha_central,true,ok,,Unidade padrão un definida para MVP,83
+IMP-0058,MERCEARIA,ARROZ AG  LF 5kg Máximo,un,un,false,8,12,cozinha_central,true,ok,,Unidade padrão un definida para MVP,87
+IMP-0059,MERCEARIA,AÇÚCAR REFINADO,un,un,false,1,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,88
+IMP-0060,MERCEARIA,SAL REFINADO,un,un,false,16,40,cozinha_central,true,ok,,Unidade padrão un definida para MVP,89
+IMP-0061,MERCEARIA,OLEO DE ALGODÃO 14kg ELOGIATA,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,90
+IMP-0062,MERCEARIA,MATE LEÃO DA CASA 1KG,un,un,false,2,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,91
+IMP-0063,CONGELADOS,"BATATA CANOA 2,5kg MCCAIN",un,un,false,6,15,cozinha_central,true,ok,,Unidade padrão un definida para MVP,94
+IMP-0064,CONGELADOS,BATATA PALITO NOBREDO 2KG,un,un,false,10,20,cozinha_central,true,ok,,Unidade padrão un definida para MVP,95
+IMP-0065,CONGELADOS,"MANDIOCA TOLETE MATHEUS 2,5",un,un,false,6,12,cozinha_central,true,ok,,Unidade padrão un definida para MVP,96
+IMP-0066,HORTIFRUTI,ALECRIM,un,un,false,1,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,99
+IMP-0067,HORTIFRUTI,ALFACE AMERICANA,un,un,false,1,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,100
+IMP-0068,HORTIFRUTI,ALFACE CRESPA,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,101
+IMP-0069,HORTIFRUTI,BATATA ASTERIX,un,un,false,10,25,cozinha_central,true,ok,,Unidade padrão un definida para MVP,102
+IMP-0070,HORTIFRUTI,BATATA CALABRESA,un,un,false,6,18,cozinha_central,true,ok,,Unidade padrão un definida para MVP,103
+IMP-0071,HORTIFRUTI,BRÓCOLIS COMUM,un,un,false,4,8,cozinha_central,true,ok,,Unidade padrão un definida para MVP,104
+IMP-0072,HORTIFRUTI,CEBOLA ROXA,un,un,false,2,4,cozinha_central,true,ok,,Unidade padrão un definida para MVP,105
+IMP-0073,HORTIFRUTI,LARANJA SELETA,un,un,false,10,25,cozinha_central,true,ok,,Unidade padrão un definida para MVP,106
+IMP-0074,HORTIFRUTI,LIMÃO,un,un,false,8,12,cozinha_central,true,ok,,Unidade padrão un definida para MVP,107
+IMP-0075,HORTIFRUTI,LIMÃO SICILIANO,un,un,false,1,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,108
+IMP-0076,HORTIFRUTI,SALSA CRESPA,un,un,false,2,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,109
+IMP-0077,HORTIFRUTI,TOMATE SALADA,un,un,false,4,10,cozinha_central,true,ok,,Unidade padrão un definida para MVP,110
+IMP-0078,HORTIFRUTI,TOMATE GRAPE,un,un,false,2,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,111
+IMP-0079,HORTIFRUTI,RUCULA,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,112
+IMP-0080,CONDIMENTOS,"Azeite Composto 5,02L Lisboa Blend",un,un,false,2,5,cozinha_central,true,ok,,Unidade padrão un definida para MVP,116
+IMP-0081,CONDIMENTOS,Azeitona Fatiada Preta 2kg WWL,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,117
+IMP-0082,CONDIMENTOS,"MELADO - 0,5KG",un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,118
+IMP-0083,CONDIMENTOS,"MILHO TORRADO C/ MOSTARDA E MEL - 0,25KG",un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,119
+IMP-0084,CONDIMENTOS,PIMENTA TABASCO,un,un,false,1,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,120
+IMP-0085,CONDIMENTOS,AZEITE SALÃO,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,121
+IMP-0086,CONDIMENTOS,"VINAGRE - 0,75L",un,un,false,1,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,122
+IMP-0087,TEMPEROS,"CHIMICHURRI - 0,2KG",un,un,false,4,10,cozinha_central,true,ok,,Unidade padrão un definida para MVP,125
+IMP-0088,TEMPEROS,"LEMON PEPPER - 0,4KG",un,un,false,2,5,cozinha_central,true,ok,,Unidade padrão un definida para MVP,126
+IMP-0089,TEMPEROS,"LOURO - 0,01KG",un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,127
+IMP-0090,TEMPEROS,SAL DE PARRILLA - PORÇÃO,un,un,false,4,8,cozinha_central,true,ok,,Unidade padrão un definida para MVP,128
+IMP-0091,TEMPEROS,SAL TEMPERADO 200G,un,un,false,2,4,cozinha_central,true,ok,,Unidade padrão un definida para MVP,129
+IMP-0092,BEBIDAS,Chopp Brahma Claro 50L Barril,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,131
+IMP-0093,BEBIDAS,Cerv Heineken Pils 12x473ml,un,un,false,7,36,cozinha_central,true,ok,,Unidade padrão un definida para MVP,132
+IMP-0094,BEBIDAS,Cerv Heineken 0.0% LN 330ml,un,un,false,7,36,cozinha_central,true,ok,,Unidade padrão un definida para MVP,133
+IMP-0095,BEBIDAS,Coca-Cola Zero Lata 350ml,un,un,false,56,96,cozinha_central,true,ok,,Unidade padrão un definida para MVP,134
+IMP-0096,BEBIDAS,Coca-Cola Lata 350ml,un,un,false,38,96,cozinha_central,true,ok,,Unidade padrão un definida para MVP,135
+IMP-0097,BEBIDAS,"Coca-Cola Original PET 1,5L",un,un,false,11,28,cozinha_central,true,ok,,Unidade padrão un definida para MVP,136
+IMP-0098,BEBIDAS,"Coca-Cola zero PET 1,5L",un,un,false,17,43,cozinha_central,true,ok,,Unidade padrão un definida para MVP,137
+IMP-0099,BEBIDAS,Dell Vale Uva Lata 290ml,un,un,false,10,18,cozinha_central,true,ok,,Unidade padrão un definida para MVP,138
+IMP-0100,BEBIDAS,Dell Vale Pessego Lata 290ml,un,un,false,10,18,cozinha_central,true,ok,,Unidade padrão un definida para MVP,139
+IMP-0101,BEBIDAS,Sprit Lata 350ml,un,un,false,4,12,cozinha_central,true,ok,,Unidade padrão un definida para MVP,140
+IMP-0102,BEBIDAS,Fanta Uva Lata 350ml,un,un,false,4,18,cozinha_central,true,ok,,Unidade padrão un definida para MVP,141
+IMP-0103,BEBIDAS,Fanta Laranja Lata 350ml,un,un,false,2,12,cozinha_central,true,ok,,Unidade padrão un definida para MVP,142
+IMP-0104,BEBIDAS,Matte Leão Limão WF PET 300ml CX12,un,un,false,12,36,cozinha_central,true,ok,,Unidade padrão un definida para MVP,143
+IMP-0105,BEBIDAS,Matte Leão Natural WF PET 300ml CX12,un,un,false,12,42,cozinha_central,true,ok,,Unidade padrão un definida para MVP,144
+IMP-0106,BEBIDAS,Matte Leão Natural Zero WF PET 300ml,un,un,false,12,36,cozinha_central,true,ok,,Unidade padrão un definida para MVP,145
+IMP-0107,BEBIDAS,Ice Tea Limão PET 300ml CX12,un,un,false,6,24,cozinha_central,true,ok,,Unidade padrão un definida para MVP,146
+IMP-0108,BEBIDAS,Ice Tea Pêssego PET 300ml CX12,un,un,false,6,12,cozinha_central,true,ok,,Unidade padrão un definida para MVP,147
+IMP-0109,BEBIDAS,Água c/ gás Cristal,un,un,false,55,22,cozinha_central,true,revisar,min_maior_que_max,Unidade padrão un definida para MVP,148
+IMP-0110,BEBIDAS,Água s/ gas Cristal,un,un,false,55,19,cozinha_central,true,revisar,min_maior_que_max,Unidade padrão un definida para MVP,149
+IMP-0111,BEBIDAS,Guaraná  Antarctica  Lata 350ml 12 unid,un,un,false,24,60,cozinha_central,true,ok,,Unidade padrão un definida para MVP,150
+IMP-0112,BEBIDAS,Guaraná  Antarctica zero Lata 350ml 12 unid,un,un,false,24,48,cozinha_central,true,ok,,Unidade padrão un definida para MVP,151
+IMP-0113,BEBIDAS,"Guaraná Antarctica zero  1,5 6 unid",un,un,false,12,36,cozinha_central,true,ok,,Unidade padrão un definida para MVP,152
+IMP-0114,BEBIDAS,"Guaraná  Antarctica 1,5L 6 unid",un,un,false,12,36,cozinha_central,true,ok,,Unidade padrão un definida para MVP,153
+IMP-0115,BEBIDAS,H2OH Limoneto C/Gás PET 500ml CX12,un,un,false,12,24,cozinha_central,true,ok,,Unidade padrão un definida para MVP,154
+IMP-0116,BEBIDAS,H2OH Limão C/Gás PET 500ml CX12,un,un,false,12,24,cozinha_central,true,ok,,Unidade padrão un definida para MVP,155
+IMP-0117,BEBIDAS,Red Bull Lata 250ml SixPack,un,un,false,6,12,cozinha_central,true,ok,,Unidade padrão un definida para MVP,156
+IMP-0118,BEBIDAS,Hocus Pocus Orange Sunshine GFA 500ml CX6,un,un,false,12,24,cozinha_central,true,ok,,Unidade padrão un definida para MVP,157
+IMP-0119,BEBIDAS,Hocus Pocus Magic 500 ml cx 6,un,un,false,12,18,cozinha_central,true,ok,,Unidade padrão un definida para MVP,158
+IMP-0120,BEBIDAS,Stella Artois Long Neck 330ml SixPack SH4,un,un,false,12,24,cozinha_central,true,ok,,Unidade padrão un definida para MVP,159
+IMP-0121,BEBIDAS,Stella Artois Pure Gold LN 330ml SP SH4,un,un,false,18,48,cozinha_central,true,ok,,Unidade padrão un definida para MVP,160
+IMP-0122,BEBIDAS,Tônica Antarctica Lata 350ml SH12,un,un,false,12,24,cozinha_central,true,ok,,Unidade padrão un definida para MVP,161
+IMP-0123,BEBIDAS,CAPSULA DE CAFÉ,un,un,false,100,300,cozinha_central,true,ok,,Unidade padrão un definida para MVP,162
+IMP-0124,BEBIDAS,MALZIBIER BRAHMA lata 350ml c/12,un,un,false,12,24,cozinha_central,true,ok,,Unidade padrão un definida para MVP,163
+IMP-0125,DESTILADOS E VINHOS,Absolut Original Garrafa 1L,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,167
+IMP-0126,DESTILADOS E VINHOS,Aperol 750ml,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,168
+IMP-0127,DESTILADOS E VINHOS,Zanella Merlot Vinho tinto 750ml,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,169
+IMP-0128,DESTILADOS E VINHOS,Zanella Chardonnay Vinho branco 750ml,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,170
+IMP-0129,DESTILADOS E VINHOS,Zanella Blanc de Blanc - Espumante 750ml,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,171
+IMP-0130,DESTILADOS E VINHOS,Da quinta - Cachaça 500ml,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,172
+IMP-0131,DESTILADOS E VINHOS,Werneck - Cachaça 750ml,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,173
+IMP-0132,DESTILADOS E VINHOS,Smirnoff - Vodka 600ml,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,174
+IMP-0133,DESTILADOS E VINHOS,Salinas imburana - Cachaça 1l,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,175
+IMP-0134,DESTILADOS E VINHOS,Salinas Cristalina - Cachaça 1l,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,176
+IMP-0135,DESTILADOS E VINHOS,Sagatiba - Cachaça 700ml,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,177
+IMP-0136,DESTILADOS E VINHOS,Lua Nova - Cachaça 1l,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,178
+IMP-0137,DESTILADOS E VINHOS,Charmosa de minas - Cachaça 980ml,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,179
+IMP-0138,DESTILADOS E VINHOS,51 - Cachaça 965lm,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,180
+IMP-0139,DESTILADOS E VINHOS,Seleta - Cachaça 1l,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,181
+IMP-0140,DESTILADOS E VINHOS,Licor 43 700ml,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,182
+IMP-0141,DESTILADOS E VINHOS,Salton Brut 750ml,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,183
+IMP-0142,DESTILADOS E VINHOS,Surrender Vinho Cabernet Sauvignon/Merlot 3L,un,un,false,1,6,cozinha_central,true,ok,,Unidade padrão un definida para MVP,184
+IMP-0143,DESCARTÁVEIS,CANUDO SHAKE IT´S  BIO  3000 - PCT 100,un,un,false,100,300,cozinha_central,true,ok,,Unidade padrão un definida para MVP,187
+IMP-0144,DESCARTÁVEIS,EMBALAGEM DE ISOPOR CARNE - 100UN,un,un,false,100,200,cozinha_central,true,ok,,Unidade padrão un definida para MVP,188
+IMP-0145,DESCARTÁVEIS,EMBALAGEM DE ISOPOR EXECUTIVO - 100UN,un,un,false,100,200,cozinha_central,true,ok,,Unidade padrão un definida para MVP,189
+IMP-0146,DESCARTÁVEIS,EMBALAGEM  TAMPA EXECUTIVO - 100UN,un,un,false,100,200,cozinha_central,true,ok,,Unidade padrão un definida para MVP,190
+IMP-0147,DESCARTÁVEIS,EMBALAGEM DE ISOPOR HAMBURG - 100UN,un,un,false,100,200,cozinha_central,true,ok,,Unidade padrão un definida para MVP,191
+IMP-0148,DESCARTÁVEIS,GUARDANAPO SIMPLES,un,un,false,200,400,cozinha_central,true,ok,,Unidade padrão un definida para MVP,192
+IMP-0149,DESCARTÁVEIS,JOGO AMERICANO 30X40 60G,un,un,false,1,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,193
+IMP-0150,DESCARTÁVEIS,PAPEL ACOPLADO PERSON PCT1KG,un,un,false,200,1000,cozinha_central,true,ok,,Unidade padrão un definida para MVP,194
+IMP-0151,DESCARTÁVEIS,POTE 30ML - 50UN,un,un,false,100,175,cozinha_central,true,ok,,Unidade padrão un definida para MVP,195
+IMP-0152,DESCARTÁVEIS,POTE 60ML - 100UN,un,un,false,100,200,cozinha_central,true,ok,,Unidade padrão un definida para MVP,196
+IMP-0153,DESCARTÁVEIS,POTE 145ML - 25UN,un,un,false,100,200,cozinha_central,true,ok,,Unidade padrão un definida para MVP,197
+IMP-0154,DESCARTÁVEIS,POTE 250ML - 25UN,un,un,false,150,300,cozinha_central,true,ok,,Unidade padrão un definida para MVP,198
+IMP-0155,DESCARTÁVEIS,POTE 500ML - 25UN,un,un,false,150,300,cozinha_central,true,ok,,Unidade padrão un definida para MVP,199
+IMP-0156,DESCARTÁVEIS,QUENTINHA 500ML - 100UN,un,un,false,100,200,cozinha_central,true,ok,,Unidade padrão un definida para MVP,200
+IMP-0157,DESCARTÁVEIS,QUENTINHA 1100ML - 100UN,un,un,false,100,200,cozinha_central,true,ok,,Unidade padrão un definida para MVP,201
+IMP-0158,DESCARTÁVEIS,QUENTINHA 220ML - 100UN,un,un,false,100,200,cozinha_central,true,ok,,Unidade padrão un definida para MVP,202
+IMP-0159,DESCARTÁVEIS,SACO DELIVERY (M) - 50UN,un,un,false,150,300,cozinha_central,true,ok,,Unidade padrão un definida para MVP,203
+IMP-0160,DESCARTÁVEIS,SACO DELIVERY (G) - 50UN,un,un,false,200,400,cozinha_central,true,ok,,Unidade padrão un definida para MVP,204
+IMP-0161,DESCARTÁVEIS,SACO DELIVERY (GG) - 50UN,un,un,false,150,300,cozinha_central,true,ok,,Unidade padrão un definida para MVP,205
+IMP-0162,DESCARTÁVEIS,SACO EMBALAR TALHER PERSO - PCT 200,un,un,false,200,400,cozinha_central,true,ok,,Unidade padrão un definida para MVP,206
+IMP-0163,DESCARTÁVEIS,SACOLA VERDE P - 110unid,un,un,false,60,110,cozinha_central,true,ok,,Unidade padrão un definida para MVP,207
+IMP-0164,DESCARTÁVEIS,SACOLA BRANCA 100unid,un,un,false,50,200,cozinha_central,true,ok,,Unidade padrão un definida para MVP,208
+IMP-0165,DESCARTÁVEIS,SALADEIRA 1000ML,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,209
+IMP-0166,DESCARTÁVEIS,SALADEIRA 500ML,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,210
+IMP-0167,DESCARTÁVEIS,FITA KRAFT,un,un,false,4,10,cozinha_central,true,ok,,Unidade padrão un definida para MVP,211
+IMP-0168,DESCARTÁVEIS,ASSA RÁPIDO,un,un,false,2,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,212
+IMP-0169,DESCARTÁVEIS,ETIQUETA VALIDADE 100UND,un,un,false,150,300,cozinha_central,true,ok,,Unidade padrão un definida para MVP,213
+IMP-0170,DESCARTÁVEIS,TINTA ETIQUETADORA (PAPEL BRANCO),un,un,false,6,10,cozinha_central,true,ok,,Unidade padrão un definida para MVP,214
+IMP-0171,DESCARTÁVEIS,EMBALAGEM DE ESPETO 100UNI,un,un,false,200,400,cozinha_central,true,ok,,Unidade padrão un definida para MVP,215
+IMP-0172,DESCARTÁVEIS,EMBALAGEM DE GALETO 400UNI,un,un,false,200,400,cozinha_central,true,ok,,Unidade padrão un definida para MVP,216
+IMP-0173,DESCARTÁVEIS,TALHER DESCARTAVEL,un,un,false,50,100,cozinha_central,true,ok,,Unidade padrão un definida para MVP,217
+IMP-0174,DESCARTÁVEIS,TOUCA DESCARTAVEL,un,un,false,100,200,cozinha_central,true,ok,,Unidade padrão un definida para MVP,218
+IMP-0175,DESCARTÁVEIS,MEXEDOR DE CAFÉ,un,un,false,50,100,cozinha_central,true,ok,,Unidade padrão un definida para MVP,219
+IMP-0176,DESCARTÁVEIS,GUARDANAPO PERSONALIZADO,un,un,false,200,400,cozinha_central,true,ok,,Unidade padrão un definida para MVP,220
+IMP-0177,DESCARTÁVEIS,PAPEL ALUMINIO ROLO 45X65 MTS,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,221
+IMP-0178,DESCARTÁVEIS,CANUDO DRINK,un,un,false,50,100,cozinha_central,true,ok,,Unidade padrão un definida para MVP,222
+IMP-0179,INSUMOS OPERACIONAIS,BOBINA PICOTADA 16X30 ROLO,un,un,false,2,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,226
+IMP-0180,INSUMOS OPERACIONAIS,"BOBINA PICOTE 30X40 - ROLO MEDIA 1,71KG",un,un,false,2,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,227
+IMP-0181,INSUMOS OPERACIONAIS,"BOBINA PICOTE 40X60 - ROLO MEDIA 2,36KG",un,un,false,2,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,228
+IMP-0182,INSUMOS OPERACIONAIS,"BOBINA PICOTE 20X35 - ROLO MEDIA 1,71KG",un,un,false,2,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,229
+IMP-0183,INSUMOS OPERACIONAIS,BOBINA TERMICA AMARELA 79X30 CX30- UNI,un,un,false,4,10,cozinha_central,true,ok,,Unidade padrão un definida para MVP,230
+IMP-0184,INSUMOS OPERACIONAIS,SACHE AÇÚCAR UNIÃO 400 - PCT 100UND,un,un,false,100,300,cozinha_central,true,ok,,Unidade padrão un definida para MVP,231
+IMP-0185,INSUMOS OPERACIONAIS,SACHE PALITO DENTAL 2000 - PCT100,un,un,false,100,300,cozinha_central,true,ok,,Unidade padrão un definida para MVP,232
+IMP-0186,INSUMOS OPERACIONAIS,SACHE SAL ITA 2000 - PCT 100,un,un,false,100,300,cozinha_central,true,ok,,Unidade padrão un definida para MVP,233
+IMP-0187,INSUMOS OPERACIONAIS,CARVAO - Un,un,un,false,6,14,cozinha_central,true,ok,,Unidade padrão un definida para MVP,234
+IMP-0188,INSUMOS OPERACIONAIS,CLORIN VERDURAS,un,un,false,2,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,235
+IMP-0189,INSUMOS OPERACIONAIS,BILHETINHO,un,un,false,10,20,cozinha_central,true,ok,,Unidade padrão un definida para MVP,236
+IMP-0190,INSUMOS OPERACIONAIS,BISCOITO CAFÉ,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,237
+IMP-0191,INSUMOS OPERACIONAIS,FOLHA DE DESENHO,un,un,false,10,20,cozinha_central,true,ok,,Unidade padrão un definida para MVP,238
+IMP-0192,LIMPEZA,ESPONJA DE AÇO,un,un,false,2,3,cozinha_central,true,ok,,Unidade padrão un definida para MVP,241
+IMP-0193,LIMPEZA,DESINFETANTE LAVANDA -   5LT,un,un,false,2,4,cozinha_central,true,ok,,Unidade padrão un definida para MVP,242
+IMP-0194,LIMPEZA,Detergente 500ml Neutro CX24,un,un,false,12,24,cozinha_central,true,ok,,Unidade padrão un definida para MVP,243
+IMP-0195,LIMPEZA,ESPONJA 3M DUPLA FACE UND,un,un,false,2,4,cozinha_central,true,ok,,Unidade padrão un definida para MVP,244
+IMP-0196,LIMPEZA,ESPONJA RISCA LIMPEZA (AZUL),un,un,false,3,4,cozinha_central,true,ok,,Unidade padrão un definida para MVP,245
+IMP-0197,LIMPEZA,ESPONJA FIBRACO 3M LIMPEZA PESADA Grande,un,un,false,2,4,cozinha_central,true,ok,,Unidade padrão un definida para MVP,246
+IMP-0198,LIMPEZA,LUVA LIMPEZA UND,un,un,false,1,1,cozinha_central,true,ok,,Unidade padrão un definida para MVP,247
+IMP-0199,LIMPEZA,ÁLCOOL LÍQUIDO - 70% 1L,un,un,false,2,5,cozinha_central,true,ok,,Unidade padrão un definida para MVP,248
+IMP-0200,LIMPEZA,MASTER GRILL (ECOGRILL) - 1L,un,un,false,2,5,cozinha_central,true,ok,,Unidade padrão un definida para MVP,249
+IMP-0201,LIMPEZA,PANO DE CHÃO GRANDE,un,un,false,2,5,cozinha_central,true,ok,,Unidade padrão un definida para MVP,250
+IMP-0202,LIMPEZA,PERFEX AZUL ROLO 240M,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,251
+IMP-0203,LIMPEZA,SACO DE LIXO 200L,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,252
+IMP-0204,LIMPEZA,SACO DE LIXO 100L,un,un,false,1,2,cozinha_central,true,ok,,Unidade padrão un definida para MVP,253
+IMP-0205,LIMPEZA,PAPEL TOALHA,un,un,false,2,5,cozinha_central,true,ok,,Unidade padrão un definida para MVP,254
+IMP-0206,LIMPEZA,PAPEL FUNCIONARIO,un,un,false,2,4,cozinha_central,true,ok,,Unidade padrão un definida para MVP,255
+IMP-0207,LIMPEZA,TOTAL,un,un,false,,,cozinha_central,true,revisar,min_max_pendente,Unidade padrão un definida para MVP,257
+IMP-0208,FUNCIONÁRIO,ACÉM,kg,kg,true,,,cozinha_central,true,revisar,min_max_pendente,Unidade kg definida por categoria FUNCIONÁRIO,259
+IMP-0209,FUNCIONÁRIO,CARNE MOIDA,kg,kg,true,,,cozinha_central,true,revisar,min_max_pendente,Unidade kg definida por categoria FUNCIONÁRIO,260
+IMP-0210,FUNCIONÁRIO,BISTECA,kg,kg,true,,,cozinha_central,true,revisar,min_max_pendente,Unidade kg definida por categoria FUNCIONÁRIO,261
+IMP-0211,FUNCIONÁRIO,COXA COM SOBRECOXA,kg,kg,true,,,cozinha_central,true,revisar,min_max_pendente,Unidade kg definida por categoria FUNCIONÁRIO,262
+IMP-0212,FUNCIONÁRIO,FILE FRANGO,kg,kg,true,,,cozinha_central,true,revisar,min_max_pendente,Unidade kg definida por categoria FUNCIONÁRIO,263
+IMP-0213,FUNCIONÁRIO,DRUMETE,kg,kg,true,,,cozinha_central,true,revisar,min_max_pendente,Unidade kg definida por categoria FUNCIONÁRIO,264
+IMP-0214,FUNCIONÁRIO,PEIXE,kg,kg,true,,,cozinha_central,true,revisar,min_max_pendente,Unidade kg definida por categoria FUNCIONÁRIO,265
+IMP-0215,FUNCIONÁRIO,MACARRÃO,kg,kg,true,,,cozinha_central,true,revisar,min_max_pendente,Unidade kg definida por categoria FUNCIONÁRIO,266
+IMP-0216,FUNCIONÁRIO,LINGUIÇA,kg,kg,true,,,cozinha_central,true,revisar,min_max_pendente,Unidade kg definida por categoria FUNCIONÁRIO,267
+IMP-0217,FUNCIONÁRIO,SOBREPALETA,kg,kg,true,,,cozinha_central,true,revisar,min_max_pendente,Unidade kg definida por categoria FUNCIONÁRIO,268
+IMP-0218,FUNCIONÁRIO,VERDURA,kg,kg,true,,,cozinha_central,true,revisar,min_max_pendente,Unidade kg definida por categoria FUNCIONÁRIO,269
+IMP-0219,FUNCIONÁRIO,LEGUME,kg,kg,true,,,cozinha_central,true,revisar,min_max_pendente,Unidade kg definida por categoria FUNCIONÁRIO,270
+IMP-0220,FUNCIONÁRIO,AÇUCAR,kg,kg,true,,,cozinha_central,true,revisar,min_max_pendente,Unidade kg definida por categoria FUNCIONÁRIO,271
+IMP-0221,FUNCIONÁRIO,CAFÉ KG,kg,kg,true,,,cozinha_central,true,revisar,min_max_pendente,Unidade kg definida por categoria FUNCIONÁRIO,272

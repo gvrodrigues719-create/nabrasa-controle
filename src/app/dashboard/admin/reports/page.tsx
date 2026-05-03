@@ -13,6 +13,7 @@ type RoutineResult = {
     completed_groups: number
     report_id: string | null
     status_approval: string | null
+    execution_id: string | null
 }
 
 export default function ReportsPage() {
@@ -40,18 +41,32 @@ export default function ReportsPage() {
                     .select('id', { count: 'exact' })
                     .eq('routine_id', r.id)
 
-                // Grupos concluídos desde o último snapshot_started_at
-                // (não filtra por "hoje" para não perder contagens de ciclos anteriores ou de testes)
+                // Grupos concluídos
                 let cGroups = 0
+                let query = supabase
+                    .from('count_sessions')
+                    .select('id', { count: 'exact' })
+                    .eq('routine_id', r.id)
+                    .eq('status', 'completed')
+                
                 if (r.snapshot_started_at) {
-                    const { count } = await supabase
-                        .from('count_sessions')
-                        .select('id', { count: 'exact' })
-                        .eq('routine_id', r.id)
-                        .eq('status', 'completed')
-                        .gte('started_at', r.snapshot_started_at)
-                    cGroups = count || 0
+                    query = query.gte('started_at', r.snapshot_started_at)
+                } else {
+                    const today = new Date()
+                    today.setHours(0, 0, 0, 0)
+                    query = query.gte('started_at', today.toISOString())
                 }
+
+                const { count } = await query
+                cGroups = count || 0
+
+                // Execução ativa
+                const { data: exec } = await supabase
+                    .from('routine_executions')
+                    .select('id')
+                    .eq('routine_id', r.id)
+                    .eq('status', 'active')
+                    .maybeSingle()
 
                 // Relatório mais recente da rotina
                 const { data: report } = await supabase
@@ -68,7 +83,8 @@ export default function ReportsPage() {
                     total_groups: tGroups || 0,
                     completed_groups: cGroups,
                     report_id: report?.id || null,
-                    status_approval: report?.status_approval || null
+                    status_approval: report?.status_approval || null,
+                    execution_id: exec?.id || null
                 }
             }))
             setRoutines(results)
@@ -92,6 +108,7 @@ export default function ReportsPage() {
             {routines.map(r => {
                 const allDone = r.total_groups > 0 && r.completed_groups >= r.total_groups
                 const hasReport = !!r.report_id
+                const hasCompletions = r.completed_groups > 0
 
                 return (
                     <div key={r.id} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
@@ -114,18 +131,28 @@ export default function ReportsPage() {
                             )}
                         </div>
 
-                        <div className="border-t border-gray-50 pt-4 flex justify-end">
-                            {hasReport ? (
-                                <button onClick={() => router.push(`/dashboard/admin/reports/${r.report_id}`)} className="bg-white border border-gray-200 text-gray-800 py-2.5 px-4 rounded-xl flex items-center font-bold text-sm shadow-sm hover:bg-gray-50 active:scale-95 transition">
-                                    <FileSearch className="w-4 h-4 mr-2" /> Acessar Auditoria
+                        <div className="border-t border-gray-50 pt-4 flex flex-col gap-2">
+                            {hasReport && (
+                                <button onClick={() => router.push(`/dashboard/admin/reports/${r.report_id}`)} className="w-full bg-white border border-gray-200 text-gray-800 py-3 px-4 rounded-xl flex items-center justify-center font-bold text-sm shadow-sm hover:bg-gray-50 active:scale-95 transition">
+                                    <FileSearch className="w-4 h-4 mr-2" /> Acessar Última Auditoria
                                 </button>
-                            ) : allDone ? (
-                                <button onClick={() => router.push(`/dashboard/admin/reports/generate/${r.id}`)} className="bg-[#B13A2B] text-white py-2.5 px-4 rounded-xl flex items-center font-bold text-sm shadow-sm hover:bg-[#8F2E21] active:scale-95 transition">
-                                    <Calculator className="w-4 h-4 mr-2" /> Consolidar Dados
+                            )}
+                            
+                            {allDone && !hasReport && (
+                                <button onClick={() => router.push(`/dashboard/admin/reports/generate/${r.id}`)} className="w-full bg-[#B13A2B] text-white py-3 px-4 rounded-xl flex items-center justify-center font-bold text-sm shadow-sm hover:bg-[#8F2E21] active:scale-95 transition">
+                                    <Calculator className="w-4 h-4 mr-2" /> Consolidar Dados Finais
                                 </button>
-                            ) : (
-                                <button onClick={() => toast.error('Conclua a contagem em todos os locais na aba Efetuar Contagem.', { icon: '⏳' })} className="bg-gray-100 text-gray-500 py-2.5 px-4 rounded-xl flex items-center font-bold text-sm transition active:scale-95">
-                                    Aguardando Operadores
+                            )}
+
+                            {hasCompletions && r.execution_id && (
+                                <button onClick={() => router.push(`/dashboard/admin/history/${r.execution_id}`)} className="w-full bg-indigo-50 text-indigo-700 py-3 px-4 rounded-xl flex items-center justify-center font-bold text-sm hover:bg-indigo-100 active:scale-95 transition border border-indigo-100">
+                                    <FileSearch className="w-4 h-4 mr-2" /> Ver Detalhes das Contagens Atuais
+                                </button>
+                            )}
+
+                            {!allDone && !hasCompletions && (
+                                <button onClick={() => toast.error('Conclua a contagem em todos os locais na aba Efetuar Contagem.', { icon: '⏳' })} className="w-full bg-gray-50 text-gray-400 py-3 px-4 rounded-xl flex items-center justify-center font-bold text-sm transition border border-gray-100 cursor-not-allowed">
+                                    Aguardando Operadores...
                                 </button>
                             )}
                         </div>
