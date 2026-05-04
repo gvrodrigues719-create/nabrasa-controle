@@ -73,13 +73,13 @@ export async function getConsolidatedPurchaseSuggestionAction(sessionIds: string
 
         // 3. Carregar mapeamentos e parâmetros da loja
         const { data: mappings } = await supabase.from('count_to_purchase_item_map').select('*');
-        const mappingMap = new Map(mappings?.map(m => [m.count_item_id, m.purchase_item_id]));
+        const mappingMap = new Map(mappings?.map((m: any) => [m.count_item_id, m.purchase_item_id]));
 
         const { data: pItems } = await supabase.from('purchase_items').select('*').eq('is_active', true);
-        const pItemMap = new Map(pItems?.map(p => [p.id, p]));
+        const pItemMap = new Map(pItems?.map((p: any) => [p.id, p]));
 
         const { data: params } = await supabase.from('store_item_parameters').select('*').eq('store_id', storeId);
-        const paramsMap = new Map(params?.map(p => [p.purchase_item_id, p]));
+        const paramsMap = new Map(params?.map((p: any) => [p.purchase_item_id, p]));
 
         // 4. Consolidar Estoque Atual
         // Agrupar por purchase_item_id. Se não houver vínculo, manter por item_id para reportar "Sem vínculo"
