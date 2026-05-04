@@ -63,7 +63,7 @@ export async function getPurchaseSuggestionAction(sessionId: string) {
         // 2. Carregar parâmetros do Banco (Única fonte de verdade agora)
         const { data: dbMappings } = await supabase.from('count_to_purchase_item_map').select('*').eq('is_active', true);
         const { data: dbParams } = await supabase.from('store_item_parameters').select('*').eq('store_id', CAMBOINHAS_UNIT_ID);
-        const { data: purchaseItems } = await supabase.from('purchase_items').select('id, name, max_stock');
+        const { data: purchaseItems } = await supabase.from('purchase_items').select('id, name, max_stock, unit');
 
         const paramMap = new Map<string, any>(dbParams?.map((p: any) => [p.item_id, p]));
         const pItemMap = new Map<string, any>(purchaseItems?.map((p: any) => [p.id, p]));
@@ -81,6 +81,7 @@ export async function getPurchaseSuggestionAction(sessionId: string) {
             let purchaseItemId = mappingMap.get(ci.item_id);
             let purchaseItem = purchaseItemId ? pItemMap.get(purchaseItemId) : pItemByNameMap.get(countItemName.toUpperCase());
             
+            let isManualMapping = !!purchaseItemId;
             if (purchaseItem && !purchaseItemId) {
                 purchaseItemId = purchaseItem.id;
             }
@@ -92,15 +93,24 @@ export async function getPurchaseSuggestionAction(sessionId: string) {
 
             if (purchaseItem) {
                 // Lógica de Prioridade de Estoque Ideal:
-                // 1. store_item_parameters.max_stock (unidade)
-                // 2. purchase_items.max_stock (global)
                 const unitParam = paramMap.get(purchaseItem.id);
                 idealStock = unitParam?.max_stock || purchaseItem.max_stock || 0;
                 
-                if (idealStock === 0) {
-                    status = 'Sem estoque ideal';
+                // Se o match foi por NOME (fallback), validamos se é seguro
+                if (!isManualMapping) {
+                    const countUnit = ci.items?.unit?.toLowerCase();
+                    const purchaseUnit = purchaseItem.unit?.toLowerCase(); // Assumindo que purchase_items pode ter unit
+                    
+                    // Se as unidades existirem e forem diferentes, exige revisão
+                    if (countUnit && purchaseUnit && countUnit !== purchaseUnit) {
+                        status = 'Revisar';
+                        statusDetail = `Unidade divergente (${countUnit} vs ${purchaseUnit})`;
+                    } else {
+                        status = idealStock === 0 ? 'Sem estoque ideal' : 'Comprar';
+                    }
                 } else {
-                    status = 'Comprar'; // Temporário
+                    // Mapeamento manual é considerado seguro
+                    status = idealStock === 0 ? 'Sem estoque ideal' : 'Comprar';
                 }
             }
 
