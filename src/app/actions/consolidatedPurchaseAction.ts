@@ -102,16 +102,16 @@ export async function getConsolidatedPurchaseSuggestionAction(sessionIds: string
             const finalIsZeroed = isValidated ? ci.validated_is_zeroed : ci.is_zeroed;
             const qty = finalIsZeroed ? 0 : (isValidated ? ci.validated_quantity : (ci.counted_quantity ?? 0));
 
-            const key = purchaseId || `unlinked_${ci.item_id}`;
+            const key = (purchaseId || `unlinked_${ci.item_id}`) as string;
             
             if (!consolidation.has(key)) {
                 consolidation.set(key, {
                     purchase_item_id: purchaseId,
-                    count_item_name: ci.items.name,
+                    count_item_name: (ci.items as any)?.name || 'Sem nome',
                     total_qty: qty,
                     origins: new Set([originName]),
                     has_correction: isValidated,
-                    unit: ci.items.unit || 'un'
+                    unit: (ci.items as any)?.unit || 'un'
                 });
             } else {
                 const existing = consolidation.get(key)!;
