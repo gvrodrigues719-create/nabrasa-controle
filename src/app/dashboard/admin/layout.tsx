@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { requireManagerOrAdmin } from '@/lib/auth-utils'
 import { redirect } from 'next/navigation'
 import AdminShell from './AdminShell'
