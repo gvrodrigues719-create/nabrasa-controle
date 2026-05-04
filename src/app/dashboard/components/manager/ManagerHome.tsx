@@ -8,7 +8,7 @@ import AttentionList from './AttentionList'
 import ExceptionCenter from './ExceptionCenter'
 import ManagerQuickActions from './ManagerQuickActions'
 import SystemArchitectureHub from './SystemArchitectureHub'
-import { RefreshCw, Clock, ShieldCheck, ArrowRight } from 'lucide-react'
+import { RefreshCw, Clock, ShieldCheck, ArrowRight, Eye, CalendarSearch } from 'lucide-react'
 import Link from 'next/link'
 
 export default function ManagerHome() {
@@ -47,7 +47,36 @@ export default function ManagerHome() {
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-20">
-            {/* CABEÇALHO LIVE */}
+
+            {/* ── ACESSO RÁPIDO ÀS CONTAGENS — TOPO ────────────────────────── */}
+            <div className="space-y-2 pt-2">
+                <Link href="/dashboard/admin/history/sessions"
+                    className="w-full bg-gradient-to-br from-indigo-600 to-indigo-800 p-5 rounded-[28px] flex items-center text-left shadow-xl shadow-indigo-200 space-x-4 active:scale-95 transition-all block">
+                    <div className="bg-white/20 p-3 rounded-2xl shrink-0">
+                        <Eye className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                        <p className="text-indigo-200 text-[10px] font-black uppercase tracking-widest mb-0.5">Acesso Rápido</p>
+                        <h3 className="font-black text-white text-lg leading-tight">Ver Contagens</h3>
+                        <p className="text-indigo-200 text-xs mt-0.5">Todas as sessões em tempo real</p>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-white/60 shrink-0" />
+                </Link>
+
+                <Link href="/dashboard/admin/counts/history"
+                    className="w-full bg-gradient-to-br from-emerald-600 to-emerald-800 p-5 rounded-[28px] flex items-center text-left shadow-lg shadow-emerald-200 space-x-4 active:scale-95 transition-all block">
+                    <div className="bg-white/20 p-3 rounded-2xl shrink-0">
+                        <CalendarSearch className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                        <p className="text-emerald-200 text-[10px] font-black uppercase tracking-widest mb-0.5">Conferência & Auditoria</p>
+                        <h3 className="font-black text-white text-lg leading-tight">Histórico de Contagens</h3>
+                        <p className="text-emerald-200 text-xs mt-0.5">Filtrar, conferir e exportar Excel</p>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-white/60 shrink-0" />
+                </Link>
+            </div>
+
             <div className="flex justify-between items-center mb-2 px-1">
                 <div className="flex items-center gap-3">
                     <h2 className="text-lg font-black text-gray-900 leading-none">Espelho do Turno</h2>
