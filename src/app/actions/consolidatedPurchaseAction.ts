@@ -125,8 +125,8 @@ export async function getConsolidatedPurchaseSuggestionAction(sessionIds: string
         const results: ConsolidatedSuggestionItem[] = [];
 
         for (const [key, data] of consolidation.entries()) {
-            const pItem = data.purchase_item_id ? pItemMap.get(data.purchase_item_id) : null;
-            const param = data.purchase_item_id ? paramsMap.get(data.purchase_item_id) : null;
+            const pItem = (data.purchase_item_id ? pItemMap.get(data.purchase_item_id) : null) as any;
+            const param = (data.purchase_item_id ? paramsMap.get(data.purchase_item_id) : null) as any;
             
             const min = param?.min_stock ?? 0;
             const max = param?.max_stock ?? 0;
