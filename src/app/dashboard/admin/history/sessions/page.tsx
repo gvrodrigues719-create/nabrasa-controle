@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Loader2, ArrowLeft, Clock, User, MapPin, ChevronRight, AlertCircle, Search } from 'lucide-react'
 
@@ -31,40 +30,22 @@ export default function RawSessionsPage() {
     const loadSessions = async () => {
         setLoading(true)
         setFetchError(null)
-        
+
         try {
-            // 1. Busca sessões puras (sem joins para evitar erro 406)
-            const { data, error } = await supabase
-                .from('count_sessions')
-                .select('*')
-                .order('started_at', { ascending: false })
-                .limit(100)
+            // USA API SERVER-SIDE com service role key para ignorar RLS
+            // Isso garante que TODOS os dispositivos (celular, computador) vejam os dados
+            const response = await fetch('/api/admin/sessions', {
+                cache: 'no-store',
+                headers: { 'Content-Type': 'application/json' }
+            })
 
-            if (error) throw error
-            if (!data) return
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}))
+                throw new Error(errData.error || `Erro HTTP ${response.status}`)
+            }
 
-            const rawSessions = data as Session[]
-
-            // 2. Coleta IDs únicos de usuários e grupos
-            const userIds = Array.from(new Set(rawSessions.map(s => s.user_id)))
-            const groupIds = Array.from(new Set(rawSessions.map(s => s.group_id)))
-
-            // 3. Busca nomes de grupos
-            const { data: groupsData } = await supabase.from('groups').select('id, name').in('id', groupIds)
-            const groupMap = Object.fromEntries((groupsData || []).map(g => [g.id, g.name]))
-
-            // 4. Busca nomes de usuários
-            const { data: usersData } = await supabase.from('users').select('id, name').in('id', userIds)
-            const userMap = Object.fromEntries((usersData || []).map(u => [u.id, u.name]))
-
-            // 5. Mescla os dados
-            const enriched = rawSessions.map(s => ({
-                ...s,
-                group_name: groupMap[s.group_id] || 'Local desconhecido',
-                user_name: userMap[s.user_id] || 'Operador desconhecido'
-            }))
-
-            setSessions(enriched)
+            const { sessions: data } = await response.json()
+            setSessions(data || [])
         } catch (err: any) {
             console.error('[RawSessions] Erro fatal:', err)
             setFetchError(err.message || 'Erro desconhecido ao carregar sessões')
@@ -75,15 +56,15 @@ export default function RawSessionsPage() {
 
     const formatDate = (d: string | null) => {
         if (!d) return '—'
-        return new Date(d).toLocaleString('pt-BR', { 
-            day: '2-digit', 
-            month: '2-digit', 
-            hour: '2-digit', 
-            minute: '2-digit' 
+        return new Date(d).toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
         })
     }
 
-    const filtered = sessions.filter(s => 
+    const filtered = sessions.filter(s =>
         (s.group_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (s.user_name || '').toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -97,12 +78,12 @@ export default function RawSessionsPage() {
                 <div className="flex-1">
                     <div className="flex items-center space-x-2">
                         <h2 className="text-xl font-black text-gray-900 tracking-tight">Auditoria Master</h2>
-                        <span className="text-[10px] font-bold text-indigo-400 bg-indigo-50 px-1.5 py-0.5 rounded">v1.0.5-audit</span>
+                        <span className="text-[10px] font-bold text-indigo-400 bg-indigo-50 px-1.5 py-0.5 rounded">v1.0.7</span>
                     </div>
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tempo Real & Histórico</p>
                 </div>
-                <button 
-                    onClick={loadSessions} 
+                <button
+                    onClick={loadSessions}
                     disabled={loading}
                     className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-200 active:scale-90 transition-all disabled:opacity-50"
                 >
@@ -112,8 +93,8 @@ export default function RawSessionsPage() {
 
             <div className="relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input 
-                    type="text" 
+                <input
+                    type="text"
                     placeholder="Buscar por local ou operador..."
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
@@ -159,8 +140,8 @@ export default function RawSessionsPage() {
                                         <span className="font-black text-gray-900">{session.group_name}</span>
                                     </div>
                                     <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${
-                                        session.status === 'completed' 
-                                            ? 'bg-green-50 text-green-600' 
+                                        session.status === 'completed'
+                                            ? 'bg-green-50 text-green-600'
                                             : 'bg-amber-50 text-amber-600 animate-pulse'
                                     }`}>
                                         {session.status === 'completed' ? 'Finalizada' : 'Em Aberto'}
