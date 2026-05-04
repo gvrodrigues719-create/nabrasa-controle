@@ -27,10 +27,24 @@ export type PurchaseSuggestionItem = {
     unit?: string
 }
 
-const CAMBOINHAS_UNIT_ID = '3e52d6b2-755d-4bc5-a808-b8ac37ffcee1';
+/**
+ * Normaliza nomes para comparação (remove acentos, pesos, ruidos operacionais)
+ */
+function normalizeName(name: string): string {
+    if (!name) return '';
+    return name
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+        .replace(/[^\w\s]/gi, ' ')       // Remove pontuação/símbolos
+        .replace(/\b(\d+(?:[,.]\d+)?\s*(kg|g|l|ml|un|porcao|litro|litros|unidade|und|un|pacote|pct))\b/gi, '') // Remove pesos/unidades
+        .replace(/\b(maximo|minimo|porcao|unidade|caixa|cx|fardo)\b/gi, '') // Remove ruidos comuns
+        .replace(/\s+/g, ' ')            // Remove espaços duplos
+        .trim();
+}
 
 /**
- * Gera a sugestão de compras para uma sessão de contagem baseada exclusivamente no Banco de Dados.
+ * Gera a sugestão de compras para uma sessão de contagem.
  */
 export async function getPurchaseSuggestionAction(sessionId: string) {
     await requireManagerOrAdmin();
@@ -50,6 +64,9 @@ export async function getPurchaseSuggestionAction(sessionId: string) {
             throw new Error("Sessão não encontrada.");
         }
 
+        const storeId = session.group_id; // Unidade dinâmica
+        console.log(`[PurchaseSuggestion] Unidade identificada: ${storeId}`);
+
         const { data: countItems, error: itemsErr } = await supabase
             .from('count_session_items')
             .select('item_id, counted_quantity, is_zeroed, items!inner(name, unit)')
@@ -60,30 +77,42 @@ export async function getPurchaseSuggestionAction(sessionId: string) {
             throw new Error("Erro ao carregar itens da contagem.");
         }
 
-        // 2. Carregar parâmetros do Banco (Única fonte de verdade agora)
+        // 2. Carregar parâmetros do Banco
         const { data: dbMappings } = await supabase.from('count_to_purchase_item_map').select('*').eq('is_active', true);
-        const { data: dbParams } = await supabase.from('store_item_parameters').select('*').eq('store_id', CAMBOINHAS_UNIT_ID);
+        const { data: dbParams } = await supabase.from('store_item_parameters').select('*').eq('store_id', storeId);
         const { data: purchaseItems } = await supabase.from('purchase_items').select('id, name, max_stock, unit');
 
         const paramMap = new Map<string, any>(dbParams?.map((p: any) => [p.item_id, p]));
         const pItemMap = new Map<string, any>(purchaseItems?.map((p: any) => [p.id, p]));
-        const pItemByNameMap = new Map<string, any>(purchaseItems?.map((p: any) => [p.name.toUpperCase(), p]));
         const mappingMap = new Map<string, string>(dbMappings?.map((m: any) => [m.count_item_id, m.purchase_item_id]));
+
+        // Criar mapa normalizado de itens de compra para match inteligente
+        const pItemNormalizedMap = new Map<string, any>();
+        purchaseItems?.forEach((p: any) => {
+            const norm = normalizeName(p.name);
+            if (norm && !pItemNormalizedMap.has(norm)) {
+                pItemNormalizedMap.set(norm, p);
+            }
+        });
 
         // 3. Processar sugestões
         const suggestions: PurchaseSuggestionItem[] = (countItems as any[]).map(ci => {
             const countItemName = ci.items?.name || 'Item Desconhecido';
             const countedQty = ci.is_zeroed ? 0 : (ci.counted_quantity ?? 0);
             
-            // Tenta encontrar o vínculo: 
-            // 1. Via tabela de mapeamento explícito
-            // 2. Via nome exato (fallback automático para itens importados)
+            // Busca de Vínculo:
+            // 1. Mapeamento explícito (Tabela de vínculo)
             let purchaseItemId = mappingMap.get(ci.item_id);
-            let purchaseItem = purchaseItemId ? pItemMap.get(purchaseItemId) : pItemByNameMap.get(countItemName.toUpperCase());
-            
+            let purchaseItem = purchaseItemId ? pItemMap.get(purchaseItemId) : null;
             let isManualMapping = !!purchaseItemId;
-            if (purchaseItem && !purchaseItemId) {
-                purchaseItemId = purchaseItem.id;
+
+            // 2. Fallback Inteligente (Normalização)
+            if (!purchaseItem) {
+                const normalizedCountName = normalizeName(countItemName);
+                purchaseItem = pItemNormalizedMap.get(normalizedCountName);
+                if (purchaseItem) {
+                    purchaseItemId = purchaseItem.id;
+                }
             }
 
             let purchaseItemName = purchaseItem?.name || '';
@@ -92,16 +121,14 @@ export async function getPurchaseSuggestionAction(sessionId: string) {
             let statusDetail = '';
 
             if (purchaseItem) {
-                // Lógica de Prioridade de Estoque Ideal:
                 const unitParam = paramMap.get(purchaseItem.id);
                 idealStock = unitParam?.max_stock || purchaseItem.max_stock || 0;
                 
-                // Se o match foi por NOME (fallback), validamos se é seguro
                 if (!isManualMapping) {
-                    const countUnit = ci.items?.unit?.toLowerCase();
-                    const purchaseUnit = purchaseItem.unit?.toLowerCase(); // Assumindo que purchase_items pode ter unit
+                    const countUnit = (ci.items?.unit || '').toLowerCase();
+                    const purchaseUnit = (purchaseItem.unit || '').toLowerCase();
                     
-                    // Se as unidades existirem e forem diferentes, exige revisão
+                    // Se as unidades existirem e forem diferentes, exige revisão (fallback inseguro)
                     if (countUnit && purchaseUnit && countUnit !== purchaseUnit) {
                         status = 'Revisar';
                         statusDetail = `Unidade divergente (${countUnit} vs ${purchaseUnit})`;
@@ -109,14 +136,13 @@ export async function getPurchaseSuggestionAction(sessionId: string) {
                         status = idealStock === 0 ? 'Sem estoque ideal' : 'Comprar';
                     }
                 } else {
-                    // Mapeamento manual é considerado seguro
                     status = idealStock === 0 ? 'Sem estoque ideal' : 'Comprar';
                 }
             }
 
-            // Cálculo final se houver estoque ideal
+            // Cálculo final
             let suggestedQty = 0;
-            if (status !== 'Sem vínculo' && status !== 'Sem estoque ideal') {
+            if (status !== 'Sem vínculo' && status !== 'Sem estoque ideal' && status !== 'Revisar') {
                 suggestedQty = Math.max(0, idealStock - countedQty);
                 status = suggestedQty === 0 ? 'Não precisa comprar' : 'Comprar';
             } else {
@@ -139,11 +165,51 @@ export async function getPurchaseSuggestionAction(sessionId: string) {
 
         return { success: true, data: suggestions };
     } catch (err: any) {
-        console.error('[PurchaseSuggestion] Erro Crítico:', err);
-        // Retorna mensagem amigável para o usuário, sem caminhos de arquivo internos
-        return { 
-            success: false, 
-            error: "Não foi possível gerar a sugestão. Verifique os parâmetros de estoque da unidade no painel administrativo." 
-        };
+        console.error('[PurchaseSuggestion] Erro:', err);
+        return { success: false, error: "Falha ao gerar sugestão. Verifique os parâmetros de estoque." };
+    }
+}
+
+/**
+ * Salva um vínculo manual entre item de contagem e item de compra.
+ */
+export async function saveItemMappingAction(countItemId: string, purchaseItemId: string) {
+    const profile = await requireManagerOrAdmin();
+    
+    try {
+        const { error } = await supabase
+            .from('count_to_purchase_item_map')
+            .upsert({
+                count_item_id: countItemId,
+                purchase_item_id: purchaseItemId,
+                is_active: true,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'count_item_id' });
+
+        if (error) throw error;
+        return { success: true };
+    } catch (err: any) {
+        console.error('[SaveMapping] Erro:', err);
+        return { success: false, error: err.message };
+    }
+}
+
+/**
+ * Busca itens do catálogo de compras para o dropdown de vínculo.
+ */
+export async function searchPurchaseCatalogAction(query: string) {
+    await requireManagerOrAdmin();
+    try {
+        const { data, error } = await supabase
+            .from('purchase_items')
+            .select('id, name, unit')
+            .ilike('name', `%${query}%`)
+            .eq('is_active', true)
+            .limit(10);
+            
+        if (error) throw error;
+        return { success: true, data };
+    } catch (err: any) {
+        return { success: false, error: err.message };
     }
 }
