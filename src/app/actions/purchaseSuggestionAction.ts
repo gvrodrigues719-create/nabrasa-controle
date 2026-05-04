@@ -1,9 +1,6 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
-import * as XLSX from 'xlsx'
-import fs from 'fs'
-import path from 'path'
 import { requireManagerOrAdmin } from '@/lib/auth-utils'
 
 const supabase = new Proxy({} as any, {
@@ -33,7 +30,7 @@ export type PurchaseSuggestionItem = {
 const CAMBOINHAS_UNIT_ID = '3e52d6b2-755d-4bc5-a808-b8ac37ffcee1';
 
 /**
- * Gera a sugestão de compras para uma sessão de contagem.
+ * Gera a sugestão de compras para uma sessão de contagem baseada exclusivamente no Banco de Dados.
  */
 export async function getPurchaseSuggestionAction(sessionId: string) {
     await requireManagerOrAdmin();
@@ -63,87 +60,62 @@ export async function getPurchaseSuggestionAction(sessionId: string) {
             throw new Error("Erro ao carregar itens da contagem.");
         }
 
-        console.log(`[PurchaseSuggestion] Encontrados ${countItems.length} itens na contagem.`);
-
-        // 2. Carregar parâmetros da planilha (Referência Real)
-        const excelPath = path.join(process.cwd(), 'data/imports/CAMBOINHAS_COMPRAS_PARAMETROS_SUGESTAO.xlsx');
-        let excelData: any[] = [];
-        if (fs.existsSync(excelPath)) {
-            const workbook = XLSX.readFile(excelPath);
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            excelData = XLSX.utils.sheet_to_json(sheet);
-        }
-
-        // Criar mapa de busca por nome (uppercase para match insensível)
-        const excelMap = new Map();
-        excelData.forEach((row: any) => {
-            const key = String(row.item_contagem || '').toUpperCase();
-            excelMap.set(key, row);
-        });
-
-        // 3. Carregar mapeamentos do banco (se existirem) e parâmetros do banco
-        // Tentamos ler da tabela de mapeamento, se falhar (tabela não existe), usamos apenas o Excel.
-        const { data: dbMappings } = await supabase.from('count_to_purchase_item_map').select('*').eq('is_active', true).catch(() => ({ data: [] }));
+        // 2. Carregar parâmetros do Banco (Única fonte de verdade agora)
+        const { data: dbMappings } = await supabase.from('count_to_purchase_item_map').select('*').eq('is_active', true);
         const { data: dbParams } = await supabase.from('store_item_parameters').select('*').eq('store_id', CAMBOINHAS_UNIT_ID);
         const { data: purchaseItems } = await supabase.from('purchase_items').select('id, name, max_stock');
 
         const paramMap = new Map<string, any>(dbParams?.map((p: any) => [p.item_id, p]));
         const pItemMap = new Map<string, any>(purchaseItems?.map((p: any) => [p.id, p]));
-        const mappingMap = new Map<string, any>(dbMappings?.map((m: any) => [m.count_item_id, m.purchase_item_id]));
+        const pItemByNameMap = new Map<string, any>(purchaseItems?.map((p: any) => [p.name.toUpperCase(), p]));
+        const mappingMap = new Map<string, string>(dbMappings?.map((m: any) => [m.count_item_id, m.purchase_item_id]));
 
-        // 4. Processar sugestões
+        // 3. Processar sugestões
         const suggestions: PurchaseSuggestionItem[] = (countItems as any[]).map(ci => {
-            const itemName = ci.items?.name || 'Item Desconhecido';
+            const countItemName = ci.items?.name || 'Item Desconhecido';
             const countedQty = ci.is_zeroed ? 0 : (ci.counted_quantity ?? 0);
-            const excelRow = excelMap.get(itemName.toUpperCase());
             
-            let purchaseItemId = mappingMap.get(ci.item_id) as string | undefined;
-            let purchaseItemName = '';
+            // Tenta encontrar o vínculo: 
+            // 1. Via tabela de mapeamento explícito
+            // 2. Via nome exato (fallback automático para itens importados)
+            let purchaseItemId = mappingMap.get(ci.item_id);
+            let purchaseItem = purchaseItemId ? pItemMap.get(purchaseItemId) : pItemByNameMap.get(countItemName.toUpperCase());
+            
+            if (purchaseItem && !purchaseItemId) {
+                purchaseItemId = purchaseItem.id;
+            }
+
+            let purchaseItemName = purchaseItem?.name || '';
             let idealStock = 0;
             let status: PurchaseSuggestionItem['status'] = 'Sem vínculo';
             let statusDetail = '';
 
-            // Lógica de Prioridade:
-            // 1. Se tem Excel Row, usa os dados dela (Referência Real solicitada)
-            if (excelRow) {
-                purchaseItemName = excelRow.item_compra;
-                idealStock = Number(excelRow.estoque_ideal_para_sugestao);
+            if (purchaseItem) {
+                // Lógica de Prioridade de Estoque Ideal:
+                // 1. store_item_parameters.max_stock (unidade)
+                // 2. purchase_items.max_stock (global)
+                const unitParam = paramMap.get(purchaseItem.id);
+                idealStock = unitParam?.max_stock || purchaseItem.max_stock || 0;
                 
-                if (excelRow.status_importacao !== 'OK') {
-                    status = 'Revisar';
-                    statusDetail = excelRow.observacao || 'Status de importação não OK';
-                } else if (isNaN(idealStock) || idealStock === 0) {
+                if (idealStock === 0) {
                     status = 'Sem estoque ideal';
                 } else {
-                    status = 'Comprar'; // Temporário, será validado abaixo
+                    status = 'Comprar'; // Temporário
                 }
-            } else if (purchaseItemId) {
-                // 2. Fallback para mapeamento no DB
-                const pItem = pItemMap.get(purchaseItemId) as any;
-                const param = paramMap.get(purchaseItemId) as any;
-                purchaseItemName = pItem?.name || '';
-                idealStock = param?.max_stock || pItem?.max_stock || 0;
-                
-                if (idealStock === 0) status = 'Sem estoque ideal';
-                else status = 'Comprar';
             }
 
             // Cálculo final se houver estoque ideal
             let suggestedQty = 0;
-            if (status !== 'Sem vínculo' && status !== 'Sem estoque ideal' && status !== 'Revisar') {
+            if (status !== 'Sem vínculo' && status !== 'Sem estoque ideal') {
                 suggestedQty = Math.max(0, idealStock - countedQty);
-                if (suggestedQty === 0) {
-                    status = 'Não precisa comprar';
-                } else {
-                    status = 'Comprar';
-                }
+                status = suggestedQty === 0 ? 'Não precisa comprar' : 'Comprar';
             } else {
                 suggestedQty = 0;
             }
 
             return {
                 count_item_id: ci.item_id,
-                count_item_name: itemName,
+                count_item_name: countItemName,
                 counted_qty: countedQty,
                 purchase_item_id: purchaseItemId,
                 purchase_item_name: purchaseItemName,
@@ -157,7 +129,11 @@ export async function getPurchaseSuggestionAction(sessionId: string) {
 
         return { success: true, data: suggestions };
     } catch (err: any) {
-        console.error('[PurchaseSuggestion] Erro:', err);
-        return { success: false, error: err.message };
+        console.error('[PurchaseSuggestion] Erro Crítico:', err);
+        // Retorna mensagem amigável para o usuário, sem caminhos de arquivo internos
+        return { 
+            success: false, 
+            error: "Não foi possível gerar a sugestão. Verifique os parâmetros de estoque da unidade no painel administrativo." 
+        };
     }
 }
