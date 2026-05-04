@@ -1,9 +1,8 @@
 'use client'
 
 import { useEffect, useState, use } from 'react'
-import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Loader2, ArrowLeft, MapPin, User, Clock, CheckCircle2, AlertCircle, Package, Hash } from 'lucide-react'
+import { Loader2, ArrowLeft, MapPin, User, Clock, AlertCircle, Package } from 'lucide-react'
 
 type SessionItem = {
     item_id: string
@@ -39,52 +38,26 @@ export default function SessionDetailPage({ params }: { params: Promise<{ sessio
     const loadData = async () => {
         setLoading(true)
         setErrorMsg(null)
-        
+
         try {
-            // 1. Dados da Sessão (Puro)
-            const { data: sData, error: sErr } = await supabase
-                .from('count_sessions')
-                .select('id, status, started_at, completed_at, group_id, user_id')
-                .eq('id', sessionId)
-                .single()
-            
-            if (sErr) throw sErr
-            if (!sData) throw new Error('Sessão não encontrada')
-
-            const rawSession = sData as Session
-
-            // 2. Resolve nomes (Puro)
-            const { data: gData } = await supabase.from('groups').select('name').eq('id', rawSession.group_id).single()
-            const { data: uData } = await supabase.from('users').select('name').eq('id', rawSession.user_id).single()
-
-            setSession({
-                ...rawSession,
-                group_name: gData?.name || 'Local desconhecido',
-                user_name: uData?.name || 'Operador desconhecido'
+            // USA API SERVER-SIDE para ignorar RLS — funciona em qualquer dispositivo
+            const response = await fetch(`/api/admin/sessions/${sessionId}`, {
+                cache: 'no-store'
             })
 
-            // 3. Itens Contados (Puro)
-            const { data: iData, error: iErr } = await supabase
-                .from('count_session_items')
-                .select('item_id, counted_quantity, is_zeroed')
-                .eq('session_id', sessionId)
-            
-            if (iErr) throw iErr
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}))
+                throw new Error(errData.error || `Erro HTTP ${response.status}`)
+            }
 
-            const rawItems = iData as SessionItem[]
+            const { session: sessionData, items: itemsData } = await response.json()
 
-            // 4. Resolve nomes dos itens
-            const itemIds = rawItems.map(ri => ri.item_id)
-            const { data: itemsRef } = await supabase.from('items').select('id, name, unit').in('id', itemIds)
-            const itemMap = Object.fromEntries((itemsRef || []).map(ir => [ir.id, { name: ir.name, unit: ir.unit }]))
-
-            const enrichedItems = rawItems.map(ri => ({
-                ...ri,
-                item_name: itemMap[ri.item_id]?.name || 'Item desconhecido',
-                item_unit: itemMap[ri.item_id]?.unit || 'un'
-            }))
-
-            setItems(enrichedItems.sort((a, b) => (a.item_name || '').localeCompare(b.item_name || '')))
+            setSession(sessionData)
+            setItems(
+                (itemsData || []).sort((a: SessionItem, b: SessionItem) =>
+                    (a.item_name || '').localeCompare(b.item_name || '')
+                )
+            )
         } catch (err: any) {
             console.error('[SessionDetail] Erro:', err)
             setErrorMsg(err.message)
@@ -95,14 +68,14 @@ export default function SessionDetailPage({ params }: { params: Promise<{ sessio
 
     const formatDate = (d: string | null) => {
         if (!d) return '—'
-        return new Date(d).toLocaleString('pt-BR', { 
+        return new Date(d).toLocaleString('pt-BR', {
             day: '2-digit', month: '2-digit', year: 'numeric',
-            hour: '2-digit', minute: '2-digit' 
+            hour: '2-digit', minute: '2-digit'
         })
     }
 
     if (loading) return <div className="min-h-screen flex items-center justify-center bg-gray-50"><Loader2 className="w-10 h-10 text-indigo-600 animate-spin" /></div>
-    
+
     if (errorMsg || !session) return (
         <div className="p-10 text-center space-y-4">
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
@@ -127,7 +100,6 @@ export default function SessionDetailPage({ params }: { params: Promise<{ sessio
             </div>
 
             <div className="p-4 space-y-4">
-                {/* Header Card */}
                 <div className="bg-white p-6 rounded-[32px] shadow-sm border border-gray-200 space-y-4">
                     <div className="flex justify-between items-start">
                         <div className="flex items-center space-x-3">
@@ -161,7 +133,6 @@ export default function SessionDetailPage({ params }: { params: Promise<{ sessio
                     </div>
                 </div>
 
-                {/* Items List */}
                 <div className="bg-white rounded-[32px] shadow-sm border border-gray-200 overflow-hidden">
                     <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                         <div className="flex items-center space-x-2">

@@ -1,12 +1,30 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { LayoutGrid, Package, CalendarSync, History, TrendingUp, ClipboardCheck, Bell, Activity, ShoppingCart } from 'lucide-react'
+import { LayoutGrid, Package, CalendarSync, History, TrendingUp, ClipboardCheck, Bell, Activity, ShoppingCart, Eye } from 'lucide-react'
 
 export default function AdminHome() {
     const router = useRouter()
     return (
         <div className="p-4 space-y-2">
+
+            {/* ── AUDITORIA MASTER — DESTAQUE PRINCIPAL ──────────── */}
+            <button
+                onClick={() => router.push('/dashboard/admin/history/sessions')}
+                className="w-full bg-gradient-to-br from-indigo-600 to-indigo-800 p-6 rounded-[28px] flex items-center text-left shadow-xl shadow-indigo-200 space-x-4 active:scale-95 transition-all mb-4"
+            >
+                <div className="bg-white/20 p-3.5 rounded-2xl shrink-0">
+                    <Eye className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1">
+                    <p className="text-indigo-200 text-[10px] font-black uppercase tracking-widest mb-0.5">Acesso Rápido</p>
+                    <h3 className="font-black text-white text-xl leading-tight">Ver Contagens</h3>
+                    <p className="text-indigo-200 text-sm mt-0.5">Todas as sessões em tempo real</p>
+                </div>
+                <div className="bg-white/10 px-3 py-1.5 rounded-xl">
+                    <span className="text-white text-[10px] font-black uppercase tracking-widest">Abrir →</span>
+                </div>
+            </button>
 
             {/* ── MÓDULOS DE ESTOQUE / OPERAÇÃO ──────────────────── */}
             <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest pl-1 mb-3">Operação</h2>
