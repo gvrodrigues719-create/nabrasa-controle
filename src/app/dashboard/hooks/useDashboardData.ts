@@ -85,10 +85,11 @@ export function useDashboardData(userId: string, isDemoMode: boolean, userRole?:
             setLoadingData(true)
             const startTime = performance.now()
             
-            // 1. Fetch de dados básicos e alocação de área
+            // 1. Fetch de todos os dados em paralelo (SEM WATERFALL)
             const results = await Promise.all([
                 getOperationalHealthAction(),
                 getActiveRoutinesAction(),
+                userId ? getOperatorDailyTasksAction(userId) : Promise.resolve({ success: false }),
                 userId
                     ? Promise.all([
                         supabase
@@ -120,9 +121,21 @@ export function useDashboardData(userId: string, isDemoMode: boolean, userRole?:
                 (userRole === 'admin' || userRole === 'manager') ? import('@/app/actions/gamificationAction').then(m => m.getManagerRankingSummaryAction()) : Promise.resolve({ success: false })
             ])
 
-            const [healthRes, routinesRes, sessionsRes, summaryRes, monthlySummaryRes, cmvRes, lastSealRes, focusRes, noticeRes, userAreaRes, historyRes, managerRankingRes] = [
-                results[0], results[1], results[2], results[3], results[4], results[5], results[6], results[7], results[8], results[9], results[10], results[11]
-            ]
+            const [
+                healthRes, 
+                routinesRes, 
+                tasksRes,
+                sessionsRes, 
+                summaryRes, 
+                monthlySummaryRes, 
+                cmvRes, 
+                lastSealRes, 
+                focusRes, 
+                noticeRes, 
+                userAreaRes, 
+                historyRes, 
+                managerRankingRes
+            ] = results as any[]
 
             // 2. Processamento de Saúde e Rotinas Gerais
             if (healthRes.success) {
@@ -130,7 +143,7 @@ export function useDashboardData(userId: string, isDemoMode: boolean, userRole?:
                 setActiveLeaks(healthRes.activeLeaks || [])
                 setWeeklyLeaks(healthRes.weeklyLeaks || [])
             }
-            setRoutinesCount(0) // Será calculado pelo motor de ações abaixo
+            setRoutinesCount(0)
 
             // 3. Processamento de Sessões e Áreas
             let currentAreaName = 'Loja' 
@@ -145,7 +158,6 @@ export function useDashboardData(userId: string, isDemoMode: boolean, userRole?:
             const activeCountSession = countSessionRes?.data
             const activeChecklistSession = checklistSessionRes?.data
 
-            // Prioriza checklist session se houver (ou vice-versa, aqui optamos pela lógica do mais recente ou simplesmente o que existir)
             const s = activeCountSession || activeChecklistSession
 
             if (s) {
@@ -174,59 +186,43 @@ export function useDashboardData(userId: string, isDemoMode: boolean, userRole?:
             let countsPendingTemp = 0
             let checklistsPendingTemp = 0
             
-            // 4.1. Processar Rotinas Ativas (Global e Área)
-            if (routinesRes.data) {
-                const brDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
-                const startOfDayBR = `${brDate}T03:00:00Z`
-
-                // Buscar detalhes de grupos por rotina e sessões de hoje (ambos tipos)
-                const results_sub = await Promise.all([
-                    supabase.from('routine_groups').select('routine_id, group_id, groups:group_id(name)'),
-                    supabase.from('count_sessions').select('routine_id, group_id, status, started_at').gte('started_at', startOfDayBR),
-                    supabase.from('checklist_sessions').select('routine_id, group_id, status, started_at').gte('started_at', startOfDayBR),
-                    getOperatorDailyTasksAction(userId)
-                ])
-
-                const [groupsRes, countSessionsRes, checklistSessionsRes, tasksRes] = results_sub as any[]
-                
-                // Usamos os dados unificados do novo action
-                if (tasksRes.success) {
-                    tasksRes.data.today.forEach((t: any) => {
-                        allPotentialActions.push({
-                            id: t.id,
-                            label: t.label || `Iniciar ${t.name}`,
-                            description: `Setor: ${t.groupName}`,
-                            type: t.type,
-                            areaName: t.groupName,
-                            status: 'pending',
-                            priority: 'medium',
-                            url: t.url,
-                            routineId: t.routineId,
-                            groupId: t.groupId,
-                            startedAt: t.startedAt
-                        })
+            // Usamos os dados unificados do novo action
+            if (tasksRes.success) {
+                tasksRes.data.today.forEach((t: any) => {
+                    allPotentialActions.push({
+                        id: t.id,
+                        label: t.label || `Iniciar ${t.name}`,
+                        description: `Setor: ${t.groupName}`,
+                        type: t.type,
+                        areaName: t.groupName,
+                        status: 'pending',
+                        priority: 'medium',
+                        url: t.url,
+                        routineId: t.routineId,
+                        groupId: t.groupId,
+                        startedAt: t.startedAt
                     })
+                })
 
-                    tasksRes.data.inProgress.forEach((t: any) => {
-                        allPotentialActions.push({
-                            id: t.id,
-                            label: t.label || `Continuar ${t.name}`,
-                            description: `Setor: ${t.groupName}`,
-                            type: t.type,
-                            areaName: t.groupName,
-                            status: 'in_progress',
-                            priority: 'medium',
-                            url: t.url,
-                            routineId: t.routineId,
-                            groupId: t.groupId,
-                            startedAt: t.startedAt
-                        })
+                tasksRes.data.inProgress.forEach((t: any) => {
+                    allPotentialActions.push({
+                        id: t.id,
+                        label: t.label || `Continuar ${t.name}`,
+                        description: `Setor: ${t.groupName}`,
+                        type: t.type,
+                        areaName: t.groupName,
+                        status: 'in_progress',
+                        priority: 'medium',
+                        url: t.url,
+                        routineId: t.routineId,
+                        groupId: t.groupId,
+                        startedAt: t.startedAt
                     })
+                })
 
-                    countsPendingTemp = tasksRes.counts.pendingCounts
-                    checklistsPendingTemp = tasksRes.counts.pendingChecklists
-                    areaPendingCount = tasksRes.counts.todayCount
-                }
+                countsPendingTemp = tasksRes.counts.pendingCounts
+                checklistsPendingTemp = tasksRes.counts.pendingChecklists
+                areaPendingCount = tasksRes.counts.todayCount
             }
 
             // 4.2. Priorização Final

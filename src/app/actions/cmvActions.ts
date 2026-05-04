@@ -56,13 +56,11 @@ export async function setCMVTarget(percentage: number) {
     return { success: true }
 }
 
-export async function calculateCMV(executionId: string) {
-    await requireManagerOrAdmin()
-
-    const { data: execInfo } = await supabase.from('routine_executions').select('revenue, routine_id').eq('id', executionId).single()
-    if (!execInfo) throw new Error("Routine execution não encontrada.")
-    const routineId = execInfo.routine_id
-
+/**
+ * Helper interno para calcular CMV de um ciclo de forma otimizada.
+ * Reduz roundtrips com o banco usando queries bulk para EF (Estoque Final).
+ */
+async function buildCMVCalculation(executionId: string, routineId: string) {
     // 1. Buscar snapshots do ciclo (Estoque Inicial = EI)
     const { data: snapshots } = await supabase
         .from('routine_theoretical_snapshot')
@@ -72,11 +70,10 @@ export async function calculateCMV(executionId: string) {
     // 2. Buscar compras agrupadas (Entradas)
     const { data: entries } = await supabase
         .from('stock_entries')
-        .select('item_id, converted_quantity, converted_unit_cost, affects_avg_cost')
+        .select('item_id, converted_quantity, converted_unit_cost')
         .eq('execution_id', executionId)
 
     // 3. Buscar EF (Estoque Final) pela última sessão completed
-    // Cuidado com count_session_items: precisamos associar via session_id
     const { data: countSessions } = await supabase
         .from('count_sessions')
         .select('id, completed_at')
@@ -84,30 +81,32 @@ export async function calculateCMV(executionId: string) {
         .eq('status', 'completed')
         .order('completed_at', { ascending: false })
 
-    let EF_map: Record<string, number> = {}
-    
+    const EF_map: Record<string, number> = {}
+
     if (countSessions && countSessions.length > 0) {
         const sessionIds = countSessions.map((s: any) => s.id)
-        // Precisamos processar do mais antigo para o mais novo para que o mais novo sobrescreva
-        const sessDesc = [...sessionIds].reverse()
-        
-        for (const sId of sessDesc) {
-            const { data: csi } = await supabase
-                .from('count_session_items')
-                .select('item_id, counted_quantity')
-                .eq('session_id', sId)
-            
-            if (csi) {
-                for (const item of csi) {
-                    if (item.counted_quantity != null) {
-                        EF_map[item.item_id] = item.counted_quantity
-                    }
-                }
-            }
+        const sessionOrder = new Map<string, number>()
+        sessionIds.forEach((id: string, idx: number) => sessionOrder.set(id, idx))
+
+        // Busca todos os itens de todas as sessões do ciclo em uma ÚNICA query
+        const { data: allCountedItems } = await supabase
+            .from('count_session_items')
+            .select('session_id, item_id, counted_quantity')
+            .in('session_id', sessionIds)
+
+        if (allCountedItems && allCountedItems.length > 0) {
+            // Processa em memória: o item da sessão mais recente (menor index no sessionIds) vence
+            allCountedItems
+                .filter((i: any) => i.counted_quantity != null)
+                .sort((a: any, b: any) => (sessionOrder.get(b.session_id) || 0) - (sessionOrder.get(a.session_id) || 0))
+                .forEach((item: any) => {
+                    // map.set sobrescreve se já existir, mas aqui queremos manter o mais novo
+                    // Como sortemos por index decrescente, o mais novo (index 0) será processado por último e ficará no map
+                    EF_map[item.item_id] = Number(item.counted_quantity)
+                })
         }
     }
 
-    // Unir todos os IDs
     const allItemIds = new Set<string>()
     const EI_map: Record<string, { qty: number, avg_cost: number, val: number }> = {}
     const Compras_map: Record<string, { qty: number, val: number }> = {}
@@ -134,18 +133,17 @@ export async function calculateCMV(executionId: string) {
 
     Object.keys(EF_map).forEach(id => allItemIds.add(id))
 
-    // Calcula Totais
     let total_ei = 0
     let total_compras = 0
     let total_ef = 0
     let total_cmv = 0
-    let uncounted_item_ids: string[] = []
-    let anomaly_item_ids: string[] = []
+    const uncounted_item_ids: string[] = []
+    const anomaly_item_ids: string[] = []
 
     for (const itemId of Array.from(allItemIds)) {
         const ei = EI_map[itemId] || { qty: 0, val: 0, avg_cost: 0 }
         const comp = Compras_map[itemId] || { qty: 0, val: 0 }
-        
+
         const sum_qty = ei.qty + comp.qty
         const sum_val = ei.val + comp.val
         const custo_medio = sum_qty > 0 ? (sum_val / sum_qty) : ei.avg_cost
@@ -158,16 +156,11 @@ export async function calculateCMV(executionId: string) {
 
         if (was_counted) {
             ef_qty = EF_map[itemId]
-            // Anomalia: não tinha no começo, não comprou, mas acha
             if (ei.qty <= 0 && comp.qty <= 0 && ef_qty > 0) {
                 anomaly_item_ids.push(itemId)
             }
-        } else {
-            // Se esqueceu de contar e tinha estoque
-            if (ei.qty > 0 || comp.qty > 0) {
-                uncounted_item_ids.push(itemId)
-            }
-            // EF fica zero, gerando Perda Total no sistema se não for revisado.
+        } else if (ei.qty > 0 || comp.qty > 0) {
+            uncounted_item_ids.push(itemId)
         }
 
         const ef_val = ef_qty * custo_medio
@@ -177,27 +170,40 @@ export async function calculateCMV(executionId: string) {
         total_cmv += cmv_item
     }
 
-    const cmv_percentage = (execInfo.revenue || 0) > 0 ? total_cmv / execInfo.revenue! : null
+    return {
+        total_ei,
+        total_compras,
+        total_ef,
+        total_cmv,
+        uncounted_item_ids,
+        anomaly_item_ids
+    }
+}
+
+export async function calculateCMV(executionId: string) {
+    await requireManagerOrAdmin()
+
+    const { data: execInfo } = await supabase.from('routine_executions').select('revenue, routine_id').eq('id', executionId).single()
+    if (!execInfo) throw new Error("Routine execution não encontrada.")
+
+    const results = await buildCMVCalculation(executionId, execInfo.routine_id)
+
+    const cmv_percentage = (execInfo.revenue || 0) > 0 ? results.total_cmv / execInfo.revenue! : null
 
     // Salvar agregados
     await supabase.from('routine_executions').update({
-        cmv_total: total_cmv,
+        cmv_total: results.total_cmv,
         cmv_percentage: cmv_percentage
     }).eq('id', executionId)
 
     return { 
         success: true, 
         data: {
-            total_ei,
-            total_compras,
-            total_ef,
-            total_cmv,
+            ...results,
             cmv_percentage,
             revenue: execInfo.revenue || 0,
-            uncounted_count: uncounted_item_ids.length,
-            uncounted_item_ids,
-            anomalies_count: anomaly_item_ids.length,
-            anomaly_item_ids
+            uncounted_count: results.uncounted_item_ids.length,
+            anomalies_count: results.anomaly_item_ids.length
         }
     }
 }
@@ -228,14 +234,23 @@ export async function getCMVItemDetail(executionId: string) {
     let EF_map: Record<string, number> = {}
     if (countSessions && countSessions.length > 0) {
         const sessionIds = countSessions.map((s: any) => s.id)
-        const sessDesc = [...sessionIds].reverse()
-        for (const sId of sessDesc) {
-            const { data: csi } = await supabase.from('count_session_items').select('item_id, counted_quantity').eq('session_id', sId)
-            if (csi) {
-                for (const item of csi) {
-                    if (item.counted_quantity != null) EF_map[item.item_id] = item.counted_quantity
-                }
-            }
+        const sessionOrder = new Map<string, number>()
+        sessionIds.forEach((id: string, idx: number) => sessionOrder.set(id, idx))
+
+        const { data: allCountedItems } = await supabase
+            .from('count_session_items')
+            .select('session_id, item_id, counted_quantity')
+            .in('session_id', sessionIds)
+
+        if (allCountedItems && allCountedItems.length > 0) {
+            allCountedItems
+                .filter((i: any) => i.counted_quantity != null)
+                .sort((a: any, b: any) => (sessionOrder.get(b.session_id) || 0) - (sessionOrder.get(a.session_id) || 0))
+                .forEach((item: any) => {
+                    if (!EF_map.hasOwnProperty(item.item_id)) {
+                        EF_map[item.item_id] = Number(item.counted_quantity)
+                    }
+                })
         }
     }
 
@@ -370,13 +385,19 @@ export async function getCMVConsolidated(filter: { mode: '4' | '6' | 'month' | '
     let cyclesWithAnomalies = 0
     let cyclesWithUncounted = 0
 
-    for (const cycle of cycles) {
-        // Aproveitamos a lógica de calculateCMV mas de forma otimizada para apenas pegar os counts
-        // Nota: Em um sistema real com muitos dados, salvaríamos esses counts no banco no momento do fechamento.
-        const res = await calculateCMV(cycle.id) // Recalcula para garantir counts atualizados (Action já existe)
-        const counts = res.data
+    // Paraleliza o cálculo de todos os ciclos usando Promise.all
+    // Isso reduz drásticamente a latência "sincronizando"
+    const cycleCalculations = await Promise.all(
+        cycles.map(async (cycle: any) => ({
+            cycle,
+            results: await buildCMVCalculation(cycle.id, cycle.routine_id)
+        }))
+    )
 
+    for (const { cycle, results } of cycleCalculations) {
         const cyclePurchases = purchasesByExec[cycle.id] || 0
+        const cycleCmvTotal = results.total_cmv
+        const cycleCmvPercentage = (cycle.revenue || 0) > 0 ? cycleCmvTotal / cycle.revenue : null
         
         cycleData.push({
             execution_id: cycle.id,
@@ -384,18 +405,18 @@ export async function getCMVConsolidated(filter: { mode: '4' | '6' | 'month' | '
             date: cycle.started_at,
             revenue: cycle.revenue || 0,
             compras_total: cyclePurchases,
-            cmv_total: cycle.cmv_total || 0,
-            cmv_percentage: cycle.cmv_percentage,
-            status: 'draft', // Simplificado
-            anomalies_count: counts.anomalies_count,
-            uncounted_count: counts.uncounted_count
+            cmv_total: cycleCmvTotal,
+            cmv_percentage: cycleCmvPercentage,
+            status: 'preview', // Status padrão para visão consolidada
+            anomalies_count: results.anomaly_item_ids.length,
+            uncounted_count: results.uncounted_item_ids.length
         })
 
         revenueTotal += (cycle.revenue || 0)
         purchasesTotal += cyclePurchases
-        cmvTotal += (cycle.cmv_total || 0)
-        if (counts.anomalies_count > 0) cyclesWithAnomalies++
-        if (counts.uncounted_count > 0) cyclesWithUncounted++
+        cmvTotal += cycleCmvTotal
+        if (results.anomaly_item_ids.length > 0) cyclesWithAnomalies++
+        if (results.uncounted_item_ids.length > 0) cyclesWithUncounted++
     }
 
     const cmvTarget = await getCMVTarget()
