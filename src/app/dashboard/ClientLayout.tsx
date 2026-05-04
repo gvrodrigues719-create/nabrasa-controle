@@ -3,62 +3,38 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
-import { Loader2 } from 'lucide-react'
 import { ConfirmModal } from '@/components/ConfirmModal'
 import { logoutOperator } from '@/app/actions/pinAuth'
 import BottomNav from './components/operator/BottomNav'
 
 export default function ClientDashboardLayout({
     children,
-    initialOp
+    initialOp,
+    hasManagerSession
 }: {
     children: React.ReactNode,
     initialOp: { name: string, role: string } | null
+    hasManagerSession?: boolean
 }) {
-    const [loading, setLoading] = useState(!initialOp)
+    // Server já garantiu autenticação — sem spinner bloqueante
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
-    const [opName, setOpName] = useState<string | null>(initialOp ? initialOp.name : null)
+    const [opName] = useState<string | null>(initialOp ? initialOp.name : null)
     const router = useRouter()
     const pathname = usePathname()
 
     const isExecutionPage = pathname?.includes('/routines/') || pathname?.includes('/checklist/') || pathname?.includes('/count/') || pathname?.includes('/purchases') || pathname?.includes('/kitchen')
     const showBottomNav = !isExecutionPage
 
+    // Guarda complementar: detecta expiração de sessão em tempo real
     useEffect(() => {
-        let isMounted = true
-
-        async function checkAuth() {
-            if (initialOp) {
-                // Já verificado via Server Component
-                return
-            }
-
-            const { data: { session } } = await supabase.auth.getSession()
-            if (!session && isMounted) {
-                router.push('/login')
-            } else if (isMounted) {
-                setLoading(false)
-            }
-        }
-
-        checkAuth()
-
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-            if (!session && !opName) {
+            if (event === 'SIGNED_OUT' && !opName) {
                 router.push('/login')
             }
         })
+        return () => subscription.unsubscribe()
+    }, [router, opName])
 
-        return () => { isMounted = false; subscription.unsubscribe() }
-    }, [router, initialOp, opName])
-
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
-            </div>
-        )
-    }
 
     return (
         <div className="min-h-screen bg-gray-50">
