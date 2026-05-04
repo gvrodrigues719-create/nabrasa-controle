@@ -78,6 +78,8 @@ export default function CountHistoryPage() {
 
     const [sessions, setSessions] = useState<CountSession[]>([])
     const [loading, setLoading] = useState(false)
+    const [exportLoading, setExportLoading] = useState(false)
+    const [exportError, setExportError] = useState<string | null>(null)
     const [error, setError] = useState<string | null>(null)
     const [showFilters, setShowFilters] = useState(true)
 
@@ -156,30 +158,79 @@ export default function CountHistoryPage() {
     const inProgress = sessions.filter(s => s.status !== 'completed' && !s.is_stuck).length
     const stuck = sessions.filter(s => s.is_stuck).length
 
-    // ── Export XLSX ───────────────────────────────────────────────────────────
-    function exportSummaryXLSX() {
-        const rows = sessions.map(s => ({
-            'Data': formatDate(s.started_at),
-            'Grupo / Área': s.group_name,
-            'Setor': s.macro_sector,
-            'Responsável': s.user_name,
-            'Rotina': s.routine_name,
-            'Status': statusLabel(s).label,
-            'Total Itens': s.total_items,
-            'Contados': s.counted_items,
-            'Zerados': s.zeroed_items,
-            'Pendentes': s.pending_items,
-            'Início': formatDate(s.started_at),
-            'Conclusão': formatDate(s.completed_at),
-            'Duração': formatDuration(s.duration_min),
-        }))
+    // ── Export XLSX (2 abas: Resumo + Itens Contados) ────────────────────────
+    async function exportDetailedXLSX() {
+        setExportLoading(true)
+        setExportError(null)
+        try {
+            const params = new URLSearchParams()
+            if (filters.from) params.set('from', filters.from)
+            if (filters.to) params.set('to', filters.to)
+            if (filters.groupId) params.set('groupId', filters.groupId)
+            if (filters.status && filters.status !== 'all') params.set('status', filters.status)
+            if (filters.userId) params.set('userId', filters.userId)
 
-        const ws = XLSX.utils.json_to_sheet(rows)
-        const wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, ws, 'Contagens')
+            const res = await fetch(`/api/admin/counts/history/export?${params}`, { cache: 'no-store' })
+            if (!res.ok) throw new Error(`Erro HTTP ${res.status}`)
+            const { sessions: exportSessions, items: exportItems } = await res.json()
 
-        const filename = `contagens_nabrasa_${filters.from}_a_${filters.to}.xlsx`
-        XLSX.writeFile(wb, filename)
+            const wb = XLSX.utils.book_new()
+
+            // ── ABA 1: Resumo ────────────────────────────────────────────────
+            const summaryRows = (exportSessions || []).map((s: any) => ({
+                'Data': formatDate(s.started_at),
+                'Grupo / Área': s.group_name,
+                'Setor': s.macro_sector,
+                'Responsável': s.user_name,
+                'Rotina': s.routine_name,
+                'Status': s.is_stuck ? 'Travada' : s.status === 'completed' ? 'Concluída' : 'Em Andamento',
+                'Total Itens': s.total_items,
+                'Contados': s.counted_items,
+                'Zerados': s.zeroed_items,
+                'Pendentes': s.pending_items,
+                'Início': formatDate(s.started_at),
+                'Conclusão': formatDate(s.completed_at),
+                'Duração': formatDuration(s.duration_min),
+            }))
+            const ws1 = XLSX.utils.json_to_sheet(summaryRows)
+            ws1['!cols'] = [14,22,14,18,20,12,10,10,10,10,16,16,10].map(w => ({ wch: w }))
+            ws1['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: summaryRows.length, c: 12 } }) }
+            ws1['!freeze'] = { xSplit: 0, ySplit: 1 }
+            XLSX.utils.book_append_sheet(wb, ws1, 'Resumo')
+
+            // ── ABA 2: Itens Contados ────────────────────────────────────────
+            const itemRows = (exportItems || []).map((i: any) => ({
+                'Data da Contagem': formatDate(i.started_at),
+                'Grupo / Área': i.group_name,
+                'Setor': i.macro_sector,
+                'Responsável': i.user_name,
+                'Rotina': i.routine_name,
+                'Status da Sessão': i.session_status === 'completed' ? 'Concluída' : 'Em Andamento',
+                'Item': i.item_name,
+                'Unidade': i.item_unit,
+                'Categoria': i.item_category,
+                'Quantidade Contada': i.counted_quantity ?? '',
+                'Zerado?': i.is_zeroed ? 'Sim' : 'Não',
+                'Quantidade Para Análise': i.quantity_for_analysis ?? '',
+                'Início': formatDate(i.started_at),
+                'Conclusão': formatDate(i.completed_at),
+                'Item ID': i.item_id,
+                'Session ID': i.session_id,
+            }))
+            const ws2 = XLSX.utils.json_to_sheet(itemRows)
+            ws2['!cols'] = [16,22,14,18,20,14,28,10,16,16,10,18,16,16,14,14].map(w => ({ wch: w }))
+            ws2['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: Math.max(itemRows.length, 1), c: 15 } }) }
+            ws2['!freeze'] = { xSplit: 0, ySplit: 1 }
+            XLSX.utils.book_append_sheet(wb, ws2, 'Itens Contados')
+
+            const filename = `contagens_nabrasa_${filters.from}_a_${filters.to}.xlsx`
+            XLSX.writeFile(wb, filename)
+        } catch (err: any) {
+            setExportError('Não foi possível gerar o Excel. Tente novamente.')
+            console.error('[Export XLSX]', err)
+        } finally {
+            setExportLoading(false)
+        }
     }
 
     return (
@@ -202,10 +253,15 @@ export default function CountHistoryPage() {
                             className="p-2.5 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition disabled:opacity-50">
                             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                         </button>
-                        <button onClick={exportSummaryXLSX} disabled={sessions.length === 0}
-                            className="flex items-center space-x-1.5 px-3 py-2.5 bg-green-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-green-700 transition disabled:opacity-40">
-                            <Download className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Exportar</span>
+                        <button
+                            onClick={exportDetailedXLSX}
+                            disabled={sessions.length === 0 || exportLoading}
+                            className="flex items-center space-x-1.5 px-3 py-2.5 bg-green-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-green-700 transition disabled:opacity-40"
+                        >
+                            {exportLoading
+                                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                : <Download className="w-3.5 h-3.5" />}
+                            <span className="hidden sm:inline">{exportLoading ? 'Gerando...' : 'Exportar Excel'}</span>
                         </button>
                         <button onClick={() => setShowFilters(v => !v)}
                             className={`p-2.5 rounded-xl transition ${showFilters ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'}`}>
@@ -321,6 +377,12 @@ export default function CountHistoryPage() {
                 {error && (
                     <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-sm text-red-700 font-medium">
                         ❌ {error}
+                    </div>
+                )}
+                {exportError && (
+                    <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-sm text-red-700 font-medium flex items-center justify-between">
+                        <span>❌ {exportError}</span>
+                        <button onClick={() => setExportError(null)} className="text-red-400 hover:text-red-600 font-black ml-3">✕</button>
                     </div>
                 )}
 
