@@ -2,7 +2,8 @@
 
 import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, ArrowLeft, MapPin, User, Clock, AlertCircle, Package } from 'lucide-react'
+import { Loader2, ArrowLeft, MapPin, User, Clock, AlertCircle, Package, ShoppingCart } from 'lucide-react'
+import PurchaseSuggestionDrawer from './PurchaseSuggestionDrawer'
 
 type SessionItem = {
     item_id: string
@@ -30,6 +31,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ sessio
     const [session, setSession] = useState<Session | null>(null)
     const [items, setItems] = useState<SessionItem[]>([])
     const [errorMsg, setErrorMsg] = useState<string | null>(null)
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
     useEffect(() => {
         loadData()
@@ -88,14 +90,25 @@ export default function SessionDetailPage({ params }: { params: Promise<{ sessio
     return (
         <div className="bg-gray-50 min-h-screen pb-10">
             <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
-                <div className="p-4 flex items-center space-x-3">
-                    <button onClick={() => router.push('/dashboard/admin/history/sessions')} className="p-2 bg-gray-50 rounded-xl text-gray-600 hover:bg-gray-100 transition">
-                        <ArrowLeft className="w-5 h-5" />
-                    </button>
-                    <div>
-                        <h2 className="text-sm font-black text-gray-900 uppercase tracking-tight">Detalhes da Contagem</h2>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">ID: {session.id.substring(0, 8)}</p>
+                <div className="p-4 flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                        <button onClick={() => router.push('/dashboard/admin/history/sessions')} className="p-2 bg-gray-50 rounded-xl text-gray-600 hover:bg-gray-100 transition">
+                            <ArrowLeft className="w-5 h-5" />
+                        </button>
+                        <div>
+                            <h2 className="text-sm font-black text-gray-900 uppercase tracking-tight">Detalhes da Contagem</h2>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">ID: {session.id.substring(0, 8)}</p>
+                        </div>
                     </div>
+                    {session.status === 'completed' && (
+                        <button 
+                            onClick={() => setIsDrawerOpen(true)}
+                            className="flex items-center space-x-1.5 px-3 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all"
+                        >
+                            <ShoppingCart className="w-3.5 h-3.5" />
+                            <span>Sugestão de Compras</span>
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -170,6 +183,12 @@ export default function SessionDetailPage({ params }: { params: Promise<{ sessio
                     </div>
                 </div>
             </div>
+
+            <PurchaseSuggestionDrawer 
+                sessionId={sessionId}
+                isOpen={isDrawerOpen}
+                onClose={() => setIsDrawerOpen(false)}
+            />
         </div>
     )
 }
