@@ -29,7 +29,7 @@ export type CorrectionInput = {
  * Registra a correção na tabela de auditoria.
  */
 export async function validateCountItemAction(input: CorrectionInput) {
-    const user = await requireManagerOrAdmin();
+    const userId = await requireManagerOrAdmin();
 
     try {
         if (input.newQuantity < 0) throw new Error("Quantidade não pode ser negativa.");
@@ -56,8 +56,8 @@ export async function validateCountItemAction(input: CorrectionInput) {
             .update({
                 validated_quantity: input.newQuantity,
                 validated_is_zeroed: input.isZeroed,
-                validated_by: user.id,
-                validated_at: new Error().toISOString(), // Mock ISO string for TS
+                validated_by: userId,
+                validated_at: new Date().toISOString(), 
                 validation_reason: input.reason,
                 validation_notes: input.notes
             })
@@ -77,7 +77,7 @@ export async function validateCountItemAction(input: CorrectionInput) {
                     old_is_zeroed: original.is_zeroed,
                     new_validated_quantity: input.newQuantity,
                     new_validated_is_zeroed: input.isZeroed,
-                    corrected_by: user.id,
+                    corrected_by: userId,
                     correction_reason: input.reason,
                     correction_notes: input.notes
                 });
@@ -105,14 +105,14 @@ export async function validateCountItemAction(input: CorrectionInput) {
  * Valida a sessão inteira como 'OK' sem alterações.
  */
 export async function validateEntireCountSessionAction(sessionId: string) {
-    const user = await requireManagerOrAdmin();
+    const userId = await requireManagerOrAdmin();
 
     try {
         const { error } = await supabase
             .from('count_sessions')
             .update({
                 validation_status: 'validated',
-                validated_by: user.id,
+                validated_by: userId,
                 validated_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             })
