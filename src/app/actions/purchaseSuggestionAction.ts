@@ -38,6 +38,7 @@ const CAMBOINHAS_UNIT_ID = '3e52d6b2-755d-4bc5-a808-b8ac37ffcee1';
 export async function getPurchaseSuggestionAction(sessionId: string) {
     await requireManagerOrAdmin();
 
+    try {
         console.log(`[PurchaseSuggestion] Gerando para sessão: ${sessionId}`);
 
         // 1. Buscar dados da sessão e itens contados
