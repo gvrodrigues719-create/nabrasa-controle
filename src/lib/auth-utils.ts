@@ -37,21 +37,18 @@ export async function getAuthenticatedUserContext() {
         const supabaseServer = await createServerClient()
         const { data: { user } } = await supabaseServer.auth.getUser()
         if (user) {
-            // Busca perfil estendido
             const supabaseAdmin = getServiceSupabase()
             if (supabaseAdmin) {
                 const { data: profile } = await supabaseAdmin
                     .from('users')
-                    .select('name, role, position, sector')
+                    .select('name, role, active')
                     .eq('id', user.id)
                     .single()
-                
+
                 return {
                     userId: user.id,
                     name: profile?.name || user.email,
                     role: profile?.role || 'operator',
-                    position: profile?.position,
-                    sector: profile?.sector,
                     source: 'supabase'
                 }
             }
@@ -87,18 +84,45 @@ export async function getAuthenticatedUserId() {
 }
 
 /**
- * Middleware para Server Actions que exige perfil administrativo
+ * Middleware para Server Actions e API Routes que exige perfil administrativo.
+ * Revalida o role DIRETAMENTE NO BANCO para evitar uso de cookies antigos/rebaixados.
  */
 export async function requireManagerOrAdmin() {
     const context = await getAuthenticatedUserContext()
-    
+
     if (!context) {
         throw new Error("Usuário não autenticado no servidor. Por favor, faça login ou informe seu PIN.")
     }
 
+    // Revalida role no banco — cookie pode estar desatualizado se o gerente foi rebaixado
+    const supabaseAdmin = getServiceSupabase()
+    if (supabaseAdmin) {
+        const { data: user } = await supabaseAdmin
+            .from('users')
+            .select('id, role, active')
+            .eq('id', context.userId)
+            .limit(1)
+            .single()
+
+        if (!user) {
+            throw new Error("Usuário não encontrado no banco.")
+        }
+
+        if (!user.active) {
+            throw new Error("Usuário inativo.")
+        }
+
+        if (user.role !== 'admin' && user.role !== 'manager') {
+            throw new Error("Acesso negado: Este módulo exige perfil de Gerente ou Administrador.")
+        }
+
+        return context.userId
+    }
+
+    // Fallback sem supabase admin: usa role do cookie
     if (context.role !== 'admin' && context.role !== 'manager') {
         throw new Error("Acesso negado: Este módulo exige perfil de Gerente ou Administrador.")
     }
-    
+
     return context.userId
 }

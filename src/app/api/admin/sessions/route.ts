@@ -1,53 +1,52 @@
 import { createClient } from '@supabase/supabase-js'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { requireManagerOrAdmin } from '@/lib/auth-utils'
+import { isCountSessionStuck, countSessionDurationMin } from '@/lib/count-session-utils'
 
-// Usa a service role key para ignorar RLS e garantir que todos os dispositivos vejam os dados
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  // ── Segurança: apenas manager/admin ──────────────────────────────────────
   try {
-    // 1. Busca todas as sessões
+    await requireManagerOrAdmin()
+  } catch (err: any) {
+    const isUnauth = err?.message?.includes('não autenticado') || err?.message?.includes('não encontrado')
+    return NextResponse.json({ error: err.message }, { status: isUnauth ? 401 : 403 })
+  }
+
+  try {
     const { data: sessions, error } = await supabaseAdmin
       .from('count_sessions')
-      .select('*')
+      .select('id, status, started_at, completed_at, updated_at, user_id, group_id, routine_id, execution_id')
       .order('started_at', { ascending: false })
-      .limit(100)
+      .limit(200)
 
-    if (error) {
-      console.error('[API/sessions] Erro ao buscar sessões:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    if (!sessions || sessions.length === 0) return NextResponse.json({ sessions: [] })
 
-    if (!sessions || sessions.length === 0) {
-      return NextResponse.json({ sessions: [] })
-    }
-
-    // 2. Coleta IDs únicos
-    const userIds = [...new Set(sessions.map((s: any) => s.user_id).filter(Boolean))]
     const groupIds = [...new Set(sessions.map((s: any) => s.group_id).filter(Boolean))]
+    const userIds = [...new Set(sessions.map((s: any) => s.user_id).filter(Boolean))]
 
-    // 3. Busca usuários e grupos em paralelo
-    const [{ data: usersData }, { data: groupsData }] = await Promise.all([
-      supabaseAdmin.from('users').select('id, name').in('id', userIds),
-      supabaseAdmin.from('groups').select('id, name').in('id', groupIds),
+    const [{ data: groups }, { data: users }] = await Promise.all([
+      supabaseAdmin.from('groups').select('id, name, macro_sector').in('id', groupIds),
+      supabaseAdmin.from('users').select('id, name, role').in('id', userIds),
     ])
 
-    const userMap = Object.fromEntries((usersData || []).map((u: any) => [u.id, u.name]))
-    const groupMap = Object.fromEntries((groupsData || []).map((g: any) => [g.id, g.name]))
+    const groupMap = Object.fromEntries((groups || []).map((g: any) => [g.id, g]))
+    const userMap = Object.fromEntries((users || []).map((u: any) => [u.id, u]))
 
-    // 4. Enriquece os dados
     const enriched = sessions.map((s: any) => ({
       ...s,
-      user_name: userMap[s.user_id] || 'Operador',
-      group_name: groupMap[s.group_id] || 'Local desconhecido',
+      group_name: groupMap[s.group_id]?.name || 'Local desconhecido',
+      user_name: userMap[s.user_id]?.name || 'Operador',
+      is_stuck: isCountSessionStuck(s),
     }))
 
     return NextResponse.json({ sessions: enriched })
   } catch (err: any) {
-    console.error('[API/sessions] Erro fatal:', err)
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
 }

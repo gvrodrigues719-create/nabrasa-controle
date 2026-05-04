@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { requireManagerOrAdmin } from '@/lib/auth-utils'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,13 +11,21 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ sessionId: string }> }
 ) {
+  // ── Segurança: apenas manager/admin ──────────────────────────────────────
+  try {
+    await requireManagerOrAdmin()
+  } catch (err: any) {
+    const isUnauth = err?.message?.includes('não autenticado') || err?.message?.includes('não encontrado')
+    return NextResponse.json({ error: err.message }, { status: isUnauth ? 401 : 403 })
+  }
+
   const { sessionId } = await params
 
   try {
-    // 1. Busca a sessão
+    // 1. Busca a sessão com campos explícitos
     const { data: sessions, error: sErr } = await supabaseAdmin
       .from('count_sessions')
-      .select('*')
+      .select('id, status, started_at, completed_at, updated_at, user_id, group_id, routine_id')
       .eq('id', sessionId)
       .limit(1)
 
@@ -27,8 +36,8 @@ export async function GET(
 
     // 2. Busca grupo e usuário em paralelo
     const [{ data: groups }, { data: users }] = await Promise.all([
-      supabaseAdmin.from('groups').select('name').eq('id', session.group_id).limit(1),
-      supabaseAdmin.from('users').select('name').eq('id', session.user_id).limit(1),
+      supabaseAdmin.from('groups').select('id, name, macro_sector').eq('id', session.group_id).limit(1),
+      supabaseAdmin.from('users').select('id, name, role').eq('id', session.user_id).limit(1),
     ])
 
     const enrichedSession = {
@@ -37,10 +46,10 @@ export async function GET(
       user_name: users?.[0]?.name || 'Operador desconhecido',
     }
 
-    // 3. Busca itens da sessão
+    // 3. Busca itens da sessão com campos explícitos
     const { data: sessionItems, error: iErr } = await supabaseAdmin
       .from('count_session_items')
-      .select('*')
+      .select('session_id, item_id, counted_quantity, is_zeroed, updated_at')
       .eq('session_id', sessionId)
 
     if (iErr) return NextResponse.json({ error: iErr.message }, { status: 500 })
@@ -54,10 +63,7 @@ export async function GET(
         .from('items')
         .select('id, name, unit')
         .in('id', itemIds)
-
-      itemMap = Object.fromEntries(
-        (itemsRef || []).map((ir: any) => [ir.id, { name: ir.name, unit: ir.unit }])
-      )
+      itemMap = Object.fromEntries((itemsRef || []).map((ir: any) => [ir.id, { name: ir.name, unit: ir.unit }]))
     }
 
     const enrichedItems = (sessionItems || []).map((item: any) => ({

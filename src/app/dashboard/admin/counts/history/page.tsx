@@ -158,7 +158,7 @@ export default function CountHistoryPage() {
     const inProgress = sessions.filter(s => s.status !== 'completed' && !s.is_stuck).length
     const stuck = sessions.filter(s => s.is_stuck).length
 
-    // ── Export XLSX — Todos os itens contados (uma linha por item) ────────────
+    // ── Export XLSX — 2 abas: Resumo + Itens Contados ────────────────────────
     async function exportDetailedXLSX() {
         setExportLoading(true)
         setExportError(null)
@@ -171,45 +171,72 @@ export default function CountHistoryPage() {
             if (filters.userId) params.set('userId', filters.userId)
 
             const res = await fetch(`/api/admin/counts/history/export?${params}`, { cache: 'no-store' })
-            if (!res.ok) throw new Error(`Erro HTTP ${res.status}`)
-            const { items: exportItems } = await res.json()
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}))
+                throw new Error(errData.error || `HTTP ${res.status}`)
+            }
+            const { sessions: exportSessions, items: exportItems } = await res.json()
 
-            if (!exportItems || exportItems.length === 0) {
-                setExportError('Nenhum item encontrado para exportar com os filtros atuais.')
+            if (!exportSessions?.length && !exportItems?.length) {
+                setExportError('Nenhum dado encontrado para exportar com os filtros atuais.')
                 return
             }
 
-            // Ordena por grupo → nome do item
-            const sorted = [...exportItems].sort((a: any, b: any) => {
+            const wb = XLSX.utils.book_new()
+
+            // ── ABA 1: Resumo — uma linha por sessão ─────────────────────────
+            const summaryRows = (exportSessions || []).map((s: any) => ({
+                'Data': formatDate(s.started_at),
+                'Grupo / Área': s.group_name,
+                'Setor': s.macro_sector,
+                'Responsável': s.user_name,
+                'Rotina': s.routine_name,
+                'Status': s.is_stuck ? 'Travada' : s.status === 'completed' ? 'Concluída' : 'Em Andamento',
+                'Total Itens': s.total_items,
+                'Contados': s.counted_items,
+                'Zerados': s.zeroed_items,
+                'Pendentes': s.pending_items,
+                'Início': formatDate(s.started_at),
+                'Conclusão': formatDate(s.completed_at),
+                'Duração': formatDuration(s.duration_min),
+                'Session ID': s.id,
+            }))
+            const ws1 = XLSX.utils.json_to_sheet(summaryRows)
+            ws1['!cols'] = [16, 22, 14, 18, 20, 14, 10, 10, 10, 10, 16, 16, 10, 14].map(w => ({ wch: w }))
+            ws1['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: Math.max(summaryRows.length, 1), c: 13 } }) }
+            ws1['!freeze'] = { xSplit: 0, ySplit: 1 }
+            XLSX.utils.book_append_sheet(wb, ws1, 'Resumo')
+
+            // ── ABA 2: Itens Contados — uma linha por item ───────────────────
+            const sorted = [...(exportItems || [])].sort((a: any, b: any) => {
                 const g = (a.group_name || '').localeCompare(b.group_name || '')
                 if (g !== 0) return g
                 return (a.item_name || '').localeCompare(b.item_name || '')
             })
 
-            // Uma linha por item — pronto para filtrar no Excel
-            const rows = sorted.map((i: any) => ({
-                'Data': formatDate(i.started_at),
+            const itemRows = sorted.map((i: any) => ({
+                'Data da Contagem': formatDate(i.started_at),
                 'Grupo / Área': i.group_name,
                 'Setor': i.macro_sector,
                 'Responsável': i.user_name,
                 'Rotina': i.routine_name,
-                'Status da Contagem': i.session_status === 'completed' ? 'Concluída' : 'Em Andamento',
+                'Status da Sessão': i.session_status === 'completed' ? 'Concluída' : 'Em Andamento',
                 'Item': i.item_name,
                 'Unidade': i.item_unit,
                 'Categoria': i.item_category,
-                'Quantidade': i.is_zeroed ? 0 : (i.counted_quantity ?? ''),
+                'Quantidade Contada': i.counted_quantity ?? '',
                 'Zerado?': i.is_zeroed ? 'Sim' : 'Não',
+                'Quantidade Para Análise': i.quantity_for_analysis ?? '',
                 'Início': formatDate(i.started_at),
                 'Conclusão': formatDate(i.completed_at),
+                'Item ID': i.item_id,
+                'Session ID': i.session_id,
             }))
-
-            const ws = XLSX.utils.json_to_sheet(rows)
-            ws['!cols'] = [16, 22, 14, 18, 20, 14, 28, 10, 16, 12, 10, 16, 16].map(w => ({ wch: w }))
-            ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: rows.length, c: 12 } }) }
-            ws['!freeze'] = { xSplit: 0, ySplit: 1 }
-
-            const wb = XLSX.utils.book_new()
-            XLSX.utils.book_append_sheet(wb, ws, 'Contagens')
+            const ws2 = XLSX.utils.json_to_sheet(itemRows)
+            ws2['!cols'] = [16, 22, 14, 18, 20, 14, 28, 10, 16, 14, 10, 18, 16, 16, 14, 14].map(w => ({ wch: w }))
+            ws2['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: Math.max(itemRows.length, 1), c: 15 } }) }
+            ws2['!freeze'] = { xSplit: 0, ySplit: 1 }
+            XLSX.utils.book_append_sheet(wb, ws2, 'Itens Contados')
 
             const filename = `contagens_nabrasa_${filters.from}_a_${filters.to}.xlsx`
             XLSX.writeFile(wb, filename)
