@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Loader2, ArrowLeft, History, CheckCircle2, Clock, AlertCircle, Search, Filter } from 'lucide-react'
+import { Loader2, ArrowLeft, History, CheckCircle2, Clock, AlertCircle, Search, Filter, ShoppingCart } from 'lucide-react'
 
 type Execution = {
     execution_id: string
@@ -70,10 +70,17 @@ export default function HistoryPage() {
                 <button onClick={() => router.push('/dashboard')} className="p-2 bg-white rounded-lg shadow-sm border border-gray-200 text-gray-600">
                     <ArrowLeft className="w-5 h-5" />
                 </button>
-                <div>
+                <div className="flex-1">
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Gerencial</p>
                     <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">Histórico de Ciclos</h2>
                 </div>
+                <button 
+                    onClick={() => router.push('/dashboard/admin/history/sessions')}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition shadow-lg shadow-indigo-100"
+                >
+                    <ShoppingCart className="w-4 h-4" />
+                    Consolidar Compra
+                </button>
             </div>
 
             {/* Filtros */}
