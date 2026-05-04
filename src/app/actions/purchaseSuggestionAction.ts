@@ -71,7 +71,7 @@ export async function getPurchaseSuggestionAction(sessionId: string) {
 
         const { data: countItems } = await supabase
             .from('count_session_items')
-            .select('item_id, counted_quantity, is_zeroed, items!inner(name, unit)')
+            .select('item_id, counted_quantity, is_zeroed, validated_quantity, validated_is_zeroed, items!inner(name, unit)')
             .eq('session_id', sessionId);
 
         if (!countItems) throw new Error("Erro ao carregar itens da contagem.");
@@ -117,7 +117,11 @@ export async function getPurchaseSuggestionAction(sessionId: string) {
         // 3. Processar sugestões com lógica V1.1
         const suggestions: PurchaseSuggestionItem[] = (countItems as any[]).map(ci => {
             const countItemName = ci.items?.name || '';
-            const countedQty = ci.is_zeroed ? 0 : (ci.counted_quantity ?? 0);
+            
+            // Prioridade: Validado > Original
+            const isValidated = ci.validated_quantity !== null && ci.validated_quantity !== undefined;
+            const finalIsZeroed = isValidated ? ci.validated_is_zeroed : ci.is_zeroed;
+            const countedQty = finalIsZeroed ? 0 : (isValidated ? ci.validated_quantity : (ci.counted_quantity ?? 0));
             
             let purchaseItemId = mappingMap.get(ci.item_id);
             let purchaseItem = purchaseItemId ? pItemMap.get(purchaseItemId) : null;
