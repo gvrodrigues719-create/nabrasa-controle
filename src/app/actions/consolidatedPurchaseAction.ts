@@ -93,7 +93,7 @@ export async function getConsolidatedPurchaseSuggestionAction(sessionIds: string
         }>();
 
         for (const ci of countItems) {
-            const purchaseId = mappingMap.get(ci.item_id) || null;
+            const purchaseId = (mappingMap.get(ci.item_id) || null) as string | null;
             const session = sessions.find((s: any) => s.id === ci.session_id);
             const originName = session?.groups?.name || 'Desconhecido';
             
