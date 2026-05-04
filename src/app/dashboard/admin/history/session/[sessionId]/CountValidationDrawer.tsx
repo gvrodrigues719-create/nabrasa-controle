@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Check, AlertTriangle, Loader2, Save, Info, RotateCcw, UserCheck } from 'lucide-react'
+import { X, Check, AlertTriangle, Loader2, Save, Info, RotateCcw, UserCheck, CheckCircle2 } from 'lucide-react'
 import { validateCountItemAction, validateEntireCountSessionAction } from '@/app/actions/countValidationAction'
 import toast from 'react-hot-toast'
 
