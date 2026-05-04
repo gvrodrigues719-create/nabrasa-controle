@@ -14,6 +14,19 @@ const supabase = new Proxy({} as any, {
     }
 })
 
+function normalizeName(name: string): string {
+    if (!name) return '';
+    return name
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") 
+        .replace(/(\d+[,.]\d+|\d+)\s*(kg|g|l|ml|un|porcao|litro|litros|unidade|und|un|pacote|pct|uni)\b/gi, ' ') 
+        .replace(/[^\w\s]/gi, ' ')       
+        .replace(/\b(maximo|minimo|porcao|unidade|caixa|cx|fardo|uni)\b/gi, ' ')
+        .replace(/\s+/g, ' ')            
+        .trim();
+}
+
 export type ConsolidatedSuggestionItem = {
     purchase_item_id: string
     purchase_item_name: string | null
@@ -81,6 +94,18 @@ export async function getConsolidatedPurchaseSuggestionAction(sessionIds: string
         const { data: params } = await supabase.from('store_item_parameters').select('*').eq('store_id', storeId);
         const paramsMap = new Map(params?.map((p: any) => [p.purchase_item_id, p]));
 
+        // Match Maps para Vínculo Automático
+        const pItemExactMap = new Map<string, any>(pItems?.map((p: any) => [p.name.toUpperCase(), p]));
+        const pItemNormalizedMap = new Map<string, any>();
+        const ambiguousNames = new Set<string>();
+
+        pItems?.forEach((p: any) => {
+            const norm = normalizeName(p.name);
+            if (!norm) return;
+            if (pItemNormalizedMap.has(norm)) ambiguousNames.add(norm);
+            else pItemNormalizedMap.set(norm, p);
+        });
+
         // 4. Consolidar Estoque Atual
         // Agrupar por purchase_item_id. Se não houver vínculo, manter por item_id para reportar "Sem vínculo"
         const consolidation = new Map<string, { 
@@ -93,7 +118,21 @@ export async function getConsolidatedPurchaseSuggestionAction(sessionIds: string
         }>();
 
         for (const ci of countItems) {
-            const purchaseId = (mappingMap.get(ci.item_id) || null) as string | null;
+            let purchaseId = (mappingMap.get(ci.item_id) || null) as string | null;
+            const countItemName = (ci.items as any)?.name || '';
+            
+            // Fallback: Vínculo Automático
+            if (!purchaseId) {
+                let pItem = pItemExactMap.get(countItemName.toUpperCase());
+                if (!pItem) {
+                    const norm = normalizeName(countItemName);
+                    if (!ambiguousNames.has(norm)) {
+                        pItem = pItemNormalizedMap.get(norm);
+                    }
+                }
+                if (pItem) purchaseId = pItem.id;
+            }
+
             const session = sessions.find((s: any) => s.id === ci.session_id);
             const originName = session?.groups?.name || 'Desconhecido';
             
