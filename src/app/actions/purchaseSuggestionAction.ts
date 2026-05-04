@@ -87,9 +87,9 @@ export async function getPurchaseSuggestionAction(sessionId: string) {
         const { data: dbParams } = await supabase.from('store_item_parameters').select('*').eq('store_id', CAMBOINHAS_UNIT_ID);
         const { data: purchaseItems } = await supabase.from('purchase_items').select('id, name, max_stock');
 
-        const paramMap = new Map(dbParams?.map((p: any) => [p.item_id, p]));
-        const pItemMap = new Map(purchaseItems?.map((p: any) => [p.id, p]));
-        const mappingMap = new Map(dbMappings?.map((m: any) => [m.count_item_id, m.purchase_item_id]));
+        const paramMap = new Map<string, any>(dbParams?.map((p: any) => [p.item_id, p]));
+        const pItemMap = new Map<string, any>(purchaseItems?.map((p: any) => [p.id, p]));
+        const mappingMap = new Map<string, any>(dbMappings?.map((m: any) => [m.count_item_id, m.purchase_item_id]));
 
         // 4. Processar sugestões
         const suggestions: PurchaseSuggestionItem[] = (countItems as any[]).map(ci => {
@@ -119,8 +119,8 @@ export async function getPurchaseSuggestionAction(sessionId: string) {
                 }
             } else if (purchaseItemId) {
                 // 2. Fallback para mapeamento no DB
-                const pItem = pItemMap.get(purchaseItemId);
-                const param = paramMap.get(purchaseItemId);
+                const pItem = pItemMap.get(purchaseItemId) as any;
+                const param = paramMap.get(purchaseItemId) as any;
                 purchaseItemName = pItem?.name || '';
                 idealStock = param?.max_stock || pItem?.max_stock || 0;
                 
