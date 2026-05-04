@@ -1,5 +1,5 @@
--- Migration: Auditoria e Validação de Contagem (Versão Final)
--- Foco: Idempotência, Segurança Gerencial e Integridade de Dados
+-- Migration: Auditoria e Validação de Contagem (Versão Finalíssima)
+-- Foco: Idempotência Total, Segurança Gerencial e Integridade de Dados
 
 -- 1. Preparar campos em count_sessions
 ALTER TABLE public.count_sessions 
@@ -7,10 +7,14 @@ ADD COLUMN IF NOT EXISTS validation_status text DEFAULT 'pending',
 ADD COLUMN IF NOT EXISTS validated_by uuid REFERENCES public.users(id),
 ADD COLUMN IF NOT EXISTS validated_at timestamptz;
 
--- 1.1 Adicionar constraint de status de validação (idempotente)
+-- 1.1 Adicionar constraint de status de validação (idempotente e vinculada à tabela)
 DO $$ 
 BEGIN 
-    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'count_sessions_validation_status_check') THEN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'count_sessions_validation_status_check' 
+        AND conrelid = 'public.count_sessions'::regclass
+    ) THEN
         ALTER TABLE public.count_sessions 
         ADD CONSTRAINT count_sessions_validation_status_check 
         CHECK (validation_status IN ('pending', 'validated', 'corrected'));
@@ -53,9 +57,9 @@ ALTER TABLE public.count_item_corrections ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Managers and Admins can view corrections" ON public.count_item_corrections;
 DROP POLICY IF EXISTS "Managers and Admins can insert corrections" ON public.count_item_corrections;
 
--- Política de Visualização: Restrita a Gerência
+-- Política de Visualização: Restrita a Gerência (Explícito para Authenticated)
 CREATE POLICY "Managers and Admins can view corrections" 
-ON public.count_item_corrections FOR SELECT 
+ON public.count_item_corrections FOR SELECT TO authenticated
 USING (
     EXISTS (
         SELECT 1 FROM public.users 
@@ -63,9 +67,9 @@ USING (
     )
 );
 
--- Política de Inserção: Restrita a Gerência
+-- Política de Inserção: Restrita a Gerência (Explícito para Authenticated)
 CREATE POLICY "Managers and Admins can insert corrections" 
-ON public.count_item_corrections FOR INSERT 
+ON public.count_item_corrections FOR INSERT TO authenticated
 WITH CHECK (
     EXISTS (
         SELECT 1 FROM public.users 
