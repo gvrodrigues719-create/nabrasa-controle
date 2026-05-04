@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, Search, Download, RefreshCw, Filter,
     CheckCircle2, Clock, AlertTriangle, BarChart3,
-    ChevronRight, User, MapPin, Calendar, Loader2
+    ChevronRight, User, MapPin, Calendar, Loader2, ShoppingCart, Check
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
+import ConsolidatedPurchaseSuggestionDrawer from '../../history/sessions/ConsolidatedPurchaseSuggestionDrawer'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -95,6 +96,11 @@ export default function CountHistoryPage() {
         userId: '',
     })
 
+    // Consolidação
+    const [isSelectionMode, setIsSelectionMode] = useState(false)
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+
     // Load groups and users for filter dropdowns (one-time)
     useEffect(() => {
         fetch('/api/admin/sessions')
@@ -150,6 +156,15 @@ export default function CountHistoryPage() {
         const f = { ...filters, from, to }
         setFilters(f)
         fetchHistory(f)
+    }
+
+    const toggleSelection = (id: string) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev)
+            if (next.has(id)) next.delete(id)
+            else next.add(id)
+            return next
+        })
     }
 
     // ── Summary stats ─────────────────────────────────────────────────────────
@@ -267,6 +282,24 @@ export default function CountHistoryPage() {
                         <button onClick={() => fetchHistory(filters)} disabled={loading}
                             className="p-2.5 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition disabled:opacity-50">
                             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                        </button>
+                        <button
+                            onClick={() => {
+                                if (isSelectionMode && selectedIds.size > 0) {
+                                    setIsDrawerOpen(true)
+                                } else {
+                                    setIsSelectionMode(!isSelectionMode)
+                                    setSelectedIds(new Set())
+                                }
+                            }}
+                            className={`flex items-center space-x-1.5 px-3 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition shadow-lg ${
+                                isSelectionMode 
+                                ? (selectedIds.size > 0 ? 'bg-indigo-600 text-white shadow-indigo-200' : 'bg-gray-400 text-white shadow-none') 
+                                : 'bg-indigo-50 text-indigo-600 shadow-none border border-indigo-100'
+                            }`}
+                        >
+                            <ShoppingCart className="w-3.5 h-3.5" />
+                            <span>{isSelectionMode ? (selectedIds.size > 0 ? `Gerar Sugestão (${selectedIds.size})` : 'Cancelar') : 'Consolidar'}</span>
                         </button>
                         <button
                             onClick={exportDetailedXLSX}
@@ -444,9 +477,21 @@ export default function CountHistoryPage() {
                                         </div>
                                     )}
                                     <button
-                                        onClick={() => router.push(`/dashboard/admin/history/session/${session.id}`)}
-                                        className="w-full p-4 text-left hover:bg-gray-50 transition-colors"
+                                        onClick={() => {
+                                            if (isSelectionMode) toggleSelection(session.id)
+                                            else router.push(`/dashboard/admin/history/session/${session.id}`)
+                                        }}
+                                        className={`w-full p-4 text-left transition-colors relative ${
+                                            isSelectionMode && selectedIds.has(session.id) ? 'bg-indigo-50/50' : 'hover:bg-gray-50'
+                                        }`}
                                     >
+                                        {isSelectionMode && (
+                                            <div className={`absolute top-4 right-10 w-6 h-6 rounded-lg border flex items-center justify-center transition-all ${
+                                                selectedIds.has(session.id) ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-gray-200 text-transparent'
+                                            }`}>
+                                                <Check className="w-4 h-4" />
+                                            </div>
+                                        )}
                                         <div className="flex items-start justify-between mb-3">
                                             <div className="flex items-center space-x-3 flex-1 min-w-0">
                                                 <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
@@ -503,6 +548,12 @@ export default function CountHistoryPage() {
                     </div>
                 )}
             </div>
+
+            <ConsolidatedPurchaseSuggestionDrawer 
+                sessionIds={Array.from(selectedIds)}
+                isOpen={isDrawerOpen}
+                onClose={() => setIsDrawerOpen(false)}
+            />
         </div>
     )
 }
