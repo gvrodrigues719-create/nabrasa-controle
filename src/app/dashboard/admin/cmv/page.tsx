@@ -328,6 +328,9 @@ export default function CMVPage() {
                                                     <p className="text-sm font-bold text-gray-800 group-hover:text-[#B13A2B] transition-colors">{c.name}</p>
                                                     <div className="flex items-center gap-2 mt-0.5">
                                                         <p className="text-[10px] text-gray-400">{formatDate(c.date)}</p>
+                                                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-tight ${c.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                                            {c.status === 'approved' ? 'Aprovado' : 'Previsto'}
+                                                        </span>
                                                         {c.uncounted_count > 0 && <span className="text-[9px] text-amber-600 font-bold">· {c.uncounted_count} não contados</span>}
                                                     </div>
                                                 </div>
