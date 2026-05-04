@@ -16,14 +16,14 @@ interface ManagerQuickActionsProps {
 
 export default function ManagerQuickActions({ lateCount, pendingOrdersCount = 0 }: ManagerQuickActionsProps) {
     const lateText = lateCount > 0
-        ? `${lateCount} ${lateCount === 1 ? 'tarefa de auditoria' : 'tarefas de auditoria'} em atraso`
-        : "sem atrasos no momento"
+        ? `${lateCount} ${lateCount === 1 ? 'tarefa exige' : 'tarefas exigem'} ação agora`
+        : "Nenhuma tarefa atrasada"
 
     return (
         <section>
             <div className="flex items-center gap-2 mb-4">
                 <span className="w-1.5 h-6 bg-gray-900 rounded-full" />
-                <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Intervenção Operacional</h3>
+                <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Ações Rápidas</h3>
             </div>
             
             <div className="grid grid-cols-1 gap-3">
@@ -43,10 +43,10 @@ export default function ManagerQuickActions({ lateCount, pendingOrdersCount = 0 
                         </div>
                         <div className="text-left">
                             <span className="block text-xs font-black uppercase text-gray-900 leading-none mb-1.5">Abastecimento</span>
-                            <span className="block text-sm font-bold text-gray-400 lowercase">
+                            <span className="block text-sm font-bold text-gray-400">
                                 {pendingOrdersCount > 0
-                                    ? `${pendingOrdersCount} ${pendingOrdersCount === 1 ? 'pedido ativo' : 'pedidos ativos'}`
-                                    : 'criar ou acompanhar pedidos'}
+                                    ? `${pendingOrdersCount} pedidos ativos`
+                                    : 'Pedidos para loja e cozinha central'}
                             </span>
                         </div>
                     </div>
@@ -66,7 +66,7 @@ export default function ManagerQuickActions({ lateCount, pendingOrdersCount = 0 
                         </div>
                         <div className="text-left">
                             <span className="block text-xs font-black uppercase text-gray-900 leading-none mb-1.5">Gerenciar Atrasos</span>
-                            <span className="block text-sm font-bold text-gray-400 lowercase">{lateText}</span>
+                            <span className="block text-sm font-bold text-gray-400">{lateText}</span>
                         </div>
                     </div>
                     <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 group-hover:bg-gray-900 group-hover:text-white transition-all">
@@ -75,7 +75,10 @@ export default function ManagerQuickActions({ lateCount, pendingOrdersCount = 0 
                 </Link>
 
                 {/* Cozinha Central */}
-                <KitchenCard />
+                <KitchenCard 
+                    titleOverride="Cozinha Central"
+                    descriptionOverride="Separação e produção pendente"
+                />
             </div>
         </section>
     )

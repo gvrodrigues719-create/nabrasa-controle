@@ -81,25 +81,25 @@ export default function SystemArchitectureHub() {
                     <span className="w-1.5 h-6 bg-gray-900 rounded-full" />
                     <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Áreas do Sistema</h3>
                 </div>
-                <span className="text-[9px] font-black text-gray-300 uppercase tracking-widest leading-none">Management Framework</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {/* 1. Rotinas Operacionais */}
                 <AreaCard 
-                    title="Rotinas Operacionais"
+                    title="ROTINAS OPERACIONAIS"
                     icon={ClipboardList}
                     accentColor="text-[#B13A2B]"
                     mainModules={[
-                        { label: 'Auditoria & Performance', href: '/dashboard/admin/checklists', status: 'ativo' },
-                        { label: 'Contagem', href: '/dashboard/admin/routines', status: 'ativo parcial' }
+                        { label: 'Checklists', href: '/dashboard/admin/checklists', status: 'ativo' },
+                        { label: 'Contagens', href: '/dashboard/admin/routines', status: 'ativo parcial' },
+                        { label: 'Auditoria', href: '/dashboard/admin/history/sessions', status: 'ativo' }
                     ]}
                     extraModule={{ label: 'Abertura & Fechamento', status: 'em desenvolvimento' }}
                 />
 
                 {/* 2. Estoque, CMV e Produção */}
                 <AreaCard 
-                    title="Estoque, CMV e Produção"
+                    title="ESTOQUE, CMV E PRODUÇÃO"
                     icon={Boxes}
                     accentColor="text-emerald-500"
                     mainModules={[
@@ -122,9 +122,9 @@ export default function SystemArchitectureHub() {
                     extraModule={{ label: 'Atendimento', status: 'em desenvolvimento' }}
                 />
 
-                {/* 4. Equipe & Performance */}
+                {/* 4. Equipe e Rotina */}
                 <AreaCard 
-                    title="Equipe & Performance"
+                    title="EQUIPE E ROTINA"
                     icon={Users}
                     accentColor="text-amber-500"
                     mainModules={[
@@ -158,9 +158,9 @@ export default function SystemArchitectureHub() {
                     extraModule={{ label: 'Configuração', status: 'em desenvolvimento' }}
                 />
 
-                {/* 7. Indicadores & Análises */}
+                {/* 7. Indicadores e Relatórios */}
                 <AreaCard 
-                    title="Indicadores & Análises"
+                    title="INDICADORES E RELATÓRIOS"
                     icon={BarChart3}
                     accentColor="text-blue-500"
                     className="lg:col-span-3 lg:h-auto"

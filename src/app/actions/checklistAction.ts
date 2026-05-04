@@ -630,6 +630,12 @@ export async function getOperationalMirrorAction() {
             .select('*', { count: 'exact', head: true })
             .eq('resolved', false)
 
+        // 4.1. Buscar Contagens Abertas
+        const { count: openCounts } = await supabase
+            .from('count_sessions')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'in_progress')
+
         // 5. PROCESSAMENTO OPERACIONAL
         const stats = {
             overview: {
@@ -640,6 +646,7 @@ export async function getOperationalMirrorAction() {
                 critical: sessions?.filter(s => s.checklist_templates?.priority === 'critical' && s.status === 'in_progress').length || 0,
                 lossesCount: losses?.length || 0,
                 pendingIssuesCount: pendingIssuesCount || 0,
+                openCounts: openCounts || 0,
                 deadRulesCount: 0
             },
             bySector: {

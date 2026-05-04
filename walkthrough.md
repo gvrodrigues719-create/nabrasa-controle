@@ -1,32 +1,37 @@
-# Walkthrough - Otimização de Performance CMV e Dashboard
+# Walkthrough - Overhaul Home do Gerente (MOC Operational)
 
-Realizamos uma série de otimizações técnicas para eliminar a latência e os travamentos relatados no dashboard gerencial e na consolidação de CMV.
+Realizamos uma reestruturação completa da Home do Gerente para transformar a interface em um centro de comando operacional, priorizando diagnóstico rápido e ação direta.
 
 ## Mudanças Realizadas
 
-### 1. Otimização de CMV (Backend)
-- **Eliminação de Loops N+1**: Refatoramos o cálculo de Estoque Final (EF) para usar queries bulk. Em vez de consultar itens sessão por sessão, agora buscamos todos os itens de todas as sessões do ciclo em uma única query `.in()`.
-- **Cálculo Paralelo**: O processamento de múltiplos ciclos no consolidado agora utiliza `Promise.all`, reduzindo o tempo total de execução linear para o tempo de execução do ciclo mais lento.
+### 1. Hierarquia Operacional (ManagerHome.tsx)
+- **Novo Header**: Boas-vindas personalizadas, identificação da unidade e timestamp da última atualização.
+- **Situação do Turno no Topo**: O bloco de métricas foi movido para a primeira posição, garantindo que o gerente veja o diagnóstico da casa imediatamente ao entrar.
+- **Bloco Unificado de Contagens**: Substituímos os dois banners gigantes por um bloco único e organizado de "Contagens de Estoque", com botões para visão ao vivo, histórico e exportação.
+- **Reordenação de Seções**: A ordem agora segue a lógica de resolução: Diagnóstico -> Ações Rápidas -> Contagens -> Atenção de Equipe -> Monitoramento por Setor.
 
-### 2. Otimização do Dashboard (Frontend)
-- **Fim das Cascatas (Waterfalls)**: No hook `useDashboardData.ts`, movemos as requisições de tarefas diárias e sessões ativas para o lote inicial de `Promise.all`. Isso evita que a interface espere o fim de uma requisição para iniciar a próxima, permitindo que todos os componentes carreguem simultaneamente.
+### 2. Diagnóstico Dinâmico (ShiftMetrics.tsx)
+- **SITUAÇÃO DO TURNO**: O bloco agora apresenta 4 indicadores críticos (Pendências, Atrasados, Contagens Abertas, Alertas Críticos).
+- **Frase de Diagnóstico**: Implementamos uma mensagem de estado dinâmica que muda de cor e texto conforme a gravidade da operação (OK, Atenção ou Crítico).
 
-### 3. Refatoração do Admin Auth Gate
-- **Server-Side Auth**: Movemos a lógica de validação de permissões do `admin/layout.tsx` (que era um componente cliente com spinners bloqueantes) para um componente servidor. Agora, a autorização é verificada antes mesmo da página ser enviada ao navegador, eliminando o atraso de "sincronização" ao entrar na área administrativa.
-- **AdminShell**: Criamos um componente cliente leve para o cabeçalho da administração, mantendo a responsividade da UI enquanto a segurança é tratada no servidor.
+### 3. Ações Rápidas e Nomenclatura (QuickActions & Hub)
+- **Linguagem de Restaurante**: Atualizamos os termos para serem mais diretos (ex: "Pedidos para loja e cozinha central", "EQUIPE E ROTINA", "INDICADORES E RELATÓRIOS").
+- **Ações Acionáveis**: O card de Cozinha Central agora destaca separação e produção pendente.
 
 ## Verificação e Testes
 
-### Testes de Tipagem
-- Executamos `npx tsc --noEmit` para garantir que as refatorações não introduziram erros de tipo no TypeScript.
-- **Resultado**: Sucesso (0 erros).
+### Estados Visuais
+- **Estado OK**: Exibe "Operação sem alertas no momento" em verde.
+- **Estado Crítico**: Destaca "Ação necessária agora" em vermelho com botão direto para resolução.
 
-### Performance Observada
-- O tempo de carregamento da tela de CMV Consolidado foi drasticamente reduzido.
-- A latência "Sincronizando..." no dashboard agora é mínima devido ao processamento paralelo.
+### Integridade Técnica
+- **Open Counts**: Atualizamos o backend (`getOperationalMirrorAction`) para incluir a contagem de sessões de estoque abertas em tempo real.
+- **Build**: Validado com `npx tsc --noEmit` (0 erros).
 
 ## Arquivos Modificados
-- [cmvActions.ts](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/actions/cmvActions.ts): Otimização de queries e paralelização de ciclos.
-- [useDashboardData.ts](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/hooks/useDashboardData.ts): Eliminação de cascatas de carregamento.
-- [admin/layout.tsx](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/admin/layout.tsx): Implementação do Auth Gate no servidor.
-- [AdminShell.tsx](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/admin/AdminShell.tsx): Componente cliente para cabeçalho administrativo.
+- [ManagerHome.tsx](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/components/manager/ManagerHome.tsx)
+- [ShiftMetrics.tsx](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/components/manager/ShiftMetrics.tsx)
+- [ManagerQuickActions.tsx](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/components/manager/ManagerQuickActions.tsx)
+- [SystemArchitectureHub.tsx](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/components/manager/SystemArchitectureHub.tsx)
+- [checklistAction.ts](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/actions/checklistAction.ts)
+- [KitchenCard.tsx](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/components/KitchenCard.tsx)

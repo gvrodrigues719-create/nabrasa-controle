@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ChefHat, ChevronRight } from 'lucide-react'
 import { getKitchenPendingCountAction } from '@/modules/purchases/actions'
 
-export default function KitchenCard() {
+export default function KitchenCard({ titleOverride, descriptionOverride }: { titleOverride?: string, descriptionOverride?: string }) {
     const [pendingCount, setPendingCount] = useState(0)
 
     useEffect(() => {
@@ -31,9 +31,9 @@ export default function KitchenCard() {
                     )}
                 </div>
                 <div className="text-left">
-                    <span className="block text-xs font-black uppercase text-gray-900 leading-none mb-1.5">Cozinha Central</span>
+                    <span className="block text-xs font-black uppercase text-gray-900 leading-none mb-1.5">{titleOverride || "Cozinha Central"}</span>
                     <span className="block text-sm font-bold text-gray-400 lowercase">
-                        Separar pedidos de abastecimento
+                        {descriptionOverride || "Separar pedidos de abastecimento"}
                     </span>
                 </div>
             </div>

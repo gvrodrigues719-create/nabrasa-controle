@@ -8,10 +8,12 @@ import AttentionList from './AttentionList'
 import ExceptionCenter from './ExceptionCenter'
 import ManagerQuickActions from './ManagerQuickActions'
 import SystemArchitectureHub from './SystemArchitectureHub'
-import { RefreshCw, Clock, ShieldCheck, ArrowRight, Eye, CalendarSearch } from 'lucide-react'
+import { RefreshCw, Clock, ShieldCheck, ArrowRight, Eye, CalendarSearch, Package, FileText } from 'lucide-react'
 import Link from 'next/link'
+import { useDashboardIdentity } from '../../hooks/useDashboardIdentity'
 
 export default function ManagerHome() {
+    const { userName } = useDashboardIdentity()
     const [data, setData] = useState<any>(null)
     const [loading, setLoading] = useState(true)
     const [isRefreshing, setIsRefreshing] = useState(false)
@@ -36,106 +38,106 @@ export default function ManagerHome() {
     )
 
     const lastUpdated = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-    const overview = data?.overview || { total: 0, completed: 0, pending: 0, late: 0, critical: 0, lossesCount: 0, deadRulesCount: 0 }
-    const status = overview.late > 0 
-        ? { label: 'Atrasos no turno', color: 'bg-red-50 text-red-600 border-red-100' }
-        : overview.critical > 0
-        ? { label: 'Em atenção', color: 'bg-purple-50 text-purple-600 border-purple-100' }
-        : overview.pending > 0
-        ? { label: 'Operação sob controle', color: 'bg-emerald-50 text-emerald-600 border-emerald-100' }
-        : { label: 'Sem alertas no momento', color: 'bg-gray-50 text-gray-500 border-gray-100' }
+    const overview = data?.overview || { total: 0, completed: 0, pending: 0, late: 0, critical: 0, lossesCount: 0, pendingIssuesCount: 0, openCounts: 0 }
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-20">
-
-            {/* ── ACESSO RÁPIDO ÀS CONTAGENS — TOPO ────────────────────────── */}
-            <div className="space-y-2 pt-2">
-                <Link href="/dashboard/admin/history/sessions"
-                    className="w-full bg-gradient-to-br from-indigo-600 to-indigo-800 p-5 rounded-[28px] flex items-center text-left shadow-xl shadow-indigo-200 space-x-4 active:scale-95 transition-all block">
-                    <div className="bg-white/20 p-3 rounded-2xl shrink-0">
-                        <Eye className="w-6 h-6 text-white" />
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-20">
+            
+            {/* 1. HEADER OPERACIONAL */}
+            <div className="flex justify-between items-start pt-4">
+                <div>
+                    <h2 className="text-2xl font-black text-gray-900 leading-tight">Bom turno, {userName}</h2>
+                    <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Unidade Matriz</span>
+                        <span className="w-1 h-1 rounded-full bg-gray-300" />
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {lastUpdated}
+                        </span>
                     </div>
-                    <div className="flex-1">
-                        <p className="text-indigo-200 text-[10px] font-black uppercase tracking-widest mb-0.5">Acesso Rápido</p>
-                        <h3 className="font-black text-white text-lg leading-tight">Ver Contagens</h3>
-                        <p className="text-indigo-200 text-xs mt-0.5">Todas as sessões em tempo real</p>
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-white/60 shrink-0" />
-                </Link>
-
-                <Link href="/dashboard/admin/counts/history"
-                    className="w-full bg-gradient-to-br from-emerald-600 to-emerald-800 p-5 rounded-[28px] flex items-center text-left shadow-lg shadow-emerald-200 space-x-4 active:scale-95 transition-all block">
-                    <div className="bg-white/20 p-3 rounded-2xl shrink-0">
-                        <CalendarSearch className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1">
-                        <p className="text-emerald-200 text-[10px] font-black uppercase tracking-widest mb-0.5">Conferência & Auditoria</p>
-                        <h3 className="font-black text-white text-lg leading-tight">Histórico de Contagens</h3>
-                        <p className="text-emerald-200 text-xs mt-0.5">Filtrar, conferir e exportar Excel</p>
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-white/60 shrink-0" />
-                </Link>
-            </div>
-
-            <div className="flex justify-between items-center mb-2 px-1">
-                <div className="flex items-center gap-3">
-                    <h2 className="text-lg font-black text-gray-900 leading-none">Espelho do Turno</h2>
-                    <Link 
-                        href="/dashboard/admin/checklists"
-                        className="px-2.5 py-1 rounded-full border bg-white border-gray-100 text-[9px] font-black uppercase tracking-wider text-gray-400 hover:text-[#B13A2B] hover:border-[#B13A2B]/20 transition-all flex items-center gap-1.5 shadow-sm"
-                    >
-                        <ShieldCheck className="w-3 h-3" />
-                        Auditoria & Performance
-                    </Link>
-                    <span className={`px-2.5 py-1 rounded-full border text-[9px] font-black uppercase tracking-wider ${status.color}`}>
-                        {status.label}
-                    </span>
                 </div>
                 <button 
                     onClick={fetchData}
                     disabled={isRefreshing}
-                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-900 transition-colors"
+                    className="p-3 bg-white border border-gray-100 rounded-2xl shadow-sm text-gray-400 hover:text-gray-900 active:scale-95 transition-all"
                 >
-                    <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin' : ''}`} />
-                    {isRefreshing ? 'Sincronizando...' : `Atualizado: ${lastUpdated}`}
+                    <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                 </button>
             </div>
 
-            {/* 1. MÉTRICAS PRINCIPAIS (EXECUTIVO) */}
-            <ShiftMetrics overview={overview} />
+            {/* 2. SITUAÇÃO DO TURNO (O CORAÇÃO) */}
+            <section className="space-y-4">
+                <div className="flex items-center justify-between px-1">
+                    <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-6 bg-gray-900 rounded-full" />
+                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Situação do Turno</h3>
+                    </div>
+                </div>
+                <ShiftMetrics overview={overview} />
+            </section>
 
-            {/* 2. EQUIPE EM ATENÇÃO (CRÍTICO + PREVENTIVO) */}
+            {/* 3. AÇÕES RÁPIDAS (INTERVENÇÃO DIRETA) */}
+            <ManagerQuickActions 
+                lateCount={overview.late} 
+            />
+
+            {/* 4. BLOCO UNIFICADO DE CONTAGENS */}
+            <section className="bg-white border border-gray-100 rounded-[2.5rem] p-6 shadow-sm space-y-4">
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                        <Package className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight leading-none mb-1.5">Contagens de Estoque</h3>
+                        <p className="text-xs font-medium text-gray-400">Acompanhe execução, confira histórico e exporte Excel.</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                    <Link href="/dashboard/admin/history/sessions"
+                        className="flex items-center justify-center gap-2 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-colors active:scale-95">
+                        <Eye className="w-4 h-4" />
+                        Ao Vivo
+                    </Link>
+                    <Link href="/dashboard/admin/counts/history"
+                        className="flex items-center justify-center gap-2 py-4 bg-gray-50 text-gray-900 border border-gray-100 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-100 transition-colors active:scale-95">
+                        <CalendarSearch className="w-4 h-4" />
+                        Histórico
+                    </Link>
+                </div>
+                
+                <Link href="/dashboard/admin/counts/history?export=true"
+                    className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-gray-100 text-gray-400 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:text-indigo-600 transition-colors">
+                    <FileText className="w-3.5 h-3.5" />
+                    Exportar Relatórios (XLSX)
+                </Link>
+            </section>
+
+            {/* 5. EQUIPE EM ATENÇÃO */}
             <AttentionList collaborators={data?.collaborators || []} />
 
-            {/* 3. SETORES EM TEMPO REAL */}
+            {/* 6. MONITORAMENTO POR SETOR */}
             <section className="space-y-4">
                 <div className="flex items-center justify-between px-1">
                     <div className="flex items-center gap-2">
                         <span className="w-1 h-4 bg-gray-200 rounded-full" />
-                        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Monitoramento por Setor</h3>
+                        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Status das Áreas</h3>
                     </div>
                     <Link 
                         href="/dashboard/areas"
                         className="flex items-center gap-1.5 text-[10px] font-black text-[#B13A2B] uppercase tracking-widest hover:opacity-70 transition-opacity"
                     >
-                        Ver Diagnóstico Completo
+                        Ver Diagnóstico
                         <ArrowRight className="w-3 h-3" />
                     </Link>
                 </div>
                 {data && <SectorGrid bySector={data.bySector} />}
             </section>
 
-            {/* EXCEÇÕES DINÂMICAS (CASO HAJA) */}
+            {/* EXCEÇÕES DINÂMICAS */}
             {data?.exceptions?.length > 0 && <ExceptionCenter exceptions={data.exceptions} />}
 
-            <div className="pt-4 border-t border-gray-100">
-                <ManagerQuickActions 
-                    lateCount={overview.late} 
-                />
-            </div>
-
-
-            {/* 5. ÁREAS DO SISTEMA (Management Hub) */}
+            {/* 7. ÁREAS DO SISTEMA (Management Hub) */}
             <div className="pt-8 border-t border-gray-100">
                 <SystemArchitectureHub />
             </div>
