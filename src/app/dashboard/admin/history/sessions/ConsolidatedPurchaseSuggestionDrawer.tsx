@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { 
     Loader2, X, Download, AlertTriangle, CheckCircle2, ShoppingCart, 
-    Search, Info, Package, ListChecks, History, ArrowRight, Edit2, Check
+    Search, Info, Package, ListChecks, History, ArrowRight, Edit2, Check,
+    AlertCircle
 } from 'lucide-react'
 import { getConsolidatedPurchaseSuggestionAction, ConsolidatedSuggestionItem } from '@/app/actions/consolidatedPurchaseAction'
 import * as XLSX from 'xlsx'
@@ -41,6 +42,14 @@ export default function ConsolidatedPurchaseSuggestionDrawer({ sessionIds, isOpe
                 setItems(res.data)
                 setDiagnostic(res.diagnostic)
                 
+                // Se não houver nada para comprar, mas houver pendências, muda de aba
+                const hasToBuy = res.data.some(i => i.status === 'Comprar')
+                if (!hasToBuy) {
+                    const hasPending = res.data.some(i => ['Sem vínculo', 'Sem estoque ideal', 'Revisar'].includes(i.status))
+                    if (hasPending) setActiveTab('Pendências')
+                    else setActiveTab('Todos')
+                }
+
                 // Seleção padrão: Apenas itens "Comprar"
                 const initialSelected = new Set<string>(
                     res.data.filter(i => i.status === 'Comprar').map(i => i.purchase_item_id)
@@ -195,9 +204,26 @@ export default function ConsolidatedPurchaseSuggestionDrawer({ sessionIds, isOpe
                             </p>
                         </div>
                     ) : filteredItems.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-center space-y-3 opacity-40">
-                            <Package className="w-12 h-12 text-gray-300" />
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Nenhum item nesta categoria</p>
+                        <div className="h-full flex flex-col items-center justify-center text-center p-8 space-y-4">
+                            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center">
+                                <Package className="w-10 h-10 text-gray-200" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Nenhum item nesta aba</p>
+                                <p className="text-xs text-gray-400 font-medium mt-1">
+                                    {activeTab === 'Comprar' && summary.pending > 0 
+                                        ? `Existem ${summary.pending} itens com pendências de vínculo ou estoque alvo que não puderam ser processados.`
+                                        : 'Não há itens para exibir com os filtros atuais.'}
+                                </p>
+                            </div>
+                            {activeTab === 'Comprar' && summary.pending > 0 && (
+                                <button 
+                                    onClick={() => setActiveTab('Pendências')}
+                                    className="px-6 py-3 bg-amber-50 text-amber-700 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-amber-100 hover:bg-amber-100 transition"
+                                >
+                                    Ver Pendências de Vínculo
+                                </button>
+                            )}
                         </div>
                     ) : (
                         <div className="space-y-4">
