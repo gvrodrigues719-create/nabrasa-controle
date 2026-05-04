@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { LayoutGrid, Package, CalendarSync, History, TrendingUp, ClipboardCheck, Bell, Activity, ShoppingCart, Eye } from 'lucide-react'
+import { LayoutGrid, Package, CalendarSync, History, TrendingUp, ClipboardCheck, Bell, Activity, ShoppingCart, Eye, CalendarSearch } from 'lucide-react'
 
 export default function AdminHome() {
     const router = useRouter()
@@ -11,7 +11,7 @@ export default function AdminHome() {
             {/* ── AUDITORIA MASTER — DESTAQUE PRINCIPAL ──────────── */}
             <button
                 onClick={() => router.push('/dashboard/admin/history/sessions')}
-                className="w-full bg-gradient-to-br from-indigo-600 to-indigo-800 p-6 rounded-[28px] flex items-center text-left shadow-xl shadow-indigo-200 space-x-4 active:scale-95 transition-all mb-4"
+                className="w-full bg-gradient-to-br from-indigo-600 to-indigo-800 p-6 rounded-[28px] flex items-center text-left shadow-xl shadow-indigo-200 space-x-4 active:scale-95 transition-all"
             >
                 <div className="bg-white/20 p-3.5 rounded-2xl shrink-0">
                     <Eye className="w-7 h-7 text-white" />
@@ -20,6 +20,24 @@ export default function AdminHome() {
                     <p className="text-indigo-200 text-[10px] font-black uppercase tracking-widest mb-0.5">Acesso Rápido</p>
                     <h3 className="font-black text-white text-xl leading-tight">Ver Contagens</h3>
                     <p className="text-indigo-200 text-sm mt-0.5">Todas as sessões em tempo real</p>
+                </div>
+                <div className="bg-white/10 px-3 py-1.5 rounded-xl">
+                    <span className="text-white text-[10px] font-black uppercase tracking-widest">Abrir →</span>
+                </div>
+            </button>
+
+            {/* ── HISTÓRICO DE CONTAGENS ──────────────────────────── */}
+            <button
+                onClick={() => router.push('/dashboard/admin/counts/history')}
+                className="w-full bg-gradient-to-br from-emerald-600 to-emerald-800 p-5 rounded-[28px] flex items-center text-left shadow-lg shadow-emerald-200 space-x-4 active:scale-95 transition-all mb-4"
+            >
+                <div className="bg-white/20 p-3 rounded-2xl shrink-0">
+                    <CalendarSearch className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                    <p className="text-emerald-200 text-[10px] font-black uppercase tracking-widest mb-0.5">Conferência & Auditoria</p>
+                    <h3 className="font-black text-white text-lg leading-tight">Histórico de Contagens</h3>
+                    <p className="text-emerald-200 text-xs mt-0.5">Filtrar, conferir e exportar Excel</p>
                 </div>
                 <div className="bg-white/10 px-3 py-1.5 rounded-xl">
                     <span className="text-white text-[10px] font-black uppercase tracking-widest">Abrir →</span>
