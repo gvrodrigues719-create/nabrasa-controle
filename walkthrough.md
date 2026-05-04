@@ -11,6 +11,10 @@ Realizamos uma série de otimizações técnicas para eliminar a latência e os 
 ### 2. Otimização do Dashboard (Frontend)
 - **Fim das Cascatas (Waterfalls)**: No hook `useDashboardData.ts`, movemos as requisições de tarefas diárias e sessões ativas para o lote inicial de `Promise.all`. Isso evita que a interface espere o fim de uma requisição para iniciar a próxima, permitindo que todos os componentes carreguem simultaneamente.
 
+### 3. Refatoração do Admin Auth Gate
+- **Server-Side Auth**: Movemos a lógica de validação de permissões do `admin/layout.tsx` (que era um componente cliente com spinners bloqueantes) para um componente servidor. Agora, a autorização é verificada antes mesmo da página ser enviada ao navegador, eliminando o atraso de "sincronização" ao entrar na área administrativa.
+- **AdminShell**: Criamos um componente cliente leve para o cabeçalho da administração, mantendo a responsividade da UI enquanto a segurança é tratada no servidor.
+
 ## Verificação e Testes
 
 ### Testes de Tipagem
@@ -24,3 +28,5 @@ Realizamos uma série de otimizações técnicas para eliminar a latência e os 
 ## Arquivos Modificados
 - [cmvActions.ts](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/actions/cmvActions.ts): Otimização de queries e paralelização de ciclos.
 - [useDashboardData.ts](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/hooks/useDashboardData.ts): Eliminação de cascatas de carregamento.
+- [admin/layout.tsx](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/admin/layout.tsx): Implementação do Auth Gate no servidor.
+- [AdminShell.tsx](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/admin/AdminShell.tsx): Componente cliente para cabeçalho administrativo.
