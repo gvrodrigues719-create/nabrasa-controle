@@ -43,30 +43,8 @@ export default function ManagerHome() {
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-20">
             
-            {/* 1. HEADER OPERACIONAL */}
-            <div className="flex justify-between items-start pt-4">
-                <div>
-                    <h2 className="text-2xl font-black text-gray-900 leading-tight">Bom turno, {userName}</h2>
-                    <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Unidade Matriz</span>
-                        <span className="w-1 h-1 rounded-full bg-gray-300" />
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {lastUpdated}
-                        </span>
-                    </div>
-                </div>
-                <button 
-                    onClick={fetchData}
-                    disabled={isRefreshing}
-                    className="p-3 bg-white border border-gray-100 rounded-2xl shadow-sm text-gray-400 hover:text-gray-900 active:scale-95 transition-all"
-                >
-                    <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                </button>
-            </div>
-
-            {/* 2. SITUAÇÃO DO TURNO (O CORAÇÃO) */}
-            <section className="space-y-4">
+            {/* 1. SITUAÇÃO DO TURNO (O CORAÇÃO) */}
+            <section className="space-y-4 pt-4">
                 <div className="flex items-center justify-between px-1">
                     <div className="flex items-center gap-2">
                         <span className="w-1.5 h-6 bg-gray-900 rounded-full" />

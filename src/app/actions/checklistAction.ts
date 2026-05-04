@@ -606,7 +606,7 @@ export async function getOperationalMirrorAction() {
             .select(`
                 *,
                 checklist_templates(name, context, priority),
-                users(id, name, position, sector, shift)
+                users(id, name, sector, shift)
             `)
             .or(`scheduled_for.eq.${today},and(scheduled_for.lt.${today},status.eq.in_progress)`)
 
