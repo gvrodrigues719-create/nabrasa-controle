@@ -88,9 +88,15 @@ export async function getPurchaseSuggestionAction(sessionId: string) {
 
         // Criar mapa normalizado de itens de compra para match inteligente
         const pItemNormalizedMap = new Map<string, any>();
+        const ambiguousNames = new Set<string>();
+
         purchaseItems?.forEach((p: any) => {
             const norm = normalizeName(p.name);
-            if (norm && !pItemNormalizedMap.has(norm)) {
+            if (!norm) return;
+            
+            if (pItemNormalizedMap.has(norm)) {
+                ambiguousNames.add(norm);
+            } else {
                 pItemNormalizedMap.set(norm, p);
             }
         });
@@ -105,11 +111,19 @@ export async function getPurchaseSuggestionAction(sessionId: string) {
             let purchaseItemId = mappingMap.get(ci.item_id);
             let purchaseItem = purchaseItemId ? pItemMap.get(purchaseItemId) : null;
             let isManualMapping = !!purchaseItemId;
+            let statusDetail = '';
 
             // 2. Fallback Inteligente (Normalização)
             if (!purchaseItem) {
                 const normalizedCountName = normalizeName(countItemName);
-                purchaseItem = pItemNormalizedMap.get(normalizedCountName);
+                if (ambiguousNames.has(normalizedCountName)) {
+                    // Se o nome é ambíguo no catálogo, não decide sozinho
+                    purchaseItem = null;
+                    statusDetail = 'Ambiguidade no catálogo de compras (vários itens similares)';
+                } else {
+                    purchaseItem = pItemNormalizedMap.get(normalizedCountName);
+                }
+                
                 if (purchaseItem) {
                     purchaseItemId = purchaseItem.id;
                 }
@@ -118,7 +132,6 @@ export async function getPurchaseSuggestionAction(sessionId: string) {
             let purchaseItemName = purchaseItem?.name || '';
             let idealStock = 0;
             let status: PurchaseSuggestionItem['status'] = 'Sem vínculo';
-            let statusDetail = '';
 
             if (purchaseItem) {
                 const unitParam = paramMap.get(purchaseItem.id);
@@ -138,6 +151,8 @@ export async function getPurchaseSuggestionAction(sessionId: string) {
                 } else {
                     status = idealStock === 0 ? 'Sem estoque ideal' : 'Comprar';
                 }
+            } else if (statusDetail) {
+                status = 'Revisar';
             }
 
             // Cálculo final
