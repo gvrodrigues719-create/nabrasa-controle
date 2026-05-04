@@ -92,7 +92,7 @@ export async function getConsolidatedPurchaseSuggestionAction(sessionIds: string
         const pItemMap = new Map(pItems?.map((p: any) => [p.id, p]));
 
         const { data: params } = await supabase.from('store_item_parameters').select('*').eq('store_id', storeId);
-        const paramsMap = new Map(params?.map((p: any) => [p.purchase_item_id, p]));
+        const paramsMap = new Map(params?.map((p: any) => [p.item_id, p]));
 
         // Match Maps para Vínculo Automático
         const pItemExactMap = new Map<string, any>(pItems?.map((p: any) => [p.name.toUpperCase(), p]));
@@ -107,7 +107,6 @@ export async function getConsolidatedPurchaseSuggestionAction(sessionIds: string
         });
 
         // 4. Consolidar Estoque Atual
-        // Agrupar por purchase_item_id. Se não houver vínculo, manter por item_id para reportar "Sem vínculo"
         const consolidation = new Map<string, { 
             purchase_item_id: string | null,
             count_item_name: string,
@@ -167,8 +166,9 @@ export async function getConsolidatedPurchaseSuggestionAction(sessionIds: string
             const pItem = (data.purchase_item_id ? pItemMap.get(data.purchase_item_id) : null) as any;
             const param = (data.purchase_item_id ? paramsMap.get(data.purchase_item_id) : null) as any;
             
-            const min = param?.min_stock ?? 0;
-            const max = param?.max_stock ?? 0;
+            // Prioridade 1: Loja | Prioridade 2: Global
+            const min = param?.min_stock ?? pItem?.min_stock ?? 0;
+            const max = param?.max_stock ?? pItem?.max_stock ?? 0;
             const stock = data.total_qty;
 
             let suggested = 0;
@@ -178,7 +178,7 @@ export async function getConsolidatedPurchaseSuggestionAction(sessionIds: string
             if (!data.purchase_item_id) {
                 status = 'Sem vínculo';
                 motivo = 'Sem vínculo com item de compra';
-            } else if (!max) {
+            } else if (max === 0) {
                 status = 'Sem estoque ideal';
                 motivo = 'Sem estoque ideal cadastrado';
             } else {
