@@ -52,7 +52,7 @@ export async function getConsolidatedPurchaseSuggestionAction(sessionIds: string
         if (!storeId) throw new Error("Não foi possível identificar a unidade da primeira sessão.");
 
         // Validar se todas são da mesma unidade
-        const divergentStore = sessions.find(s => (s.users as any)?.unit_id !== storeId);
+        const divergentStore = sessions.find((s: any) => (s.users as any)?.unit_id !== storeId);
         if (divergentStore) throw new Error("Todas as sessões selecionadas devem pertencer à mesma unidade.");
 
         // 2. Carregar TODOS os itens das sessões selecionadas
@@ -94,7 +94,7 @@ export async function getConsolidatedPurchaseSuggestionAction(sessionIds: string
 
         for (const ci of countItems) {
             const purchaseId = mappingMap.get(ci.item_id) || null;
-            const session = sessions.find(s => s.id === ci.session_id);
+            const session = sessions.find((s: any) => s.id === ci.session_id);
             const originName = session?.groups?.name || 'Desconhecido';
             
             // Lógica de quantidade efetiva (Auditoria V1.1)
