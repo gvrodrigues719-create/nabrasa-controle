@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, Search, Download, RefreshCw, Filter,
     CheckCircle2, Clock, AlertTriangle, BarChart3,
-    ChevronRight, User, MapPin, Calendar, Loader2, ShoppingCart, Check
+    ChevronRight, User, MapPin, Calendar, Loader2, 
+    ShoppingCart, Check, Info
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import ConsolidatedPurchaseSuggestionDrawer from '../../history/sessions/ConsolidatedPurchaseSuggestionDrawer'
@@ -464,10 +465,9 @@ export default function CountHistoryPage() {
                                 : 0
 
                             return (
-                                <div key={session.id}
-                                    className={`bg-white rounded-[24px] border shadow-sm overflow-hidden ${
-                                        session.is_stuck ? 'border-orange-200' : 'border-gray-100'
-                                    }`}>
+                                        <div className={`bg-white rounded-[24px] border shadow-sm overflow-hidden transition-all ${
+                                            isSelectionMode && selectedIds.has(session.id) ? 'border-indigo-600 ring-4 ring-indigo-50' : (session.is_stuck ? 'border-orange-200' : 'border-gray-100')
+                                        }`}>
                                     {session.is_stuck && (
                                         <div className="bg-orange-500 px-4 py-1.5 flex items-center space-x-2">
                                             <AlertTriangle className="w-3.5 h-3.5 text-white" />
@@ -481,13 +481,11 @@ export default function CountHistoryPage() {
                                             if (isSelectionMode) toggleSelection(session.id)
                                             else router.push(`/dashboard/admin/history/session/${session.id}`)
                                         }}
-                                        className={`w-full p-4 text-left transition-colors relative ${
-                                            isSelectionMode && selectedIds.has(session.id) ? 'bg-indigo-50/50' : 'hover:bg-gray-50'
-                                        }`}
+                                        className="w-full p-4 text-left transition-colors flex items-center gap-4"
                                     >
                                         {isSelectionMode && (
-                                            <div className={`absolute top-4 right-10 w-6 h-6 rounded-lg border flex items-center justify-center transition-all ${
-                                                selectedIds.has(session.id) ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-gray-200 text-transparent'
+                                            <div className={`w-6 h-6 rounded-lg border flex items-center justify-center transition-all shrink-0 ${
+                                                selectedIds.has(session.id) ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-gray-50 border-gray-200 text-transparent'
                                             }`}>
                                                 <Check className="w-4 h-4" />
                                             </div>
