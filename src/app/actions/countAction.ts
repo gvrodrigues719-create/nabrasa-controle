@@ -46,9 +46,9 @@ export async function initCountSessionAction(routineId: string, groupId: string,
 
         const cycleStart = getCycleAnchorDate(routineRow?.snapshot_started_at)
 
-        const { data: existingSession } = await supabase
+        const { data: existingSession, error: fetchErr } = await supabase
             .from('count_sessions')
-            .select('id, status, user_id, execution_id, users(name)')
+            .select('id, status, user_id, execution_id, users:count_sessions_user_id_fkey(name)')
             .eq('routine_id', routineId)
             .eq('group_id', groupId)
             .neq('status', 'completed')
@@ -116,7 +116,6 @@ export async function initCountSessionAction(routineId: string, groupId: string,
             dbZeroed
         }
     } catch (e: any) {
-        console.error('[CountAction] Erro em initCountSessionAction:', e)
         return { error: e.message || 'Erro ao inicializar sessão' }
     }
 }
