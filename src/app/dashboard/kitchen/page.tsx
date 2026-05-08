@@ -42,22 +42,22 @@ export default function KitchenPage() {
             {/* Header */}
             <div className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-sm">
                 <div className="max-w-md lg:max-w-4xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-4">
-                        <button onClick={() => router.push('/dashboard')} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => router.push('/dashboard')} className="p-2 hover:bg-gray-100 rounded-xl transition-colors shrink-0">
                             <ArrowLeft className="w-5 h-5 text-gray-600" />
                         </button>
-                        <div>
-                            <h1 className="text-base font-black text-gray-900 leading-none">Cozinha Central</h1>
-                            <p className="text-[11px] text-gray-400 mt-1 font-bold">Pedidos de abastecimento para separar</p>
+                        <div className="min-w-0">
+                            <h1 className="text-sm font-black text-gray-900 leading-none truncate">Cozinha Central</h1>
+                            <p className="text-[10px] text-gray-400 mt-1 font-bold truncate">Pedidos de abastecimento</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 shrink-0">
                         <button
                             onClick={() => router.push('/dashboard/kitchen/planning')}
-                            className="flex items-center gap-2 px-4 py-2 bg-orange-50 text-orange-700 rounded-xl text-sm font-bold hover:bg-orange-100 transition-colors"
+                            className="flex items-center gap-2 px-3 md:px-4 py-2 bg-orange-50 text-orange-700 rounded-xl text-sm font-bold hover:bg-orange-100 transition-colors"
                         >
                             <Calculator className="w-4 h-4" />
-                            Planejamento
+                            <span className="hidden md:inline">Planejamento</span>
                         </button>
                         <button
                             onClick={() => fetchOrders(true)}
