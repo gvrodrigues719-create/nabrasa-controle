@@ -24,13 +24,17 @@ export type InitCountSessionResult = {
 export async function initCountSessionAction(routineId: string, groupId: string, userId: string): Promise<InitCountSessionResult> {
     try {
         const { data: userData } = await supabase.from('users').select('name, role, primary_group_id').eq('id', userId).single()
-        const { data: group } = await supabase.from('groups').select('name').eq('id', groupId).single()
+        const { data: group } = await supabase.from('groups').select('name, macro_sector').eq('id', groupId).single()
 
         const isTester = await isTestOperator(userData)
         const isManager = userData?.role === 'admin' || userData?.role === 'manager'
+        const isKitchen = userData?.role === 'kitchen' || userData?.name === 'Cozinha Central'
+        const isKitchenGroup = group?.macro_sector === 'Cozinha Central'
+        
         const isMyArea = userData?.primary_group_id === groupId
+        const allowedKitchen = isKitchen && isKitchenGroup
 
-        if (!isTester && !isManager && !isMyArea) {
+        if (!isTester && !isManager && !isMyArea && !allowedKitchen) {
             return { blocked: 'Você não tem permissão para realizar contagens fora da sua área designada.' }
         }
 
