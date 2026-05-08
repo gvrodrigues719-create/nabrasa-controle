@@ -67,10 +67,9 @@ function GroupCard({
     return (
         <button
             onClick={() => onNavigate(group.groupId)}
-            disabled={group.status === 'completed'}
             className={`w-full text-left p-5 rounded-[24px] border-2 transition-all active:scale-[0.98] ${
                 group.status === 'completed'
-                    ? 'bg-emerald-50/50 border-emerald-100 cursor-default opacity-80'
+                    ? 'bg-emerald-50/30 border-emerald-100 shadow-sm hover:border-emerald-300'
                     : group.status === 'in_progress'
                     ? 'bg-white border-amber-200 shadow-md shadow-amber-50'
                     : 'bg-white border-gray-100 shadow-sm hover:border-orange-200 hover:shadow-md hover:shadow-orange-50'
@@ -79,7 +78,7 @@ function GroupCard({
             <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex-1">
                     <h3 className={`font-black text-base leading-tight ${
-                        group.status === 'completed' ? 'text-gray-400' : 'text-gray-900'
+                        group.status === 'completed' ? 'text-emerald-900' : 'text-gray-900'
                     }`}>
                         {displayName}
                     </h3>
@@ -90,7 +89,9 @@ function GroupCard({
 
                 <div className="flex items-center gap-2 shrink-0">
                     <StatusBadge status={group.status} />
-                    {group.status !== 'completed' && (
+                    {group.status === 'completed' ? (
+                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-white/50 px-2 py-1 rounded-lg border border-emerald-100">Ver / Editar</span>
+                    ) : (
                         <ChevronRight className="w-4 h-4 text-gray-300" />
                     )}
                 </div>

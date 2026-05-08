@@ -37,6 +37,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     const [weeklyPoints, setWeeklyPoints] = useState<number>(0)
     const [isDeleting, setIsDeleting] = useState(false)
     const [syncMessage, setSyncMessage] = useState('Salvando...')
+    const [sessionStatus, setSessionStatus] = useState<string>('in_progress')
     
     const searchParams = useSearchParams()
     const returnTo = searchParams.get('returnTo')
@@ -89,6 +90,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         }
 
         if (res.groupName) setGroupName(res.groupName)
+        if (res.sessionStatus) setSessionStatus(res.sessionStatus)
         if (res.sessionId) {
             setSessionId(res.sessionId)
             sessionIdRef.current = res.sessionId
@@ -356,7 +358,9 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                     <div className="flex flex-col items-center">
                         <h1 className="text-sm font-black text-[#1b1c1a] uppercase tracking-wider leading-none">{groupName}</h1>
                         <div className="flex items-center mt-1 space-x-1.5 opacity-60">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-[#8c716c]">Contagem em andamento</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-[#8c716c]">
+                                {sessionStatus === 'completed' ? 'Revisando Contagem Finalizada' : 'Contagem em andamento'}
+                            </span>
                         </div>
                     </div>
 
@@ -445,6 +449,17 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                 </div>
             ) : (
                 <div className="p-4 space-y-4">
+                    {sessionStatus === 'completed' && (
+                        <div className="mx-2 p-4 bg-emerald-50 border-2 border-emerald-100 rounded-3xl flex items-center gap-3">
+                            <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center shadow-sm shrink-0">
+                                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-black text-emerald-900 uppercase tracking-tight">Modo de Revisão</p>
+                                <p className="text-[11px] font-medium text-emerald-700 leading-tight">Esta contagem já foi enviada, mas você pode editar os valores e salvar novamente se necessário.</p>
+                            </div>
+                        </div>
+                    )}
                     {items.length === 0 ? (
                         <p className="text-center mt-10 text-[#8c716c] font-medium">Não há itens vinculados a este local.</p>
                     ) : items.map((item, index) => {
@@ -537,11 +552,11 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                             disabled={itemsPendentes > 0}
                             className={`flex-1 py-5 rounded-2xl font-black flex justify-center items-center text-lg active:scale-95 transition-all shadow-xl ${
                                 itemsPendentes === 0 
-                                    ? 'bg-[#1b1c1a] text-white shadow-black/20' 
+                                    ? (sessionStatus === 'completed' ? 'bg-emerald-600 text-white shadow-emerald-200' : 'bg-[#1b1c1a] text-white shadow-black/20')
                                     : 'bg-gray-100 text-gray-300'
                             }`}
                         >
-                            Finalizar Grupo {itemsPendentes > 0 ? `(${itemsPendentes})` : ''}
+                            {sessionStatus === 'completed' ? 'Atualizar Contagem' : `Finalizar Grupo ${itemsPendentes > 0 ? `(${itemsPendentes})` : ''}`}
                         </button>
                     </div>
                 </div>

@@ -13,6 +13,7 @@ const supabase = createClient(
 
 export type InitCountSessionResult = {
     sessionId?: string | null
+    sessionStatus?: string
     groupName?: string
     items?: CountItem[]
     dbCounts?: Record<string, string>
@@ -57,7 +58,7 @@ export async function initCountSessionAction(routineId: string, groupId: string,
             .maybeSingle()
 
         if (existingSession) {
-            if (existingSession.status === 'completed') {
+            if (existingSession.status === 'completed' && !allowedKitchen) {
                 return { blocked: 'Este grupo já foi concluído hoje e não pode mais ser editado.' }
             }
             if (existingSession.status === 'in_progress' && existingSession.user_id !== userId) {
@@ -67,6 +68,7 @@ export async function initCountSessionAction(routineId: string, groupId: string,
         }
 
         let sessionId = existingSession?.id
+        const sessionStatus = existingSession?.status || 'in_progress'
 
         // Puxa a execução ativa
         const { data: exec } = await supabase.from('routine_executions').select('id').eq('routine_id', routineId).eq('status', 'active').maybeSingle()
@@ -110,6 +112,7 @@ export async function initCountSessionAction(routineId: string, groupId: string,
 
         return {
             sessionId,
+            sessionStatus,
             groupName: group?.name || '',
             items: items || [],
             dbCounts,
