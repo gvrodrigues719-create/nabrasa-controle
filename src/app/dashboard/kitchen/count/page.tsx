@@ -135,6 +135,13 @@ export default function KitchenCountPage() {
 
     function handleNavigate(groupId: string) {
         if (!data) return
+        const group = data.groups.find(g => g.groupId === groupId)
+        
+        if (group?.status === 'completed' && group.sessionId) {
+            router.push(`/dashboard/kitchen/history/${group.sessionId}`)
+            return
+        }
+
         // Reuse the existing count engine, returnTo this page
         router.push(`/dashboard/count/${data.routineId}/${groupId}?returnTo=/dashboard/kitchen/count`)
     }

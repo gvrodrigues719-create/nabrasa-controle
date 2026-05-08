@@ -71,7 +71,6 @@ export default function KitchenPage() {
             </div>
 
             <div className="max-w-md lg:max-w-4xl mx-auto px-4 py-6 space-y-8 pb-32">
-                
                 {/* ── Card: Contagem da Cozinha Central ─────────── */}
                 <button
                     onClick={() => router.push('/dashboard/kitchen/count')}
@@ -93,6 +92,30 @@ export default function KitchenPage() {
                     </div>
                     <div className="bg-white/10 px-3 py-1.5 rounded-xl shrink-0">
                         <span className="text-white text-[10px] font-black uppercase tracking-widest">Abrir →</span>
+                    </div>
+                </button>
+
+                {/* ── Card: Histórico de Contagens ─────────── */}
+                <button
+                    onClick={() => router.push('/dashboard/kitchen/history')}
+                    className="w-full bg-white p-5 rounded-[28px] flex items-center text-left border-2 border-gray-100 shadow-sm space-x-4 active:scale-[0.98] transition-all hover:border-orange-200"
+                >
+                    <div className="bg-orange-50 p-3.5 rounded-2xl shrink-0">
+                        <Timer className="w-7 h-7 text-orange-600" />
+                    </div>
+                    <div className="flex-1">
+                        <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-0.5">
+                            Registros Anteriores
+                        </p>
+                        <h3 className="font-black text-gray-900 text-lg leading-tight">
+                            Histórico de Contagens
+                        </h3>
+                        <p className="text-gray-500 text-sm mt-0.5">
+                            Veja contagens finalizadas e corrija valores quando necessário.
+                        </p>
+                    </div>
+                    <div className="bg-gray-50 px-3 py-1.5 rounded-xl shrink-0">
+                        <span className="text-gray-400 text-[10px] font-black uppercase tracking-widest text-orange-600">Ver →</span>
                     </div>
                 </button>
 
