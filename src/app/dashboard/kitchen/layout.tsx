@@ -1,19 +1,44 @@
 import { redirect } from 'next/navigation'
 import { getActiveOperator } from '@/app/actions/pinAuth'
-import { supabase } from '@/lib/supabase/client'
+import { createClient } from '@supabase/supabase-js'
+
+// Service role client para verificação server-side (não depende de RLS de frontend)
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
 
 export default async function KitchenLayout({ children }: { children: React.ReactNode }) {
     const op = await getActiveOperator()
-    const { data: { user } } = await supabase.auth.getUser()
 
     if (op) {
-        // Apenas Cozinha Central ou admin podem acessar a tela da cozinha
-        // Guilherme Gerente pode acessar por enquanto para testes se o user quiser, mas idealmente só admin ou kitchen.
-        if (op.name !== 'Cozinha Central' && op.role !== 'admin' && op.role !== 'manager') {
+        // Acesso permitido para:
+        // 1. Role 'kitchen' (abordagem limpa, futura)
+        // 2. Nome 'Cozinha Central' (workaround compatível atual)
+        // 3. Admin / Manager (auditoria e supervisão)
+        const isKitchen = op.role === 'kitchen' || op.name === 'Cozinha Central'
+        const isManagerOrAdmin = op.role === 'admin' || op.role === 'manager'
+
+        if (!isKitchen && !isManagerOrAdmin) {
             redirect('/dashboard')
         }
-    } else if (!user) {
-        redirect('/login')
+    } else {
+        // Sem sessão de operador PIN — verifica sessão web (admin/manager logado via email)
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) redirect('/login')
+
+        const { data: userData } = await supabase
+            .from('users')
+            .select('role, name')
+            .eq('id', user.id)
+            .single()
+
+        const isKitchen = userData?.role === 'kitchen' || userData?.name === 'Cozinha Central'
+        const isManagerOrAdmin = userData?.role === 'admin' || userData?.role === 'manager'
+
+        if (!isKitchen && !isManagerOrAdmin) {
+            redirect('/dashboard')
+        }
     }
 
     return <>{children}</>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, RefreshCw, ChefHat, Inbox, Timer, PackageCheck, AlertTriangle, Send, Calculator } from 'lucide-react'
+import { ArrowLeft, RefreshCw, ChefHat, Inbox, Timer, PackageCheck, AlertTriangle, Send, Calculator, ClipboardList } from 'lucide-react'
 import { getOrdersForKitchenAction } from '@/modules/purchases/actions'
 import type { PurchaseOrder } from '@/modules/purchases/types'
 import { KitchenOrderCard } from './components/KitchenOrderCard'
@@ -72,6 +72,30 @@ export default function KitchenPage() {
 
             <div className="max-w-md lg:max-w-4xl mx-auto px-4 py-6 space-y-8 pb-32">
                 
+                {/* ── Card: Contagem da Cozinha Central ─────────── */}
+                <button
+                    onClick={() => router.push('/dashboard/kitchen/count')}
+                    className="w-full bg-gradient-to-br from-orange-500 to-orange-700 p-5 rounded-[28px] flex items-center text-left shadow-xl shadow-orange-200 space-x-4 active:scale-[0.98] transition-all"
+                >
+                    <div className="bg-white/20 p-3.5 rounded-2xl shrink-0">
+                        <ClipboardList className="w-7 h-7 text-white" />
+                    </div>
+                    <div className="flex-1">
+                        <p className="text-orange-200 text-[10px] font-black uppercase tracking-widest mb-0.5">
+                            Estoque Físico
+                        </p>
+                        <h3 className="font-black text-white text-lg leading-tight">
+                            Contagem da Cozinha Central
+                        </h3>
+                        <p className="text-orange-100 text-sm mt-0.5">
+                            Conte insumos, espetos, carnes, frios e descartáveis da produção.
+                        </p>
+                    </div>
+                    <div className="bg-white/10 px-3 py-1.5 rounded-xl shrink-0">
+                        <span className="text-white text-[10px] font-black uppercase tracking-widest">Abrir →</span>
+                    </div>
+                </button>
+
                 {/* Summary Cards */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">

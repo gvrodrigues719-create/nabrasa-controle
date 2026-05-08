@@ -7,7 +7,14 @@
  */
 export function isIntegerUnit(unit: string): boolean {
     if (!unit) return false;
-    return ['un', 'und', 'cx', 'pct'].includes(unit.toLowerCase().trim());
+    const normalized = unit.toLowerCase().trim();
+    // Integer units: all non-decimal units used across lojas and Cozinha Central
+    return [
+        // Original loja units
+        'un', 'und', 'cx', 'pct',
+        // Cozinha Central units
+        'unid', 'rolo', 'amarrado', 'peça', 'peca', 'porção', 'porcao', 'caixinha',
+    ].includes(normalized);
 }
 
 /**
