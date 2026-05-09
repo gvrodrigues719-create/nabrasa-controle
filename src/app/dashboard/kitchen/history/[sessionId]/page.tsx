@@ -30,8 +30,8 @@ export default function KitchenSessionDetailPage({ params }: { params: Promise<{
         setLoading(true)
         const res = await getKitchenSessionDetailAction(sessionId)
         if (res.success) {
-            setSession(res.data?.session || res.session)
-            const sessionItems = res.data?.items || res.items || []
+            setSession(res.session)
+            const sessionItems = res.items || []
             setItems(sessionItems)
             
             // Initialize corrections with current validated or counted values
