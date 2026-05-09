@@ -218,9 +218,15 @@ BEGIN
         ('SACO 50X80',                             'AMARRADO',NULL, v_g_descartaveis, true),
         ('SACO DELIVERY C/50 G',                   'UNID',    NULL, v_g_descartaveis, true),
         ('SACO DELIVERY C/50 GG',                  'UNID',    NULL, v_g_descartaveis, true),
-        ('SACO DELIVERY C/50 M',                   'UNID',    NULL, v_g_descartaveis, true),
+        ('SACO DELIVERY M',                        'UNID',    NULL, v_g_descartaveis, true),
         ('SALADEIRA 500 ML',                       'UNID',    NULL, v_g_descartaveis, true),
-        ('TOUCA DESCARTÁVEL C/100',                'PCT',     NULL, v_g_descartaveis, true)
+        ('TOUCA DESCARTÁVEL C/100',                'PCT',     NULL, v_g_descartaveis, true),
+        ('SACO VIRGEM',                            'PCT',     NULL, v_g_descartaveis, true),
+        ('SALADEIRA 1000ML',                       'CX',      NULL, v_g_descartaveis, true),
+        ('TALHER DESCARTÁVEL',                     'PCT',     NULL, v_g_descartaveis, true),
+        ('POTE 145ML (MOLHO)',                     'PCT',     NULL, v_g_descartaveis, true),
+        ('BOBINA DE IMPRESSORA',                   'UN',      NULL, v_g_descartaveis, true),
+        ('POTE DE PUDIM',                          'UN',      NULL, v_g_descartaveis, true)
     ON CONFLICT DO NOTHING;
 
     -- Categoria: PRODUTOS DE LIMPEZA
@@ -228,7 +234,11 @@ BEGIN
     VALUES
         ('ALVEJANTE HIPOCLORITO DE SÓDIO 2,5% - 5L', 'UN', NULL, v_g_limpeza, true),
         ('HIPOCLORITO DE SÓDIO 5% - 5L',             'UN', NULL, v_g_limpeza, true),
-        ('DESINFETANTE 5L',                          'UN', NULL, v_g_limpeza, true)
+        ('DESINFETANTE 5L',                          'UN', NULL, v_g_limpeza, true),
+        ('ÁLCOOL — CAIXA (12 UN)',                   'CX', NULL, v_g_limpeza, true),
+        ('PAPEL TOALHA',                             'UN', NULL, v_g_limpeza, true),
+        ('SACO PRETO 105 LITROS',                    'UN', NULL, v_g_limpeza, true),
+        ('SACO PRETO 200 LITROS',                    'PCT',NULL, v_g_limpeza, true)
     ON CONFLICT DO NOTHING;
 
     -- ── PASSO 5: Estrutura de Auditoria ──────────────────────────
