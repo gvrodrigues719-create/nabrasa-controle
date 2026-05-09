@@ -109,10 +109,12 @@ export async function getConsolidatedKitchenDataAction(sessionIds: string[]) {
 
         if (error) throw error
 
+        const typedItems = (items || []) as any[]
+
         // Agrupar por item_id
         const consolidated: Record<string, any> = {}
         
-        items.forEach(i => {
+        typedItems.forEach(i => {
             const id = i.item_id
             const qty = i.validated_quantity ?? i.counted_quantity ?? 0
             
@@ -121,7 +123,7 @@ export async function getConsolidatedKitchenDataAction(sessionIds: string[]) {
                     id,
                     name: i.items?.name,
                     unit: i.items?.unit,
-                    groupName: i.items?.groups?.name,
+                    groupName: Array.isArray(i.items?.groups) ? i.items?.groups[0]?.name : i.items?.groups?.name,
                     total: 0
                 }
             }
