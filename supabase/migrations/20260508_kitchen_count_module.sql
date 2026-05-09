@@ -17,6 +17,7 @@ DECLARE
     v_g_carnes_por    uuid;
     v_g_carnes_frios  uuid;
     v_g_descartaveis  uuid;
+    v_g_limpeza       uuid;
     v_rotina_id       uuid;
     v_kitchen_user_id uuid;
 BEGIN
@@ -63,6 +64,13 @@ BEGIN
 
     SELECT id INTO v_g_descartaveis FROM public.groups WHERE name = 'CK — Descartáveis' LIMIT 1;
 
+    -- Grupo: PRODUTOS DE LIMPEZA
+    INSERT INTO public.groups (name, macro_sector, description, order_index, active)
+    VALUES ('CK — Produtos de Limpeza', 'Cozinha Central', 'Produtos de limpeza da Cozinha Central', 106, true)
+    ON CONFLICT DO NOTHING;
+
+    SELECT id INTO v_g_limpeza FROM public.groups WHERE name = 'CK — Produtos de Limpeza' LIMIT 1;
+
     -- ── PASSO 2: Criar a rotina "Contagem Cozinha Central" ────────
 
     INSERT INTO public.routines (name, frequency, active, routine_type)
@@ -97,6 +105,10 @@ BEGIN
     VALUES (v_rotina_id, v_g_descartaveis)
     ON CONFLICT DO NOTHING;
 
+    INSERT INTO public.routine_groups (routine_id, group_id)
+    VALUES (v_rotina_id, v_g_limpeza)
+    ON CONFLICT DO NOTHING;
+
     -- ── PASSO 4: Seed de Itens ────────────────────────────────────
     -- Categoria: INSUMOS
     INSERT INTO public.items (name, unit, unit_observation, group_id, active)
@@ -113,7 +125,19 @@ BEGIN
         ('MILHO TORRADO',              'UN',          'Saco 200G',                   v_g_insumos, true),
         ('LEMON PEPPER',               'UN',          'Saco 200G',                   v_g_insumos, true),
         ('CHIMICHURRI',                'UN',          'Saco 200G',                   v_g_insumos, true),
-        ('ORÉGANO',                    'UN',          'Saco 200G',                   v_g_insumos, true)
+        ('ORÉGANO',                    'UN',          'Saco 200G',                   v_g_insumos, true),
+        ('MARGARINA',                  'KG',          NULL,                          v_g_insumos, true),
+        ('LEITE CONDENSADO',           'CAIXINHA',    NULL,                          v_g_insumos, true),
+        ('ARROZ',                      'KG',          NULL,                          v_g_insumos, true),
+        ('ALHO',                       'KG',          NULL,                          v_g_insumos, true),
+        ('AÇÚCAR MASCAVO',             'KG',          NULL,                          v_g_insumos, true),
+        ('PIMENTA BIQUINHA',           'BALDE',       NULL,                          v_g_insumos, true),
+        ('FEIJÃO PRODUZIDO',           'KG',          NULL,                          v_g_insumos, true),
+        ('VINAGRE',                    'UN',          NULL,                          v_g_insumos, true),
+        ('AZEITE 2L',                  'UN',          NULL,                          v_g_insumos, true),
+        ('ÓLEO 900ML',                 'UN',          NULL,                          v_g_insumos, true),
+        ('LEITE',                      'CAIXA',       NULL,                          v_g_insumos, true),
+        ('REQUEIJÃO 1,5KG',            'BISNAGA',     NULL,                          v_g_insumos, true)
     ON CONFLICT DO NOTHING;
 
     -- Categoria: ESPETOS
@@ -164,7 +188,9 @@ BEGIN
         ('QUEIJO PARMESÃO',                    'KG',   NULL, v_g_carnes_frios, true),
         ('QUEIJO COALHO',                      'PEÇA', NULL, v_g_carnes_frios, true),
         ('QUEIJO GORGONZOLA',                  'KG',   NULL, v_g_carnes_frios, true),
-        ('QUEIJO MUSSARELA',                   'KG',   NULL, v_g_carnes_frios, true)
+        ('QUEIJO MUSSARELA',                   'KG',   NULL, v_g_carnes_frios, true),
+        ('SOBRECOXA',                          'KG',   NULL, v_g_carnes_frios, true),
+        ('BACON FATIADO',                      'KG',   NULL, v_g_carnes_frios, true)
     ON CONFLICT DO NOTHING;
 
     -- Categoria: DESCARTÁVEIS
@@ -197,7 +223,23 @@ BEGIN
         ('TOUCA DESCARTÁVEL C/100',                'PCT',     NULL, v_g_descartaveis, true)
     ON CONFLICT DO NOTHING;
 
-    -- ── PASSO 5: Atualizar primary_group_id do usuário Cozinha Central ──
+    -- Categoria: PRODUTOS DE LIMPEZA
+    INSERT INTO public.items (name, unit, unit_observation, group_id, active)
+    VALUES
+        ('ALVEJANTE HIPOCLORITO DE SÓDIO 2,5% - 5L', 'UN', NULL, v_g_limpeza, true),
+        ('HIPOCLORITO DE SÓDIO 5% - 5L',             'UN', NULL, v_g_limpeza, true),
+        ('DESINFETANTE 5L',                          'UN', NULL, v_g_limpeza, true)
+    ON CONFLICT DO NOTHING;
+
+    -- ── PASSO 5: Estrutura de Auditoria ──────────────────────────
+    -- Adicionar coluna de motivo se não existir
+    BEGIN
+        ALTER TABLE public.count_sessions ADD COLUMN validation_reason TEXT;
+    EXCEPTION WHEN duplicate_column THEN
+        -- Já existe
+    END;
+
+    -- ── PASSO 6: Atualizar primary_group_id do usuário Cozinha Central ──
     -- Âncora = grupo Insumos (primeiro grupo da rotina)
     -- Isso permite que initCountSessionAction libere acesso server-side
     UPDATE public.users
@@ -205,7 +247,7 @@ BEGIN
     WHERE name = 'Cozinha Central'
       AND (primary_group_id IS NULL OR primary_group_id NOT IN (
           v_g_insumos, v_g_espetos, v_g_croquetes,
-          v_g_carnes_por, v_g_carnes_frios, v_g_descartaveis
+          v_g_carnes_por, v_g_carnes_frios, v_g_descartaveis, v_g_limpeza
       ));
 
 END $$;
