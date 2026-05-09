@@ -88,3 +88,46 @@ export async function getKitchenSessionHistoryAction(filters: { date?: string, g
         return { success: false, error: e.message }
     }
 }
+
+export async function getConsolidatedKitchenDataAction(sessionIds: string[]) {
+    try {
+        const { data: items, error } = await supabaseAdmin
+            .from('count_session_items')
+            .select(`
+                item_id,
+                counted_quantity,
+                validated_quantity,
+                items(name, unit, group_id, groups(name))
+            `)
+            .in('session_id', sessionIds)
+
+        if (error) throw error
+
+        // Agrupar por item_id
+        const consolidated: Record<string, any> = {}
+        
+        items.forEach(i => {
+            const id = i.item_id
+            const qty = i.validated_quantity ?? i.counted_quantity ?? 0
+            
+            if (!consolidated[id]) {
+                consolidated[id] = {
+                    id,
+                    name: i.items?.name,
+                    unit: i.items?.unit,
+                    groupName: i.items?.groups?.name,
+                    total: 0
+                }
+            }
+            consolidated[id].total += qty
+        })
+
+        return { 
+            success: true, 
+            data: Object.values(consolidated).sort((a, b) => a.name.localeCompare(b.name)) 
+        }
+    } catch (e: any) {
+        console.error('[getConsolidatedKitchenDataAction] Erro:', e.message)
+        return { success: false, error: e.message }
+    }
+}
