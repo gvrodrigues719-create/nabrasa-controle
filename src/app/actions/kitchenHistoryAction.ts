@@ -43,7 +43,15 @@ export async function getKitchenSessionHistoryAction(filters: { date?: string, g
         return { success: false, error: 'Acesso negado' }
     }
 
-    // 2. Buscar sessões
+    // 2. Buscar IDs dos grupos da Cozinha Central para filtro robusto
+    const { data: ckGroups } = await supabase
+        .from('groups')
+        .select('id')
+        .eq('macro_sector', 'Cozinha Central')
+    
+    const ckGroupIds = ckGroups?.map(g => g.id) || []
+
+    // 3. Buscar sessões
     try {
         let query = supabase
             .from('count_sessions')
@@ -55,10 +63,10 @@ export async function getKitchenSessionHistoryAction(filters: { date?: string, g
                 validation_status,
                 validated_at,
                 validation_reason,
-                groups!inner(id, name, macro_sector),
+                groups(id, name, macro_sector),
                 users!user_id(name)
             `)
-            .eq('groups.macro_sector', 'Cozinha Central')
+            .in('group_id', ckGroupIds)
             .order('started_at', { ascending: false })
 
         if (filters.groupId) {
