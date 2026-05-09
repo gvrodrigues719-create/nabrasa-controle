@@ -13,7 +13,10 @@ export default function KitchenHistoryPage() {
     const router = useRouter()
     const [loading, setLoading] = useState(true)
     const [sessions, setSessions] = useState<any[]>([])
-    const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0])
+    const [filterDate, setFilterDate] = useState(new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Sao_Paulo',
+        year: 'numeric', month: '2-digit', day: '2-digit'
+    }).format(new Date()))
     
     useEffect(() => {
         loadSessions()
