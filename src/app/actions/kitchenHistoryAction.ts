@@ -1,22 +1,43 @@
 'use server'
 
 import { createServerClient } from '@/lib/supabase/server'
+import { getActiveOperator } from '@/app/actions/pinAuth'
 
 export async function getKitchenSessionHistoryAction(filters: { date?: string, groupId?: string }) {
     const supabase = await createServerClient()
 
-    // 1. Validar se o usuário tem acesso à Cozinha Central
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { success: false, error: 'Não autenticado' }
+    // 1. Validar se o usuário tem acesso à Cozinha Central (Pelo Operador ou Web Auth)
+    const op = await getActiveOperator()
+    
+    let userId = op?.userId
+    let userRole = op?.role
+    let userName = op?.name
 
-    const { data: userData } = await supabase
+    if (!op) {
+        // Fallback para Web Auth (Admin)
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return { success: false, error: 'Não autenticado' }
+        
+        const { data: userData } = await supabase
+            .from('users')
+            .select('role, name')
+            .eq('id', user.id)
+            .single()
+        
+        userId = user.id
+        userRole = userData?.role
+        userName = userData?.name
+    }
+
+    // Buscar dados do usuário para validar macro_sector
+    const { data: userDetails } = await supabase
         .from('users')
-        .select('role, primary_group_id, groups!primary_group_id(macro_sector)')
-        .eq('id', user.id)
+        .select('primary_group_id, groups!primary_group_id(macro_sector)')
+        .eq('id', userId)
         .single()
 
-    const isAdmin = userData?.role === 'admin' || userData?.role === 'manager'
-    const isKitchen = (userData?.groups as any)?.macro_sector === 'Cozinha Central'
+    const isAdmin = userRole === 'admin' || userRole === 'manager'
+    const isKitchen = (userDetails?.groups as any)?.macro_sector === 'Cozinha Central' || userName === 'Cozinha Central'
 
     if (!isAdmin && !isKitchen) {
         return { success: false, error: 'Acesso negado' }

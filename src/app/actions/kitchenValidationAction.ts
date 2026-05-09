@@ -1,6 +1,7 @@
 'use server'
 
 import { createServerClient } from '@/lib/supabase/server'
+import { getActiveOperator } from '@/app/actions/pinAuth'
 
 export async function getKitchenSessionDetailAction(sessionId: string) {
     const supabase = await createServerClient()
@@ -43,8 +44,14 @@ export async function validateKitchenSessionAction(
     const supabase = await createServerClient()
 
     try {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) throw new Error('Não autenticado')
+        const op = await getActiveOperator()
+        let userId = op?.userId
+
+        if (!op) {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) throw new Error('Não autenticado')
+            userId = user.id
+        }
 
         // 1. Atualizar itens validados
         for (const item of itemsCorrections) {
@@ -64,7 +71,7 @@ export async function validateKitchenSessionAction(
             .update({
                 validation_status: 'corrected',
                 validation_reason: reason,
-                validated_by: user.id,
+                validated_by: userId,
                 validated_at: new Date().toISOString()
             })
             .eq('id', sessionId)
