@@ -1,7 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
+'use server'
+
+import { createServerClient } from '@/lib/supabase/server'
 
 export async function getKitchenSessionDetailAction(sessionId: string) {
-    const supabase = await createClient()
+    const supabase = await createServerClient()
 
     try {
         const { data: session, error: sErr } = await supabase
@@ -38,7 +40,7 @@ export async function validateKitchenSessionAction(
     itemsCorrections: { itemId: string, quantity: number, isZeroed: boolean }[],
     reason: string
 ) {
-    const supabase = await createClient()
+    const supabase = await createServerClient()
 
     try {
         const { data: { user } } = await supabase.auth.getUser()

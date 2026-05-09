@@ -1,8 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
+'use server'
+
+import { createServerClient } from '@/lib/supabase/server'
 
 export async function getKitchenSessionHistoryAction(filters: { date?: string, groupId?: string }) {
-    const supabase = await createClient()
+    const supabase = await createServerClient()
 
     // 1. Validar se o usuário tem acesso à Cozinha Central
     const { data: { user } } = await supabase.auth.getUser()
