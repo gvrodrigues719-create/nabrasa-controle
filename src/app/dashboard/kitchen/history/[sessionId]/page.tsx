@@ -37,7 +37,7 @@ export default function KitchenSessionDetailPage({ params }: { params: Promise<{
             // Initialize corrections with current validated or counted values
             const initialCorrections: Record<string, number> = {}
             sessionItems.forEach((item: any) => {
-                initialCorrections[item.item_id] = item.validated_quantity ?? item.quantity
+                initialCorrections[item.item_id] = item.validated_quantity ?? item.counted_quantity
             });
             setCorrections(initialCorrections)
         } else {
@@ -210,11 +210,11 @@ export default function KitchenSessionDetailPage({ params }: { params: Promise<{
                                     </div>
                                 ) : (
                                     <div className="flex flex-col items-end">
-                                        <span className={`text-base font-black ${item.validated_quantity !== null && item.validated_quantity !== item.quantity ? 'text-amber-600' : 'text-gray-900'}`}>
-                                            {item.validated_quantity ?? item.quantity}
+                                        <span className={`text-base font-black ${item.validated_quantity !== null && item.validated_quantity !== item.counted_quantity ? 'text-amber-600' : 'text-gray-900'}`}>
+                                            {item.validated_quantity ?? item.counted_quantity}
                                         </span>
-                                        {item.validated_quantity !== null && item.validated_quantity !== item.quantity && (
-                                            <span className="text-[8px] font-bold text-gray-400 line-through">Era: {item.quantity}</span>
+                                        {item.validated_quantity !== null && item.validated_quantity !== item.counted_quantity && (
+                                            <span className="text-[8px] font-bold text-gray-400 line-through">Era: {item.counted_quantity}</span>
                                         )}
                                     </div>
                                 )}
