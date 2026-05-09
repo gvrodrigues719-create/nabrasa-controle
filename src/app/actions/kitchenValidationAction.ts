@@ -89,3 +89,35 @@ export async function validateKitchenSessionAction(
         return { success: false, error: e.message }
     }
 }
+
+export async function deleteKitchenSessionAction(sessionId: string) {
+    try {
+        const op = await getActiveOperator()
+        if (!op) {
+            const supabase = await createServerClient()
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) throw new Error('Não autenticado')
+        }
+
+        // Deletar itens primeiro (FK constraint)
+        const { error: itemsErr } = await supabaseAdmin
+            .from('count_session_items')
+            .delete()
+            .eq('session_id', sessionId)
+        
+        if (itemsErr) throw itemsErr
+
+        // Deletar a sessão
+        const { error: sessErr } = await supabaseAdmin
+            .from('count_sessions')
+            .delete()
+            .eq('id', sessionId)
+        
+        if (sessErr) throw sessErr
+
+        return { success: true }
+    } catch (e: any) {
+        console.error('[deleteKitchenSessionAction] Erro:', e.message)
+        return { success: false, error: e.message }
+    }
+}

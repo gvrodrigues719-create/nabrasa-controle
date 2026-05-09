@@ -5,10 +5,14 @@ import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
     Loader2, ArrowLeft, CheckCircle2, AlertTriangle, 
-    Save, History, Edit3, X, Check, Package, Calculator
+    Save, History, Edit3, X, Check, Package, Calculator, Trash2
 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { getKitchenSessionDetailAction, validateKitchenSessionAction } from '@/app/actions/kitchenValidationAction'
+import { 
+    getKitchenSessionDetailAction, 
+    validateKitchenSessionAction,
+    deleteKitchenSessionAction 
+} from '@/app/actions/kitchenValidationAction'
 
 export default function KitchenSessionDetailPage({ params }: { params: Promise<{ sessionId: string }> }) {
     const { sessionId } = use(params)
@@ -69,6 +73,22 @@ export default function KitchenSessionDetailPage({ params }: { params: Promise<{
         }
         setSaving(false)
     }
+    
+    const handleDelete = async () => {
+        if (!window.confirm('Tem certeza que deseja EXCLUIR esta contagem? Esta ação não pode ser desfeita.')) {
+            return
+        }
+
+        setSaving(true)
+        const res = await deleteKitchenSessionAction(sessionId)
+        if (res.success) {
+            toast.success('Contagem excluída com sucesso!')
+            router.push('/dashboard/kitchen/history')
+        } else {
+            toast.error(res.error || 'Erro ao excluir contagem')
+        }
+        setSaving(false)
+    }
 
     if (loading) {
         return (
@@ -108,13 +128,23 @@ export default function KitchenSessionDetailPage({ params }: { params: Promise<{
                 </div>
                 
                 {!isEditing && (
-                    <button 
-                        onClick={() => setIsEditing(true)}
-                        className="flex items-center gap-2 px-3 py-2 bg-orange-50 text-orange-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-100 transition"
-                    >
-                        <Edit3 className="w-3.5 h-3.5" />
-                        Corrigir
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={handleDelete}
+                            disabled={saving}
+                            className="p-2 text-gray-400 hover:text-red-500 transition"
+                            title="Excluir contagem"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                        <button 
+                            onClick={() => setIsEditing(true)}
+                            className="flex items-center gap-2 px-3 py-2 bg-orange-50 text-orange-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-100 transition"
+                        >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            Corrigir
+                        </button>
+                    </div>
                 )}
             </div>
 
