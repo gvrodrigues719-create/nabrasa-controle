@@ -54,7 +54,7 @@ export default function KitchenHistoryPage() {
         setIsConsolidating(true)
         const res = await getConsolidatedKitchenDataAction(selectedIds)
         if (res.success) {
-            setConsolidatedData(res.data)
+            setConsolidatedData(res.data || [])
             setIsDrawerOpen(true)
         } else {
             toast.error(res.error || 'Erro ao consolidar dados')
