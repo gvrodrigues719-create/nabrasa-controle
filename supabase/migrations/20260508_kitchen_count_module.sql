@@ -202,7 +202,7 @@ BEGIN
         ('BOBINA PICOTE 40X60 - ROLO MÉDIA 2,36KG','ROLO',   NULL, v_g_descartaveis, true),
         ('CANUDO BIODEGRADÁVEL CX 3000',           'CX',      NULL, v_g_descartaveis, true),
         ('COPO DESCARTÁVEL 300ML PCT C/100',       'UNID',    NULL, v_g_descartaveis, true),
-        ('DESCARTÁVEL CARNE C/200',                'UNID',    NULL, v_g_descartaveis, true),
+        ('DESCARTÁVEL CARNE C/100',                'UNID',    NULL, v_g_descartaveis, true),
         ('DESCARTÁVEL HAMBURGUERIA C/100',         'UNID',    NULL, v_g_descartaveis, true),
         ('EMBALAGEM GALETO C/100',                 'UNID',    NULL, v_g_descartaveis, true),
         ('ETIQUETA BOPP',                          'ROLO',    NULL, v_g_descartaveis, true),
