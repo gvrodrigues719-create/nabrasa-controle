@@ -4,7 +4,6 @@ import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/supabase/server'
 import { getActiveOperator } from '@/app/actions/pinAuth'
 
-// Cliente com privilégios para diagnóstico se necessário, mas vamos tentar o padrão primeiro com logs
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -41,9 +40,8 @@ export async function getKitchenSessionHistoryAction(filters: { date?: string, g
         return { success: false, error: 'Acesso negado' }
     }
 
-    // 2. Buscar sessões usando o Admin Client para ignorar RLS (apenas para este diagnóstico crítico)
+    // 2. Buscar sessões
     try {
-        // Primeiro, pegar todos os grupos que começam com CK ou são da Cozinha Central
         const { data: ckGroups } = await supabaseAdmin
             .from('groups')
             .select('id')
@@ -72,11 +70,19 @@ export async function getKitchenSessionHistoryAction(filters: { date?: string, g
         }
 
         if (filters.date) {
-            // Filtro de data local (GMT-3)
-            // Para garantir que pegamos tudo do dia, vamos ser um pouco mais flexíveis na query
-            const startStr = `${filters.date}T00:00:00Z`
-            const endStr = `${filters.date}T23:59:59Z`
-            query = query.gte('started_at', startStr).lte('started_at', endStr)
+            // Ajuste de Timezone: America/Sao_Paulo (UTC-3)
+            // O dia '2026-05-08' em SP começa em '2026-05-08 03:00:00Z' e termina em '2026-05-09 02:59:59Z'
+            const startStr = `${filters.date}T03:00:00Z`
+            
+            const endDate = new Date(`${filters.date}T23:59:59Z`)
+            endDate.setHours(endDate.getHours() + 3) // Avança 3 horas para cobrir o fim do dia em SP (que entra no dia seguinte UTC)
+            const endStr = endDate.toISOString()
+
+            // Para ser ainda mais seguro com o final do dia, vamos usar gte e lte com o range ajustado
+            // Mas note que contagens feitas no início da madrugada (00h-03h UTC) pertencem ao dia anterior em SP.
+            // Para simplificar e garantir que pegamos o que o usuário espera:
+            query = query.gte('started_at', `${filters.date}T00:00:00-03:00`)
+            query = query.lte('started_at', `${filters.date}T23:59:59-03:00`)
         }
 
         const { data, error } = await query
