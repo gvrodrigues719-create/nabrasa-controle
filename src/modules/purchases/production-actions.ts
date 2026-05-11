@@ -102,7 +102,7 @@ export async function getProductionPlanningDataAction(locationId?: string) {
 
         // 5. Buscar o último estoque contado apenas para os itens que possuem mapeamento
         const countItemIds = Array.from(countToPurchaseMap.keys())
-        const lastCountMap: Record<string, { qty: number; date: string }> = {}
+        const lastCountMap: Record<string, { qty: number; date: string; group_name?: string }> = {}
 
         if (countItemIds.length > 0) {
             const { data: countData } = await supabase
