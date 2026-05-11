@@ -69,15 +69,6 @@ export default function ReceivingsPage() {
 
     useEffect(() => { fetchData() }, [weekOffset])
 
-    // Detect role from fetch error or success to show/hide create button
-    useEffect(() => {
-        async function detectRole() {
-            try {
-                const { getServerAuthContext } = await import('@/lib/server-auth-context')
-            } catch {}
-        }
-    }, [])
-
     // Stats
     const today = receivings.filter(r => r.delivery_date === todayStr)
     const scheduled = receivings.filter(r => r.status === 'scheduled')
