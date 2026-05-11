@@ -498,7 +498,7 @@ export default function ProductionPlanningPage() {
                                         >
                                             <div>
                                                 <span className="block text-sm font-bold text-gray-900">{c.name}</span>
-                                                <span className="block text-[10px] text-gray-400 font-medium mt-0.5">{c.category_id || 'Item de contagem'}</span>
+                                                <span className="block text-[10px] text-gray-400 font-medium mt-0.5">{c.unit || 'UN'}</span>
                                             </div>
                                             <ChevronRight className="w-4 h-4 text-gray-300" />
                                         </button>

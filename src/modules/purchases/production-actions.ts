@@ -341,7 +341,7 @@ export async function getCountItemsForLinkingAction(search: string): Promise<{ s
         const { supabase } = await getCurrentUser()
         const { data, error } = await supabase
             .from('items')
-            .select('id, name, unit, category_id')
+            .select('id, name, unit')
             .ilike('name', `%${search}%`)
             .order('name')
             .limit(20)

@@ -6,17 +6,13 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-async function testFetch() {
-    const { data: countData, error } = await supabase
-        .from('count_session_items')
-        .select(`
-            item_id, counted_quantity, is_zeroed, validated_quantity, validated_is_zeroed,
-            count_sessions!inner(completed_at, status)
-        `)
-        .eq('count_sessions.status', 'completed')
-        .limit(10)
-    
-    console.log(error || countData)
+async function testQuery() {
+  const { data, error } = await supabase
+    .from('items')
+    .select('id, name, category_id, unit')
+    .ilike('name', '%farofa%');
+  
+  console.log('Query Farofa:', data, error);
 }
 
-testFetch()
+testQuery();
