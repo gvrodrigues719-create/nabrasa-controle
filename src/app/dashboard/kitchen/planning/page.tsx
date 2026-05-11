@@ -402,12 +402,12 @@ export default function ProductionPlanningPage() {
                                                 {s.review_reason && (
                                                     <p className="text-xs text-red-600 bg-red-50/50 p-2 rounded-lg border border-red-50">{s.review_reason}</p>
                                                 )}
-                                                {s.planning_category === 'review' && s.review_reason?.includes('ainda não está ligado a um item da contagem') && (
+                                                {s.planning_category === 'review' && (
                                                     <button
                                                         onClick={() => setLinkingItem({ purchaseItemId: s.item_id, name: s.item?.name || 'Item' })}
                                                         className="mt-1 w-full bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold py-2 rounded-lg transition-colors border border-red-200"
                                                     >
-                                                        Vincular agora
+                                                        {s.review_reason?.includes('ainda não está ligado a um item da contagem') ? 'Vincular agora' : 'Alterar / Refazer Vínculo'}
                                                     </button>
                                                 )}
                                             </div>
