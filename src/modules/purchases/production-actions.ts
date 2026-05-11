@@ -392,7 +392,7 @@ export async function linkPurchaseToCountItemAction(purchaseItemId: string, coun
 export async function unlinkPurchaseToCountItemAction(purchaseItemId: string): Promise<{ success: boolean; removedCountItemId?: string; error?: string }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager'].includes(user.role)) throw new Error('Sem permissão. Apenas admin ou manager podem desvincular itens.')
+        if (!['admin', 'manager', 'kitchen'].includes(user.role)) throw new Error('Sem permissão para desvincular itens.')
 
         // Buscar o vínculo atual para log
         const { data: existing } = await supabase
