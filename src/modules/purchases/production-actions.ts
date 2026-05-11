@@ -109,10 +109,14 @@ export async function getProductionPlanningDataAction(locationId?: string) {
                 .from('count_session_items')
                 .select(`
                     item_id, counted_quantity, is_zeroed, validated_quantity, validated_is_zeroed,
-                    count_sessions!inner(completed_at, status)
+                    count_sessions!inner(
+                        completed_at, status,
+                        groups!inner(name, macro_sector)
+                    )
                 `)
                 .in('item_id', countItemIds)
                 .eq('count_sessions.status', 'completed')
+                .or('macro_sector.eq.Cozinha Central,name.ilike.CK%', { foreignTable: 'count_sessions.groups' })
 
             // Ordenar no JS (mais seguro e fácil dado as limitações de JOIN ordering)
             // Pegar sempre a data mais recente
@@ -124,7 +128,8 @@ export async function getProductionPlanningDataAction(locationId?: string) {
                         const qty = isZero ? 0 : (c.validated_quantity ?? c.counted_quantity)
                         lastCountMap[c.item_id] = {
                             qty: Number(qty),
-                            date: c.count_sessions.completed_at
+                            date: c.count_sessions.completed_at,
+                            group_name: c.count_sessions.groups?.name
                         }
                     }
                 })
@@ -166,6 +171,7 @@ export async function getProductionPlanningDataAction(locationId?: string) {
                     } else {
                         ready_stock_qty = stockData.qty
                         last_count_date = stockData.date
+                        suggestion.count_group_name = stockData.group_name
                     }
                 }
             } else if (planning_category === 'separation') {
@@ -356,7 +362,7 @@ export async function getCountItemsForLinkingAction(search: string): Promise<{ s
 export async function linkPurchaseToCountItemAction(purchaseItemId: string, countItemId: string): Promise<{ success: boolean; error?: string }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager'].includes(user.role)) throw new Error('Sem permissão')
+        if (!['admin', 'manager', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
         // Tenta remover o vínculo antigo caso exista para evitar duplicatas, ou apenas faz um upsert
         const { error: delError } = await supabase

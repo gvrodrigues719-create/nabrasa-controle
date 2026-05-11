@@ -296,7 +296,7 @@ export default function ProductionPlanningPage() {
                                                         </p>
                                                         {s.last_count_date && (
                                                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">
-                                                                Base: Última contagem CK em {new Date(s.last_count_date).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                                                                Base: {s.count_group_name || 'Cozinha Central'} • {new Date(s.last_count_date).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
                                                             </p>
                                                         )}
                                                     </div>

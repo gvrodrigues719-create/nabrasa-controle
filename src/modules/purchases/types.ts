@@ -164,6 +164,7 @@ export interface ProductionSuggestion {
     planning_category?: 'production' | 'separation' | 'review'
     classified_by_recipe?: boolean
     last_count_date?: string
+    count_group_name?: string
     review_reason?: string
 }
 
