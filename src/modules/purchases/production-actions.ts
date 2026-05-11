@@ -388,3 +388,30 @@ export async function linkPurchaseToCountItemAction(purchaseItemId: string, coun
         return { success: false, error: (e as Error).message }
     }
 }
+
+export async function unlinkPurchaseToCountItemAction(purchaseItemId: string): Promise<{ success: boolean; removedCountItemId?: string; error?: string }> {
+    try {
+        const { supabase, user } = await getCurrentUser()
+        if (!['admin', 'manager'].includes(user.role)) throw new Error('Sem permissão. Apenas admin ou manager podem desvincular itens.')
+
+        // Buscar o vínculo atual para log
+        const { data: existing } = await supabase
+            .from('count_to_purchase_item_map')
+            .select('count_item_id')
+            .eq('purchase_item_id', purchaseItemId)
+            .single()
+
+        const { error } = await supabase
+            .from('count_to_purchase_item_map')
+            .delete()
+            .eq('purchase_item_id', purchaseItemId)
+
+        if (error) throw error
+
+        console.log(`[unlink] user=${user.id} removed link purchase_item=${purchaseItemId} count_item=${existing?.count_item_id} at ${new Date().toISOString()}`)
+
+        return { success: true, removedCountItemId: existing?.count_item_id }
+    } catch (e: unknown) {
+        return { success: false, error: (e as Error).message }
+    }
+}

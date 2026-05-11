@@ -11,7 +11,8 @@ import {
     getProductionPlanningDataAction, 
     approveProductionPlanningAction,
     getCountItemsForLinkingAction,
-    linkPurchaseToCountItemAction
+    linkPurchaseToCountItemAction,
+    unlinkPurchaseToCountItemAction
 } from '@/modules/purchases/production-actions'
 import type { ProductionSuggestion, AdjustmentReason } from '@/modules/purchases/types'
 import toast from 'react-hot-toast'
@@ -41,6 +42,8 @@ export default function ProductionPlanningPage() {
     const [countItems, setCountItems] = useState<any[]>([])
     const [isSearchingCount, setIsSearchingCount] = useState(false)
     const [isSavingLink, setIsSavingLink] = useState(false)
+    const [unlinkConfirm, setUnlinkConfirm] = useState<{ purchaseItemId: string; name: string } | null>(null)
+    const [isUnlinking, setIsUnlinking] = useState(false)
 
     const categories = useMemo(() => {
         const cats = data.map(s => s.item?.category).filter(Boolean) as string[]
@@ -166,6 +169,20 @@ export default function ProductionPlanningPage() {
             toast.error(res.error || 'Erro ao vincular item.')
         }
         setIsSavingLink(false)
+    }
+
+    async function handleUnlink() {
+        if (!unlinkConfirm) return
+        setIsUnlinking(true)
+        const res = await unlinkPurchaseToCountItemAction(unlinkConfirm.purchaseItemId)
+        if (res.success) {
+            toast.success('Vínculo removido com sucesso.')
+            setUnlinkConfirm(null)
+            fetchData()
+        } else {
+            toast.error(res.error || 'Erro ao remover vínculo.')
+        }
+        setIsUnlinking(false)
     }
 
     return (
@@ -299,6 +316,12 @@ export default function ProductionPlanningPage() {
                                                                 Base: {s.count_group_name || 'Cozinha Central'} • {new Date(s.last_count_date).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
                                                             </p>
                                                         )}
+                                                        <button
+                                                            onClick={() => setUnlinkConfirm({ purchaseItemId: s.item_id, name: s.item?.name || 'Item' })}
+                                                            className="mt-1 text-[10px] font-bold text-gray-400 hover:text-red-500 transition-colors underline underline-offset-2"
+                                                        >
+                                                            Desvincular item da contagem
+                                                        </button>
                                                     </div>
                                                 </div>
 
@@ -507,6 +530,42 @@ export default function ProductionPlanningPage() {
                                     <p className="text-sm text-gray-500 text-center py-4">Nenhum item encontrado.</p>
                                 ) : null}
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Modal de Confirmação de Desvínculo */}
+            {unlinkConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl">
+                        <div className="p-6">
+                            <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center mb-4">
+                                <AlertCircle className="w-6 h-6 text-red-500" />
+                            </div>
+                            <h2 className="text-base font-black text-gray-900 mb-2">Remover Vínculo de Contagem</h2>
+                            <p className="text-sm text-gray-500 leading-relaxed">
+                                Tem certeza que deseja remover o vínculo do item{' '}
+                                <span className="font-bold text-gray-800">{unlinkConfirm.name}</span>{' '}
+                                com a contagem da Cozinha Central?
+                            </p>
+                            <p className="text-xs text-gray-400 mt-2">O item voltará para "Itens para Revisar". A contagem histórica não será apagada.</p>
+                        </div>
+                        <div className="px-6 pb-6 flex gap-3">
+                            <button
+                                onClick={() => setUnlinkConfirm(null)}
+                                disabled={isUnlinking}
+                                className="flex-1 py-3 rounded-2xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleUnlink}
+                                disabled={isUnlinking}
+                                className="flex-1 py-3 rounded-2xl bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                {isUnlinking ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                Remover Vínculo
+                            </button>
                         </div>
                     </div>
                 </div>
