@@ -157,7 +157,7 @@ export async function getProductionPlanningDataAction(locationId?: string) {
             if (planning_category === 'production') {
                 if (!countItemId) {
                     planning_category = 'review'
-                    review_reason = 'Item produzido não possui vínculo com módulo de contagem.'
+                    review_reason = 'Este item está marcado como produzido, mas ainda não está ligado a um item da contagem da Cozinha Central.'
                 } else {
                     const stockData = lastCountMap[countItemId]
                     if (!stockData) {
@@ -329,5 +329,54 @@ export async function getProductionOrderAction(orderId: string) {
         return { success: true, data }
     } catch (e: any) {
         return { success: false, error: e.message }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VÍNCULO MANUAL DE ITENS DA COZINHA CENTRAL
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getCountItemsForLinkingAction(search: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
+    try {
+        const { supabase } = await getCurrentUser()
+        const { data, error } = await supabase
+            .from('items')
+            .select('id, name, unit, category_id')
+            .ilike('name', `%${search}%`)
+            .order('name')
+            .limit(20)
+
+        if (error) throw error
+        return { success: true, data }
+    } catch (e: unknown) {
+        return { success: false, error: (e as Error).message }
+    }
+}
+
+export async function linkPurchaseToCountItemAction(purchaseItemId: string, countItemId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { supabase, user } = await getCurrentUser()
+        if (!['admin', 'manager'].includes(user.role)) throw new Error('Sem permissão')
+
+        // Tenta remover o vínculo antigo caso exista para evitar duplicatas, ou apenas faz um upsert
+        const { error: delError } = await supabase
+            .from('count_to_purchase_item_map')
+            .delete()
+            .eq('purchase_item_id', purchaseItemId)
+        
+        if (delError) throw delError
+
+        const { error } = await supabase
+            .from('count_to_purchase_item_map')
+            .insert({
+                purchase_item_id: purchaseItemId,
+                count_item_id: countItemId
+            })
+
+        if (error) throw error
+
+        return { success: true }
+    } catch (e: unknown) {
+        return { success: false, error: (e as Error).message }
     }
 }

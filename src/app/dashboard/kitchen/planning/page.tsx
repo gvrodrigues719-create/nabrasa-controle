@@ -9,7 +9,9 @@ import {
 } from 'lucide-react'
 import { 
     getProductionPlanningDataAction, 
-    approveProductionPlanningAction 
+    approveProductionPlanningAction,
+    getCountItemsForLinkingAction,
+    linkPurchaseToCountItemAction
 } from '@/modules/purchases/production-actions'
 import type { ProductionSuggestion, AdjustmentReason } from '@/modules/purchases/types'
 import toast from 'react-hot-toast'
@@ -32,6 +34,13 @@ export default function ProductionPlanningPage() {
     const [search, setSearch] = useState('')
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
     const [selectedItemForReason, setSelectedItemForReason] = useState<string | null>(null)
+
+    // Vínculo Manual
+    const [linkingItem, setLinkingItem] = useState<{ purchaseItemId: string; name: string } | null>(null)
+    const [countSearch, setCountSearch] = useState('')
+    const [countItems, setCountItems] = useState<any[]>([])
+    const [isSearchingCount, setIsSearchingCount] = useState(false)
+    const [isSavingLink, setIsSavingLink] = useState(false)
 
     const categories = useMemo(() => {
         const cats = data.map(s => s.item?.category).filter(Boolean) as string[]
@@ -127,6 +136,36 @@ export default function ProductionPlanningPage() {
             toast.error(res.error || 'Erro ao aprovar produção')
         }
         setSubmitting(false)
+    }
+
+    async function searchCountItems(q: string) {
+        setCountSearch(q)
+        if (q.length < 2) {
+            setCountItems([])
+            return
+        }
+        setIsSearchingCount(true)
+        const res = await getCountItemsForLinkingAction(q)
+        if (res.success) {
+            setCountItems(res.data || [])
+        }
+        setIsSearchingCount(false)
+    }
+
+    async function handleLinkItem(countItemId: string) {
+        if (!linkingItem) return
+        setIsSavingLink(true)
+        const res = await linkPurchaseToCountItemAction(linkingItem.purchaseItemId, countItemId)
+        if (res.success) {
+            toast.success('Item vinculado com sucesso!')
+            setLinkingItem(null)
+            setCountSearch('')
+            setCountItems([])
+            fetchData() // to recalculate
+        } else {
+            toast.error(res.error || 'Erro ao vincular item.')
+        }
+        setIsSavingLink(false)
     }
 
     return (
@@ -363,6 +402,14 @@ export default function ProductionPlanningPage() {
                                                 {s.review_reason && (
                                                     <p className="text-xs text-red-600 bg-red-50/50 p-2 rounded-lg border border-red-50">{s.review_reason}</p>
                                                 )}
+                                                {s.planning_category === 'review' && s.review_reason?.includes('ainda não está ligado a um item da contagem') && (
+                                                    <button
+                                                        onClick={() => setLinkingItem({ purchaseItemId: s.item_id, name: s.item?.name || 'Item' })}
+                                                        className="mt-1 w-full bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold py-2 rounded-lg transition-colors border border-red-200"
+                                                    >
+                                                        Vincular agora
+                                                    </button>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
@@ -407,6 +454,59 @@ export default function ProductionPlanningPage() {
                                     {reason}
                                 </button>
                             ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Modal de Vínculo */}
+            {linkingItem && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+                            <h2 className="text-sm font-black text-gray-900">Vincular Item de Contagem</h2>
+                            <button onClick={() => setLinkingItem(null)} className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                                <X className="w-5 h-5 text-gray-500" />
+                            </button>
+                        </div>
+                        <div className="p-4 flex-1 overflow-y-auto">
+                            <p className="text-xs text-gray-500 mb-4">
+                                Você está vinculando o item do catálogo <span className="font-bold text-gray-900">{linkingItem.name}</span>. Busque e selecione o item correspondente no módulo de contagem da Cozinha Central.
+                            </p>
+                            
+                            <div className="relative mb-4">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <input
+                                    type="text"
+                                    value={countSearch}
+                                    onChange={e => searchCountItems(e.target.value)}
+                                    placeholder="Buscar item na contagem..."
+                                    className="w-full pl-9 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:border-gray-400 focus:bg-white transition-all"
+                                />
+                                {isSearchingCount && (
+                                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 animate-spin" />
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                {countItems.length > 0 ? (
+                                    countItems.map(c => (
+                                        <button
+                                            key={c.id}
+                                            onClick={() => handleLinkItem(c.id)}
+                                            disabled={isSavingLink}
+                                            className="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all text-left"
+                                        >
+                                            <div>
+                                                <span className="block text-sm font-bold text-gray-900">{c.name}</span>
+                                                <span className="block text-[10px] text-gray-400 font-medium mt-0.5">{c.category_id || 'Item de contagem'}</span>
+                                            </div>
+                                            <ChevronRight className="w-4 h-4 text-gray-300" />
+                                        </button>
+                                    ))
+                                ) : countSearch.length >= 2 && !isSearchingCount ? (
+                                    <p className="text-sm text-gray-500 text-center py-4">Nenhum item encontrado.</p>
+                                ) : null}
+                            </div>
                         </div>
                     </div>
                 </div>
