@@ -336,20 +336,20 @@ export default function ReceivingsPage() {
                         <div className="p-5 space-y-4">
                             <div>
                                 <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Nome da entrega *</label>
-                                <input value={createForm.title} onChange={e => setCreateForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Hortifruti da semana, Compra de limpeza, Carnes bovinas" className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                                <input value={createForm.title} onChange={e => setCreateForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Hortifruti da semana, Compra de limpeza, Carnes bovinas" className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
                             </div>
                             <div>
                                 <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Fornecedor, se souber</label>
-                                <input value={createForm.supplier_name} onChange={e => setCreateForm(f => ({ ...f, supplier_name: e.target.value }))} placeholder="Ex: Hortifruti São José" className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                                <input value={createForm.supplier_name} onChange={e => setCreateForm(f => ({ ...f, supplier_name: e.target.value }))} placeholder="Ex: Hortifruti São José" className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Data *</label>
-                                    <input type="date" value={createForm.delivery_date} onChange={e => setCreateForm(f => ({ ...f, delivery_date: e.target.value }))} className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                                    <input type="date" value={createForm.delivery_date} onChange={e => setCreateForm(f => ({ ...f, delivery_date: e.target.value }))} className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Período</label>
-                                    <select value={createForm.delivery_period} onChange={e => setCreateForm(f => ({ ...f, delivery_period: e.target.value }))} className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 bg-white">
+                                    <select value={createForm.delivery_period} onChange={e => setCreateForm(f => ({ ...f, delivery_period: e.target.value }))} className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 bg-white">
                                         <option value="">Selecione</option>
                                         <option value="manha">Manhã</option>
                                         <option value="tarde">Tarde</option>
@@ -361,12 +361,12 @@ export default function ReceivingsPage() {
                             {createForm.delivery_period === 'horario_especifico' && (
                                 <div>
                                     <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Horário</label>
-                                    <input type="time" value={createForm.delivery_time} onChange={e => setCreateForm(f => ({ ...f, delivery_time: e.target.value }))} className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                                    <input type="time" value={createForm.delivery_time} onChange={e => setCreateForm(f => ({ ...f, delivery_time: e.target.value }))} className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
                                 </div>
                             )}
                             <div>
                                 <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Observação</label>
-                                <textarea value={createForm.notes} onChange={e => setCreateForm(f => ({ ...f, notes: e.target.value }))} rows={3} placeholder="Ex: conferir qualidade, entregar até 10h, atenção para item que veio errado na última entrega." className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 resize-none" />
+                                <textarea value={createForm.notes} onChange={e => setCreateForm(f => ({ ...f, notes: e.target.value }))} rows={3} placeholder="Ex: conferir qualidade, entregar até 10h, atenção para item que veio errado na última entrega." className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 resize-none" />
                             </div>
                             {/* Items */}
                             <div>
@@ -398,7 +398,7 @@ export default function ReceivingsPage() {
                                                         value={itemQuery[idx] || ''}
                                                         onChange={e => handleItemSearch(idx, e.target.value)}
                                                         placeholder="Buscar item do catálogo..."
-                                                        className="w-full pl-8 pr-3 py-2 border border-gray-200 bg-white rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400"
+                                                        className="w-full pl-8 pr-3 py-2 border border-gray-200 bg-white rounded-xl text-xs font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400"
                                                         autoFocus
                                                     />
                                                     {itemSearching[idx] && <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-blue-500 animate-spin" />}
@@ -430,8 +430,8 @@ export default function ReceivingsPage() {
                                         {/* Qty + Unit */}
                                         {item.item_name && (
                                             <div className="flex gap-2 mt-2">
-                                                <input value={item.expected_qty} onChange={e => { const n = [...createItems]; n[idx].expected_qty = e.target.value; setCreateItems(n) }} placeholder="Qtd prevista" type="number" className="flex-1 px-3 py-2 border border-gray-200 bg-white rounded-xl text-xs font-medium text-center focus:outline-none focus:ring-1 focus:ring-blue-400" />
-                                                <input value={item.unit} onChange={e => { const n = [...createItems]; n[idx].unit = e.target.value; setCreateItems(n) }} placeholder="Unid." className="w-20 px-2 py-2 border border-gray-200 bg-white rounded-xl text-xs font-medium text-center focus:outline-none focus:ring-1 focus:ring-blue-400" />
+                                                <input value={item.expected_qty} onChange={e => { const n = [...createItems]; n[idx].expected_qty = e.target.value; setCreateItems(n) }} placeholder="Qtd prevista" type="number" className="flex-1 px-3 py-2 border border-gray-200 bg-white rounded-xl text-xs font-medium text-gray-900 text-center focus:outline-none focus:ring-1 focus:ring-blue-400" />
+                                                <input value={item.unit} onChange={e => { const n = [...createItems]; n[idx].unit = e.target.value; setCreateItems(n) }} placeholder="Unid." className="w-20 px-2 py-2 border border-gray-200 bg-white rounded-xl text-xs font-medium text-gray-900 text-center focus:outline-none focus:ring-1 focus:ring-blue-400" />
                                             </div>
                                         )}
                                     </div>
