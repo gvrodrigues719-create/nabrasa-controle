@@ -47,9 +47,10 @@ export default function ReceivingsPage() {
     const [actionLoading, setActionLoading] = useState(false)
 
     // Create form
-    const [createForm, setCreateForm] = useState({ title: '', supplier_name: '', delivery_date: '', delivery_period: '', notes: '' })
+    const [createForm, setCreateForm] = useState({ title: '', supplier_name: '', delivery_date: '', delivery_period: '', delivery_time: '', notes: '' })
     const [createItems, setCreateItems] = useState<{ item_name: string; expected_qty: string; unit: string }[]>([])
     const [creating, setCreating] = useState(false)
+    const [userRole, setUserRole] = useState<string>('')
 
     const week = useMemo(() => getWeekRange(weekOffset), [weekOffset])
     const todayStr = new Date().toISOString().split('T')[0]
@@ -67,6 +68,15 @@ export default function ReceivingsPage() {
     }
 
     useEffect(() => { fetchData() }, [weekOffset])
+
+    // Detect role from fetch error or success to show/hide create button
+    useEffect(() => {
+        async function detectRole() {
+            try {
+                const { getServerAuthContext } = await import('@/lib/server-auth-context')
+            } catch {}
+        }
+    }, [])
 
     // Stats
     const today = receivings.filter(r => r.delivery_date === todayStr)
@@ -89,7 +99,7 @@ export default function ReceivingsPage() {
 
     async function handleCreate() {
         if (!createForm.title.trim() || !createForm.delivery_date) {
-            toast.error('Título e data são obrigatórios')
+            toast.error('Nome da entrega e data são obrigatórios')
             return
         }
         setCreating(true)
@@ -98,6 +108,7 @@ export default function ReceivingsPage() {
             supplier_name: createForm.supplier_name || undefined,
             delivery_date: createForm.delivery_date,
             delivery_period: createForm.delivery_period || undefined,
+            delivery_time: createForm.delivery_time || undefined,
             notes: createForm.notes || undefined,
             items: createItems.filter(i => i.item_name.trim()).map(i => ({
                 item_name: i.item_name,
@@ -108,7 +119,7 @@ export default function ReceivingsPage() {
         if (res.success) {
             toast.success('Entrega criada!')
             setShowCreate(false)
-            setCreateForm({ title: '', supplier_name: '', delivery_date: '', delivery_period: '', notes: '' })
+            setCreateForm({ title: '', supplier_name: '', delivery_date: '', delivery_period: '', delivery_time: '', notes: '' })
             setCreateItems([])
             fetchData()
         } else {
@@ -125,8 +136,9 @@ export default function ReceivingsPage() {
         if (type === 'deliver') {
             res = await markReceivingDeliveredAction(receiving.id, actionNotes)
         } else if (type === 'partial') {
-            if (!actionNotes.trim()) { toast.error('Observação obrigatória para parcial'); setActionLoading(false); return }
-            res = await markReceivingPartialAction(receiving.id, actionNotes)
+            const partialNote = actionReason ? `${actionReason}: ${actionNotes}`.trim() : actionNotes
+            if (!partialNote.trim()) { toast.error('Motivo e observação obrigatórios para parcial'); setActionLoading(false); return }
+            res = await markReceivingPartialAction(receiving.id, partialNote)
         } else if (type === 'refuse') {
             const reason = actionReason || actionNotes
             if (!reason.trim()) { toast.error('Motivo obrigatório para recusa'); setActionLoading(false); return }
@@ -156,8 +168,9 @@ export default function ReceivingsPage() {
                     <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-black text-gray-900 truncate">{r.title}</h4>
                         <p className="text-xs text-gray-400 font-medium mt-0.5">
-                            {r.supplier_name || 'Sem fornecedor'} {r.delivery_period ? `• ${PERIOD_LABELS[r.delivery_period] || r.delivery_period}` : ''}
+                            {r.supplier_name || 'Fornecedor não informado'} {r.delivery_period ? `• ${PERIOD_LABELS[r.delivery_period] || r.delivery_period}` : ''}
                             {r.delivery_time ? ` ${r.delivery_time}` : ''}
+                            {r.items && r.items.length > 0 ? ` • ${r.items.length} ${r.items.length === 1 ? 'item' : 'itens'}` : ''}
                         </p>
                     </div>
                     <span className={`shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${cfg.color} ${cfg.textColor}`}>
@@ -275,7 +288,10 @@ export default function ReceivingsPage() {
                                     {items.length > 0 ? (
                                         <div className="space-y-3">{items.map(renderCard)}</div>
                                     ) : (
-                                        <p className="text-xs text-gray-300 italic pl-1">Nenhuma entrega prevista</p>
+                                        <div className="pl-1 flex items-center gap-3">
+                                            <p className="text-xs text-gray-300 italic">Nenhuma entrega prevista para este dia.</p>
+                                            <button onClick={() => { setShowCreate(true); setCreateForm(f => ({ ...f, delivery_date: dateStr })) }} className="text-[10px] font-bold text-blue-500 hover:text-blue-700 transition-colors">+ Criar entrega</button>
+                                        </div>
                                     )}
                                 </section>
                             )
@@ -294,12 +310,12 @@ export default function ReceivingsPage() {
                         </div>
                         <div className="p-5 space-y-4">
                             <div>
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Título *</label>
-                                <input value={createForm.title} onChange={e => setCreateForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Hortifruti São José" className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Nome da entrega *</label>
+                                <input value={createForm.title} onChange={e => setCreateForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Hortifruti da semana, Compra de limpeza, Carnes bovinas" className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Fornecedor</label>
-                                <input value={createForm.supplier_name} onChange={e => setCreateForm(f => ({ ...f, supplier_name: e.target.value }))} placeholder="Nome do fornecedor (opcional)" className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Fornecedor, se souber</label>
+                                <input value={createForm.supplier_name} onChange={e => setCreateForm(f => ({ ...f, supplier_name: e.target.value }))} placeholder="Ex: Hortifruti São José" className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
@@ -309,24 +325,31 @@ export default function ReceivingsPage() {
                                 <div>
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Período</label>
                                     <select value={createForm.delivery_period} onChange={e => setCreateForm(f => ({ ...f, delivery_period: e.target.value }))} className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 bg-white">
-                                        <option value="">—</option>
+                                        <option value="">Selecione</option>
                                         <option value="manha">Manhã</option>
                                         <option value="tarde">Tarde</option>
                                         <option value="noite">Noite</option>
+                                        <option value="horario_especifico">Horário específico</option>
                                     </select>
                                 </div>
                             </div>
+                            {createForm.delivery_period === 'horario_especifico' && (
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Horário</label>
+                                    <input type="time" value={createForm.delivery_time} onChange={e => setCreateForm(f => ({ ...f, delivery_time: e.target.value }))} className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                                </div>
+                            )}
                             <div>
                                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Observação</label>
-                                <textarea value={createForm.notes} onChange={e => setCreateForm(f => ({ ...f, notes: e.target.value }))} rows={2} placeholder="Algo a lembrar?" className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 resize-none" />
+                                <textarea value={createForm.notes} onChange={e => setCreateForm(f => ({ ...f, notes: e.target.value }))} rows={3} placeholder="Ex: conferir qualidade, entregar até 10h, atenção para item que veio errado na última entrega." className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 resize-none" />
                             </div>
                             {/* Items */}
                             <div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Itens</label>
-                                    <button onClick={() => setCreateItems(p => [...p, { item_name: '', expected_qty: '', unit: 'un' }])} className="text-[10px] font-bold text-blue-600 hover:text-blue-700">+ Adicionar item</button>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Itens (opcional)</label>
                                 </div>
-                                {createItems.length === 0 && <p className="text-xs text-gray-300 italic">Nenhum item (opcional)</p>}
+                                {createItems.length === 0 && <p className="text-xs text-gray-300 italic mb-2">Nenhum item cadastrado. Você pode criar a entrega sem detalhar.</p>}
+                                <button type="button" onClick={() => setCreateItems(p => [...p, { item_name: '', expected_qty: '', unit: 'un' }])} className="w-full py-2.5 rounded-xl border-2 border-dashed border-blue-200 text-blue-600 text-xs font-bold hover:bg-blue-50 hover:border-blue-300 transition-colors mb-2">+ Adicionar item</button>
                                 {createItems.map((item, idx) => (
                                     <div key={idx} className="flex gap-2 mb-2">
                                         <input value={item.item_name} onChange={e => { const n = [...createItems]; n[idx].item_name = e.target.value; setCreateItems(n) }} placeholder="Nome do item" className="flex-1 px-2 py-2 border border-gray-200 rounded-lg text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-400" />
@@ -351,9 +374,10 @@ export default function ReceivingsPage() {
                     <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl">
                         <div className="p-5 border-b border-gray-100">
                             <h2 className="text-base font-black text-gray-900">
-                                {actionModal.type === 'deliver' ? 'Confirmar Recebimento' : actionModal.type === 'partial' ? 'Informar Parcial' : actionModal.type === 'refuse' ? 'Recusar Entrega' : 'Cancelar Entrega'}
+                                {actionModal.type === 'deliver' ? 'Confirmar recebimento?' : actionModal.type === 'partial' ? 'Entrega parcial' : actionModal.type === 'refuse' ? 'Recusar entrega' : 'Cancelar Entrega'}
                             </h2>
-                            <p className="text-xs text-gray-400 mt-1">{actionModal.receiving.title}</p>
+                            <p className="text-xs text-gray-400 mt-1">{actionModal.receiving.title}{actionModal.receiving.supplier_name ? ` — ${actionModal.receiving.supplier_name}` : ''}</p>
+                            {actionModal.type === 'deliver' && <p className="text-xs text-gray-500 mt-2">Essa entrega será marcada como recebida.</p>}
                         </div>
                         <div className="p-5 space-y-3">
                             {actionModal.type === 'refuse' && (
@@ -364,14 +388,27 @@ export default function ReceivingsPage() {
                                             <button key={r} onClick={() => setActionReason(r)} className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-colors ${actionReason === r ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-transparent'}`}>{r}</button>
                                         ))}
                                     </div>
+                                    <textarea value={actionNotes} onChange={e => setActionNotes(e.target.value)} rows={2} placeholder="Observação adicional..." className="w-full mt-2 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 resize-none" />
                                 </div>
                             )}
-                            {(actionModal.type === 'partial' || actionModal.type === 'deliver') && (
+                            {actionModal.type === 'partial' && (
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1 block">Motivo *</label>
+                                    <div className="space-y-1 mb-2">
+                                        {['Faltou item', 'Veio quantidade menor', 'Produto errado', 'Qualidade ruim', 'Fornecedor entregou incompleto', 'Outro'].map(r => (
+                                            <button key={r} onClick={() => setActionReason(r)} className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-colors ${actionReason === r ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-transparent'}`}>{r}</button>
+                                        ))}
+                                    </div>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1 block">Observação *</label>
+                                    <textarea value={actionNotes} onChange={e => setActionNotes(e.target.value)} rows={3} placeholder="Descreva o que aconteceu..." className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-400 resize-none" />
+                                </div>
+                            )}
+                            {actionModal.type === 'deliver' && (
                                 <div>
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1 block">
-                                        Observação {actionModal.type === 'partial' ? '*' : '(opcional)'}
+                                        Observação (opcional)
                                     </label>
-                                    <textarea value={actionNotes} onChange={e => setActionNotes(e.target.value)} rows={3} placeholder="Descreva o que aconteceu..." className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 resize-none" />
+                                    <textarea value={actionNotes} onChange={e => setActionNotes(e.target.value)} rows={2} placeholder="Algo a registrar sobre a entrega?" className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 resize-none" />
                                 </div>
                             )}
                             {actionModal.type === 'cancel' && (
