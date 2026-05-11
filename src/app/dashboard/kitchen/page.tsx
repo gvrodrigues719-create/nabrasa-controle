@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, RefreshCw, ChefHat, Inbox, Timer, PackageCheck, AlertTriangle, Send, Calculator, ClipboardList } from 'lucide-react'
+import { ArrowLeft, RefreshCw, ChefHat, Inbox, Timer, PackageCheck, AlertTriangle, Send, Calculator, ClipboardList, Truck } from 'lucide-react'
 import { getOrdersForKitchenAction } from '@/modules/purchases/actions'
 import type { PurchaseOrder } from '@/modules/purchases/types'
 import { KitchenOrderCard } from './components/KitchenOrderCard'
@@ -116,6 +116,30 @@ export default function KitchenPage() {
                     </div>
                     <div className="bg-gray-50 px-3 py-1.5 rounded-xl shrink-0">
                         <span className="text-gray-400 text-[10px] font-black uppercase tracking-widest text-orange-600">Ver →</span>
+                    </div>
+                </button>
+
+                {/* ── Card: Recebimentos da Semana ─────────── */}
+                <button
+                    onClick={() => router.push('/dashboard/kitchen/receivings')}
+                    className="w-full bg-white p-5 rounded-[28px] flex items-center text-left border-2 border-gray-100 shadow-sm space-x-4 active:scale-[0.98] transition-all hover:border-blue-200"
+                >
+                    <div className="bg-blue-50 p-3.5 rounded-2xl shrink-0">
+                        <Truck className="w-7 h-7 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                        <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-0.5">
+                            Entregas Externas
+                        </p>
+                        <h3 className="font-black text-gray-900 text-lg leading-tight">
+                            Recebimentos da Semana
+                        </h3>
+                        <p className="text-gray-500 text-sm mt-0.5">
+                            Acompanhe entregas previstas, parciais e recusadas.
+                        </p>
+                    </div>
+                    <div className="bg-gray-50 px-3 py-1.5 rounded-xl shrink-0">
+                        <span className="text-blue-600 text-[10px] font-black uppercase tracking-widest">Ver →</span>
                     </div>
                 </button>
 
