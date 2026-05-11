@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, Plus, Truck, Check, AlertTriangle, X,
@@ -14,6 +14,7 @@ import {
     markReceivingPartialAction,
     markReceivingRefusedAction,
     cancelReceivingAction,
+    searchPurchaseItemsAction,
 } from '@/modules/kitchen/receivings-actions'
 import type { CKReceiving } from '@/modules/kitchen/receivings-types'
 import { RECEIVING_STATUS_CONFIG, PERIOD_LABELS, REFUSAL_REASONS } from '@/modules/kitchen/receivings-types'
@@ -48,9 +49,14 @@ export default function ReceivingsPage() {
 
     // Create form
     const [createForm, setCreateForm] = useState({ title: '', supplier_name: '', delivery_date: '', delivery_period: '', delivery_time: '', notes: '' })
-    const [createItems, setCreateItems] = useState<{ item_name: string; expected_qty: string; unit: string }[]>([])
+    const [createItems, setCreateItems] = useState<{ purchase_item_id?: string; item_name: string; expected_qty: string; unit: string; is_free?: boolean }[]>([])
     const [creating, setCreating] = useState(false)
     const [userRole, setUserRole] = useState<string>('')
+    // Autocomplete per item
+    const [itemSuggestions, setItemSuggestions] = useState<Record<number, { id: string; name: string; order_unit: string; category?: string }[]>>({})
+    const [itemSearching, setItemSearching] = useState<Record<number, boolean>>({})
+    const [itemQuery, setItemQuery] = useState<Record<number, string>>({})
+    const debounceRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({})
 
     const week = useMemo(() => getWeekRange(weekOffset), [weekOffset])
     const todayStr = new Date().toISOString().split('T')[0]
@@ -87,6 +93,34 @@ export default function ReceivingsPage() {
         }
         return map
     }, [receivings, week])
+
+    function handleItemSearch(idx: number, query: string) {
+        setItemQuery(prev => ({ ...prev, [idx]: query }))
+        setItemSuggestions(prev => ({ ...prev, [idx]: [] }))
+        if (debounceRef.current[idx]) clearTimeout(debounceRef.current[idx])
+        if (query.length < 2) { setItemSearching(prev => ({ ...prev, [idx]: false })); return }
+        setItemSearching(prev => ({ ...prev, [idx]: true }))
+        debounceRef.current[idx] = setTimeout(async () => {
+            const res = await searchPurchaseItemsAction(query)
+            setItemSearching(prev => ({ ...prev, [idx]: false }))
+            if (res.success && res.data) setItemSuggestions(prev => ({ ...prev, [idx]: res.data! }))
+        }, 300)
+    }
+
+    function selectItemSuggestion(idx: number, s: { id: string; name: string; order_unit: string }) {
+        const n = [...createItems]
+        n[idx] = { ...n[idx], purchase_item_id: s.id, item_name: s.name, unit: s.order_unit, is_free: false }
+        setCreateItems(n)
+        setItemQuery(prev => ({ ...prev, [idx]: '' }))
+        setItemSuggestions(prev => ({ ...prev, [idx]: [] }))
+    }
+
+    function clearItemSelection(idx: number) {
+        const n = [...createItems]
+        n[idx] = { purchase_item_id: undefined, item_name: '', expected_qty: n[idx].expected_qty, unit: '', is_free: true }
+        setCreateItems(n)
+        setItemQuery(prev => ({ ...prev, [idx]: '' }))
+    }
 
     async function handleCreate() {
         if (!createForm.title.trim() || !createForm.delivery_date) {
@@ -340,13 +374,66 @@ export default function ReceivingsPage() {
                                     <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Itens (opcional)</label>
                                 </div>
                                 {createItems.length === 0 && <p className="text-xs text-gray-300 italic mb-2">Nenhum item cadastrado. Você pode criar a entrega sem detalhar.</p>}
-                                <button type="button" onClick={() => setCreateItems(p => [...p, { item_name: '', expected_qty: '', unit: 'un' }])} className="w-full py-2.5 rounded-xl border-2 border-dashed border-blue-200 text-blue-600 text-xs font-bold hover:bg-blue-50 hover:border-blue-300 transition-colors mb-2">+ Adicionar item</button>
+                                <button type="button" onClick={() => setCreateItems(p => [...p, { item_name: '', expected_qty: '', unit: 'un', is_free: false }])} className="w-full py-2.5 rounded-xl border-2 border-dashed border-blue-200 text-blue-600 text-xs font-bold hover:bg-blue-50 hover:border-blue-300 transition-colors mb-3">+ Adicionar item</button>
                                 {createItems.map((item, idx) => (
-                                    <div key={idx} className="flex gap-2 mb-2">
-                                        <input value={item.item_name} onChange={e => { const n = [...createItems]; n[idx].item_name = e.target.value; setCreateItems(n) }} placeholder="Nome do item" className="flex-1 px-2 py-2 border border-gray-200 rounded-lg text-xs font-medium focus:outline-none focus:ring-1 focus:ring-blue-400" />
-                                        <input value={item.expected_qty} onChange={e => { const n = [...createItems]; n[idx].expected_qty = e.target.value; setCreateItems(n) }} placeholder="Qtd" className="w-16 px-2 py-2 border border-gray-200 rounded-lg text-xs font-medium text-center focus:outline-none focus:ring-1 focus:ring-blue-400" />
-                                        <input value={item.unit} onChange={e => { const n = [...createItems]; n[idx].unit = e.target.value; setCreateItems(n) }} placeholder="un" className="w-12 px-2 py-2 border border-gray-200 rounded-lg text-xs font-medium text-center focus:outline-none focus:ring-1 focus:ring-blue-400" />
-                                        <button onClick={() => setCreateItems(p => p.filter((_, i) => i !== idx))} className="text-gray-300 hover:text-red-500"><X className="w-4 h-4" /></button>
+                                    <div key={idx} className="bg-gray-50 rounded-2xl p-3 mb-3 border border-gray-100">
+                                        <div className="flex items-center justify-between mb-2">
+                                            {item.item_name ? (
+                                                <div className="flex items-center gap-2 flex-1">
+                                                    <span className="text-xs font-black text-gray-800 truncate">{item.item_name}</span>
+                                                    {item.is_free && <span className="text-[9px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-md">Item livre</span>}
+                                                    {!item.is_free && item.purchase_item_id && <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md">Catálogo</span>}
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-gray-400 italic">Novo item</span>
+                                            )}
+                                            <button onClick={() => { setCreateItems(p => p.filter((_, i) => i !== idx)); setItemSuggestions(p => { const n = {...p}; delete n[idx]; return n }) }} className="text-gray-300 hover:text-red-500 ml-2 shrink-0"><X className="w-4 h-4" /></button>
+                                        </div>
+                                        {/* Search field or selected display */}
+                                        {!item.item_name ? (
+                                            <div className="relative">
+                                                <div className="relative">
+                                                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                                                    <input
+                                                        value={itemQuery[idx] || ''}
+                                                        onChange={e => handleItemSearch(idx, e.target.value)}
+                                                        placeholder="Buscar item do catálogo..."
+                                                        className="w-full pl-8 pr-3 py-2 border border-gray-200 bg-white rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-400/30 focus:border-blue-400"
+                                                        autoFocus
+                                                    />
+                                                    {itemSearching[idx] && <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-blue-500 animate-spin" />}
+                                                </div>
+                                                {/* Suggestions */}
+                                                {(itemQuery[idx] || '').length >= 2 && !itemSearching[idx] && (
+                                                    <div className="mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden max-h-48 overflow-y-auto">
+                                                        {(itemSuggestions[idx] || []).length > 0 ? (
+                                                            (itemSuggestions[idx] || []).map(s => (
+                                                                <button key={s.id} type="button" onClick={() => selectItemSuggestion(idx, s)} className="w-full text-left px-3 py-3 hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0">
+                                                                    <p className="text-xs font-bold text-gray-800">{s.name}</p>
+                                                                    <p className="text-[10px] text-gray-400 mt-0.5">{s.order_unit}{s.category ? ` · ${s.category}` : ''}</p>
+                                                                </button>
+                                                            ))
+                                                        ) : (
+                                                            <div className="px-3 py-3">
+                                                                <p className="text-xs text-gray-400">Nenhum item encontrado.</p>
+                                                                <button type="button" onClick={() => { const n = [...createItems]; n[idx] = { ...n[idx], item_name: itemQuery[idx] || '', is_free: true }; setCreateItems(n); setItemQuery(p => ({ ...p, [idx]: '' })); setItemSuggestions(p => ({ ...p, [idx]: [] })) }} className="text-xs font-bold text-blue-600 hover:text-blue-700 mt-1">
+                                                                    Salvar como item livre: "{itemQuery[idx]}"
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <button type="button" onClick={() => clearItemSelection(idx)} className="text-[10px] text-gray-400 hover:text-red-500 font-bold underline mb-2 block">Trocar item</button>
+                                        )}
+                                        {/* Qty + Unit */}
+                                        {item.item_name && (
+                                            <div className="flex gap-2 mt-2">
+                                                <input value={item.expected_qty} onChange={e => { const n = [...createItems]; n[idx].expected_qty = e.target.value; setCreateItems(n) }} placeholder="Qtd prevista" type="number" className="flex-1 px-3 py-2 border border-gray-200 bg-white rounded-xl text-xs font-medium text-center focus:outline-none focus:ring-1 focus:ring-blue-400" />
+                                                <input value={item.unit} onChange={e => { const n = [...createItems]; n[idx].unit = e.target.value; setCreateItems(n) }} placeholder="Unid." className="w-20 px-2 py-2 border border-gray-200 bg-white rounded-xl text-xs font-medium text-center focus:outline-none focus:ring-1 focus:ring-blue-400" />
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>

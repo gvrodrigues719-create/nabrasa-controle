@@ -335,16 +335,16 @@ export async function cancelReceivingAction(
 
 export async function searchPurchaseItemsAction(q: string): Promise<{
     success: boolean
-    data?: { id: string; name: string; order_unit: string }[]
+    data?: { id: string; name: string; order_unit: string; category?: string }[]
     error?: string
 }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager'].includes(user.role)) throw new Error('Sem permissão')
+        if (!['admin', 'manager', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
         const { data, error } = await supabase
             .from('purchase_items')
-            .select('id, name, order_unit')
+            .select('id, name, order_unit, category')
             .ilike('name', `%${q}%`)
             .eq('is_active', true)
             .order('name')
