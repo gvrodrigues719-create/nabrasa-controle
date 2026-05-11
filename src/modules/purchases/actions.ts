@@ -75,7 +75,7 @@ export async function updatePurchaseItemAction(
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (user.role !== 'admin') throw new Error('Sem permissão')
+        if (!['admin', 'manager'].includes(user.role)) throw new Error('Sem permissão')
 
         const { error } = await supabase
             .from('purchase_items')
