@@ -301,20 +301,20 @@ export default function ReceivingsPage() {
                         </div>
                         <div className="p-5 space-y-4">
                             <div>
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Nome da entrega *</label>
+                                <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Nome da entrega *</label>
                                 <input value={createForm.title} onChange={e => setCreateForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Hortifruti da semana, Compra de limpeza, Carnes bovinas" className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
                             </div>
                             <div>
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Fornecedor, se souber</label>
+                                <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Fornecedor, se souber</label>
                                 <input value={createForm.supplier_name} onChange={e => setCreateForm(f => ({ ...f, supplier_name: e.target.value }))} placeholder="Ex: Hortifruti São José" className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Data *</label>
+                                    <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Data *</label>
                                     <input type="date" value={createForm.delivery_date} onChange={e => setCreateForm(f => ({ ...f, delivery_date: e.target.value }))} className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Período</label>
+                                    <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Período</label>
                                     <select value={createForm.delivery_period} onChange={e => setCreateForm(f => ({ ...f, delivery_period: e.target.value }))} className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 bg-white">
                                         <option value="">Selecione</option>
                                         <option value="manha">Manhã</option>
@@ -326,18 +326,18 @@ export default function ReceivingsPage() {
                             </div>
                             {createForm.delivery_period === 'horario_especifico' && (
                                 <div>
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Horário</label>
+                                    <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Horário</label>
                                     <input type="time" value={createForm.delivery_time} onChange={e => setCreateForm(f => ({ ...f, delivery_time: e.target.value }))} className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
                                 </div>
                             )}
                             <div>
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Observação</label>
+                                <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Observação</label>
                                 <textarea value={createForm.notes} onChange={e => setCreateForm(f => ({ ...f, notes: e.target.value }))} rows={3} placeholder="Ex: conferir qualidade, entregar até 10h, atenção para item que veio errado na última entrega." className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 resize-none" />
                             </div>
                             {/* Items */}
                             <div>
                                 <div className="flex items-center justify-between mb-2">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Itens (opcional)</label>
+                                    <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Itens (opcional)</label>
                                 </div>
                                 {createItems.length === 0 && <p className="text-xs text-gray-300 italic mb-2">Nenhum item cadastrado. Você pode criar a entrega sem detalhar.</p>}
                                 <button type="button" onClick={() => setCreateItems(p => [...p, { item_name: '', expected_qty: '', unit: 'un' }])} className="w-full py-2.5 rounded-xl border-2 border-dashed border-blue-200 text-blue-600 text-xs font-bold hover:bg-blue-50 hover:border-blue-300 transition-colors mb-2">+ Adicionar item</button>
