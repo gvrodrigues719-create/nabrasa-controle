@@ -158,6 +158,7 @@ export async function getProductionPlanningDataAction(locationId?: string) {
             const countItemId = purchaseToCountMap.get(item.id)
             let ready_stock_qty = 0
             let last_count_date: string | undefined = undefined
+            let count_group_name: string | undefined = undefined
 
             if (planning_category === 'production') {
                 if (!countItemId) {
@@ -171,7 +172,7 @@ export async function getProductionPlanningDataAction(locationId?: string) {
                     } else {
                         ready_stock_qty = stockData.qty
                         last_count_date = stockData.date
-                        suggestion.count_group_name = stockData.group_name
+                        count_group_name = stockData.group_name
                     }
                 }
             } else if (planning_category === 'separation') {
@@ -203,6 +204,7 @@ export async function getProductionPlanningDataAction(locationId?: string) {
                 },
                 planning_category,
                 last_count_date,
+                count_group_name,
                 review_reason
             } as any
         })
