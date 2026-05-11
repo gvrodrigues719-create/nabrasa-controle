@@ -25,6 +25,7 @@ export interface PurchaseItem {
     max_stock: number | null
     origin: ItemOrigin
     is_active: boolean
+    item_type?: 'produced' | 'separated' | 'unclassified'
     /**
      * Sinaliza itens importados com dados incompletos ou inconsistentes
      * (sem mín/máx, ou mín > máx). Admin deve revisar antes de usar.
@@ -160,6 +161,10 @@ export interface ProductionSuggestion {
     created_at: string
     updated_at: string
     item?: PurchaseItem
+    planning_category?: 'production' | 'separation' | 'review'
+    classified_by_recipe?: boolean
+    last_count_date?: string
+    review_reason?: string
 }
 
 export type AdjustmentReason =

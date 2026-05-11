@@ -20,6 +20,8 @@ export default function AdminPurchaseItemsPage() {
     const [showInactive, setShowInactive] = useState(false)
     const [showPendingOnly, setShowPendingOnly] = useState(false)
     const [toggling, setToggling] = useState<string | null>(null)
+    const [itemTypeFilter, setItemTypeFilter] = useState('')
+    const [typeToggling, setTypeToggling] = useState<string | null>(null)
 
     async function fetchItems() {
         setLoading(true)
@@ -44,8 +46,22 @@ export default function AdminPurchaseItemsPage() {
     const filtered = items.filter(item => {
         if (!showInactive && !item.is_active) return false
         if (showPendingOnly && !item.pending_review) return false
+        if (itemTypeFilter && (item.item_type || 'unclassified') !== itemTypeFilter) return false
         return true
     })
+
+    async function handleToggleItemType(item: PurchaseItem) {
+        setTypeToggling(item.id)
+        const newType = item.item_type === 'produced' ? 'separated' : 'produced'
+        const res = await updatePurchaseItemAction(item.id, { item_type: newType })
+        if (res.success) {
+            setItems(prev => prev.map(i => i.id === item.id ? { ...i, item_type: newType } : i))
+            toast.success('Item atualizado.')
+        } else {
+            toast.error(res.error ?? 'Erro ao atualizar')
+        }
+        setTypeToggling(null)
+    }
 
     const pendingCount = items.filter(i => i.pending_review).length
     const inactiveCount = items.filter(i => !i.is_active).length
@@ -115,23 +131,52 @@ export default function AdminPurchaseItemsPage() {
                 </div>
 
                 {/* Filters row */}
-                <div className="flex items-center gap-2">
-                    <div className="flex gap-2 flex-1 overflow-x-auto pb-1 scrollbar-hide">
-                        <button
-                            onClick={() => setCategory('')}
-                            className={`shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${!category ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-500'}`}
-                        >
-                            Todos
-                        </button>
-                        {ITEM_CATEGORIES.map(cat => (
+                <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-2">
+                        <div className="flex gap-2 flex-1 overflow-x-auto pb-1 scrollbar-hide">
                             <button
-                                key={cat}
-                                onClick={() => setCategory(c => c === cat ? '' : cat)}
-                                className={`shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${category === cat ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-500'}`}
+                                onClick={() => setCategory('')}
+                                className={`shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${!category ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-500'}`}
                             >
-                                {cat}
+                                Todas
                             </button>
-                        ))}
+                            {ITEM_CATEGORIES.map(cat => (
+                                <button
+                                    key={cat}
+                                    onClick={() => setCategory(c => c === cat ? '' : cat)}
+                                    className={`shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${category === cat ? 'bg-gray-900 text-white' : 'bg-white border border-gray-200 text-gray-500'}`}
+                                >
+                                    {cat}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                        <button
+                            onClick={() => setItemTypeFilter('')}
+                            className={`shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${!itemTypeFilter ? 'bg-indigo-600 text-white' : 'bg-white border border-indigo-100 text-indigo-600'}`}
+                        >
+                            Todos os Tipos
+                        </button>
+                        <button
+                            onClick={() => setItemTypeFilter('produced')}
+                            className={`shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${itemTypeFilter === 'produced' ? 'bg-indigo-600 text-white' : 'bg-white border border-indigo-100 text-indigo-600'}`}
+                        >
+                            Produzidos
+                        </button>
+                        <button
+                            onClick={() => setItemTypeFilter('separated')}
+                            className={`shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${itemTypeFilter === 'separated' ? 'bg-indigo-600 text-white' : 'bg-white border border-indigo-100 text-indigo-600'}`}
+                        >
+                            Separados
+                        </button>
+                        <button
+                            onClick={() => setItemTypeFilter('unclassified')}
+                            className={`shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${itemTypeFilter === 'unclassified' ? 'bg-amber-600 text-white' : 'bg-white border border-amber-200 text-amber-700'}`}
+                        >
+                            Sem classificação
+                        </button>
                     </div>
                 </div>
 
@@ -191,9 +236,41 @@ export default function AdminPurchaseItemsPage() {
                                     <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-700 transition-colors shrink-0 ml-2" />
                                 </button>
 
+                                <div className="border-t border-gray-50 px-4 py-3 flex items-center justify-between bg-gray-50/50">
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                handleToggleItemType(item)
+                                            }}
+                                            disabled={typeToggling === item.id}
+                                            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                                        >
+                                            <div className={`w-8 h-5 rounded-full flex items-center p-0.5 transition-colors ${
+                                                item.item_type === 'produced' ? 'bg-indigo-600' : 'bg-gray-300'
+                                            }`}>
+                                                <div className={`bg-white w-4 h-4 rounded-full shadow-sm transform transition-transform ${
+                                                    item.item_type === 'produced' ? 'translate-x-3' : 'translate-x-0'
+                                                }`} />
+                                            </div>
+                                            <span className={`text-[10px] font-black uppercase tracking-wider ${
+                                                item.item_type === 'produced' ? 'text-indigo-700' : 'text-gray-500'
+                                            }`}>
+                                                Produzido pela Cozinha Central
+                                            </span>
+                                        </button>
+                                        {(!item.item_type || item.item_type === 'unclassified') && (
+                                            <span className="text-[9px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded uppercase ml-2">Sem classificação</span>
+                                        )}
+                                    </div>
+                                </div>
+
                                 <div className="border-t border-gray-50 px-4 py-2 flex items-center justify-between">
                                     <button
-                                        onClick={() => handleToggleActive(item)}
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleToggleActive(item)
+                                        }}
                                         disabled={toggling === item.id}
                                         className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest transition-all ${item.is_active ? 'text-emerald-600 hover:text-red-500' : 'text-gray-400 hover:text-emerald-600'}`}
                                     >

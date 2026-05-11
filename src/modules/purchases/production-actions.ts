@@ -54,19 +54,7 @@ export async function getProductionPlanningDataAction(locationId?: string) {
             aggregatedRequests[si.item_id].orderIds.push(si.purchase_orders.id)
         })
 
-        // 2. Buscar estoque disponível (finished) na localização
-        // available = quantity - reserved_qty
-        const { data: stock, error: stockErr } = await supabase
-            .from('inventory_balances')
-            .select('*')
-            .eq('location_id', locId)
-            .eq('type', 'finished')
-        
-        if (stockErr) throw stockErr
-        const stockMap: Record<string, { quantity: number; reserved: number }> = {}
-        stock?.forEach((s: any) => stockMap[s.item_id] = { quantity: Number(s.quantity), reserved: Number(s.reserved_qty) })
-
-        // 3. Buscar produção já programada (ordens pendentes ou em andamento nesta unidade)
+        // 2. Buscar produção já programada (ordens pendentes ou em andamento nesta unidade)
         const { data: scheduledItems, error: scheduledErr } = await supabase
             .from('production_order_items')
             .select(`
@@ -83,10 +71,9 @@ export async function getProductionPlanningDataAction(locationId?: string) {
             scheduledMap[si.item_id] = (scheduledMap[si.item_id] || 0) + Number(si.approved_qty)
         })
 
-        // 4. Detalhes dos itens e receitas
+        // 3. Detalhes dos itens (agora precisamos saber tudo que foi pedido ou programado)
         const allRelevantItemIds = Array.from(new Set([
             ...Object.keys(aggregatedRequests),
-            ...Object.keys(stockMap),
             ...Object.keys(scheduledMap)
         ]))
 
@@ -100,39 +87,97 @@ export async function getProductionPlanningDataAction(locationId?: string) {
         
         if (itemDetailsErr) throw itemDetailsErr
 
-        // 5. Receitas e Insumos Brutos (para cálculo de falta 'W')
-        const { data: recipes } = await supabase.from('recipes').select('*, ingredient:purchase_items!ingredient_id(*)')
-        const { data: rawStock } = await supabase.from('inventory_balances').select('*').eq('location_id', locId).eq('type', 'raw')
-        const rawStockMap: Record<string, { quantity: number; reserved: number }> = {}
-        rawStock?.forEach((s: any) => rawStockMap[s.item_id] = { quantity: Number(s.quantity), reserved: Number(s.reserved_qty) })
+        // 4. Buscar mapeamento de contagem para esses itens
+        const { data: mappings } = await supabase
+            .from('count_to_purchase_item_map')
+            .select('count_item_id, purchase_item_id')
+            .in('purchase_item_id', allRelevantItemIds)
 
-        // 6. Montar sugestões com a "Frase de Experiência" em mente
-        const suggestions: ProductionSuggestion[] = items.map((item: any) => {
-            const req = aggregatedRequests[item.id]?.total || 0
-            const stockData = stockMap[item.id] || { quantity: 0, reserved: 0 }
-            const available = Math.max(0, stockData.quantity - stockData.reserved)
-            const scheduled = scheduledMap[item.id] || 0
-            const suggested = Math.max(0, req - available - scheduled)
+        const purchaseToCountMap = new Map<string, string>()
+        const countToPurchaseMap = new Map<string, string>()
+        mappings?.forEach(m => {
+            purchaseToCountMap.set(m.purchase_item_id, m.count_item_id)
+            countToPurchaseMap.set(m.count_item_id, m.purchase_item_id)
+        })
 
-            const itemRecipes = (recipes ?? []).filter((r: any) => r.product_id === item.id)
-            
-            let status_color = 'green'
-            let missingIngredients: string[] = []
+        // 5. Buscar o último estoque contado apenas para os itens que possuem mapeamento
+        const countItemIds = Array.from(countToPurchaseMap.keys())
+        const lastCountMap: Record<string, { qty: number; date: string }> = {}
 
-            if (available < req) {
-                status_color = 'yellow'
-                if (suggested > 0) {
-                    for (const r of itemRecipes) {
-                        const need = (suggested * Number(r.quantity)) / (Number(r.yield_percentage || 100) / 100)
-                        const ingStock = rawStockMap[r.ingredient_id] || { quantity: 0, reserved: 0 }
-                        const ingAvailable = ingStock.quantity - ingStock.reserved
-                        if (ingAvailable < need) {
-                            status_color = 'red'
-                            missingIngredients.push(r.ingredient?.name || 'Insumo')
+        if (countItemIds.length > 0) {
+            const { data: countData } = await supabase
+                .from('count_session_items')
+                .select(`
+                    item_id, counted_quantity, is_zeroed, validated_quantity, validated_is_zeroed,
+                    count_sessions!inner(completed_at, status)
+                `)
+                .in('item_id', countItemIds)
+                .eq('count_sessions.status', 'completed')
+
+            // Ordenar no JS (mais seguro e fácil dado as limitações de JOIN ordering)
+            // Pegar sempre a data mais recente
+            if (countData) {
+                countData.sort((a: any, b: any) => new Date(b.count_sessions.completed_at).getTime() - new Date(a.count_sessions.completed_at).getTime())
+                countData.forEach((c: any) => {
+                    if (!lastCountMap[c.item_id]) {
+                        const isZero = c.validated_is_zeroed ?? c.is_zeroed
+                        const qty = isZero ? 0 : (c.validated_quantity ?? c.counted_quantity)
+                        lastCountMap[c.item_id] = {
+                            qty: Number(qty),
+                            date: c.count_sessions.completed_at
                         }
                     }
+                })
+            }
+        }
+
+        // 6. Montar sugestões
+        const suggestions: ProductionSuggestion[] = items.map((item: any) => {
+            const req = aggregatedRequests[item.id]?.total || 0
+            const scheduled = scheduledMap[item.id] || 0
+            
+            let planning_category: 'production' | 'separation' | 'review' = 'review'
+            let review_reason = ''
+
+            // Regras de Classificação Simplificadas (sem usar recipes como prioridade)
+            if (item.item_type === 'produced') {
+                planning_category = 'production'
+            } else if (item.item_type === 'separated') {
+                planning_category = 'separation'
+            } else {
+                planning_category = 'review'
+                review_reason = 'Item sem classificação no catálogo (item_type = unclassified).'
+            }
+
+            // Descobrir o estoque atual via contagem
+            const countItemId = purchaseToCountMap.get(item.id)
+            let ready_stock_qty = 0
+            let last_count_date: string | undefined = undefined
+
+            if (planning_category === 'production') {
+                if (!countItemId) {
+                    planning_category = 'review'
+                    review_reason = 'Item produzido não possui vínculo com módulo de contagem.'
+                } else {
+                    const stockData = lastCountMap[countItemId]
+                    if (!stockData) {
+                        planning_category = 'review'
+                        review_reason = 'Item produzido não possui contagem recente finalizada na Cozinha Central.'
+                    } else {
+                        ready_stock_qty = stockData.qty
+                        last_count_date = stockData.date
+                    }
+                }
+            } else if (planning_category === 'separation') {
+                // Se houver contagem mapeada, mostra como informativo, se não, mostra 0
+                if (countItemId && lastCountMap[countItemId]) {
+                    ready_stock_qty = lastCountMap[countItemId].qty
+                    last_count_date = lastCountMap[countItemId].date
                 }
             }
+
+            // Produção Necessária
+            const suggested = Math.max(0, req - ready_stock_qty - scheduled)
 
             return {
                 id: item.id,
@@ -140,7 +185,7 @@ export async function getProductionPlanningDataAction(locationId?: string) {
                 item_id: item.id,
                 source_location_id: locId,
                 requested_qty: req,
-                ready_stock_qty: available,
+                ready_stock_qty,
                 scheduled_qty: scheduled,
                 suggested_qty: suggested,
                 approved_qty: suggested,
@@ -148,9 +193,11 @@ export async function getProductionPlanningDataAction(locationId?: string) {
                 calculated_at: new Date().toISOString(),
                 item: { 
                     ...item, 
-                    status_color,
-                    missing_ingredients: missingIngredients // Para a frase "falta comprar W"
-                }
+                    status_color: 'green' // Simplificado sem dependência de insumos (missingIngredients) nesta fase
+                },
+                planning_category,
+                last_count_date,
+                review_reason
             } as any
         })
 
