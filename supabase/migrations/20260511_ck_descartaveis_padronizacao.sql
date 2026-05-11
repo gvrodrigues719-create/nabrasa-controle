@@ -42,15 +42,15 @@ BEGIN
 
     -- Inserções caso não existam após as atualizações
     IF NOT EXISTS (SELECT 1 FROM public.items WHERE group_id = v_group_id AND name = 'POTE 145ML - 25UN') THEN
-        INSERT INTO public.items (group_id, name, unit, is_active) VALUES (v_group_id, 'POTE 145ML - 25UN', 'UN', true);
+        INSERT INTO public.items (group_id, name, unit, active) VALUES (v_group_id, 'POTE 145ML - 25UN', 'UN', true);
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM public.items WHERE group_id = v_group_id AND name = 'POTE 30ML - 50UN') THEN
-        INSERT INTO public.items (group_id, name, unit, is_active) VALUES (v_group_id, 'POTE 30ML - 50UN', 'UN', true);
+        INSERT INTO public.items (group_id, name, unit, active) VALUES (v_group_id, 'POTE 30ML - 50UN', 'UN', true);
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM public.items WHERE group_id = v_group_id AND name = 'POTE 60ML - 100UN') THEN
-        INSERT INTO public.items (group_id, name, unit, is_active) VALUES (v_group_id, 'POTE 60ML - 100UN', 'UN', true);
+        INSERT INTO public.items (group_id, name, unit, active) VALUES (v_group_id, 'POTE 60ML - 100UN', 'UN', true);
     END IF;
 
     -- =========================================================================
@@ -61,11 +61,11 @@ BEGIN
     WHERE group_id = v_group_id AND name ILIKE 'QUENTINHA 500 ML C/100';
 
     IF NOT EXISTS (SELECT 1 FROM public.items WHERE group_id = v_group_id AND name = 'QUENTINHA 1100ML - 100UN') THEN
-        INSERT INTO public.items (group_id, name, unit, is_active) VALUES (v_group_id, 'QUENTINHA 1100ML - 100UN', 'PCT', true);
+        INSERT INTO public.items (group_id, name, unit, active) VALUES (v_group_id, 'QUENTINHA 1100ML - 100UN', 'PCT', true);
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM public.items WHERE group_id = v_group_id AND name = 'QUENTINHA 220ML - 100UN') THEN
-        INSERT INTO public.items (group_id, name, unit, is_active) VALUES (v_group_id, 'QUENTINHA 220ML - 100UN', 'PCT', true);
+        INSERT INTO public.items (group_id, name, unit, active) VALUES (v_group_id, 'QUENTINHA 220ML - 100UN', 'PCT', true);
     END IF;
 
     -- =========================================================================
@@ -99,19 +99,19 @@ BEGIN
     WHERE group_id = v_group_id AND name ILIKE 'SALADEIRA 500 ML';
 
     IF NOT EXISTS (SELECT 1 FROM public.items WHERE group_id = v_group_id AND name = 'SALADEIRA 1000ML') THEN
-        INSERT INTO public.items (group_id, name, unit, is_active) VALUES (v_group_id, 'SALADEIRA 1000ML', 'UN', true);
+        INSERT INTO public.items (group_id, name, unit, active) VALUES (v_group_id, 'SALADEIRA 1000ML', 'UN', true);
     END IF;
 
     -- =========================================================================
     -- 7. Incluir embalagens de executivo
     -- =========================================================================
     IF NOT EXISTS (SELECT 1 FROM public.items WHERE group_id = v_group_id AND name = 'EMBALAGEM TAMPA EXECUTIVO - 100UN') THEN
-        INSERT INTO public.items (group_id, name, unit, unit_observation, is_active) 
+        INSERT INTO public.items (group_id, name, unit, unit_observation, active) 
         VALUES (v_group_id, 'EMBALAGEM TAMPA EXECUTIVO - 100UN', 'PCT', 'Contar pacote fechado com 100 unidades.', true);
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM public.items WHERE group_id = v_group_id AND name = 'EMBALAGEM DE ISOPOR EXECUTIVO - 100UN') THEN
-        INSERT INTO public.items (group_id, name, unit, unit_observation, is_active) 
+        INSERT INTO public.items (group_id, name, unit, unit_observation, active) 
         VALUES (v_group_id, 'EMBALAGEM DE ISOPOR EXECUTIVO - 100UN', 'PCT', 'Contar pacote fechado com 100 unidades.', true);
     END IF;
 
