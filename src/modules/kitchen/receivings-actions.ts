@@ -433,7 +433,7 @@ export async function createCatalogItemAction(input: {
 }): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager'].includes(user.role)) throw new Error('Sem permissão para cadastrar insumos')
+        if (!['admin', 'manager', 'kitchen'].includes(user.role)) throw new Error('Sem permissão para cadastrar insumos')
         if (!input.name?.trim()) throw new Error('Nome é obrigatório')
         if (!input.unit?.trim()) throw new Error('Unidade é obrigatória')
 
@@ -474,7 +474,7 @@ export async function updateCatalogItemAction(id: string, input: {
 }): Promise<{ success: boolean; error?: string }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager'].includes(user.role)) throw new Error('Sem permissão')
+        if (!['admin', 'manager', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
         const updates: any = { updated_by: user.id }
         if (input.name !== undefined) {
