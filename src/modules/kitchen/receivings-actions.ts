@@ -335,23 +335,164 @@ export async function cancelReceivingAction(
 
 export async function searchPurchaseItemsAction(q: string): Promise<{
     success: boolean
-    data?: { id: string; name: string; order_unit: string; category?: string }[]
+    data?: { id: string; name: string; order_unit: string; category?: string; source: 'catalog' | 'purchase' }[]
     error?: string
 }> {
     try {
         const { supabase, user } = await getCurrentUser()
         if (!['admin', 'manager', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
-        const { data, error } = await supabase
-            .from('purchase_items')
-            .select('id, name, order_unit, category')
-            .ilike('name', `%${q}%`)
+        const term = q.trim()
+
+        // 1. Busca no catálogo de insumos de recebimento
+        const { data: catalogData } = await supabase
+            .from('ck_receiving_catalog_items')
+            .select('id, name, unit, category')
+            .ilike('name', `%${term}%`)
             .eq('is_active', true)
             .order('name')
-            .limit(20)
+            .limit(15)
 
+        // 2. Busca no purchase_items (catálogo geral)
+        const { data: purchaseData } = await supabase
+            .from('purchase_items')
+            .select('id, name, order_unit, category')
+            .ilike('name', `%${term}%`)
+            .eq('is_active', true)
+            .order('name')
+            .limit(10)
+
+        const catalogResults = (catalogData || []).map(r => ({
+            id: r.id,
+            name: r.name,
+            order_unit: r.unit || 'UN',
+            category: r.category,
+            source: 'catalog' as const,
+        }))
+
+        const purchaseResults = (purchaseData || []).map(r => ({
+            id: r.id,
+            name: r.name,
+            order_unit: r.order_unit || 'UN',
+            category: r.category,
+            source: 'purchase' as const,
+        }))
+
+        // Catálogo próprio primeiro, depois purchase_items (sem duplicar pelo nome)
+        const catalogNames = new Set(catalogResults.map(r => r.name.toLowerCase()))
+        const merged = [
+            ...catalogResults,
+            ...purchaseResults.filter(r => !catalogNames.has(r.name.toLowerCase())),
+        ].slice(0, 20)
+
+        return { success: true, data: merged }
+    } catch (e: any) {
+        return { success: false, error: e.message }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CATALOG — Listar insumos do catálogo de recebimentos
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function getCatalogItemsAction(opts?: { search?: string; category?: string; active?: boolean }): Promise<{
+    success: boolean
+    data?: any[]
+    error?: string
+}> {
+    try {
+        const { supabase, user } = await getCurrentUser()
+        if (!['admin', 'manager', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
+
+        let q = supabase
+            .from('ck_receiving_catalog_items')
+            .select('*')
+            .order('name')
+
+        if (opts?.search) q = q.ilike('name', `%${opts.search}%`)
+        if (opts?.category) q = q.eq('category', opts.category)
+        if (opts?.active !== undefined) q = q.eq('is_active', opts.active)
+
+        const { data, error } = await q
         if (error) throw error
         return { success: true, data: data || [] }
+    } catch (e: any) {
+        return { success: false, error: e.message }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CATALOG — Criar insumo
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function createCatalogItemAction(input: {
+    name: string
+    unit: string
+    category?: string
+    notes?: string
+}): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+        const { supabase, user } = await getCurrentUser()
+        if (!['admin', 'manager'].includes(user.role)) throw new Error('Sem permissão para cadastrar insumos')
+        if (!input.name?.trim()) throw new Error('Nome é obrigatório')
+        if (!input.unit?.trim()) throw new Error('Unidade é obrigatória')
+
+        const name = input.name.trim().toUpperCase()
+        const normalized = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+
+        const { data, error } = await supabase
+            .from('ck_receiving_catalog_items')
+            .insert({
+                name,
+                normalized_name: normalized,
+                unit: input.unit.trim().toUpperCase(),
+                category: input.category || null,
+                notes: input.notes || null,
+                is_active: true,
+                created_by: user.id,
+            })
+            .select()
+            .single()
+
+        if (error) throw error
+        return { success: true, data }
+    } catch (e: any) {
+        return { success: false, error: e.message }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CATALOG — Editar insumo
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function updateCatalogItemAction(id: string, input: {
+    name?: string
+    unit?: string
+    category?: string
+    notes?: string
+    is_active?: boolean
+}): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { supabase, user } = await getCurrentUser()
+        if (!['admin', 'manager'].includes(user.role)) throw new Error('Sem permissão')
+
+        const updates: any = { updated_by: user.id }
+        if (input.name !== undefined) {
+            updates.name = input.name.trim().toUpperCase()
+            updates.normalized_name = updates.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+        }
+        if (input.unit !== undefined) updates.unit = input.unit.trim().toUpperCase()
+        if (input.category !== undefined) updates.category = input.category || null
+        if (input.notes !== undefined) updates.notes = input.notes || null
+        if (input.is_active !== undefined) updates.is_active = input.is_active
+
+        const { error } = await supabase
+            .from('ck_receiving_catalog_items')
+            .update(updates)
+            .eq('id', id)
+
+        if (error) throw error
+        return { success: true }
     } catch (e: any) {
         return { success: false, error: e.message }
     }

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, Plus, Truck, Check, AlertTriangle, X,
     Loader2, ChevronLeft, ChevronRight, Package,
-    Clock, Ban, CalendarDays, Search
+    Clock, Ban, CalendarDays, Search, BookOpen
 } from 'lucide-react'
 import {
     getWeeklyReceivingsAction,
@@ -15,6 +15,7 @@ import {
     markReceivingRefusedAction,
     cancelReceivingAction,
     searchPurchaseItemsAction,
+    createCatalogItemAction,
 } from '@/modules/kitchen/receivings-actions'
 import type { CKReceiving } from '@/modules/kitchen/receivings-types'
 import { RECEIVING_STATUS_CONFIG, PERIOD_LABELS, REFUSAL_REASONS } from '@/modules/kitchen/receivings-types'
@@ -53,10 +54,15 @@ export default function ReceivingsPage() {
     const [creating, setCreating] = useState(false)
     const [userRole, setUserRole] = useState<string>('')
     // Autocomplete per item
-    const [itemSuggestions, setItemSuggestions] = useState<Record<number, { id: string; name: string; order_unit: string; category?: string }[]>>({})
+    const [itemSuggestions, setItemSuggestions] = useState<Record<number, { id: string; name: string; order_unit: string; category?: string; source: 'catalog' | 'purchase' }[]>>({})
     const [itemSearching, setItemSearching] = useState<Record<number, boolean>>({})
     const [itemQuery, setItemQuery] = useState<Record<number, string>>({})
     const debounceRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({})
+    // Quick-create catalog item
+    const [quickCreate, setQuickCreate] = useState<{ idx: number; name: string } | null>(null)
+    const [quickUnit, setQuickUnit] = useState('KG')
+    const [quickCategory, setQuickCategory] = useState('')
+    const [quickSaving, setQuickSaving] = useState(false)
 
     const week = useMemo(() => getWeekRange(weekOffset), [weekOffset])
     const todayStr = new Date().toISOString().split('T')[0]
@@ -107,7 +113,7 @@ export default function ReceivingsPage() {
         }, 300)
     }
 
-    function selectItemSuggestion(idx: number, s: { id: string; name: string; order_unit: string }) {
+    function selectItemSuggestion(idx: number, s: { id: string; name: string; order_unit: string; source?: string }) {
         const n = [...createItems]
         n[idx] = { ...n[idx], purchase_item_id: s.id, item_name: s.name, unit: s.order_unit, is_free: false }
         setCreateItems(n)
@@ -120,6 +126,29 @@ export default function ReceivingsPage() {
         n[idx] = { purchase_item_id: undefined, item_name: '', expected_qty: n[idx].expected_qty, unit: '', is_free: true }
         setCreateItems(n)
         setItemQuery(prev => ({ ...prev, [idx]: '' }))
+    }
+
+    async function handleQuickCreate() {
+        if (!quickCreate) return
+        const finalUnit = quickUnit === 'OUTRO' ? '' : quickUnit
+        if (!finalUnit) { toast.error('Escolha uma unidade'); return }
+        setQuickSaving(true)
+        const res = await createCatalogItemAction({ name: quickCreate.name, unit: finalUnit, category: quickCategory || undefined })
+        if (res.success && res.data) {
+            toast.success('Insumo criado!')
+            // Inserir na linha da entrega automaticamente
+            const n = [...createItems]
+            n[quickCreate.idx] = { ...n[quickCreate.idx], purchase_item_id: res.data.id, item_name: res.data.name, unit: res.data.unit, is_free: false }
+            setCreateItems(n)
+            setItemQuery(prev => ({ ...prev, [quickCreate.idx]: '' }))
+            setItemSuggestions(prev => ({ ...prev, [quickCreate.idx]: [] }))
+            setQuickCreate(null)
+            setQuickUnit('KG')
+            setQuickCategory('')
+        } else {
+            toast.error(res.error || 'Erro ao criar insumo')
+        }
+        setQuickSaving(false)
     }
 
     async function handleCreate() {
@@ -245,10 +274,16 @@ export default function ReceivingsPage() {
                             <p className="text-[10px] text-gray-400 font-bold">Entregas previstas para a Cozinha Central</p>
                         </div>
                     </div>
-                    <button onClick={() => { setShowCreate(true); setCreateForm(f => ({ ...f, delivery_date: todayStr })) }} className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors">
-                        <Plus className="w-4 h-4" />
-                        <span className="hidden sm:inline">Nova Entrega</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button onClick={() => router.push('/dashboard/kitchen/receivings/items')} className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 text-gray-700 rounded-xl text-xs font-bold hover:bg-gray-200 transition-colors">
+                            <BookOpen className="w-4 h-4" />
+                            <span className="hidden sm:inline">Catálogo</span>
+                        </button>
+                        <button onClick={() => { setShowCreate(true); setCreateForm(f => ({ ...f, delivery_date: todayStr })) }} className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-colors">
+                            <Plus className="w-4 h-4" />
+                            <span className="hidden sm:inline">Nova Entrega</span>
+                        </button>
+                    </div>
                 </div>
             </header>
 
@@ -407,18 +442,19 @@ export default function ReceivingsPage() {
                                                 {(itemQuery[idx] || '').length >= 2 && !itemSearching[idx] && (
                                                     <div className="mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden max-h-48 overflow-y-auto">
                                                         {(itemSuggestions[idx] || []).length > 0 ? (
-                                                            (itemSuggestions[idx] || []).map(s => (
+                                                                (itemSuggestions[idx] || []).map(s => (
                                                                 <button key={s.id} type="button" onClick={() => selectItemSuggestion(idx, s)} className="w-full text-left px-3 py-3 hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0">
                                                                     <p className="text-xs font-bold text-gray-800">{s.name}</p>
-                                                                    <p className="text-[10px] text-gray-400 mt-0.5">{s.order_unit}{s.category ? ` · ${s.category}` : ''}</p>
+                                                                    <p className="text-[10px] text-gray-400 mt-0.5">{s.order_unit}{s.category ? ` · ${s.category}` : ''} · <span className={s.source === 'catalog' ? 'text-blue-500 font-bold' : 'text-gray-400'}>{s.source === 'catalog' ? 'Insumo de recebimento' : 'Item do catálogo'}</span></p>
                                                                 </button>
                                                             ))
                                                         ) : (
                                                             <div className="px-3 py-3">
                                                                 <p className="text-xs text-gray-400">Nenhum item encontrado.</p>
-                                                                <button type="button" onClick={() => { const n = [...createItems]; n[idx] = { ...n[idx], item_name: itemQuery[idx] || '', is_free: true }; setCreateItems(n); setItemQuery(p => ({ ...p, [idx]: '' })); setItemSuggestions(p => ({ ...p, [idx]: [] })) }} className="text-xs font-bold text-blue-600 hover:text-blue-700 mt-1">
-                                                                    Salvar como item livre: "{itemQuery[idx]}"
-                                                                </button>
+                                                                <div className="flex flex-col gap-1.5 mt-2">
+                                                                    <button type="button" onClick={() => { setQuickCreate({ idx, name: (itemQuery[idx] || '').toUpperCase() }); setQuickUnit('KG'); setQuickCategory('') }} className="text-xs font-bold text-blue-600 hover:text-blue-700">+ Cadastrar novo insumo: "{itemQuery[idx]}"</button>
+                                                                    <button type="button" onClick={() => { const n = [...createItems]; n[idx] = { ...n[idx], item_name: itemQuery[idx] || '', is_free: true }; setCreateItems(n); setItemQuery(p => ({ ...p, [idx]: '' })); setItemSuggestions(p => ({ ...p, [idx]: [] })) }} className="text-xs font-bold text-gray-500 hover:text-gray-700">Salvar como item livre</button>
+                                                                </div>
                                                             </div>
                                                         )}
                                                     </div>
@@ -499,6 +535,46 @@ export default function ReceivingsPage() {
                                 {actionLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                                 Confirmar
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Quick-create catalog item modal */}
+            {quickCreate && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl">
+                        <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+                            <div>
+                                <h2 className="text-base font-black text-gray-900">Cadastrar insumo</h2>
+                                <p className="text-xs text-gray-400 mt-0.5">O item será salvo no catálogo e adicionado à entrega</p>
+                            </div>
+                            <button onClick={() => setQuickCreate(null)} className="p-2 hover:bg-gray-100 rounded-xl"><X className="w-5 h-5 text-gray-400" /></button>
+                        </div>
+                        <div className="p-5 space-y-4">
+                            <div>
+                                <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Nome</label>
+                                <input value={quickCreate.name} onChange={e => setQuickCreate(p => p ? { ...p, name: e.target.value } : null)} className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Unidade *</label>
+                                <select value={quickUnit} onChange={e => setQuickUnit(e.target.value)} className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
+                                    {['KG', 'UN', 'PCT', 'CX', 'L', 'ML', 'BALDE', 'SACO', 'ROLO', 'PEÇA'].map(u => <option key={u} value={u}>{u}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Categoria</label>
+                                <select value={quickCategory} onChange={e => setQuickCategory(e.target.value)} className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
+                                    <option value="">Sem categoria</option>
+                                    {['Carnes', 'Hortifruti', 'Laticínios', 'Mercearia', 'Limpeza', 'Descartáveis', 'Outros'].map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                            </div>
+                            <div className="flex gap-3">
+                                <button onClick={() => setQuickCreate(null)} className="flex-1 py-3 rounded-2xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50">Cancelar</button>
+                                <button onClick={handleQuickCreate} disabled={quickSaving} className="flex-1 py-3 rounded-2xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                                    {quickSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                    Salvar e usar
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
