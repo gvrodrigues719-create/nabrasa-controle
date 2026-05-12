@@ -97,7 +97,7 @@ export async function createReceivingAction(input: {
 }): Promise<{ success: boolean; data?: CKReceiving; error?: string }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager'].includes(user.role)) throw new Error('Sem permissão para criar recebimentos')
+        if (!['admin', 'manager', 'kitchen'].includes(user.role)) throw new Error('Sem permissão para criar recebimentos')
 
         // Criar cabeçalho
         const { data: receiving, error: createErr } = await supabase
