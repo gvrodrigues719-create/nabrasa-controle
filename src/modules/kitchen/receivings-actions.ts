@@ -91,6 +91,7 @@ export async function createReceivingAction(input: {
     items?: {
         item_name: string
         purchase_item_id?: string
+        receiving_catalog_item_id?: string
         expected_qty?: number
         unit?: string
     }[]
@@ -127,6 +128,7 @@ export async function createReceivingAction(input: {
                         receiving_id: receiving.id,
                         item_name: item.item_name,
                         purchase_item_id: item.purchase_item_id || null,
+                        receiving_catalog_item_id: item.receiving_catalog_item_id || null,
                         expected_qty: item.expected_qty || null,
                         unit: item.unit || null,
                         item_status: 'pending',

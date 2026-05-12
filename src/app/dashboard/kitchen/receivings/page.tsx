@@ -50,7 +50,14 @@ export default function ReceivingsPage() {
 
     // Create form
     const [createForm, setCreateForm] = useState({ title: '', supplier_name: '', delivery_date: '', delivery_period: '', delivery_time: '', notes: '' })
-    const [createItems, setCreateItems] = useState<{ purchase_item_id?: string; item_name: string; expected_qty: string; unit: string; is_free?: boolean }[]>([])
+    const [createItems, setCreateItems] = useState<{ 
+        purchase_item_id?: string; 
+        receiving_catalog_item_id?: string;
+        item_name: string; 
+        expected_qty: string; 
+        unit: string; 
+        is_free?: boolean 
+    }[]>([])
     const [creating, setCreating] = useState(false)
     const [userRole, setUserRole] = useState<string>('')
     // Autocomplete per item
@@ -113,9 +120,17 @@ export default function ReceivingsPage() {
         }, 300)
     }
 
-    function selectItemSuggestion(idx: number, s: { id: string; name: string; order_unit: string; source?: string }) {
+    function selectItemSuggestion(idx: number, s: { id: string; name: string; order_unit: string; source?: 'catalog' | 'purchase' }) {
         const n = [...createItems]
-        n[idx] = { ...n[idx], purchase_item_id: s.id, item_name: s.name, unit: s.order_unit, is_free: false }
+        const isCatalog = s.source === 'catalog'
+        n[idx] = { 
+            ...n[idx], 
+            purchase_item_id: isCatalog ? undefined : s.id,
+            receiving_catalog_item_id: isCatalog ? s.id : undefined,
+            item_name: s.name, 
+            unit: s.order_unit, 
+            is_free: false 
+        }
         setCreateItems(n)
         setItemQuery(prev => ({ ...prev, [idx]: '' }))
         setItemSuggestions(prev => ({ ...prev, [idx]: [] }))
@@ -123,7 +138,14 @@ export default function ReceivingsPage() {
 
     function clearItemSelection(idx: number) {
         const n = [...createItems]
-        n[idx] = { purchase_item_id: undefined, item_name: '', expected_qty: n[idx].expected_qty, unit: '', is_free: true }
+        n[idx] = { 
+            purchase_item_id: undefined, 
+            receiving_catalog_item_id: undefined,
+            item_name: '', 
+            expected_qty: n[idx].expected_qty, 
+            unit: '', 
+            is_free: true 
+        }
         setCreateItems(n)
         setItemQuery(prev => ({ ...prev, [idx]: '' }))
     }
@@ -138,7 +160,14 @@ export default function ReceivingsPage() {
             toast.success('Insumo criado!')
             // Inserir na linha da entrega automaticamente
             const n = [...createItems]
-            n[quickCreate.idx] = { ...n[quickCreate.idx], purchase_item_id: res.data.id, item_name: res.data.name, unit: res.data.unit, is_free: false }
+            n[quickCreate.idx] = { 
+                ...n[quickCreate.idx], 
+                receiving_catalog_item_id: res.data.id,
+                purchase_item_id: undefined,
+                item_name: res.data.name, 
+                unit: res.data.unit, 
+                is_free: false 
+            }
             setCreateItems(n)
             setItemQuery(prev => ({ ...prev, [quickCreate.idx]: '' }))
             setItemSuggestions(prev => ({ ...prev, [quickCreate.idx]: [] }))
@@ -166,6 +195,8 @@ export default function ReceivingsPage() {
             notes: createForm.notes || undefined,
             items: createItems.filter(i => i.item_name.trim()).map(i => ({
                 item_name: i.item_name,
+                purchase_item_id: i.purchase_item_id,
+                receiving_catalog_item_id: i.receiving_catalog_item_id,
                 expected_qty: parseFloat(i.expected_qty) || undefined,
                 unit: i.unit || undefined,
             })),
