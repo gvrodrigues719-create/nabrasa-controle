@@ -159,7 +159,7 @@ export async function getOperatorDailyTasksAction(userId: string) {
 
         const [routinesRes, groupsRes, itemsRes] = await Promise.all([
             supabase.from('routines').select('*').eq('active', true),
-            supabase.from('routine_groups').select('routine_id, group_id, groups:group_id(name, macro_sector)'),
+            supabase.from('routine_groups').select('routine_id, group_id, groups!group_id(name, macro_sector)'),
             supabase.from('items').select('group_id').eq('active', true)
         ])
 
@@ -197,11 +197,14 @@ export async function getOperatorDailyTasksAction(userId: string) {
                 const isCompleted = session?.status === 'completed'
                 const isInProgress = session?.status === 'in_progress'
                 const isMyArea = rg.group_id === primaryGroupId
-                const groupName = (rg.groups as any)?.name || 'Setor'
-                const macroSector = (rg.groups as any)?.macro_sector || ''
+                // ── RESOLVER METADADOS DO GRUPO ──────────────────────────────
+                const groupData = rg.groups as any
+                const groupName = groupData?.name || 'Setor'
+                const macroSector = groupData?.macro_sector || ''
                 const type = routine.routine_type === 'checklist' ? 'checklist' : 'count'
 
                 // ── APLICAR ESCOPO DE SEGURANÇA ────────────────────────────────
+                // Regra de Ouro: Bloqueio Total entre Macro Setores (Cozinha vs Lojas)
                 if (scope.type === 'kitchen' && macroSector !== 'Cozinha Central') return
                 if (scope.type === 'store' && macroSector === 'Cozinha Central') return
 
@@ -238,6 +241,10 @@ export async function getOperatorDailyTasksAction(userId: string) {
 
         // Adicionar tarefas operacionais à lista
         opTasks?.forEach(task => {
+            // ── APLICAR ESCOPO DE SEGURANÇA PARA TAREFAS ─────────────────────
+            if (scope.type === 'store' && task.type === 'production') return
+            if (scope.type === 'kitchen' && task.type !== 'production') return
+
             const isMyTask = task.responsible_id === userId
             const formattedTask = {
                 id: task.id,

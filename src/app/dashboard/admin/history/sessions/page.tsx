@@ -10,6 +10,8 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ConsolidatedPurchaseSuggestionDrawer from './ConsolidatedPurchaseSuggestionDrawer'
+import { getScopedFilterMetadataAction } from '@/app/actions/commonMetadataAction'
+import { getScopedSessionsAction } from '@/app/actions/sessionAction'
 
 export default function ConsolidatedHistoryPage() {
     const router = useRouter()
@@ -34,39 +36,27 @@ export default function ConsolidatedHistoryPage() {
     }, [])
 
     const loadMetadata = async () => {
-        const { data: u } = await supabase.from('units').select('id, name').order('name')
-        if (u) setUnits(u)
-        const { data: g } = await supabase.from('groups').select('id, name').order('name')
-        if (g) setGroups(g)
+        const res = await getScopedFilterMetadataAction()
+        if (res.success) {
+            setUnits(res.units || [])
+            setGroups(res.groups || [])
+        }
     }
 
     const loadSessions = async () => {
         setLoading(true)
         try {
-            let query = supabase
-                .from('count_sessions')
-                .select(`
-                    id, 
-                    status, 
-                    started_at, 
-                    completed_at, 
-                    validation_status,
-                    groups(id, name), 
-                    users!user_id(name, unit_id, units(name))
-                `)
-                .order('completed_at', { ascending: false })
-
-            if (filterUnit) query = query.eq('users.unit_id', filterUnit)
-            if (filterGroup) query = query.eq('group_id', filterGroup)
-            if (filterStatus) query = query.eq('status', filterStatus)
-            if (filterDate) {
-                query = query.gte('completed_at', `${filterDate}T00:00:00Z`)
-                query = query.lte('completed_at', `${filterDate}T23:59:59Z`)
+            const res = await getScopedSessionsAction({
+                unitId: filterUnit,
+                groupId: filterGroup,
+                status: filterStatus,
+                date: filterDate
+            })
+            if (res.success && res.data) {
+                setSessions(res.data)
+            } else if (res.error) {
+                throw new Error(res.error)
             }
-
-            const { data, error } = await query
-            if (error) throw error
-            setSessions(data || [])
         } catch (e: any) {
             toast.error('Erro ao carregar sessões')
         } finally {

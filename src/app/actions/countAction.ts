@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { getCycleAnchorDate } from '@/modules/count/helpers'
 import { isTestOperator } from './routinesAction'
+import { getAccessibleCountScope } from '@/lib/server-auth-context'
 
 import { CountItem } from '@/modules/count/types'
 
@@ -25,17 +26,26 @@ export type InitCountSessionResult = {
 export async function initCountSessionAction(routineId: string, groupId: string, userId: string): Promise<InitCountSessionResult> {
     try {
         const { data: userData } = await supabase.from('users').select('name, role, primary_group_id').eq('id', userId).single()
+        const scope = await getAccessibleCountScope()
         const { data: group } = await supabase.from('groups').select('name, macro_sector').eq('id', groupId).single()
 
-        const isTester = await isTestOperator(userData)
-        const isManager = userData?.role === 'admin' || userData?.role === 'manager'
-        const isKitchen = userData?.role === 'kitchen' || userData?.name === 'Cozinha Central'
         const isKitchenGroup = group?.macro_sector === 'Cozinha Central'
         
+        // ── VALIDAÇÃO DE ESCOPO ───────────────────────────────────────
+        if (scope.type === 'restricted') {
+            return { blocked: 'Seu usuário não possui permissão de acesso a rotinas operacionais.' }
+        }
+        if (scope.type === 'kitchen' && !isKitchenGroup) {
+            return { blocked: 'Seu acesso é restrito a rotinas da Cozinha Central.' }
+        }
+        if (scope.type === 'store' && isKitchenGroup) {
+            return { blocked: 'Acesso negado: Este setor pertence à Cozinha Central.' }
+        }
+        // Para lojas, verificar se o grupo é da área do usuário (se não for gerente)
+        const isManager = userData?.role === 'admin' || userData?.role === 'manager'
         const isMyArea = userData?.primary_group_id === groupId
-        const allowedKitchen = isKitchen && isKitchenGroup
 
-        if (!isTester && !isManager && !isMyArea && !allowedKitchen) {
+        if (scope.type === 'store' && !isManager && !isMyArea) {
             return { blocked: 'Você não tem permissão para realizar contagens fora da sua área designada.' }
         }
 
@@ -58,7 +68,7 @@ export async function initCountSessionAction(routineId: string, groupId: string,
             .maybeSingle()
 
         if (existingSession) {
-            if (existingSession.status === 'completed' && !allowedKitchen) {
+            if (existingSession.status === 'completed' && scope.type !== 'kitchen') {
                 return { blocked: 'Este grupo já foi concluído hoje e não pode mais ser editado.' }
             }
             if (existingSession.status === 'in_progress' && existingSession.user_id !== userId) {

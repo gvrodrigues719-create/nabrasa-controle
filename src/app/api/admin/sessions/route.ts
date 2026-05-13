@@ -24,9 +24,9 @@ export async function GET(req: NextRequest) {
     let query = supabaseAdmin
       .from('count_sessions')
       .select(`
-        id, status, started_at, completed_at, updated_at, user_id, group_id, routine_id, execution_id,
-        users!inner(unit_id),
-        groups!inner(macro_sector)
+        id, group_id, user_id, started_at,
+        users!user_id!inner(unit_id),
+        groups!group_id!inner(macro_sector)
       `)
       .order('started_at', { ascending: false })
       .limit(200)

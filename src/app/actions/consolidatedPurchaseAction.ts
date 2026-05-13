@@ -61,7 +61,7 @@ export async function getConsolidatedPurchaseSuggestionAction(sessionIds: string
                 id, 
                 group_id, 
                 user_id,
-                groups!inner(name, macro_sector),
+                groups!group_id!inner(name, macro_sector),
                 users!user_id!inner(unit_id)
             `)
             .in('id', sessionIds);

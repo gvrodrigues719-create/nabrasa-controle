@@ -30,8 +30,8 @@ export async function GET(
       .from('count_sessions')
       .select(`
         id, status, started_at, completed_at, updated_at, user_id, group_id, routine_id,
-        users!inner(name, unit_id),
-        groups!inner(name, macro_sector)
+        users!user_id!inner(name, unit_id),
+        groups!group_id!inner(name, macro_sector)
       `)
       .eq('id', sessionId)
 
