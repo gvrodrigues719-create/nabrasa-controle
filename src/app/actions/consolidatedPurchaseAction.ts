@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { requireManagerOrAdmin } from '@/lib/auth-utils'
+import { getAccessibleCountScope } from '@/lib/server-auth-context'
 
 const supabase = new Proxy({} as any, {
     get(target, prop) {
@@ -42,7 +43,13 @@ export type ConsolidatedSuggestionItem = {
 }
 
 export async function getConsolidatedPurchaseSuggestionAction(sessionIds: string[]) {
-    await requireManagerOrAdmin();
+    let scope: any
+    try {
+        await requireManagerOrAdmin()
+        scope = await getAccessibleCountScope()
+    } catch (e: any) {
+        return { success: false, error: e.message }
+    }
 
     try {
         if (!sessionIds || sessionIds.length === 0) throw new Error("Nenhuma sessão selecionada.");
@@ -54,12 +61,26 @@ export async function getConsolidatedPurchaseSuggestionAction(sessionIds: string
                 id, 
                 group_id, 
                 user_id,
-                groups(name),
-                users!user_id(unit_id)
+                groups!inner(name, macro_sector),
+                users!user_id!inner(unit_id)
             `)
             .in('id', sessionIds);
 
         if (sessErr || !sessions) throw sessErr || new Error("Erro ao carregar sessões.");
+
+        // ── Validar Escopo ──────────────────────────────────────────────────
+        if (scope.type === 'kitchen') {
+            const hasNonKitchen = sessions.some((s: any) => s.groups?.macro_sector !== 'Cozinha Central');
+            if (hasNonKitchen) throw new Error("Acesso negado: Algumas sessões selecionadas não pertencem à Cozinha Central.");
+        } else if (scope.type === 'store') {
+            const divergentStore = sessions.find((s: any) => (s.users as any)?.unit_id !== scope.unitId);
+            if (divergentStore) throw new Error("Acesso negado: Algumas sessões não pertencem à sua unidade.");
+            
+            const hasKitchen = sessions.some((s: any) => s.groups?.macro_sector === 'Cozinha Central');
+            if (hasKitchen) throw new Error("Acesso negado: Sessões da Cozinha Central não podem ser consolidadas por lojas.");
+        } else if (scope.type === 'restricted') {
+            throw new Error("Acesso restrito.");
+        }
 
         const storeId = (sessions[0]?.users as any)?.unit_id;
         if (!storeId) throw new Error("Não foi possível identificar a unidade da primeira sessão.");

@@ -87,3 +87,27 @@ export async function getServerAuthContext() {
 
     return profile as { id: string; name: string; role: string; primary_group_id: string | null; unit_id: string | null }
 }
+
+/**
+ * Retorna o escopo de acesso para contagens baseado no perfil do usuário.
+ */
+export async function getAccessibleCountScope() {
+    const user = await getServerAuthContext()
+
+    if (user.role === 'admin') {
+        return { type: 'all' as const }
+    }
+
+    // Cozinha Central
+    if (user.role === 'kitchen' || user.name.toLowerCase().includes('cozinha central')) {
+        return { type: 'kitchen' as const }
+    }
+
+    // Gerente ou Operador de Loja
+    if (user.unit_id) {
+        return { type: 'store' as const, unitId: user.unit_id }
+    }
+
+    // Caso não tenha unidade definida e não seja admin, restringimos por segurança
+    return { type: 'restricted' as const }
+}

@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getActiveOperator } from './pinAuth'
 import { mapRoutineGroupsToStatus } from '@/modules/count/mappers'
 import { requireManagerOrAdmin } from '@/lib/auth-utils'
+import { getAccessibleCountScope } from '@/lib/server-auth-context'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,9 +12,39 @@ const supabase = createClient(
 )
 
 export async function getActiveRoutinesAction() {
-    const { data, error } = await supabase.from('routines').select('*').eq('active', true).order('created_at', { ascending: false })
+    const scope = await getAccessibleCountScope()
+    
+    let query = supabase.from('routines').select('*').eq('active', true)
+
+    // Se for loja, filtrar para não mostrar rotinas da Cozinha Central
+    // Nota: Como routines não tem macro_sector direto, idealmente filtraríamos pelos grupos vinculados.
+    // Mas por simplicidade e segurança, podemos filtrar pelo nome ou macro_sector dos grupos na query.
+    
+    const { data, error } = await query.order('created_at', { ascending: false })
     if (error) return { error: error.message }
-    return { data }
+
+    // Filtro pós-busca se necessário (mais seguro que query complexa se não houver campo direto)
+    let filtered = data
+    if (scope.type === 'store') {
+        // Busca quais rotinas tem grupos da CK
+        const { data: ckRoutines } = await supabase
+            .from('routine_groups')
+            .select('routine_id, groups!inner(macro_sector)')
+            .eq('groups.macro_sector', 'Cozinha Central')
+        
+        const ckRoutineIds = new Set(ckRoutines?.map(r => r.routine_id) || [])
+        filtered = data.filter(r => !ckRoutineIds.has(r.id))
+    } else if (scope.type === 'kitchen') {
+        const { data: ckRoutines } = await supabase
+            .from('routine_groups')
+            .select('routine_id, groups!inner(macro_sector)')
+            .eq('groups.macro_sector', 'Cozinha Central')
+        
+        const ckRoutineIds = new Set(ckRoutines?.map(r => r.routine_id) || [])
+        filtered = data.filter(r => ckRoutineIds.has(r.id))
+    }
+
+    return { data: filtered }
 }
 
 export async function getRoutineDetailsAction(routineId: string) {
@@ -21,6 +52,7 @@ export async function getRoutineDetailsAction(routineId: string) {
     const brDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
     const startOfDayBR = `${brDate}T03:00:00Z` // meia-noite BRT = 03:00 UTC
 
+    const scope = await getAccessibleCountScope()
     const { data: routine } = await supabase.from('routines').select('name, snapshot_started_at, routine_type').eq('id', routineId).single()
     if (!routine) return { error: 'Rotina não encontrada' }
 
@@ -31,7 +63,12 @@ export async function getRoutineDetailsAction(routineId: string) {
         isStartedToday = snapBrDate === brDate
     }
 
-    const { data: rGroups } = await supabase.from('routine_groups').select('groups(id, name)').eq('routine_id', routineId)
+    const { data: rGroups } = await supabase.from('routine_groups').select('groups(id, name, macro_sector)').eq('routine_id', routineId)
+
+    // ── APLICAR ESCOPO DE SEGURANÇA ──────────────────────────────────────────
+    const hasKitchen = rGroups?.some(rg => (rg.groups as any)?.macro_sector === 'Cozinha Central')
+    if (scope.type === 'store' && hasKitchen) return { error: 'Acesso negado: Esta rotina pertence à Cozinha Central.' }
+    if (scope.type === 'kitchen' && !hasKitchen) return { error: 'Acesso negado: Esta rotina não pertence à Cozinha Central.' }
     
     // Escolhe a tabela de sessões baseada no tipo de rotina
     const sessionTable = routine.routine_type === 'checklist' ? 'checklist_sessions' : 'count_sessions'
@@ -118,9 +155,11 @@ export async function getOperatorDailyTasksAction(userId: string) {
         const userRole = userData?.role
         const isTester = await isTestOperator(userData)
 
+        const scope = await getAccessibleCountScope()
+
         const [routinesRes, groupsRes, itemsRes] = await Promise.all([
             supabase.from('routines').select('*').eq('active', true),
-            supabase.from('routine_groups').select('routine_id, group_id, groups:group_id(name)'),
+            supabase.from('routine_groups').select('routine_id, group_id, groups:group_id(name, macro_sector)'),
             supabase.from('items').select('group_id').eq('active', true)
         ])
 
@@ -159,7 +198,12 @@ export async function getOperatorDailyTasksAction(userId: string) {
                 const isInProgress = session?.status === 'in_progress'
                 const isMyArea = rg.group_id === primaryGroupId
                 const groupName = (rg.groups as any)?.name || 'Setor'
+                const macroSector = (rg.groups as any)?.macro_sector || ''
                 const type = routine.routine_type === 'checklist' ? 'checklist' : 'count'
+
+                // ── APLICAR ESCOPO DE SEGURANÇA ────────────────────────────────
+                if (scope.type === 'kitchen' && macroSector !== 'Cozinha Central') return
+                if (scope.type === 'store' && macroSector === 'Cozinha Central') return
 
                 // REGRA: Se for contagem, só exibe se houver itens ativos no grupo
                 if (type === 'count') {
