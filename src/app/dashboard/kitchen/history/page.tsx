@@ -167,9 +167,12 @@ export default function KitchenHistoryPage() {
                                     <span className={`text-[8px] font-black px-2 py-1 rounded-lg uppercase tracking-widest ${
                                         s.validation_status === 'validated' ? 'bg-emerald-100 text-emerald-700' :
                                         s.validation_status === 'corrected' ? 'bg-amber-100 text-amber-700' :
+                                        s.status === 'completed' ? 'bg-blue-100 text-blue-700' :
                                         'bg-gray-100 text-gray-400'
                                     }`}>
-                                        {s.validation_status === 'validated' ? 'Validada' : s.validation_status === 'corrected' ? 'Corrigida' : 'Pendente'}
+                                        {s.validation_status === 'validated' ? 'Validada' : 
+                                         s.validation_status === 'corrected' ? 'Corrigida' : 
+                                         s.status === 'completed' ? 'Finalizada' : 'Pendente'}
                                     </span>
                                     <ChevronRight className="w-4 h-4 text-gray-300" />
                                 </div>

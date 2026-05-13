@@ -240,8 +240,11 @@ export default function KitchenSessionDetailPage({ params }: { params: Promise<{
                                     </div>
                                 ) : (
                                     <div className="flex flex-col items-end">
-                                        <span className={`text-base font-black ${item.validated_quantity !== null && item.validated_quantity !== item.counted_quantity ? 'text-amber-600' : 'text-gray-900'}`}>
-                                            {item.validated_quantity ?? item.counted_quantity}
+                                        <span className={`text-base font-black ${
+                                            item.is_zeroed ? 'text-red-600' :
+                                            (item.validated_quantity !== null && item.validated_quantity !== item.counted_quantity ? 'text-amber-600' : 'text-gray-900')
+                                        }`}>
+                                            {item.is_zeroed ? 'ZERADO' : (item.validated_quantity ?? item.counted_quantity)}
                                         </span>
                                         {item.validated_quantity !== null && item.validated_quantity !== item.counted_quantity && (
                                             <span className="text-[8px] font-bold text-gray-400 line-through">Era: {item.counted_quantity}</span>
