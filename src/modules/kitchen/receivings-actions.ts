@@ -29,7 +29,7 @@ export async function getWeeklyReceivingsAction(weekStart: string, weekEnd: stri
 }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
         // Entregas da semana
         const { data: weekData, error: weekErr } = await supabase
@@ -98,7 +98,7 @@ export async function createReceivingAction(input: {
 }): Promise<{ success: boolean; data?: CKReceiving; error?: string }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager', 'kitchen'].includes(user.role)) throw new Error('Sem permissão para criar recebimentos')
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão para criar recebimentos')
 
         // Criar cabeçalho
         const { data: receiving, error: createErr } = await supabase
@@ -161,7 +161,7 @@ export async function markReceivingDeliveredAction(
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
         const { error } = await supabase
             .from('ck_receivings')
@@ -211,7 +211,7 @@ export async function markReceivingPartialAction(
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
         if (!receptionNotes?.trim()) throw new Error('Motivo/observação é obrigatório para recebimento parcial')
 
         const { error } = await supabase
@@ -263,7 +263,7 @@ export async function markReceivingRefusedAction(
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
         if (!refusalReason?.trim()) throw new Error('Motivo é obrigatório para recusar entrega')
 
         const { error } = await supabase
@@ -342,7 +342,7 @@ export async function searchPurchaseItemsAction(q: string): Promise<{
 }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
         const term = q.trim()
 
@@ -404,7 +404,7 @@ export async function getCatalogItemsAction(opts?: { search?: string; category?:
 }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
         let q = supabase
             .from('ck_receiving_catalog_items')
@@ -435,7 +435,7 @@ export async function createCatalogItemAction(input: {
 }): Promise<{ success: boolean; data?: any; error?: string }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager', 'kitchen'].includes(user.role)) throw new Error('Sem permissão para cadastrar insumos')
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão para cadastrar insumos')
         if (!input.name?.trim()) throw new Error('Nome é obrigatório')
         if (!input.unit?.trim()) throw new Error('Unidade é obrigatória')
 
@@ -476,7 +476,7 @@ export async function updateCatalogItemAction(id: string, input: {
 }): Promise<{ success: boolean; error?: string }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
         const updates: any = { updated_by: user.id }
         if (input.name !== undefined) {

@@ -119,8 +119,8 @@ export default function OperatorHome({
 
     return (
         <div className="space-y-4 md:space-y-6 pb-20 md:pb-6">
-            {/* COZINHA CENTRAL (Apenas role kitchen ou nome específico) */}
-            {(userRole === 'kitchen' || userRole === 'admin' || fullName === 'Cozinha Central') && (
+            {/* COZINHA CENTRAL — Acesso restrito (admin ou kitchen) */}
+            {!loadingWave1 && (userRole === 'kitchen' || userRole === 'admin') && (
                 <div className="mb-4">
                     <KitchenCard />
                 </div>

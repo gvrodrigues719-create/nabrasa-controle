@@ -11,6 +11,7 @@ import {
     ExternalLink,
     Wrench
 } from 'lucide-react'
+import { useDashboardIdentity } from '../../hooks/useDashboardIdentity'
 
 interface ModuleItem {
     label: string;
@@ -74,6 +75,8 @@ function AreaCard({ title, icon: Icon, accentColor, mainModules, extraModule, cl
 }
 
 export default function SystemArchitectureHub() {
+    const { userRole } = useDashboardIdentity()
+
     return (
         <section className="space-y-6">
             <div className="flex items-center justify-between mb-2">
@@ -102,11 +105,11 @@ export default function SystemArchitectureHub() {
                     title="ESTOQUE, CMV E PRODUÇÃO"
                     icon={Boxes}
                     accentColor="text-emerald-500"
-                    mainModules={[
+                    mainModules={([
                         { label: 'CMV & Compras', href: '/dashboard/admin/cmv', status: 'ativo parcial' },
                         { label: 'Perdas', href: '/dashboard/admin/cmv?tab=losses', status: 'ativo parcial' },
-                        { label: 'Planejamento Cozinha', href: '/dashboard/kitchen/planning', status: 'ativo' }
-                    ]}
+                        ...(userRole === 'admin' ? [{ label: 'Planejamento Cozinha', href: '/dashboard/kitchen/planning', status: 'ativo' }] : [])
+                    ] as ModuleItem[]).filter(Boolean)}
                     extraModule={{ label: 'Ficha Técnica', status: 'ativo parcial' }}
                 />
 

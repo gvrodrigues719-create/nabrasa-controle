@@ -17,9 +17,9 @@ export default async function KitchenLayout({ children }: { children: React.Reac
         // 2. Nome 'Cozinha Central' (workaround compatível atual)
         // 3. Admin / Manager (auditoria e supervisão)
         const isKitchen = op.role === 'kitchen' || op.name === 'Cozinha Central'
-        const isManagerOrAdmin = op.role === 'admin' || op.role === 'manager'
+        const isAllowed = op.role === 'admin' || isKitchen
 
-        if (!isKitchen && !isManagerOrAdmin) {
+        if (!isAllowed) {
             redirect('/dashboard')
         }
     } else {
@@ -34,9 +34,9 @@ export default async function KitchenLayout({ children }: { children: React.Reac
             .single()
 
         const isKitchen = userData?.role === 'kitchen' || userData?.name === 'Cozinha Central'
-        const isManagerOrAdmin = userData?.role === 'admin' || userData?.role === 'manager'
+        const isAllowed = userData?.role === 'admin' || isKitchen
 
-        if (!isKitchen && !isManagerOrAdmin) {
+        if (!isAllowed) {
             redirect('/dashboard')
         }
     }

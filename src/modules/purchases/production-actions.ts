@@ -27,7 +27,7 @@ async function getCurrentUser() {
 export async function getProductionPlanningDataAction(locationId?: string) {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'kitchen', 'manager'].includes(user.role)) throw new Error('Sem permissão')
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
         const locId = locationId || user.primary_group_id
         if (!locId) throw new Error('Localização (unidade) não identificada para este usuário.')
@@ -243,7 +243,7 @@ export async function approveProductionPlanningAction(
 ) {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'kitchen', 'manager'].includes(user.role)) throw new Error('Sem permissão')
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
         // Chamar a função RPC transacional blindada
         const { data: orderId, error: rpcErr } = await supabase.rpc('approve_production_plan', {
@@ -281,7 +281,7 @@ export async function completeProductionOrderAction(
 ) {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'kitchen', 'manager', 'operator'].includes(user.role)) throw new Error('Sem permissão')
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
         const { error: rpcErr } = await supabase.rpc('complete_production_order', {
             p_order_id: orderId,
@@ -303,7 +303,7 @@ export async function completeProductionOrderAction(
 export async function cancelProductionOrderAction(orderId: string) {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'kitchen', 'manager'].includes(user.role)) throw new Error('Sem permissão')
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
         const { error: rpcErr } = await supabase.rpc('cancel_production_order', {
             p_order_id: orderId
@@ -364,7 +364,7 @@ export async function getCountItemsForLinkingAction(search: string): Promise<{ s
 export async function linkPurchaseToCountItemAction(purchaseItemId: string, countItemId: string): Promise<{ success: boolean; error?: string }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
         // Tenta remover o vínculo antigo caso exista para evitar duplicatas, ou apenas faz um upsert
         const { error: delError } = await supabase
@@ -392,7 +392,7 @@ export async function linkPurchaseToCountItemAction(purchaseItemId: string, coun
 export async function unlinkPurchaseToCountItemAction(purchaseItemId: string): Promise<{ success: boolean; removedCountItemId?: string; error?: string }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager', 'kitchen'].includes(user.role)) throw new Error('Sem permissão para desvincular itens.')
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão para desvincular itens.')
 
         // Buscar o vínculo atual para log
         const { data: existing } = await supabase

@@ -13,7 +13,7 @@ import Link from 'next/link'
 import { useDashboardIdentity } from '../../hooks/useDashboardIdentity'
 
 export default function ManagerHome() {
-    const { userName } = useDashboardIdentity()
+    const { userName, userRole } = useDashboardIdentity()
     const [data, setData] = useState<any>(null)
     const [loading, setLoading] = useState(true)
     const [isRefreshing, setIsRefreshing] = useState(false)
@@ -57,6 +57,7 @@ export default function ManagerHome() {
             {/* 3. AÇÕES RÁPIDAS (INTERVENÇÃO DIRETA) */}
             <ManagerQuickActions 
                 lateCount={overview.late} 
+                userRole={userRole}
             />
 
             {/* 4. BLOCO UNIFICADO DE CONTAGENS */}

@@ -1,37 +1,31 @@
-# Walkthrough - Overhaul Home do Gerente (MOC Operational)
+# Walkthrough - Segurança e Isolamento da Cozinha Central (Issue #4)
 
-Realizamos uma reestruturação completa da Home do Gerente para transformar a interface em um centro de comando operacional, priorizando diagnóstico rápido e ação direta.
+Implementamos uma camada rigorosa de proteção e isolamento para o painel da Cozinha Central, garantindo que usuários de loja (gerentes e operadores) não tenham acesso ou visibilidade das rotinas internas da cozinha.
 
 ## Mudanças Realizadas
 
-### 1. Hierarquia Operacional (ManagerHome.tsx)
-- **Novo Header**: Boas-vindas personalizadas, identificação da unidade e timestamp da última atualização.
-- **Situação do Turno no Topo**: O bloco de métricas foi movido para a primeira posição, garantindo que o gerente veja o diagnóstico da casa imediatamente ao entrar.
-- **Bloco Unificado de Contagens**: Substituímos os dois banners gigantes por um bloco único e organizado de "Contagens de Estoque", com botões para visão ao vivo, histórico e exportação.
-- **Reordenação de Seções**: A ordem agora segue a lógica de resolução: Diagnóstico -> Ações Rápidas -> Contagens -> Atenção de Equipe -> Monitoramento por Setor.
+### 1. Proteção Server-Side (layout.tsx)
+- **Bloqueio de Rota**: O layout de `/dashboard/kitchen` agora valida a role do usuário no servidor.
+- **Roles Permitidas**: Apenas `admin` e `kitchen` (ou o usuário "Cozinha Central") podem acessar.
+- **Redirecionamento**: Qualquer outro usuário (ex: role `manager` de loja) é redirecionado automaticamente para a home principal.
 
-### 2. Diagnóstico Dinâmico (ShiftMetrics.tsx)
-- **SITUAÇÃO DO TURNO**: O bloco agora apresenta 4 indicadores críticos (Pendências, Atrasados, Contagens Abertas, Alertas Críticos).
-- **Frase de Diagnóstico**: Implementamos uma mensagem de estado dinâmica que muda de cor e texto conforme a gravidade da operação (OK, Atenção ou Crítico).
+### 2. Ocultação de Cards (Manager Home)
+- **Ações Rápidas**: O `KitchenCard` foi removido das ações rápidas para gerentes de loja. Apenas administradores globais continuam vendo o atalho.
+- **Mapa do Sistema (Hub)**: O módulo "Planejamento Cozinha" foi removido da visão de arquitetura para usuários não-admin.
 
-### 3. Ações Rápidas e Nomenclatura (QuickActions & Hub)
-- **Linguagem de Restaurante**: Atualizamos os termos para serem mais diretos (ex: "Pedidos para loja e cozinha central", "EQUIPE E ROTINA", "INDICADORES E RELATÓRIOS").
-- **Ações Acionáveis**: O card de Cozinha Central agora destaca separação e produção pendente.
+### 3. Proteção no Painel do Operador
+- **Visibilidade Estrita**: O card da cozinha no painel do operador agora exige role `kitchen` ou `admin`.
+- **Prevenção de Flash**: Adicionamos uma trava de carregamento (`!loadingWave1`) para garantir que o card não apareça nem por um milissegundo antes da validação da identidade.
 
 ## Verificação e Testes
 
-### Estados Visuais
-- **Estado OK**: Exibe "Operação sem alertas no momento" em verde.
-- **Estado Crítico**: Destaca "Ação necessária agora" em vermelho com botão direto para resolução.
-
 ### Integridade Técnica
-- **Open Counts**: Atualizamos o backend (`getOperationalMirrorAction`) para incluir a contagem de sessões de estoque abertas em tempo real.
-- **Build**: Validado com `npx tsc --noEmit` (0 erros).
+- **Build de Produção**: O projeto foi compilado com sucesso (`npm run build`), validando todas as rotas e tipos TypeScript.
+- **TypeScript**: Corrigidos erros de inferência no spread de arrays condicionais no `SystemArchitectureHub`.
 
 ## Arquivos Modificados
+- [Kitchen Layout](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/kitchen/layout.tsx)
 - [ManagerHome.tsx](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/components/manager/ManagerHome.tsx)
-- [ShiftMetrics.tsx](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/components/manager/ShiftMetrics.tsx)
 - [ManagerQuickActions.tsx](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/components/manager/ManagerQuickActions.tsx)
 - [SystemArchitectureHub.tsx](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/components/manager/SystemArchitectureHub.tsx)
-- [checklistAction.ts](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/actions/checklistAction.ts)
-- [KitchenCard.tsx](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/components/KitchenCard.tsx)
+- [OperatorHome.tsx](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/components/operator/OperatorHome.tsx)

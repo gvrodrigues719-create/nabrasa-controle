@@ -148,7 +148,7 @@ export async function createPurchaseOrderAction(explicitStoreId?: string): Promi
 export async function getKitchenPendingCountAction(): Promise<{ success: boolean; data?: number; error?: string }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'kitchen', 'manager'].includes(user.role)) throw new Error('Sem permissão')
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
         const { count, error } = await supabase
             .from('purchase_orders')
@@ -493,7 +493,7 @@ export async function getOrdersForKitchenAction(): Promise<{
 }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'kitchen', 'manager'].includes(user.role)) throw new Error('Sem permissão')
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
         const { data, error } = await supabase
             .from('purchase_orders')

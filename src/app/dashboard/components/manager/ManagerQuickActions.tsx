@@ -12,9 +12,10 @@ import KitchenCard from '../KitchenCard'
 interface ManagerQuickActionsProps {
     lateCount: number
     pendingOrdersCount?: number
+    userRole?: string | null
 }
 
-export default function ManagerQuickActions({ lateCount, pendingOrdersCount = 0 }: ManagerQuickActionsProps) {
+export default function ManagerQuickActions({ lateCount, pendingOrdersCount = 0, userRole }: ManagerQuickActionsProps) {
     const lateText = lateCount > 0
         ? `${lateCount} ${lateCount === 1 ? 'tarefa exige' : 'tarefas exigem'} ação agora`
         : "Nenhuma tarefa atrasada"
@@ -74,11 +75,13 @@ export default function ManagerQuickActions({ lateCount, pendingOrdersCount = 0 
                     </div>
                 </Link>
 
-                {/* Cozinha Central */}
-                <KitchenCard 
-                    titleOverride="Cozinha Central"
-                    descriptionOverride="Separação e produção pendente"
-                />
+                {/* Cozinha Central — Apenas para Admin */}
+                {userRole === 'admin' && (
+                    <KitchenCard 
+                        titleOverride="Cozinha Central"
+                        descriptionOverride="Separação e produção pendente"
+                    />
+                )}
             </div>
         </section>
     )
