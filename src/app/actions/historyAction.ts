@@ -25,7 +25,8 @@ export async function getScopedExecutionHistoryAction(filters: { routineId?: str
              const allowedRoutineIds = new Set(
                 routineGroups
                     ?.filter(rg => {
-                        const ms = rg.groups?.macro_sector
+                        const groupData = Array.isArray(rg.groups) ? rg.groups[0] : rg.groups as any
+                        const ms = groupData?.macro_sector
                         if (scope.type === 'kitchen') return ms === 'Cozinha Central'
                         if (scope.type === 'store') return ms !== 'Cozinha Central'
                         return true

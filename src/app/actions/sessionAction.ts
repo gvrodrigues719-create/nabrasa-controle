@@ -53,15 +53,20 @@ export async function getScopedSessionsAction(filters: {
         if (error) throw error
 
         // Transformar para o formato esperado pelo componente (renomear joins se necessário)
-        const sessions = data?.map((s: any) => ({
-            ...s,
-            groups: { id: s.group_id, name: s.groups?.name },
-            users: { 
-                name: s.users?.name, 
-                unit_id: s.users?.unit_id, 
-                units: { name: s.users?.units?.name } 
+        const sessions = data?.map((s: any) => {
+            const groupData = Array.isArray(s.groups) ? s.groups[0] : s.groups
+            const userData = Array.isArray(s.users) ? s.users[0] : s.users
+            
+            return {
+                ...s,
+                groups: { id: s.group_id, name: groupData?.name },
+                users: { 
+                    name: userData?.name, 
+                    unit_id: userData?.unit_id, 
+                    units: { name: userData?.units?.name } 
+                }
             }
-        }))
+        })
 
         return { success: true, data: sessions || [] }
     } catch (e: any) {
