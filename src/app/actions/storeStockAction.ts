@@ -38,29 +38,42 @@ export async function getKitchenStoreStockAction() {
             return { success: true, units: [] }
         }
 
-        // 2. Buscar usuários e unidades separadamente
+        // 2. Buscar usuários separadamente
         const userIds = [...new Set(sessionsRaw.map(s => s.user_id))]
-        const { data: usersData, error: usersError } = await supabase
+        const { data: usersRaw, error: usersError } = await supabase
             .from('users')
             .select(`
                 id,
                 name,
                 unit_id,
-                role,
-                units!inner(id, name)
+                role
             `)
             .in('id', userIds)
 
         if (usersError) throw usersError
 
-        // 3. Reconstruir sessions com dados de users (Equivalente ao !inner original)
-        const userMap = new Map(usersData?.map(u => [u.id, u]))
+        // 3. Buscar unidades separadamente (para evitar erro de relationship cache entre users e units)
+        const unitIds = [...new Set(usersRaw?.map(u => u.unit_id).filter(Boolean) || [])]
+        const { data: unitsRaw, error: unitsError } = await supabase
+            .from('units')
+            .select('id, name')
+            .in('id', unitIds)
+
+        if (unitsError) throw unitsError
+
+        // 4. Reconstruir sessions com dados de users e units (Equivalente ao !inner original)
+        const unitMap = new Map(unitsRaw?.map(u => [u.id, u]) || [])
+        const userMap = new Map(usersRaw?.map(u => {
+            const unit = u.unit_id ? unitMap.get(u.unit_id) : null
+            return [u.id, { ...u, units: unit }]
+        }))
+
         const sessions = sessionsRaw
             .map(s => ({
                 ...s,
                 users: userMap.get(s.user_id)
             }))
-            .filter(s => s.users)
+            .filter(s => s.users && (s.users as any).units)
 
         // 2. Deduplicar: manter apenas a última contagem de cada unidade/grupo
         const latestSessionsMap = new Map()
