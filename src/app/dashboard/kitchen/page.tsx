@@ -143,6 +143,30 @@ export default function KitchenPage() {
                     </div>
                 </button>
 
+                {/* ── Card: Estoque das Lojas ─────────── */}
+                <button
+                    onClick={() => router.push('/dashboard/kitchen/store-stock')}
+                    className="w-full bg-white p-5 rounded-[28px] flex items-center text-left border-2 border-orange-100 shadow-lg shadow-orange-100/20 space-x-4 active:scale-[0.98] transition-all hover:border-orange-300"
+                >
+                    <div className="bg-orange-50 p-3.5 rounded-2xl shrink-0">
+                        <PackageCheck className="w-7 h-7 text-orange-600" />
+                    </div>
+                    <div className="flex-1">
+                        <p className="text-orange-400 text-[10px] font-black uppercase tracking-widest mb-0.5">
+                            Visão da Rede
+                        </p>
+                        <h3 className="font-black text-gray-900 text-lg leading-tight">
+                            Estoque das Lojas
+                        </h3>
+                        <p className="text-gray-500 text-sm mt-0.5">
+                            Veja as últimas contagens das unidades para priorizar produção e compras.
+                        </p>
+                    </div>
+                    <div className="bg-orange-50 px-3 py-1.5 rounded-xl shrink-0">
+                        <span className="text-orange-600 text-[10px] font-black uppercase tracking-widest">Abrir →</span>
+                    </div>
+                </button>
+
                 {/* Summary Cards */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
