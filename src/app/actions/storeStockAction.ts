@@ -17,22 +17,50 @@ export async function getKitchenStoreStockAction() {
             return { success: false, error: 'Acesso negado: Perfil não autorizado.' }
         }
 
-        // 1. Buscar sessões finalizadas de lojas
-        const { data: sessions, error: sessionsError } = await supabase
+        // 1. Buscar sessões finalizadas de lojas (sem users ainda para evitar ambiguidade de FK)
+        const { data: sessionsRaw, error: sessionsError } = await supabase
             .from('count_sessions')
             .select(`
                 id,
                 completed_at,
                 group_id,
-                groups!inner(name, macro_sector),
                 user_id,
-                users!inner(name, unit_id, units!inner(name))
+                status,
+                groups!inner(name, macro_sector)
             `)
             .eq('status', 'completed')
             .neq('groups.macro_sector', 'Cozinha Central')
             .order('completed_at', { ascending: false })
 
         if (sessionsError) throw sessionsError
+
+        if (!sessionsRaw || sessionsRaw.length === 0) {
+            return { success: true, units: [] }
+        }
+
+        // 2. Buscar usuários e unidades separadamente
+        const userIds = [...new Set(sessionsRaw.map(s => s.user_id))]
+        const { data: usersData, error: usersError } = await supabase
+            .from('users')
+            .select(`
+                id,
+                name,
+                unit_id,
+                role,
+                units!inner(id, name)
+            `)
+            .in('id', userIds)
+
+        if (usersError) throw usersError
+
+        // 3. Reconstruir sessions com dados de users (Equivalente ao !inner original)
+        const userMap = new Map(usersData?.map(u => [u.id, u]))
+        const sessions = sessionsRaw
+            .map(s => ({
+                ...s,
+                users: userMap.get(s.user_id)
+            }))
+            .filter(s => s.users)
 
         // 2. Deduplicar: manter apenas a última contagem de cada unidade/grupo
         const latestSessionsMap = new Map()
