@@ -52,10 +52,10 @@ export async function getKitchenStoreStockAction() {
 
         if (usersError) throw usersError
 
-        // 3. Buscar unidades separadamente (para evitar erro de relationship cache entre users e units)
+        // 3. Buscar unidades separadamente (No NaBrasa, unidades são registros na tabela 'groups')
         const unitIds = [...new Set(usersRaw?.map(u => u.unit_id).filter(Boolean) || [])]
         const { data: unitsRaw, error: unitsError } = await supabase
-            .from('units')
+            .from('groups')
             .select('id, name')
             .in('id', unitIds)
 

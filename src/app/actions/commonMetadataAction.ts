@@ -12,8 +12,8 @@ export async function getScopedFilterMetadataAction() {
     try {
         const scope = await getAccessibleCountScope()
         
-        // 1. Fetch Units
-        let unitsQuery = supabase.from('units').select('id, name').order('name')
+        // 1. Fetch Units (Stored in groups table)
+        let unitsQuery = supabase.from('groups').select('id, name').eq('type', 'unit').order('name')
         if (scope.type === 'store') {
             unitsQuery = unitsQuery.eq('id', scope.unitId)
         } else if (scope.type === 'kitchen') {
