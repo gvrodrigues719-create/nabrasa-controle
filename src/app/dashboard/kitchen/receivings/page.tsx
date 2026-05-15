@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, Plus, Truck, Check, AlertTriangle, X,
     Loader2, ChevronLeft, ChevronRight, Package,
-    Clock, Ban, CalendarDays, Search, BookOpen
+    Clock, Ban, CalendarDays, Search, BookOpen, Edit, MoreHorizontal, History, ChevronDown, ChevronUp
 } from 'lucide-react'
 import {
     getWeeklyReceivingsAction,
     createReceivingAction,
+    updateReceivingAction,
     markReceivingDeliveredAction,
     markReceivingPartialAction,
     markReceivingRefusedAction,
@@ -34,6 +35,15 @@ function getWeekRange(offset: number) {
 
 const DAY_NAMES = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 
+const CANCEL_REASONS = [
+    'Criado por engano',
+    'Entrega duplicada',
+    'Pedido de teste',
+    'Fornecedor cancelou',
+    'Data errada',
+    'Outro'
+]
+
 export default function ReceivingsPage() {
     const router = useRouter()
     const [weekOffset, setWeekOffset] = useState(0)
@@ -43,6 +53,9 @@ export default function ReceivingsPage() {
 
     // Modals
     const [showCreate, setShowCreate] = useState(false)
+    const [editingId, setEditingId] = useState<string | null>(null)
+    const [expandedCardId, setExpandedCardId] = useState<string | null>(null)
+    const [showHistory, setShowHistory] = useState(false)
     const [actionModal, setActionModal] = useState<{ type: 'deliver' | 'partial' | 'refuse' | 'cancel'; receiving: CKReceiving } | null>(null)
     const [actionNotes, setActionNotes] = useState('')
     const [actionReason, setActionReason] = useState('')
@@ -51,6 +64,7 @@ export default function ReceivingsPage() {
     // Create form
     const [createForm, setCreateForm] = useState({ title: '', supplier_name: '', delivery_date: '', delivery_period: '', delivery_time: '', notes: '' })
     const [createItems, setCreateItems] = useState<{ 
+        id?: string;
         purchase_item_id?: string; 
         receiving_catalog_item_id?: string;
         item_name: string; 
@@ -88,24 +102,32 @@ export default function ReceivingsPage() {
 
     useEffect(() => { fetchData() }, [weekOffset])
 
-    // Stats
-    const today = receivings.filter(r => r.delivery_date === todayStr)
-    const scheduled = receivings.filter(r => r.status === 'scheduled')
-    const delivered = receivings.filter(r => r.status === 'delivered')
-    const partial = receivings.filter(r => r.status === 'partial')
-    const refused = receivings.filter(r => r.status === 'refused')
+    // Data filtering for New Hierarchy
+    const overdueScheduled = overdue
+    const scheduledToday = receivings.filter(r => r.delivery_date === todayStr && r.status === 'scheduled')
+    const partials = receivings.filter(r => r.status === 'partial')
 
-    // Group by day
-    const byDay = useMemo(() => {
-        const map: Record<string, CKReceiving[]> = {}
+    const actionRequired = [...overdueScheduled, ...scheduledToday, ...partials]
+    const historical = receivings.filter(r => ['delivered', 'refused', 'canceled'].includes(r.status))
+
+    // Agenda da Semana (only scheduled)
+    const weekDays = useMemo(() => {
+        const days = []
         for (let i = 0; i < 7; i++) {
             const d = new Date(week.startDate)
             d.setDate(d.getDate() + i)
-            const key = d.toISOString().split('T')[0]
-            map[key] = receivings.filter(r => r.delivery_date === key)
+            const dateStr = d.toISOString().split('T')[0]
+            const items = receivings.filter(r => r.delivery_date === dateStr && r.status === 'scheduled')
+            days.push({ dateStr, dateObj: d, items })
         }
-        return map
+        return days
     }, [receivings, week])
+
+    // Stats
+    const scheduledCount = receivings.filter(r => r.status === 'scheduled').length
+    const deliveredCount = historical.filter(r => r.status === 'delivered').length
+    const partialCount = partials.length
+    const refusedCount = historical.filter(r => r.status === 'refused').length
 
     function handleItemSearch(idx: number, query: string) {
         setItemQuery(prev => ({ ...prev, [idx]: query }))
@@ -180,35 +202,81 @@ export default function ReceivingsPage() {
         setQuickSaving(false)
     }
 
-    async function handleCreate() {
+    function openEdit(r: CKReceiving) {
+        setEditingId(r.id)
+        setCreateForm({
+            title: r.title,
+            supplier_name: r.supplier_name || '',
+            delivery_date: r.delivery_date,
+            delivery_period: r.delivery_period || '',
+            delivery_time: r.delivery_time || '',
+            notes: r.notes || ''
+        })
+        setCreateItems(r.items?.map(i => ({
+            id: i.id,
+            purchase_item_id: i.purchase_item_id || undefined,
+            receiving_catalog_item_id: i.receiving_catalog_item_id || undefined,
+            item_name: i.item_name,
+            expected_qty: i.expected_qty ? i.expected_qty.toString() : '',
+            unit: i.unit || 'un',
+            is_free: !i.purchase_item_id && !i.receiving_catalog_item_id
+        })) || [])
+        setShowCreate(true)
+    }
+
+    async function handleSaveForm() {
         if (!createForm.title.trim() || !createForm.delivery_date) {
             toast.error('Nome da entrega e data são obrigatórios')
             return
         }
         setCreating(true)
-        const res = await createReceivingAction({
-            title: createForm.title,
-            supplier_name: createForm.supplier_name || undefined,
-            delivery_date: createForm.delivery_date,
-            delivery_period: createForm.delivery_period || undefined,
-            delivery_time: createForm.delivery_time || undefined,
-            notes: createForm.notes || undefined,
-            items: createItems.filter(i => i.item_name.trim()).map(i => ({
-                item_name: i.item_name,
-                purchase_item_id: i.purchase_item_id,
-                receiving_catalog_item_id: i.receiving_catalog_item_id,
-                expected_qty: parseFloat(i.expected_qty) || undefined,
-                unit: i.unit || undefined,
-            })),
-        })
-        if (res.success) {
-            toast.success('Entrega criada!')
-            setShowCreate(false)
-            setCreateForm({ title: '', supplier_name: '', delivery_date: '', delivery_period: '', delivery_time: '', notes: '' })
-            setCreateItems([])
-            fetchData()
+
+        const payloadItems = createItems.filter(i => i.item_name.trim()).map(i => ({
+            id: i.id,
+            item_name: i.item_name,
+            purchase_item_id: i.purchase_item_id,
+            receiving_catalog_item_id: i.receiving_catalog_item_id,
+            expected_qty: parseFloat(i.expected_qty) || undefined,
+            unit: i.unit || undefined,
+        }))
+
+        if (editingId) {
+            const res = await updateReceivingAction(editingId, {
+                title: createForm.title,
+                supplier_name: createForm.supplier_name || undefined,
+                delivery_date: createForm.delivery_date,
+                delivery_period: createForm.delivery_period || undefined,
+                delivery_time: createForm.delivery_time || undefined,
+                notes: createForm.notes || undefined,
+                items: payloadItems
+            })
+            if (res.success) {
+                toast.success('Entrega atualizada!')
+                setShowCreate(false)
+                setEditingId(null)
+                fetchData()
+            } else {
+                toast.error(res.error || 'Erro ao atualizar')
+            }
         } else {
-            toast.error(res.error || 'Erro ao criar')
+            const res = await createReceivingAction({
+                title: createForm.title,
+                supplier_name: createForm.supplier_name || undefined,
+                delivery_date: createForm.delivery_date,
+                delivery_period: createForm.delivery_period || undefined,
+                delivery_time: createForm.delivery_time || undefined,
+                notes: createForm.notes || undefined,
+                items: payloadItems
+            })
+            if (res.success) {
+                toast.success('Entrega criada!')
+                setShowCreate(false)
+                setCreateForm({ title: '', supplier_name: '', delivery_date: '', delivery_period: '', delivery_time: '', notes: '' })
+                setCreateItems([])
+                fetchData()
+            } else {
+                toast.error(res.error || 'Erro ao criar')
+            }
         }
         setCreating(false)
     }
@@ -229,7 +297,8 @@ export default function ReceivingsPage() {
             if (!reason.trim()) { toast.error('Motivo obrigatório para recusa'); setActionLoading(false); return }
             res = await markReceivingRefusedAction(receiving.id, reason)
         } else {
-            res = await cancelReceivingAction(receiving.id)
+            if (!actionReason.trim()) { toast.error('Motivo de cancelamento é obrigatório'); setActionLoading(false); return }
+            res = await cancelReceivingAction(receiving.id, actionReason)
         }
         if (res.success) {
             toast.success(type === 'deliver' ? 'Entrega confirmada!' : type === 'partial' ? 'Marcado como parcial' : type === 'refuse' ? 'Entrega recusada' : 'Cancelado')
@@ -247,6 +316,7 @@ export default function ReceivingsPage() {
         const isOverdue = r.status === 'scheduled' && r.delivery_date < todayStr
         const cfg = isOverdue ? { label: 'Atrasada', color: 'bg-orange-50', textColor: 'text-orange-700', dot: 'bg-orange-500' } : RECEIVING_STATUS_CONFIG[r.status]
         const isActionable = r.status === 'scheduled'
+        const isExpanded = expandedCardId === r.id
         return (
             <div key={r.id} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm space-y-3">
                 <div className="flex items-start justify-between gap-2">
@@ -264,12 +334,15 @@ export default function ReceivingsPage() {
                 </div>
                 {r.items && r.items.length > 0 ? (
                     <div className="space-y-1">
-                        {r.items.map(item => (
+                        {r.items.slice(0, 3).map(item => (
                             <div key={item.id} className="flex items-center justify-between text-xs">
                                 <span className="text-gray-600 font-medium truncate">{item.item_name}</span>
                                 <span className="text-gray-400 shrink-0 ml-2">{item.expected_qty ? `${item.expected_qty} ${item.unit || 'un'}` : '—'}</span>
                             </div>
                         ))}
+                        {r.items.length > 3 && (
+                            <p className="text-[10px] font-bold text-gray-400 italic pt-1">+ {r.items.length - 3} itens</p>
+                        )}
                     </div>
                 ) : (
                     <p className="text-[11px] text-gray-300 italic">Itens não detalhados</p>
@@ -283,6 +356,27 @@ export default function ReceivingsPage() {
                         <button onClick={() => { setActionModal({ type: 'deliver', receiving: r }); setActionNotes('') }} className="flex-1 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition-colors">Recebido</button>
                         <button onClick={() => { setActionModal({ type: 'partial', receiving: r }); setActionNotes('') }} className="flex-1 py-2 rounded-xl bg-yellow-50 text-yellow-700 text-xs font-bold hover:bg-yellow-100 transition-colors">Parcial</button>
                         <button onClick={() => { setActionModal({ type: 'refuse', receiving: r }); setActionNotes(''); setActionReason('') }} className="flex-1 py-2 rounded-xl bg-red-50 text-red-700 text-xs font-bold hover:bg-red-100 transition-colors">Recusar</button>
+                        <button onClick={() => setExpandedCardId(isExpanded ? null : r.id)} className="px-3 py-2 rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors">
+                            <MoreHorizontal className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
+                {(!isActionable && r.status === 'partial') && (
+                    <div className="flex gap-2 pt-1">
+                        <button onClick={() => openEdit(r)} className="flex-1 py-2 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100 transition-colors">Editar</button>
+                        <button onClick={() => { setActionModal({ type: 'deliver', receiving: r }); setActionNotes('') }} className="flex-1 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition-colors">Receber Restante</button>
+                    </div>
+                )}
+                {isExpanded && (
+                    <div className="flex gap-2 pt-2 border-t border-gray-100 mt-2">
+                        {(r.status === 'scheduled' || r.status === 'partial') && (
+                            <button onClick={() => openEdit(r)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100 transition-colors">
+                                <Edit className="w-3.5 h-3.5" /> Editar
+                            </button>
+                        )}
+                        <button onClick={() => { setActionModal({ type: 'cancel', receiving: r }); setActionReason('') }} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gray-100 text-gray-600 text-xs font-bold hover:bg-gray-200 transition-colors">
+                            <Ban className="w-3.5 h-3.5" /> Cancelar
+                        </button>
                     </div>
                 )}
             </div>
@@ -332,12 +426,12 @@ export default function ReceivingsPage() {
                 {/* Stats */}
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                     {[
-                        { n: today.length, l: 'Hoje', c: 'text-blue-700 bg-blue-50' },
-                        { n: scheduled.length, l: 'Previstas', c: 'text-gray-700 bg-gray-50' },
-                        { n: delivered.length, l: 'Recebidas', c: 'text-emerald-700 bg-emerald-50' },
-                        { n: partial.length, l: 'Parciais', c: 'text-yellow-700 bg-yellow-50' },
-                        { n: refused.length, l: 'Recusadas', c: 'text-red-700 bg-red-50' },
-                        { n: overdue.length, l: 'Atrasadas', c: 'text-orange-700 bg-orange-50' },
+                        { n: scheduledToday.length, l: 'Hoje', c: 'text-blue-700 bg-blue-50' },
+                        { n: scheduledCount, l: 'Previstas', c: 'text-gray-700 bg-gray-50' },
+                        { n: deliveredCount, l: 'Recebidas', c: 'text-emerald-700 bg-emerald-50' },
+                        { n: partialCount, l: 'Parciais', c: 'text-yellow-700 bg-yellow-50' },
+                        { n: refusedCount, l: 'Recusadas', c: 'text-red-700 bg-red-50' },
+                        { n: overdueScheduled.length, l: 'Atrasadas', c: 'text-orange-700 bg-orange-50' },
                     ].map(s => (
                         <div key={s.l} className={`p-3 rounded-xl text-center ${s.c}`}>
                             <p className="text-lg font-black leading-none">{s.n}</p>
@@ -350,24 +444,23 @@ export default function ReceivingsPage() {
                     <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 text-blue-500 animate-spin" /></div>
                 ) : (
                     <>
-                        {/* Overdue */}
-                        {overdue.length > 0 && (
+                        {/* Ação Necessária */}
+                        {actionRequired.length > 0 && (
                             <section>
                                 <div className="flex items-center gap-2 mb-3">
                                     <AlertTriangle className="w-4 h-4 text-orange-500" />
-                                    <h2 className="text-sm font-black text-orange-700">Atrasadas</h2>
-                                    <span className="text-[10px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">{overdue.length}</span>
+                                    <h2 className="text-sm font-black text-orange-700">Ação Necessária</h2>
+                                    <span className="text-[10px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">{actionRequired.length}</span>
                                 </div>
-                                <div className="space-y-3">{overdue.map(renderCard)}</div>
+                                <div className="space-y-3">{actionRequired.map(renderCard)}</div>
                             </section>
                         )}
 
-                        {/* By day */}
-                        {Object.entries(byDay).map(([dateStr, items]) => {
-                            const d = new Date(dateStr + 'T12:00:00')
-                            const dayName = DAY_NAMES[d.getDay()]
+                        {/* Agenda da Semana */}
+                        {weekDays.map(({ dateStr, dateObj, items }) => {
+                            const dayName = DAY_NAMES[dateObj.getDay()]
                             const isToday = dateStr === todayStr
-                            const dateLabel = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+                            const dateLabel = dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
                             return (
                                 <section key={dateStr}>
                                     <div className="flex items-center gap-2 mb-3">
@@ -380,13 +473,32 @@ export default function ReceivingsPage() {
                                         <div className="space-y-3">{items.map(renderCard)}</div>
                                     ) : (
                                         <div className="pl-1 flex items-center gap-3">
-                                            <p className="text-xs text-gray-300 italic">Nenhuma entrega prevista para este dia.</p>
-                                            <button onClick={() => { setShowCreate(true); setCreateForm(f => ({ ...f, delivery_date: dateStr })) }} className="text-[10px] font-bold text-blue-500 hover:text-blue-700 transition-colors">+ Criar entrega</button>
+                                            <p className="text-xs text-gray-300 italic">Nenhuma entrega prevista.</p>
+                                            <button onClick={() => { setShowCreate(true); setCreateForm(f => ({ ...f, delivery_date: dateStr })) }} className="text-[10px] font-bold text-blue-500 hover:text-blue-700 transition-colors">+ Adicionar</button>
                                         </div>
                                     )}
                                 </section>
                             )
                         })}
+
+                        {/* Histórico e Concluídas */}
+                        {historical.length > 0 && (
+                            <section className="pt-4 border-t border-gray-200">
+                                <button onClick={() => setShowHistory(!showHistory)} className="w-full flex items-center justify-between p-3 rounded-2xl bg-white border border-gray-100 shadow-sm hover:bg-gray-50 transition-colors">
+                                    <div className="flex items-center gap-2">
+                                        <History className="w-4 h-4 text-gray-400" />
+                                        <span className="text-sm font-black text-gray-700">Histórico / Concluídas</span>
+                                        <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{historical.length}</span>
+                                    </div>
+                                    {showHistory ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                                </button>
+                                {showHistory && (
+                                    <div className="mt-4 space-y-3">
+                                        {historical.map(renderCard)}
+                                    </div>
+                                )}
+                            </section>
+                        )}
                     </>
                 )}
             </div>
@@ -396,8 +508,8 @@ export default function ReceivingsPage() {
                 <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm">
                     <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
                         <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-                            <h2 className="text-base font-black text-gray-900">Nova Entrega</h2>
-                            <button onClick={() => setShowCreate(false)} className="p-2 hover:bg-gray-100 rounded-xl"><X className="w-5 h-5 text-gray-400" /></button>
+                            <h2 className="text-base font-black text-gray-900">{editingId ? 'Editar Entrega' : 'Nova Entrega'}</h2>
+                            <button onClick={() => { setShowCreate(false); setEditingId(null) }} className="p-2 hover:bg-gray-100 rounded-xl"><X className="w-5 h-5 text-gray-400" /></button>
                         </div>
                         <div className="p-5 space-y-4">
                             <div>
@@ -504,9 +616,9 @@ export default function ReceivingsPage() {
                                     </div>
                                 ))}
                             </div>
-                            <button onClick={handleCreate} disabled={creating} className="w-full py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
-                                {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                                Criar Entrega
+                            <button onClick={handleSaveForm} disabled={creating} className="w-full py-3 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+                                {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : (editingId ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />)}
+                                {editingId ? 'Salvar Alterações' : 'Criar Entrega'}
                             </button>
                         </div>
                     </div>
@@ -557,7 +669,14 @@ export default function ReceivingsPage() {
                                 </div>
                             )}
                             {actionModal.type === 'cancel' && (
-                                <p className="text-sm text-gray-500">Tem certeza que deseja cancelar esta entrega?</p>
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1 block">Motivo do Cancelamento *</label>
+                                    <div className="space-y-1">
+                                        {CANCEL_REASONS.map(r => (
+                                            <button key={r} onClick={() => setActionReason(r)} className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-colors ${actionReason === r ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-transparent'}`}>{r}</button>
+                                        ))}
+                                    </div>
+                                </div>
                             )}
                         </div>
                         <div className="px-5 pb-5 flex gap-3">

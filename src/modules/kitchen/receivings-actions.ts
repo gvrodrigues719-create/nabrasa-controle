@@ -302,11 +302,13 @@ export async function markReceivingRefusedAction(
 // ─────────────────────────────────────────────────────────────────────────────
 
 export async function cancelReceivingAction(
-    receivingId: string
+    receivingId: string,
+    cancelReason: string
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager'].includes(user.role)) throw new Error('Sem permissão para cancelar')
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão para cancelar')
+        if (!cancelReason?.trim()) throw new Error('Motivo de cancelamento é obrigatório')
 
         const { error } = await supabase
             .from('ck_receivings')
@@ -323,6 +325,128 @@ export async function cancelReceivingAction(
             receiving_id: receivingId,
             user_id: user.id,
             event_type: 'canceled',
+            payload: { cancel_reason: cancelReason }
+        })
+
+        return { success: true }
+    } catch (e: any) {
+        return { success: false, error: e.message }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ACTION — Editar Entrega (somente admin/kitchen, somente scheduled/partial)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function updateReceivingAction(
+    receivingId: string,
+    input: {
+        title?: string
+        supplier_name?: string
+        delivery_date?: string
+        delivery_period?: string
+        delivery_time?: string
+        priority?: string
+        notes?: string
+        items?: {
+            id?: string // Se existir, atualiza; senão, cria. (Itens removidos da tela serão excluídos se o status permitir)
+            item_name: string
+            purchase_item_id?: string
+            receiving_catalog_item_id?: string
+            expected_qty?: number
+            unit?: string
+        }[]
+    }
+): Promise<{ success: boolean; data?: CKReceiving; error?: string }> {
+    try {
+        const { supabase, user } = await getCurrentUser()
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão para editar recebimentos')
+
+        // Validar status atual
+        const { data: current, error: currentErr } = await supabase
+            .from('ck_receivings')
+            .select('status')
+            .eq('id', receivingId)
+            .single()
+            
+        if (currentErr) throw currentErr
+        if (!['scheduled', 'partial'].includes(current.status)) {
+            throw new Error(`Não é possível editar uma entrega com status ${current.status}`)
+        }
+
+        // 1. Atualizar cabeçalho
+        const updates: any = {}
+        if (input.title !== undefined) updates.title = input.title
+        if (input.supplier_name !== undefined) updates.supplier_name = input.supplier_name || null
+        if (input.delivery_date !== undefined) updates.delivery_date = input.delivery_date
+        if (input.delivery_period !== undefined) updates.delivery_period = input.delivery_period || null
+        if (input.delivery_time !== undefined) updates.delivery_time = input.delivery_time || null
+        if (input.priority !== undefined) updates.priority = input.priority
+        if (input.notes !== undefined) updates.notes = input.notes || null
+
+        if (Object.keys(updates).length > 0) {
+            const { error: updateErr } = await supabase
+                .from('ck_receivings')
+                .update(updates)
+                .eq('id', receivingId)
+            if (updateErr) throw updateErr
+        }
+
+        // 2. Sincronizar itens (se enviado no input)
+        if (input.items !== undefined) {
+            // Pegar itens atuais
+            const { data: currentItems, error: itemsErr } = await supabase
+                .from('ck_receiving_items')
+                .select('id, item_status')
+                .eq('receiving_id', receivingId)
+            if (itemsErr) throw itemsErr
+
+            const currentMap = new Map(currentItems.map(i => [i.id, i]))
+            const inputIds = new Set(input.items.filter(i => i.id).map(i => i.id))
+
+            // A. Deletar os que não estão mais no input (somente se pending/not_delivered)
+            for (const cItem of currentItems) {
+                if (!inputIds.has(cItem.id)) {
+                    if (['pending', 'not_delivered'].includes(cItem.item_status)) {
+                        await supabase.from('ck_receiving_items').delete().eq('id', cItem.id)
+                    } else {
+                        throw new Error('Não é possível remover um item que já teve recebimento registrado.')
+                    }
+                }
+            }
+
+            // B. Atualizar ou Criar
+            for (const item of input.items) {
+                if (item.id && currentMap.has(item.id)) {
+                    // Update
+                    await supabase.from('ck_receiving_items').update({
+                        item_name: item.item_name,
+                        expected_qty: item.expected_qty || null,
+                        unit: item.unit || null,
+                        purchase_item_id: item.purchase_item_id || null,
+                        receiving_catalog_item_id: item.receiving_catalog_item_id || null,
+                    }).eq('id', item.id)
+                } else {
+                    // Insert
+                    await supabase.from('ck_receiving_items').insert({
+                        receiving_id: receivingId,
+                        item_name: item.item_name,
+                        expected_qty: item.expected_qty || null,
+                        unit: item.unit || null,
+                        purchase_item_id: item.purchase_item_id || null,
+                        receiving_catalog_item_id: item.receiving_catalog_item_id || null,
+                        item_status: 'pending'
+                    })
+                }
+            }
+        }
+
+        // 3. Registrar auditoria
+        await supabase.from('ck_receiving_events').insert({
+            receiving_id: receivingId,
+            user_id: user.id,
+            event_type: 'updated',
+            payload: { fields_changed: Object.keys(updates), has_item_updates: input.items !== undefined },
         })
 
         return { success: true }
