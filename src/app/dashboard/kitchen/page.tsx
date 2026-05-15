@@ -194,7 +194,7 @@ export default function KitchenPage() {
                                 <button key="lojas" onClick={() => router.push('/dashboard/kitchen/store-stock')}
                                     className="bg-white rounded-2xl p-3 text-left border-2 border-amber-200 shadow-sm active:scale-[0.97] transition-all">
                                     <p className="text-2xl font-black leading-none text-amber-600">{operacao.lojasDesatualizadas}</p>
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Lojas +72h</p>
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Loja desatualizada</p>
                                 </button>
                             ),
                         ].filter(Boolean)
@@ -473,12 +473,12 @@ export default function KitchenPage() {
                         <div className="h-28 bg-white rounded-3xl animate-pulse border border-gray-100" />
                     ) : saude ? (() => {
                         const items = [
-                            { label: 'Itens produzidos sem vínculo', val: saude.producedSemVinculoCount, icon: Link2, alert: saude.producedSemVinculoCount > 0, isRed: true },
-                            { label: 'Itens sem classificação', val: saude.unclassifiedCount, icon: Tag, alert: saude.unclassifiedCount > 0, isRed: true },
-                            { label: 'Itens para revisar (Planejamento)', val: saude.itensParaRevisarCount, icon: AlertTriangle, alert: saude.itensParaRevisarCount > 0, isRed: true },
-                            { label: 'Pedidos teste na base', val: saude.pedidosTesteCount, icon: AlertTriangle, alert: saude.pedidosTesteCount > 0, isRed: true },
-                            { label: 'Idade da Contagem CK', val: saude.idadeContagemCK_horas !== null ? formatHours(saude.idadeContagemCK_horas) : '—', icon: Clock, alert: (saude.idadeContagemCK_horas ?? 0) > 24, isRed: (saude.idadeContagemCK_horas ?? 0) > 72 },
-                            { label: 'Lojas com contagem antiga', val: saude.lojasDesatualizadas.length, icon: Store, alert: saude.lojasDesatualizadas.length > 0, isRed: false },
+                            { label: 'Vínculos pendentes', val: saude.producedSemVinculoCount, icon: Link2, alert: saude.producedSemVinculoCount > 0, isRed: true },
+                            { label: 'Sem classificação', val: saude.unclassifiedCount, icon: Tag, alert: saude.unclassifiedCount > 0, isRed: true },
+                            { label: 'Para revisar', val: saude.itensParaRevisarCount, icon: AlertTriangle, alert: saude.itensParaRevisarCount > 0, isRed: true },
+                            { label: 'Pedidos teste', val: saude.pedidosTesteCount, icon: AlertTriangle, alert: saude.pedidosTesteCount > 0, isRed: true },
+                            { label: 'Contagem CK', val: saude.idadeContagemCK_horas !== null ? formatHours(saude.idadeContagemCK_horas) : '—', icon: Clock, alert: (saude.idadeContagemCK_horas ?? 0) > 24, isRed: (saude.idadeContagemCK_horas ?? 0) > 72 },
+                            { label: 'Loja desatualizada', val: saude.lojasDesatualizadas.length, icon: Store, alert: saude.lojasDesatualizadas.length > 0, isRed: false },
                         ].filter(item => item.alert)
 
                         if (items.length === 0) {
