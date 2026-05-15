@@ -18,6 +18,7 @@ export interface CKReceivingItem {
     id: string
     receiving_id: string
     purchase_item_id?: string | null
+    receiving_catalog_item_id?: string | null
     item_name: string
     expected_qty?: number | null
     received_qty?: number | null
