@@ -242,10 +242,13 @@ export async function getKitchenDashboardDataAction(): Promise<KitchenDashboardR
 
         // ─── Assemble result ──────────────────────────────────────────────────
         const pedidosAnalise = pendingOrders.filter(o => o.status === 'em_analise').length
+        const todayStart = new Date()
+        todayStart.setUTCHours(0, 0, 0, 0)
         const pedidosSeparadosHoje = (await supabase
             .from('purchase_orders')
             .select('id', { count: 'exact', head: true })
             .eq('status', 'separado')
+            .gte('updated_at', todayStart.toISOString())
         ).count ?? 0
 
         const operacao: KitchenOperacaoData = {
