@@ -18,29 +18,30 @@ Implementamos uma camada rigorosa de proteção e isolamento para o painel da Co
 - **Visibilidade Estrita**: O card da cozinha no painel do operador exige role `kitchen` ou `admin`.
 - **Prevenção de Flash**: Adicionamos uma trava de carregamento (`!loadingWave1`) para garantir que o card não apareça nem por um milissegundo antes da validação da identidade.
 
-## Verificação e Testes (Produção)
+### 4. Reorganização Visual (Dashboard da Cozinha)
+- **Novo Subtítulo**: "Rotinas, produção e abastecimento".
+- **Blocos Operacionais**:
+    - **Rotina**: Contagem, Recebimentos e Histórico agrupados.
+    - **Planejamento**: Planejamento de Produção e Estoque das Lojas em destaque.
+    - **Abastecimento**: Lista de pedidos agrupada por status (Divergentes, Novos, Em Separação, Separados) com resumo quantitativo no topo.
+- **Design**: Mantivemos o foco em *mobile-first* com cards grandes e espaçamento consistente, evitando a aparência de um ERP denso.
 
-### Resultado dos Testes
-- **Usuário Alan (Manager)**: 
-  - Acesso direto a `/dashboard/kitchen` -> Redirecionado.
-  - Card "Cozinha Central" -> Oculto.
-- **Operador Teste (Operator)**:
-  - Acesso direto a links da cozinha -> Redirecionado.
-  - Card da cozinha -> Oculto (sem flash visual).
-- **Cozinha Central (Kitchen)**:
-  - Acesso pleno a todos os módulos (Contagem, Recebimentos, Histórico, Estoque Lojas, Planejamento).
+## Verificação e Testes Finais
+
+### Cozinha Central (Acesso Pleno)
+- [x] Subtítulo atualizado.
+- [x] 3 blocos operacionais visíveis e organizados.
+- [x] Lista de pedidos com cabeçalho "Lista de pedidos".
+- [x] Todos os cards navegando para as rotas corretas.
+
+### Segurança (Isolamento Mantido)
+- [x] **Alan (Gerente)**: Continua sem acesso a `/dashboard/kitchen` (redireciona para home). Card oculto.
+- [x] **Operador Teste**: Continua sem ver o card da Cozinha Central no dashboard principal.
+- [x] **Admin**: Acesso global preservado.
 
 ### Integridade Técnica
-- **Commit Hash**: `91b9442`
-- **Build de Produção**: Validado com sucesso na Vercel.
-- **Deploy**: Finalizado e testado em ambiente real.
+- [x] `npm run build` passando sem erros (Commit `91b9442` + ajustes visuais).
+- [x] Nenhuma regra de negócio ou Server Action alterada durante a reorganização visual.
 
-## Arquivos Modificados
-- [Kitchen Layout](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/kitchen/layout.tsx)
-- [ManagerHome.tsx](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/components/manager/ManagerHome.tsx)
-- [ManagerQuickActions.tsx](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/components/manager/ManagerQuickActions.tsx)
-- [SystemArchitectureHub.tsx](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/components/manager/SystemArchitectureHub.tsx)
-- [OperatorHome.tsx](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/app/dashboard/components/operator/OperatorHome.tsx)
-- [Server Actions - Purchases](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/modules/purchases/actions.ts)
-- [Server Actions - Receivings](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/modules/kitchen/receivings-actions.ts)
-- [Server Actions - Production](file:///c:/Users/Guilherme/.gemini/antigravity/playground/neon-copernicus/web-app/src/modules/purchases/production-actions.ts)
+---
+*Relatório gerado em 15/05/2026 após validação em ambiente de desenvolvimento.*

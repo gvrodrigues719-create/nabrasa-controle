@@ -48,7 +48,7 @@ export default function KitchenPage() {
                         </button>
                         <div className="min-w-0">
                             <h1 className="text-sm font-black text-gray-900 leading-none truncate">Cozinha Central</h1>
-                            <p className="text-[10px] text-gray-400 mt-1 font-bold truncate">Painel operacional da Cozinha Central</p>
+                            <p className="text-[10px] text-gray-400 mt-1 font-bold truncate">Rotinas, produção e abastecimento</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
@@ -240,6 +240,9 @@ export default function KitchenPage() {
                         </div>
                     ) : (
                         <div className="space-y-8">
+                            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">
+                                Lista de pedidos
+                            </h3>
                             {/* Divergências para apurar */}
                             {divergentes.length > 0 && (
                                 <section>
