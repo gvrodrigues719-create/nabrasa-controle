@@ -97,91 +97,83 @@ export default function KitchenPage() {
                         Operação de Hoje
                     </h2>
 
-                    {/* Status banner */}
+                    {/* Status banner — mensagem específica */}
                     {!dashLoading && operacao && (() => {
-                        const isCritico = operacao.pedidosAnalise > 0 || (operacao.idadeContagemCK_horas ?? 0) > 72
-                        const isAtencao = !isCritico && ((operacao.separacaoNecessaria > 0) || ((operacao.idadeContagemCK_horas ?? 0) > 24) || operacao.lojasDesatualizadas > 0)
+                        const ckVelha = (operacao.idadeContagemCK_horas ?? 0) > 72
+                        const ckAtencao = !ckVelha && (operacao.idadeContagemCK_horas ?? 0) > 24
+                        const isCritico = operacao.pedidosAnalise > 0 || ckVelha
+                        const isAtencao = !isCritico && (operacao.separacaoNecessaria > 0 || ckAtencao || operacao.lojasDesatualizadas > 0)
                         const bg = isCritico ? 'bg-red-500' : isAtencao ? 'bg-amber-500' : 'bg-emerald-500'
                         const Icon = isCritico ? XCircle : isAtencao ? AlertTriangle : CheckCircle2
-                        const msg = isCritico ? 'Ação necessária agora.' : isAtencao ? 'Existem pontos para acompanhar hoje.' : 'Operação sem alertas críticos no momento.'
+                        let msg = 'Operação sem alertas críticos agora.'
+                        if (operacao.pedidosAnalise > 0) msg = `${operacao.pedidosAnalise} pedido(s) aguardando análise da CK.`
+                        else if (ckVelha) msg = 'Ação recomendada: atualizar contagem da CK antes de planejar produção.'
+                        else if (operacao.lojasDesatualizadas > 0) msg = `Atenção: ${operacao.lojasDesatualizadas} loja(s) com contagem desatualizada.`
+                        else if (ckAtencao) msg = `Contagem CK feita há ${formatHours(operacao.idadeContagemCK_horas!)}.  Considere atualizar.`
+                        else if (operacao.separacaoNecessaria > 0) msg = `${operacao.separacaoNecessaria} item(s) aguardando separação.`
                         return (
                             <div className={`${bg} rounded-2xl px-4 py-3 flex items-center gap-3 text-white`}>
                                 <Icon className="w-5 h-5 shrink-0" />
-                                <p className="text-xs font-black">{msg}</p>
+                                <p className="text-xs font-black leading-snug">{msg}</p>
                             </div>
                         )
                     })()}
 
-                    {/* Mini-cards grid */}
+                    {/* Indicadores — só mostra cards com valor ou alerta */}
                     {dashLoading ? (
                         <div className="grid grid-cols-3 gap-2.5">
-                            {[1,2,3,4,5,6].map(i => <div key={i} className="h-20 bg-white rounded-2xl animate-pulse border border-gray-100" />)}
+                            {[1,2,3].map(i => <div key={i} className="h-20 bg-white rounded-2xl animate-pulse border border-gray-100" />)}
                         </div>
-                    ) : operacao ? (
-                        <div className="grid grid-cols-3 gap-2.5">
-                            {/* Pedidos em análise */}
-                            <button onClick={() => router.push('/dashboard/kitchen/planning')}
-                                className={`bg-white rounded-2xl p-3 text-left border-2 shadow-sm active:scale-[0.97] transition-all ${
-                                    operacao.pedidosAnalise > 0 ? 'border-red-200' : 'border-gray-100'
-                                }`}>
-                                <p className={`text-2xl font-black leading-none ${
-                                    operacao.pedidosAnalise > 0 ? 'text-red-600' : 'text-gray-900'
-                                }`}>{operacao.pedidosAnalise}</p>
-                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Em Análise</p>
-                            </button>
-
-                            {/* Produção necessária */}
-                            <button onClick={() => router.push('/dashboard/kitchen/planning')}
-                                className={`bg-white rounded-2xl p-3 text-left border-2 shadow-sm active:scale-[0.97] transition-all ${
-                                    operacao.producaoNecessaria > 0 ? 'border-orange-200' : 'border-gray-100'
-                                }`}>
-                                <p className={`text-2xl font-black leading-none ${
-                                    operacao.producaoNecessaria > 0 ? 'text-orange-600' : 'text-gray-900'
-                                }`}>{operacao.producaoNecessaria}</p>
-                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Para Produzir</p>
-                            </button>
-
-                            {/* Separação */}
-                            <button onClick={() => router.push('/dashboard/kitchen/planning')}
-                                className="bg-white rounded-2xl p-3 text-left border-2 border-gray-100 shadow-sm active:scale-[0.97] transition-all">
-                                <p className="text-2xl font-black leading-none text-gray-900">{operacao.separacaoNecessaria}</p>
-                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Para Separar</p>
-                            </button>
-
-                            {/* Contagem CK */}
-                            <button onClick={() => router.push('/dashboard/kitchen/count')}
-                                className={`bg-white rounded-2xl p-3 text-left border-2 shadow-sm active:scale-[0.97] transition-all ${
-                                    (operacao.idadeContagemCK_horas ?? 999) > 72 ? 'border-red-200' :
-                                    (operacao.idadeContagemCK_horas ?? 999) > 24 ? 'border-amber-200' : 'border-gray-100'
-                                }`}>
-                                <p className={`text-base font-black leading-none ${
-                                    (operacao.idadeContagemCK_horas ?? 999) > 72 ? 'text-red-600' :
-                                    (operacao.idadeContagemCK_horas ?? 999) > 24 ? 'text-amber-600' : 'text-emerald-600'
-                                }`}>
-                                    {operacao.idadeContagemCK_horas !== null ? formatHours(operacao.idadeContagemCK_horas) : '—'}
-                                </p>
-                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Contagem CK</p>
-                            </button>
-
-                            {/* Lojas desatualizadas */}
-                            <button onClick={() => router.push('/dashboard/kitchen/store-stock')}
-                                className={`bg-white rounded-2xl p-3 text-left border-2 shadow-sm active:scale-[0.97] transition-all ${
-                                    operacao.lojasDesatualizadas > 0 ? 'border-amber-200' : 'border-gray-100'
-                                }`}>
-                                <p className={`text-2xl font-black leading-none ${
-                                    operacao.lojasDesatualizadas > 0 ? 'text-amber-600' : 'text-gray-900'
-                                }`}>{operacao.lojasDesatualizadas}</p>
-                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Lojas +72h</p>
-                            </button>
-
-                            {/* Separados hoje */}
-                            <button onClick={() => router.push('/dashboard/kitchen/planning')}
-                                className="bg-white rounded-2xl p-3 text-left border-2 border-gray-100 shadow-sm active:scale-[0.97] transition-all">
-                                <p className="text-2xl font-black leading-none text-gray-900">{operacao.pedidosSeparadosHoje}</p>
-                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Separados</p>
-                            </button>
-                        </div>
-                    ) : null}
+                    ) : operacao && (() => {
+                        const ckH = operacao.idadeContagemCK_horas ?? 0
+                        const cards = [
+                            operacao.pedidosAnalise > 0 && (
+                                <button key="analise" onClick={() => router.push('/dashboard/kitchen/planning')}
+                                    className="bg-white rounded-2xl p-3 text-left border-2 border-red-200 shadow-sm active:scale-[0.97] transition-all">
+                                    <p className="text-2xl font-black leading-none text-red-600">{operacao.pedidosAnalise}</p>
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Em Análise</p>
+                                </button>
+                            ),
+                            operacao.producaoNecessaria > 0 && (
+                                <button key="prod" onClick={() => router.push('/dashboard/kitchen/planning')}
+                                    className="bg-white rounded-2xl p-3 text-left border-2 border-orange-200 shadow-sm active:scale-[0.97] transition-all">
+                                    <p className="text-2xl font-black leading-none text-orange-600">{operacao.producaoNecessaria}</p>
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Para Produzir</p>
+                                </button>
+                            ),
+                            operacao.separacaoNecessaria > 0 && (
+                                <button key="sep" onClick={() => router.push('/dashboard/kitchen/planning')}
+                                    className="bg-white rounded-2xl p-3 text-left border-2 border-gray-200 shadow-sm active:scale-[0.97] transition-all">
+                                    <p className="text-2xl font-black leading-none text-gray-700">{operacao.separacaoNecessaria}</p>
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Para Separar</p>
+                                </button>
+                            ),
+                            (ckH > 0) && (
+                                <button key="ck" onClick={() => router.push('/dashboard/kitchen/count')}
+                                    className={`bg-white rounded-2xl p-3 text-left border-2 shadow-sm active:scale-[0.97] transition-all ${ckH > 72 ? 'border-red-200' : ckH > 24 ? 'border-amber-200' : 'border-gray-100'}`}>
+                                    <p className={`text-base font-black leading-none ${ckH > 72 ? 'text-red-600' : ckH > 24 ? 'text-amber-600' : 'text-emerald-600'}`}>{formatHours(ckH)}</p>
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Contagem CK</p>
+                                </button>
+                            ),
+                            operacao.lojasDesatualizadas > 0 && (
+                                <button key="lojas" onClick={() => router.push('/dashboard/kitchen/store-stock')}
+                                    className="bg-white rounded-2xl p-3 text-left border-2 border-amber-200 shadow-sm active:scale-[0.97] transition-all">
+                                    <p className="text-2xl font-black leading-none text-amber-600">{operacao.lojasDesatualizadas}</p>
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Lojas +72h</p>
+                                </button>
+                            ),
+                            operacao.pedidosSeparadosHoje > 0 && (
+                                <button key="sepHoje" onClick={() => router.push('/dashboard/kitchen')}
+                                    className="bg-white rounded-2xl p-3 text-left border-2 border-gray-100 shadow-sm active:scale-[0.97] transition-all">
+                                    <p className="text-2xl font-black leading-none text-emerald-600">{operacao.pedidosSeparadosHoje}</p>
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Separados hoje</p>
+                                </button>
+                            ),
+                        ].filter(Boolean)
+                        return cards.length > 0
+                            ? <div className="grid grid-cols-3 gap-2.5">{cards}</div>
+                            : <p className="text-xs text-gray-400 font-bold px-1">Sem pedidos pendentes agora.</p>
+                    })()}
                 </section>
 
                 {/* ── SEÇÃO: Pedidos das Lojas ─────────────────────────── */}
@@ -193,25 +185,35 @@ export default function KitchenPage() {
                         </div>
                     </div>
 
-                    {/* Summary strip */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-                        <div className={`bg-white p-4 rounded-2xl border shadow-sm ${ emAnalise.length > 0 ? 'border-red-200' : 'border-gray-100'}`}>
-                            <p className={`text-2xl font-black leading-none ${ emAnalise.length > 0 ? 'text-red-600' : 'text-gray-900'}`}>{emAnalise.length}</p>
-                            <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wider">Em análise</p>
+                    {/* Summary strip — só mostra se houver pendências */}
+                    {pedidosComAcao.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                            {emAnalise.length > 0 && (
+                                <div className="bg-white p-4 rounded-2xl border border-red-200 shadow-sm">
+                                    <p className="text-2xl font-black leading-none text-red-600">{emAnalise.length}</p>
+                                    <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wider">Em análise</p>
+                                </div>
+                            )}
+                            {enviados.length > 0 && (
+                                <div className="bg-white p-4 rounded-2xl border border-blue-200 shadow-sm">
+                                    <p className="text-2xl font-black leading-none text-blue-600">{enviados.length}</p>
+                                    <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wider">Enviados</p>
+                                </div>
+                            )}
+                            {emSeparacao.length > 0 && (
+                                <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+                                    <p className="text-2xl font-black leading-none text-gray-700">{emSeparacao.length}</p>
+                                    <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wider">Em separação</p>
+                                </div>
+                            )}
+                            {divergentes.length > 0 && (
+                                <div className="bg-white p-4 rounded-2xl border border-red-200 shadow-sm">
+                                    <p className="text-2xl font-black leading-none text-red-600">{divergentes.length}</p>
+                                    <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wider">Divergentes</p>
+                                </div>
+                            )}
                         </div>
-                        <div className={`bg-white p-4 rounded-2xl border shadow-sm ${ enviados.length > 0 ? 'border-blue-200' : 'border-gray-100'}`}>
-                            <p className={`text-2xl font-black leading-none ${ enviados.length > 0 ? 'text-blue-600' : 'text-gray-900'}`}>{enviados.length}</p>
-                            <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wider">Enviados</p>
-                        </div>
-                        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                            <p className="text-2xl font-black text-gray-900 leading-none">{emSeparacao.length}</p>
-                            <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wider">Em separação</p>
-                        </div>
-                        <div className={`bg-white p-4 rounded-2xl border shadow-sm ${ divergentes.length > 0 ? 'border-red-200' : 'border-gray-100'}`}>
-                            <p className={`text-2xl font-black leading-none ${ divergentes.length > 0 ? 'text-red-600' : 'text-gray-900'}`}>{divergentes.length}</p>
-                            <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-wider">Divergentes</p>
-                        </div>
-                    </div>
+                    )}
 
                     {loading ? (
                         <div className="space-y-3">
@@ -226,12 +228,14 @@ export default function KitchenPage() {
                             <p className="text-sm text-gray-500">Sem permissão para acessar a Cozinha Central.</p>
                         </div>
                     ) : pedidosComAcao.length === 0 && separadosHoje.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-center">
-                            <div className="w-16 h-16 bg-orange-50 rounded-[28px] flex items-center justify-center mb-4">
-                                <Inbox className="w-8 h-8 text-orange-200" />
+                        <div className="bg-white rounded-2xl px-4 py-4 border border-gray-100 shadow-sm flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-black text-gray-900">Sem pedidos pendentes agora.</p>
+                                {separadosAntigos.length > 0 && (
+                                    <p className="text-[11px] text-gray-400 font-bold mt-0.5">{separadosAntigos.length} separado(s) anteriores</p>
+                                )}
                             </div>
-                            <h3 className="text-base font-black text-gray-900 mb-1">Fila vazia</h3>
-                            <p className="text-sm text-gray-400">Nenhum pedido aguardando ação.</p>
+                            <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
                         </div>
                     ) : (
                         <div className="space-y-6">
@@ -397,9 +401,9 @@ export default function KitchenPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h3 className="font-black text-gray-900 text-base leading-tight truncate">
-                                    Planejamento
+                                    Produção
                                 </h3>
-                                <p className="text-orange-400 text-[10px] font-bold mt-0.5 uppercase tracking-wider">Produção Necessária</p>
+                                <p className="text-orange-400 text-[10px] font-bold mt-0.5 uppercase tracking-wider">Planejamento de Produção</p>
                             </div>
                         </button>
 
@@ -430,31 +434,52 @@ export default function KitchenPage() {
                     {dashLoading ? (
                         <div className="h-28 bg-white rounded-3xl animate-pulse border border-gray-100" />
                     ) : saude ? (() => {
-                        const isRed = saude.unclassifiedCount > 0 || saude.producedSemVinculoCount > 0 || saude.pedidosTesteCount > 0
-                        const isAmber = !isRed && (saude.lojasDesatualizadas.length > 0 || (saude.idadeContagemCK_horas ?? 0) > 24 || saude.producaoEmAbertoCount > 0)
-                        const borderColor = isRed ? 'border-red-100' : isAmber ? 'border-amber-100' : 'border-emerald-100'
+                        const items = [
+                            { label: 'Sem classificação', val: saude.unclassifiedCount, icon: Tag, alert: saude.unclassifiedCount > 0, isRed: true },
+                            { label: 'Sem vínculo', val: saude.producedSemVinculoCount, icon: Link2, alert: saude.producedSemVinculoCount > 0, isRed: true },
+                            { label: 'Para revisar', val: saude.itensParaRevisarCount, icon: AlertTriangle, alert: saude.itensParaRevisarCount > 0, isRed: true },
+                            { label: 'Pedidos teste', val: saude.pedidosTesteCount, icon: AlertTriangle, alert: saude.pedidosTesteCount > 0, isRed: true },
+                            { label: 'Contagem CK', val: saude.idadeContagemCK_horas !== null ? formatHours(saude.idadeContagemCK_horas) : '—', icon: Clock, alert: (saude.idadeContagemCK_horas ?? 0) > 24, isRed: (saude.idadeContagemCK_horas ?? 0) > 72 },
+                            { label: 'Lojas +72h', val: saude.lojasDesatualizadas.length, icon: Store, alert: saude.lojasDesatualizadas.length > 0, isRed: false },
+                        ].filter(item => item.alert)
+
+                        if (items.length === 0) {
+                            return (
+                                <div className="bg-white rounded-2xl px-4 py-4 border border-emerald-100 shadow-sm flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-emerald-50 rounded-full flex items-center justify-center">
+                                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-black text-gray-900">Base saudável</p>
+                                            <p className="text-[10px] text-gray-400 font-bold mt-0.5">Nenhuma pendência de cadastro.</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => router.push('/dashboard/kitchen/system-health')} className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1.5 rounded-lg active:scale-95 transition-transform">
+                                        Abrir
+                                    </button>
+                                </div>
+                            )
+                        }
+
+                        const hasRed = items.some(i => i.isRed)
+                        const borderColor = hasRed ? 'border-red-100' : 'border-amber-100'
+
                         return (
                             <div className={`bg-white rounded-3xl p-5 border-2 ${borderColor} shadow-sm space-y-4`}>
                                 <div className="grid grid-cols-2 gap-2.5">
-                                    {[
-                                        { label: 'Sem classificação', val: saude.unclassifiedCount, icon: Tag, red: saude.unclassifiedCount > 0 },
-                                        { label: 'Sem vínculo', val: saude.producedSemVinculoCount, icon: Link2, red: saude.producedSemVinculoCount > 0 },
-                                        { label: 'Para revisar', val: saude.itensParaRevisarCount, icon: AlertTriangle, red: saude.itensParaRevisarCount > 0 },
-                                        { label: 'Pedidos teste', val: saude.pedidosTesteCount, icon: AlertTriangle, red: saude.pedidosTesteCount > 0 },
-                                        { label: 'Contagem CK', val: saude.idadeContagemCK_horas !== null ? formatHours(saude.idadeContagemCK_horas) : '—', icon: Clock, red: (saude.idadeContagemCK_horas ?? 0) > 72, amber: (saude.idadeContagemCK_horas ?? 0) > 24 },
-                                        { label: 'Lojas +72h', val: saude.lojasDesatualizadas.length, icon: Store, amber: saude.lojasDesatualizadas.length > 0, red: false },
-                                    ].map((item, idx) => (
+                                    {items.map((item, idx) => (
                                         <div key={idx} className="flex items-center gap-2">
                                             <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
-                                                item.red ? 'bg-red-50' : (item as any).amber ? 'bg-amber-50' : 'bg-emerald-50'
+                                                item.isRed ? 'bg-red-50' : 'bg-amber-50'
                                             }`}>
                                                 <item.icon className={`w-3.5 h-3.5 ${
-                                                    item.red ? 'text-red-500' : (item as any).amber ? 'text-amber-500' : 'text-emerald-500'
+                                                    item.isRed ? 'text-red-500' : 'text-amber-500'
                                                 }`} />
                                             </div>
                                             <div className="min-w-0">
                                                 <p className={`text-sm font-black leading-none ${
-                                                    item.red ? 'text-red-600' : (item as any).amber ? 'text-amber-600' : 'text-gray-900'
+                                                    item.isRed ? 'text-red-600' : 'text-amber-600'
                                                 }`}>{item.val}</p>
                                                 <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wide truncate">{item.label}</p>
                                             </div>
@@ -473,57 +498,7 @@ export default function KitchenPage() {
                     })() : null}
                 </section>
 
-                {/* ── SEÇÃO: Saúde da Base (compacto) ─────────────────── */}
-                <section className="space-y-3">
-                    <div className="flex items-center justify-between px-1">
-                        <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Saúde da Base</h2>
-                    </div>
-
-                    {dashLoading ? (
-                        <div className="h-28 bg-white rounded-3xl animate-pulse border border-gray-100" />
-                    ) : saude ? (() => {
-                        const isRed = saude.unclassifiedCount > 0 || saude.producedSemVinculoCount > 0 || saude.pedidosTesteCount > 0
-                        const isAmber = !isRed && (saude.lojasDesatualizadas.length > 0 || (saude.idadeContagemCK_horas ?? 0) > 24 || saude.producaoEmAbertoCount > 0)
-                        const borderColor = isRed ? 'border-red-100' : isAmber ? 'border-amber-100' : 'border-emerald-100'
-                        return (
-                            <div className={`bg-white rounded-3xl p-5 border-2 ${borderColor} shadow-sm space-y-4`}>
-                                <div className="grid grid-cols-2 gap-2.5">
-                                    {[
-                                        { label: 'Sem classificação', val: saude.unclassifiedCount, icon: Tag, red: saude.unclassifiedCount > 0 },
-                                        { label: 'Sem vínculo', val: saude.producedSemVinculoCount, icon: Link2, red: saude.producedSemVinculoCount > 0 },
-                                        { label: 'Para revisar', val: saude.itensParaRevisarCount, icon: AlertTriangle, red: saude.itensParaRevisarCount > 0 },
-                                        { label: 'Pedidos teste', val: saude.pedidosTesteCount, icon: AlertTriangle, red: saude.pedidosTesteCount > 0 },
-                                        { label: 'Contagem CK', val: saude.idadeContagemCK_horas !== null ? formatHours(saude.idadeContagemCK_horas) : '—', icon: Clock, red: (saude.idadeContagemCK_horas ?? 0) > 72, amber: (saude.idadeContagemCK_horas ?? 0) > 24 },
-                                        { label: 'Lojas +72h', val: saude.lojasDesatualizadas.length, icon: Store, amber: saude.lojasDesatualizadas.length > 0, red: false },
-                                    ].map((item, idx) => (
-                                        <div key={idx} className="flex items-center gap-2">
-                                            <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
-                                                item.red ? 'bg-red-50' : (item as any).amber ? 'bg-amber-50' : 'bg-emerald-50'
-                                            }`}>
-                                                <item.icon className={`w-3.5 h-3.5 ${
-                                                    item.red ? 'text-red-500' : (item as any).amber ? 'text-amber-500' : 'text-emerald-500'
-                                                }`} />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className={`text-sm font-black leading-none ${
-                                                    item.red ? 'text-red-600' : (item as any).amber ? 'text-amber-600' : 'text-gray-900'
-                                                }`}>{item.val}</p>
-                                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wide truncate">{item.label}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <button
-                                    onClick={() => router.push('/dashboard/kitchen/system-health')}
-                                    className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 rounded-xl active:scale-[0.98] transition-all hover:bg-gray-100"
-                                >
-                                    <span className="text-xs font-black text-gray-600">Ver detalhes completos</span>
-                                    <ChevronRight className="w-4 h-4 text-gray-400" />
-                                </button>
-                            </div>
-                        )
-                    })() : null}
-                </section>
+                {/* duplicate section removed */}
             </div>
         </div>
     )
