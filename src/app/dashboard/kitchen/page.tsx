@@ -2,11 +2,19 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, RefreshCw, ChefHat, Inbox, Timer, PackageCheck, AlertTriangle, Send, Calculator, ClipboardList, Truck } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Inbox, Timer, PackageCheck, AlertTriangle, Send, Calculator, ClipboardList, Truck, CheckCircle2, XCircle, Link2, Tag, Clock, Store, ChevronRight } from 'lucide-react'
 import { getOrdersForKitchenAction } from '@/modules/purchases/actions'
+import { getKitchenDashboardDataAction } from '@/app/actions/kitchenDashboardAction'
 import type { PurchaseOrder } from '@/modules/purchases/types'
+import type { KitchenOperacaoData, KitchenSaudeData } from '@/app/actions/kitchenDashboardAction'
 import { KitchenOrderCard } from './components/KitchenOrderCard'
 import toast from 'react-hot-toast'
+
+function formatHours(h: number): string {
+    if (h < 1) return '<1h'
+    if (h < 24) return `${Math.round(h)}h`
+    return `${Math.floor(h / 24)}d ${Math.round(h % 24)}h`
+}
 
 export default function KitchenPage() {
     const router = useRouter()
@@ -14,6 +22,9 @@ export default function KitchenPage() {
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
     const [errorMsg, setErrorMsg] = useState<string | null>(null)
+    const [operacao, setOperacao] = useState<KitchenOperacaoData | null>(null)
+    const [saude, setSaude] = useState<KitchenSaudeData | null>(null)
+    const [dashLoading, setDashLoading] = useState(true)
 
     async function fetchOrders(showRefresh = false) {
         if (showRefresh) setRefreshing(true)
@@ -30,7 +41,17 @@ export default function KitchenPage() {
         setRefreshing(false)
     }
 
-    useEffect(() => { fetchOrders() }, [])
+    async function fetchDashboard() {
+        setDashLoading(true)
+        const res = await getKitchenDashboardDataAction()
+        if (res.success) {
+            setOperacao(res.operacao ?? null)
+            setSaude(res.saude ?? null)
+        }
+        setDashLoading(false)
+    }
+
+    useEffect(() => { fetchOrders(); fetchDashboard() }, [])
 
     const enviados = orders.filter(o => o.status === 'enviado')
     const emAndamento = orders.filter(o => ['em_analise', 'em_separacao'].includes(o.status))
@@ -64,7 +85,100 @@ export default function KitchenPage() {
             </div>
 
             <div className="max-w-md lg:max-w-4xl mx-auto px-4 py-6 space-y-10 pb-32">
-                
+
+                {/* ── SEÇÃO: Operação de Hoje ──────────────────────────── */}
+                <section className="space-y-4">
+                    <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">
+                        Operação de Hoje
+                    </h2>
+
+                    {/* Status banner */}
+                    {!dashLoading && operacao && (() => {
+                        const isCritico = operacao.pedidosAnalise > 0 || (operacao.idadeContagemCK_horas ?? 0) > 72
+                        const isAtencao = !isCritico && ((operacao.separacaoNecessaria > 0) || ((operacao.idadeContagemCK_horas ?? 0) > 24) || operacao.lojasDesatualizadas > 0)
+                        const bg = isCritico ? 'bg-red-500' : isAtencao ? 'bg-amber-500' : 'bg-emerald-500'
+                        const Icon = isCritico ? XCircle : isAtencao ? AlertTriangle : CheckCircle2
+                        const msg = isCritico ? 'Ação necessária agora.' : isAtencao ? 'Existem pontos para acompanhar hoje.' : 'Operação sem alertas críticos no momento.'
+                        return (
+                            <div className={`${bg} rounded-2xl px-4 py-3 flex items-center gap-3 text-white`}>
+                                <Icon className="w-5 h-5 shrink-0" />
+                                <p className="text-xs font-black">{msg}</p>
+                            </div>
+                        )
+                    })()}
+
+                    {/* Mini-cards grid */}
+                    {dashLoading ? (
+                        <div className="grid grid-cols-3 gap-2.5">
+                            {[1,2,3,4,5,6].map(i => <div key={i} className="h-20 bg-white rounded-2xl animate-pulse border border-gray-100" />)}
+                        </div>
+                    ) : operacao ? (
+                        <div className="grid grid-cols-3 gap-2.5">
+                            {/* Pedidos em análise */}
+                            <button onClick={() => router.push('/dashboard/kitchen/planning')}
+                                className={`bg-white rounded-2xl p-3 text-left border-2 shadow-sm active:scale-[0.97] transition-all ${
+                                    operacao.pedidosAnalise > 0 ? 'border-red-200' : 'border-gray-100'
+                                }`}>
+                                <p className={`text-2xl font-black leading-none ${
+                                    operacao.pedidosAnalise > 0 ? 'text-red-600' : 'text-gray-900'
+                                }`}>{operacao.pedidosAnalise}</p>
+                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Em Análise</p>
+                            </button>
+
+                            {/* Produção necessária */}
+                            <button onClick={() => router.push('/dashboard/kitchen/planning')}
+                                className={`bg-white rounded-2xl p-3 text-left border-2 shadow-sm active:scale-[0.97] transition-all ${
+                                    operacao.producaoNecessaria > 0 ? 'border-orange-200' : 'border-gray-100'
+                                }`}>
+                                <p className={`text-2xl font-black leading-none ${
+                                    operacao.producaoNecessaria > 0 ? 'text-orange-600' : 'text-gray-900'
+                                }`}>{operacao.producaoNecessaria}</p>
+                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Para Produzir</p>
+                            </button>
+
+                            {/* Separação */}
+                            <button onClick={() => router.push('/dashboard/kitchen/planning')}
+                                className="bg-white rounded-2xl p-3 text-left border-2 border-gray-100 shadow-sm active:scale-[0.97] transition-all">
+                                <p className="text-2xl font-black leading-none text-gray-900">{operacao.separacaoNecessaria}</p>
+                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Para Separar</p>
+                            </button>
+
+                            {/* Contagem CK */}
+                            <button onClick={() => router.push('/dashboard/kitchen/count')}
+                                className={`bg-white rounded-2xl p-3 text-left border-2 shadow-sm active:scale-[0.97] transition-all ${
+                                    (operacao.idadeContagemCK_horas ?? 999) > 72 ? 'border-red-200' :
+                                    (operacao.idadeContagemCK_horas ?? 999) > 24 ? 'border-amber-200' : 'border-gray-100'
+                                }`}>
+                                <p className={`text-base font-black leading-none ${
+                                    (operacao.idadeContagemCK_horas ?? 999) > 72 ? 'text-red-600' :
+                                    (operacao.idadeContagemCK_horas ?? 999) > 24 ? 'text-amber-600' : 'text-emerald-600'
+                                }`}>
+                                    {operacao.idadeContagemCK_horas !== null ? formatHours(operacao.idadeContagemCK_horas) : '—'}
+                                </p>
+                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Contagem CK</p>
+                            </button>
+
+                            {/* Lojas desatualizadas */}
+                            <button onClick={() => router.push('/dashboard/kitchen/store-stock')}
+                                className={`bg-white rounded-2xl p-3 text-left border-2 shadow-sm active:scale-[0.97] transition-all ${
+                                    operacao.lojasDesatualizadas > 0 ? 'border-amber-200' : 'border-gray-100'
+                                }`}>
+                                <p className={`text-2xl font-black leading-none ${
+                                    operacao.lojasDesatualizadas > 0 ? 'text-amber-600' : 'text-gray-900'
+                                }`}>{operacao.lojasDesatualizadas}</p>
+                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Lojas +72h</p>
+                            </button>
+
+                            {/* Separados hoje */}
+                            <button onClick={() => router.push('/dashboard/kitchen/planning')}
+                                className="bg-white rounded-2xl p-3 text-left border-2 border-gray-100 shadow-sm active:scale-[0.97] transition-all">
+                                <p className="text-2xl font-black leading-none text-gray-900">{operacao.pedidosSeparadosHoje}</p>
+                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Separados</p>
+                            </button>
+                        </div>
+                    ) : null}
+                </section>
+
                 {/* ── SEÇÃO: Rotina da Cozinha Central ────────────────── */}
                 <section className="space-y-4">
                     <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-1">
@@ -171,6 +285,58 @@ export default function KitchenPage() {
                             </div>
                         </button>
                     </div>
+                </section>
+
+                {/* ── SEÇÃO: Saúde da Base (compacto) ─────────────────── */}
+                <section className="space-y-3">
+                    <div className="flex items-center justify-between px-1">
+                        <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Saúde da Base</h2>
+                    </div>
+
+                    {dashLoading ? (
+                        <div className="h-28 bg-white rounded-3xl animate-pulse border border-gray-100" />
+                    ) : saude ? (() => {
+                        const isRed = saude.unclassifiedCount > 0 || saude.producedSemVinculoCount > 0 || saude.pedidosTesteCount > 0
+                        const isAmber = !isRed && (saude.lojasDesatualizadas.length > 0 || (saude.idadeContagemCK_horas ?? 0) > 24 || saude.producaoEmAbertoCount > 0)
+                        const borderColor = isRed ? 'border-red-100' : isAmber ? 'border-amber-100' : 'border-emerald-100'
+                        return (
+                            <div className={`bg-white rounded-3xl p-5 border-2 ${borderColor} shadow-sm space-y-4`}>
+                                <div className="grid grid-cols-2 gap-2.5">
+                                    {[
+                                        { label: 'Sem classificação', val: saude.unclassifiedCount, icon: Tag, red: saude.unclassifiedCount > 0 },
+                                        { label: 'Sem vínculo', val: saude.producedSemVinculoCount, icon: Link2, red: saude.producedSemVinculoCount > 0 },
+                                        { label: 'Para revisar', val: saude.itensParaRevisarCount, icon: AlertTriangle, red: saude.itensParaRevisarCount > 0 },
+                                        { label: 'Pedidos teste', val: saude.pedidosTesteCount, icon: AlertTriangle, red: saude.pedidosTesteCount > 0 },
+                                        { label: 'Contagem CK', val: saude.idadeContagemCK_horas !== null ? formatHours(saude.idadeContagemCK_horas) : '—', icon: Clock, red: (saude.idadeContagemCK_horas ?? 0) > 72, amber: (saude.idadeContagemCK_horas ?? 0) > 24 },
+                                        { label: 'Lojas +72h', val: saude.lojasDesatualizadas.length, icon: Store, amber: saude.lojasDesatualizadas.length > 0, red: false },
+                                    ].map((item, idx) => (
+                                        <div key={idx} className="flex items-center gap-2">
+                                            <div className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${
+                                                item.red ? 'bg-red-50' : (item as any).amber ? 'bg-amber-50' : 'bg-emerald-50'
+                                            }`}>
+                                                <item.icon className={`w-3.5 h-3.5 ${
+                                                    item.red ? 'text-red-500' : (item as any).amber ? 'text-amber-500' : 'text-emerald-500'
+                                                }`} />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className={`text-sm font-black leading-none ${
+                                                    item.red ? 'text-red-600' : (item as any).amber ? 'text-amber-600' : 'text-gray-900'
+                                                }`}>{item.val}</p>
+                                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wide truncate">{item.label}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <button
+                                    onClick={() => router.push('/dashboard/kitchen/system-health')}
+                                    className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 rounded-xl active:scale-[0.98] transition-all hover:bg-gray-100"
+                                >
+                                    <span className="text-xs font-black text-gray-600">Ver detalhes completos</span>
+                                    <ChevronRight className="w-4 h-4 text-gray-400" />
+                                </button>
+                            </div>
+                        )
+                    })() : null}
                 </section>
 
                 {/* ── SEÇÃO: Pedidos de Abastecimento ─────────────────── */}
