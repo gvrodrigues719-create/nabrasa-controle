@@ -56,6 +56,7 @@ export default function ReceivingsPage() {
     const [editingId, setEditingId] = useState<string | null>(null)
     const [expandedCardId, setExpandedCardId] = useState<string | null>(null)
     const [showHistory, setShowHistory] = useState(false)
+    const [historyFilter, setHistoryFilter] = useState<'all' | 'delivered' | 'canceled' | 'refused' | 'tests'>('all')
     const [actionModal, setActionModal] = useState<{ type: 'deliver' | 'partial' | 'refuse' | 'cancel'; receiving: CKReceiving } | null>(null)
     const [actionNotes, setActionNotes] = useState('')
     const [actionReason, setActionReason] = useState('')
@@ -109,6 +110,14 @@ export default function ReceivingsPage() {
 
     const actionRequired = [...overdueScheduled, ...scheduledToday, ...partials]
     const historical = receivings.filter(r => ['delivered', 'refused', 'canceled'].includes(r.status))
+
+    const filteredHistory = useMemo(() => {
+        return historical.filter(r => {
+            if (historyFilter === 'all') return true
+            if (historyFilter === 'tests') return r.title.toUpperCase().includes('TESTE') || r.title.toUpperCase().includes('QA')
+            return r.status === historyFilter
+        })
+    }, [historical, historyFilter])
 
     // Agenda da Semana (only scheduled)
     const weekDays = useMemo(() => {
@@ -321,7 +330,12 @@ export default function ReceivingsPage() {
             <div key={r.id} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm space-y-3">
                 <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-black text-gray-900 truncate">{r.title}</h4>
+                        <h4 className="text-sm font-black text-gray-900 truncate">
+                            {r.title}
+                            {(r.title.toUpperCase().includes('TESTE') || r.title.toUpperCase().includes('QA')) && (
+                                <span className="ml-2 text-[9px] font-black text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-md uppercase tracking-tighter">Ambiente QA</span>
+                            )}
+                        </h4>
                         <p className="text-xs text-gray-400 font-medium mt-0.5">
                             {r.supplier_name || 'Fornecedor não informado'} {r.delivery_period ? `• ${PERIOD_LABELS[r.delivery_period] || r.delivery_period}` : ''}
                             {r.delivery_time ? ` ${r.delivery_time}` : ''}
@@ -365,18 +379,48 @@ export default function ReceivingsPage() {
                     <div className="flex gap-2 pt-1">
                         <button onClick={() => openEdit(r)} className="flex-1 py-2 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100 transition-colors">Editar</button>
                         <button onClick={() => { setActionModal({ type: 'deliver', receiving: r }); setActionNotes('') }} className="flex-1 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition-colors">Receber Restante</button>
+                        <button onClick={() => { setActionModal({ type: 'refuse', receiving: r }); setActionNotes(''); setActionReason('') }} className="flex-1 py-2 rounded-xl bg-red-50 text-red-700 text-xs font-bold hover:bg-red-100 transition-colors">Recusar Restante</button>
+                        <button onClick={() => setExpandedCardId(isExpanded ? null : r.id)} className="px-3 py-2 rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors">
+                            <MoreHorizontal className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
+                {!isActionable && r.status !== 'partial' && (
+                    <div className="flex gap-2 pt-1">
+                        <button onClick={() => {
+                            setCreateForm({
+                                title: `Cópia: ${r.title}`,
+                                supplier_name: r.supplier_name || '',
+                                delivery_date: todayStr,
+                                delivery_period: r.delivery_period || '',
+                                delivery_time: r.delivery_time || '',
+                                notes: r.notes || ''
+                            });
+                            setCreateItems(r.items?.map(i => ({
+                                purchase_item_id: i.purchase_item_id || undefined,
+                                receiving_catalog_item_id: i.receiving_catalog_item_id || undefined,
+                                item_name: i.item_name,
+                                expected_qty: i.expected_qty ? i.expected_qty.toString() : '',
+                                unit: i.unit || 'un',
+                                is_free: !i.purchase_item_id && !i.receiving_catalog_item_id
+                            })) || []);
+                            setShowCreate(true);
+                        }} className="flex-1 py-2 rounded-xl bg-gray-50 text-gray-600 text-xs font-bold hover:bg-gray-100 transition-colors">Duplicar para hoje</button>
+                        <button onClick={() => setExpandedCardId(isExpanded ? null : r.id)} className="flex-1 py-2 rounded-xl bg-white border border-gray-100 text-gray-500 text-xs font-bold hover:bg-gray-50 transition-colors">Ver detalhes</button>
                     </div>
                 )}
                 {isExpanded && (
                     <div className="flex gap-2 pt-2 border-t border-gray-100 mt-2">
                         {(r.status === 'scheduled' || r.status === 'partial') && (
-                            <button onClick={() => openEdit(r)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100 transition-colors">
-                                <Edit className="w-3.5 h-3.5" /> Editar
-                            </button>
+                            <>
+                                <button onClick={() => openEdit(r)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100 transition-colors">
+                                    <Edit className="w-3.5 h-3.5" /> Editar
+                                </button>
+                                <button onClick={() => { setActionModal({ type: 'cancel', receiving: r }); setActionReason('') }} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-red-50 text-red-600 text-xs font-bold hover:bg-red-100 transition-colors">
+                                    <Ban className="w-3.5 h-3.5" /> Cancelar
+                                </button>
+                            </>
                         )}
-                        <button onClick={() => { setActionModal({ type: 'cancel', receiving: r }); setActionReason('') }} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gray-100 text-gray-600 text-xs font-bold hover:bg-gray-200 transition-colors">
-                            <Ban className="w-3.5 h-3.5" /> Cancelar
-                        </button>
                     </div>
                 )}
             </div>
@@ -472,9 +516,9 @@ export default function ReceivingsPage() {
                                     {items.length > 0 ? (
                                         <div className="space-y-3">{items.map(renderCard)}</div>
                                     ) : (
-                                        <div className="pl-1 flex items-center gap-3">
-                                            <p className="text-xs text-gray-300 italic">Nenhuma entrega prevista.</p>
-                                            <button onClick={() => { setShowCreate(true); setCreateForm(f => ({ ...f, delivery_date: dateStr })) }} className="text-[10px] font-bold text-blue-500 hover:text-blue-700 transition-colors">+ Adicionar</button>
+                                        <div className="pl-1 flex items-center gap-2">
+                                            <p className="text-[11px] text-gray-300 italic">Nenhuma entrega prevista.</p>
+                                            <button onClick={() => { setShowCreate(true); setCreateForm(f => ({ ...f, delivery_date: dateStr })) }} className="text-[10px] font-bold text-gray-400 hover:text-blue-500 transition-colors">+</button>
                                         </div>
                                     )}
                                 </section>
@@ -487,14 +531,32 @@ export default function ReceivingsPage() {
                                 <button onClick={() => setShowHistory(!showHistory)} className="w-full flex items-center justify-between p-3 rounded-2xl bg-white border border-gray-100 shadow-sm hover:bg-gray-50 transition-colors">
                                     <div className="flex items-center gap-2">
                                         <History className="w-4 h-4 text-gray-400" />
-                                        <span className="text-sm font-black text-gray-700">Histórico / Concluídas</span>
-                                        <span className="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{historical.length}</span>
+                                        <span className="text-sm font-black text-gray-700">Histórico / Concluídas · {historical.length}</span>
                                     </div>
-                                    {showHistory ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-bold text-blue-500 uppercase">Ver histórico</span>
+                                        {showHistory ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                                    </div>
                                 </button>
                                 {showHistory && (
-                                    <div className="mt-4 space-y-3">
-                                        {historical.map(renderCard)}
+                                    <div className="mt-4 space-y-4">
+                                        {/* Filtros do Histórico */}
+                                        <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide">
+                                            {[
+                                                { id: 'all', l: 'Todas' },
+                                                { id: 'delivered', l: 'Recebidas' },
+                                                { id: 'canceled', l: 'Canceladas' },
+                                                { id: 'refused', l: 'Recusadas' },
+                                                { id: 'tests', l: 'Testes/QA' },
+                                            ].map(f => (
+                                                <button key={f.id} onClick={() => setHistoryFilter(f.id as any)} className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-colors ${historyFilter === f.id ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>{f.l}</button>
+                                            ))}
+                                        </div>
+                                        <div className="space-y-3">
+                                            {filteredHistory.length > 0 ? filteredHistory.map(renderCard) : (
+                                                <p className="text-center py-8 text-xs text-gray-400 italic">Nenhum registro encontrado neste filtro.</p>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </section>
