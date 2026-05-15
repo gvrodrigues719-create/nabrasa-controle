@@ -105,16 +105,51 @@ export default function KitchenPage() {
                         const isAtencao = !isCritico && (operacao.separacaoNecessaria > 0 || ckAtencao || operacao.lojasDesatualizadas > 0)
                         const bg = isCritico ? 'bg-red-500' : isAtencao ? 'bg-amber-500' : 'bg-emerald-500'
                         const Icon = isCritico ? XCircle : isAtencao ? AlertTriangle : CheckCircle2
-                        let msg = 'Operação sem alertas críticos agora.'
-                        if (operacao.pedidosAnalise > 0) msg = `${operacao.pedidosAnalise} pedido(s) aguardando análise da CK.`
-                        else if (ckVelha) msg = 'Ação recomendada: atualizar contagem da CK antes de planejar produção.'
-                        else if (operacao.lojasDesatualizadas > 0) msg = `Atenção: ${operacao.lojasDesatualizadas} loja(s) com contagem desatualizada.`
-                        else if (ckAtencao) msg = `Contagem CK feita há ${formatHours(operacao.idadeContagemCK_horas!)}.  Considere atualizar.`
-                        else if (operacao.separacaoNecessaria > 0) msg = `${operacao.separacaoNecessaria} item(s) aguardando separação.`
+                        let msg = 'Operação sem pendências críticas agora.'
+                        let actionUrl = ''
+                        if (operacao.pedidosAnalise > 0) {
+                            msg = `Ação recomendada: analisar ${operacao.pedidosAnalise} pedido(s) das lojas.`
+                            actionUrl = '/dashboard/kitchen/planning'
+                        }
+                        else if (ckVelha) {
+                            msg = 'Ação recomendada: atualizar contagem da CK antes de planejar produção.'
+                            actionUrl = '/dashboard/kitchen/count'
+                        }
+                        else if (operacao.lojasDesatualizadas > 0) {
+                            msg = `Ação recomendada: revisar Estoque das Lojas. ${operacao.lojasDesatualizadas} loja(s) com contagem antiga.`
+                            actionUrl = '/dashboard/kitchen/store-stock'
+                        }
+                        else if (saude && saude.producedSemVinculoCount > 0) {
+                            msg = `Ação recomendada: resolver ${saude.producedSemVinculoCount} vínculos pendentes da base.`
+                            actionUrl = '/dashboard/kitchen/system-health'
+                        }
+                        else if (ckAtencao) {
+                            msg = `Contagem CK feita há ${formatHours(operacao.idadeContagemCK_horas!)}. Considere atualizar.`
+                            actionUrl = '/dashboard/kitchen/count'
+                        }
+                        else if (operacao.separacaoNecessaria > 0) {
+                            msg = `${operacao.separacaoNecessaria} item(s) aguardando separação.`
+                            actionUrl = '/dashboard/kitchen/planning'
+                        }
+                        const bannerContent = (
+                            <>
+                                <Icon className="w-5 h-5 shrink-0" />
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-xs font-black leading-snug">{msg}</p>
+                                </div>
+                                {actionUrl && <ChevronRight className="w-4 h-4 opacity-70 shrink-0" />}
+                            </>
+                        )
+                        if (actionUrl) {
+                            return (
+                                <button onClick={() => router.push(actionUrl)} className={`w-full ${bg} rounded-2xl px-4 py-3 flex items-center justify-between gap-3 text-white text-left active:scale-[0.98] transition-transform`}>
+                                    {bannerContent}
+                                </button>
+                            )
+                        }
                         return (
                             <div className={`${bg} rounded-2xl px-4 py-3 flex items-center gap-3 text-white`}>
-                                <Icon className="w-5 h-5 shrink-0" />
-                                <p className="text-xs font-black leading-snug">{msg}</p>
+                                {bannerContent}
                             </div>
                         )
                     })()}
@@ -160,13 +195,6 @@ export default function KitchenPage() {
                                     className="bg-white rounded-2xl p-3 text-left border-2 border-amber-200 shadow-sm active:scale-[0.97] transition-all">
                                     <p className="text-2xl font-black leading-none text-amber-600">{operacao.lojasDesatualizadas}</p>
                                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Lojas +72h</p>
-                                </button>
-                            ),
-                            operacao.pedidosSeparadosHoje > 0 && (
-                                <button key="sepHoje" onClick={() => router.push('/dashboard/kitchen')}
-                                    className="bg-white rounded-2xl p-3 text-left border-2 border-gray-100 shadow-sm active:scale-[0.97] transition-all">
-                                    <p className="text-2xl font-black leading-none text-emerald-600">{operacao.pedidosSeparadosHoje}</p>
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Separados hoje</p>
                                 </button>
                             ),
                         ].filter(Boolean)
@@ -227,15 +255,25 @@ export default function KitchenPage() {
                             <h3 className="text-base font-black text-gray-900 mb-1">Acesso Negado</h3>
                             <p className="text-sm text-gray-500">Sem permissão para acessar a Cozinha Central.</p>
                         </div>
-                    ) : pedidosComAcao.length === 0 && separadosHoje.length === 0 ? (
+                    ) : pedidosComAcao.length === 0 ? (
                         <div className="bg-white rounded-2xl px-4 py-4 border border-gray-100 shadow-sm flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-black text-gray-900">Sem pedidos pendentes agora.</p>
-                                {separadosAntigos.length > 0 && (
+                                {separadosHoje.length > 0 && (
+                                    <p className="text-[11px] text-gray-400 font-bold mt-0.5">{separadosHoje.length} pedido(s) separado(s) hoje</p>
+                                )}
+                                {separadosHoje.length === 0 && separadosAntigos.length > 0 && (
                                     <p className="text-[11px] text-gray-400 font-bold mt-0.5">{separadosAntigos.length} separado(s) anteriores</p>
                                 )}
                             </div>
-                            <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                            <div className="flex items-center gap-2">
+                                {(separadosHoje.length > 0 || separadosAntigos.length > 0) && (
+                                    <button onClick={() => router.push('/dashboard/kitchen/planning')} className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-3 py-1.5 bg-gray-50 rounded-xl hover:bg-gray-100 active:scale-95 transition-transform">
+                                        Ver histórico →
+                                    </button>
+                                )}
+                                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
+                            </div>
                         </div>
                     ) : (
                         <div className="space-y-6">
@@ -435,12 +473,12 @@ export default function KitchenPage() {
                         <div className="h-28 bg-white rounded-3xl animate-pulse border border-gray-100" />
                     ) : saude ? (() => {
                         const items = [
-                            { label: 'Sem classificação', val: saude.unclassifiedCount, icon: Tag, alert: saude.unclassifiedCount > 0, isRed: true },
-                            { label: 'Sem vínculo', val: saude.producedSemVinculoCount, icon: Link2, alert: saude.producedSemVinculoCount > 0, isRed: true },
-                            { label: 'Para revisar', val: saude.itensParaRevisarCount, icon: AlertTriangle, alert: saude.itensParaRevisarCount > 0, isRed: true },
-                            { label: 'Pedidos teste', val: saude.pedidosTesteCount, icon: AlertTriangle, alert: saude.pedidosTesteCount > 0, isRed: true },
-                            { label: 'Contagem CK', val: saude.idadeContagemCK_horas !== null ? formatHours(saude.idadeContagemCK_horas) : '—', icon: Clock, alert: (saude.idadeContagemCK_horas ?? 0) > 24, isRed: (saude.idadeContagemCK_horas ?? 0) > 72 },
-                            { label: 'Lojas +72h', val: saude.lojasDesatualizadas.length, icon: Store, alert: saude.lojasDesatualizadas.length > 0, isRed: false },
+                            { label: 'Itens produzidos sem vínculo', val: saude.producedSemVinculoCount, icon: Link2, alert: saude.producedSemVinculoCount > 0, isRed: true },
+                            { label: 'Itens sem classificação', val: saude.unclassifiedCount, icon: Tag, alert: saude.unclassifiedCount > 0, isRed: true },
+                            { label: 'Itens para revisar (Planejamento)', val: saude.itensParaRevisarCount, icon: AlertTriangle, alert: saude.itensParaRevisarCount > 0, isRed: true },
+                            { label: 'Pedidos teste na base', val: saude.pedidosTesteCount, icon: AlertTriangle, alert: saude.pedidosTesteCount > 0, isRed: true },
+                            { label: 'Idade da Contagem CK', val: saude.idadeContagemCK_horas !== null ? formatHours(saude.idadeContagemCK_horas) : '—', icon: Clock, alert: (saude.idadeContagemCK_horas ?? 0) > 24, isRed: (saude.idadeContagemCK_horas ?? 0) > 72 },
+                            { label: 'Lojas com contagem antiga', val: saude.lojasDesatualizadas.length, icon: Store, alert: saude.lojasDesatualizadas.length > 0, isRed: false },
                         ].filter(item => item.alert)
 
                         if (items.length === 0) {
@@ -490,7 +528,7 @@ export default function KitchenPage() {
                                     onClick={() => router.push('/dashboard/kitchen/system-health')}
                                     className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 rounded-xl active:scale-[0.98] transition-all hover:bg-gray-100"
                                 >
-                                    <span className="text-xs font-black text-gray-600">Ver detalhes completos</span>
+                                    <span className="text-xs font-black text-gray-600">Ver pendências da base</span>
                                     <ChevronRight className="w-4 h-4 text-gray-400" />
                                 </button>
                             </div>
