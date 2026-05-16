@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
-import { requireManagerOrAdmin } from '@/lib/auth-utils'
+import { getServerAuthContext } from '@/lib/server-auth-context'
 
 const supabase = new Proxy({} as any, {
     get(target, prop) {
@@ -13,6 +13,22 @@ const supabase = new Proxy({} as any, {
         return typeof value === 'function' ? value.bind(client) : value
     }
 })
+
+async function validateExecutionOwnership(executionId: string) {
+    const user = await getServerAuthContext()
+    if (user.role === 'admin') return user
+
+    const { data: exec } = await supabase
+        .from('routine_executions')
+        .select('unit_id')
+        .eq('id', executionId)
+        .single()
+
+    if (!exec || exec.unit_id !== user.unit_id) {
+        throw new Error('Acesso negado: Este ciclo pertence a outra unidade.')
+    }
+    return user
+}
 
 
 
@@ -46,7 +62,8 @@ export async function addStockEntry(data: {
     notes?: string
 }) {
     // 1. Extrair auth via servidor e testar ciclo
-    const userId = await requireManagerOrAdmin()
+    const user = await validateExecutionOwnership(data.executionId)
+    const userId = user.id
     await requireActiveCycle(data.executionId)
 
     // 2. Buscar informações do item
@@ -157,6 +174,7 @@ export async function addStockEntry(data: {
 }
 
 export async function getStockEntries(executionId: string) {
+    await validateExecutionOwnership(executionId)
     const { data, error } = await supabase
         .from('stock_entries')
         .select(`
@@ -171,8 +189,8 @@ export async function getStockEntries(executionId: string) {
 }
 
 export async function deleteStockEntry(entryId: string) {
-    // Apenas validação de segurança na hierarquia 
-    await requireManagerOrAdmin()
+    const user = await getServerAuthContext()
+    if (user.role !== 'admin' && user.role !== 'manager') throw new Error('Sem permissão')
 
     // Verifica bloqueio de ciclo via entry referenciada
     const { data: entry } = await supabase.from('stock_entries').select('execution_id').eq('id', entryId).single()

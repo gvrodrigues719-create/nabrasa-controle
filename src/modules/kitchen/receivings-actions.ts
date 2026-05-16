@@ -165,6 +165,18 @@ export async function markReceivingDeliveredAction(
         const { supabase, user } = await getCurrentUser()
         if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
+        // Validar status atual
+        const { data: current, error: currentErr } = await supabase
+            .from('ck_receivings')
+            .select('status')
+            .eq('id', receivingId)
+            .single()
+            
+        if (currentErr) throw currentErr
+        if (current.status !== 'scheduled' && current.status !== 'partial') {
+            throw new Error(`Não é possível marcar como recebido uma entrega com status ${current.status}`)
+        }
+
         const { error } = await supabase
             .from('ck_receivings')
             .update({
@@ -215,6 +227,18 @@ export async function markReceivingPartialAction(
         const { supabase, user } = await getCurrentUser()
         if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
         if (!receptionNotes?.trim()) throw new Error('Motivo/observação é obrigatório para recebimento parcial')
+
+        // Validar status atual
+        const { data: current, error: currentErr } = await supabase
+            .from('ck_receivings')
+            .select('status')
+            .eq('id', receivingId)
+            .single()
+            
+        if (currentErr) throw currentErr
+        if (current.status !== 'scheduled' && current.status !== 'partial') {
+            throw new Error(`Não é possível marcar como parcial uma entrega com status ${current.status}`)
+        }
 
         const { error } = await supabase
             .from('ck_receivings')
@@ -268,6 +292,18 @@ export async function markReceivingRefusedAction(
         if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
         if (!refusalReason?.trim()) throw new Error('Motivo é obrigatório para recusar entrega')
 
+        // Validar status atual
+        const { data: current, error: currentErr } = await supabase
+            .from('ck_receivings')
+            .select('status')
+            .eq('id', receivingId)
+            .single()
+            
+        if (currentErr) throw currentErr
+        if (current.status !== 'scheduled' && current.status !== 'partial') {
+            throw new Error(`Não é possível recusar uma entrega com status ${current.status}`)
+        }
+
         const { error } = await supabase
             .from('ck_receivings')
             .update({
@@ -311,6 +347,18 @@ export async function cancelReceivingAction(
         const { supabase, user } = await getCurrentUser()
         if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão para cancelar')
         if (!cancelReason?.trim()) throw new Error('Motivo de cancelamento é obrigatório')
+
+        // Validar status atual
+        const { data: current, error: currentErr } = await supabase
+            .from('ck_receivings')
+            .select('status')
+            .eq('id', receivingId)
+            .single()
+            
+        if (currentErr) throw currentErr
+        if (current.status !== 'scheduled') {
+            throw new Error(`Não é possível cancelar uma entrega com status ${current.status}`)
+        }
 
         const { error } = await supabase
             .from('ck_receivings')
