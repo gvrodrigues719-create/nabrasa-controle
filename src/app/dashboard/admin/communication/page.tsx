@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { getActiveNoticesAction, createNoticeAction, deleteNoticeAction } from '@/app/actions/communicationAction'
-import { Bell, Plus, Trash2, Calendar, AlertTriangle, Info, Clock, CheckCircle2, ThumbsUp, MessageSquare } from 'lucide-react'
+import { Bell, Plus, Trash2, Calendar, AlertTriangle, Info, Clock, CheckCircle2, ThumbsUp, MessageSquare, ArrowLeft } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 export default function AdminCommunicationPage() {
+    const router = useRouter()
     const [notices, setNotices] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -63,12 +65,20 @@ export default function AdminCommunicationPage() {
 
     return (
         <div className="p-4 max-w-4xl mx-auto pb-20">
-            <header className="mb-8">
-                <h1 className="text-2xl font-black text-[#1b1c1a] flex items-center gap-3 tracking-tight">
-                    <Bell className="w-6 h-6 text-[#B13A2B]" />
-                    Mural & Comunicados
-                </h1>
-                <p className="text-sm text-[#8c716c] font-medium mt-1">Gerencie os avisos que aparecem na Home dos Operadores.</p>
+            <header className="mb-8 flex items-center gap-4 mt-2">
+                <button 
+                    onClick={() => router.push('/dashboard')}
+                    className="p-2 bg-white border border-gray-200 rounded-xl shadow-sm text-gray-600 hover:bg-gray-50 transition active:scale-95 shrink-0"
+                >
+                    <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div>
+                    <h1 className="text-2xl font-black text-[#1b1c1a] flex items-center gap-3 tracking-tight">
+                        <Bell className="w-6 h-6 text-[#B13A2B]" />
+                        Mural & Comunicados
+                    </h1>
+                    <p className="text-sm text-[#8c716c] font-medium mt-1">Gerencie os avisos que aparecem na Home dos Operadores.</p>
+                </div>
             </header>
 
             {message.text && (

@@ -213,7 +213,7 @@ export default function VendasPage() {
       {/* ── BLOCO A — CABEÇALHO ────────────────────────────────── */}
       <div className="flex items-center gap-3 mt-2">
         <button
-          onClick={() => router.push('/dashboard/admin')}
+          onClick={() => router.push('/dashboard')}
           className="p-2 bg-white rounded-lg shadow-sm border border-gray-200 text-gray-600 shrink-0"
         >
           <ArrowLeft className="w-5 h-5" />

@@ -41,85 +41,67 @@ export default function ManagerHome() {
     const overview = data?.overview || { total: 0, completed: 0, pending: 0, late: 0, critical: 0, lossesCount: 0, pendingIssuesCount: 0, openCounts: 0 }
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-20">
+        <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-20">
             
-            {/* 1. SITUAÇÃO DO TURNO (O CORAÇÃO) */}
-            <section className="space-y-4 pt-4">
-                <div className="flex items-center justify-between px-1">
-                    <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-6 bg-gray-900 rounded-full" />
-                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Situação do Turno</h3>
-                    </div>
-                </div>
+            {/* 1. OPERAÇÃO AGORA (DIAGNÓSTICO E MÉTRICAS) */}
+            <section className="space-y-4">
                 <ShiftMetrics overview={overview} />
             </section>
 
-            {/* 3. AÇÕES RÁPIDAS (INTERVENÇÃO DIRETA) */}
+            {/* 2. AÇÕES RÁPIDAS (TAREFAS DIRETAS) */}
             <ManagerQuickActions 
                 lateCount={overview.late} 
                 userRole={userRole}
             />
 
-            {/* 4. BLOCO UNIFICADO DE CONTAGENS */}
-            <section className="bg-white border border-gray-100 rounded-[2.5rem] p-6 shadow-sm space-y-4">
-                <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                        <Package className="w-6 h-6" />
+            {/* 3. FRENTES DE GESTÃO */}
+            <SystemArchitectureHub />
+
+            {/* 4. BLOCO DE CONTAGENS (COMPACTO) */}
+            <section className="bg-gray-50 border border-gray-100 rounded-[2rem] p-5 space-y-4">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white text-indigo-600 flex items-center justify-center shadow-sm border border-gray-100">
+                        <Package className="w-5 h-5" />
                     </div>
                     <div>
-                        <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight leading-none mb-1.5">Contagens de Estoque</h3>
-                        <p className="text-xs font-medium text-gray-400">Acompanhe execução, confira histórico e exporte Excel.</p>
+                        <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-tight leading-none mb-1">Estoques</h3>
+                        <p className="text-[10px] font-bold text-gray-400">Auditoria e histórico de contagens.</p>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2">
                     <Link href="/dashboard/admin/history/sessions"
-                        className="flex items-center justify-center gap-2 py-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-colors active:scale-95">
-                        <Eye className="w-4 h-4" />
+                        className="flex items-center justify-center gap-2 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-700 transition-all active:scale-95">
+                        <Eye className="w-3.5 h-3.5" />
                         Ao Vivo
                     </Link>
                     <Link href="/dashboard/admin/counts/history"
-                        className="flex items-center justify-center gap-2 py-4 bg-gray-50 text-gray-900 border border-gray-100 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-100 transition-colors active:scale-95">
-                        <CalendarSearch className="w-4 h-4" />
+                        className="flex items-center justify-center gap-2 py-3 bg-white text-gray-900 border border-gray-100 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-gray-50 transition-all active:scale-95">
+                        <CalendarSearch className="w-3.5 h-3.5" />
                         Histórico
                     </Link>
                 </div>
-                
-                <Link href="/dashboard/admin/counts/history?export=true"
-                    className="w-full flex items-center justify-center gap-2 py-3 bg-white border border-gray-100 text-gray-400 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:text-indigo-600 transition-colors">
-                    <FileText className="w-3.5 h-3.5" />
-                    Exportar Relatórios (XLSX)
-                </Link>
             </section>
 
-            {/* 5. EQUIPE EM ATENÇÃO */}
+            {/* EXCEÇÕES E ATENÇÃO (DINÂMICOS) */}
+            {data?.exceptions?.length > 0 && <ExceptionCenter exceptions={data.exceptions} />}
             <AttentionList collaborators={data?.collaborators || []} />
 
-            {/* 6. MONITORAMENTO POR SETOR */}
-            <section className="space-y-4">
+            {/* MONITORAMENTO POR SETOR (COMPACTO) */}
+            <section className="space-y-3">
                 <div className="flex items-center justify-between px-1">
-                    <div className="flex items-center gap-2">
-                        <span className="w-1 h-4 bg-gray-200 rounded-full" />
-                        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Status das Áreas</h3>
-                    </div>
+                    <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Status das Áreas</h3>
                     <Link 
                         href="/dashboard/areas"
                         className="flex items-center gap-1.5 text-[10px] font-black text-[#B13A2B] uppercase tracking-widest hover:opacity-70 transition-opacity"
                     >
-                        Ver Diagnóstico
+                        Diagnóstico
                         <ArrowRight className="w-3 h-3" />
                     </Link>
                 </div>
                 {data && <SectorGrid bySector={data.bySector} />}
             </section>
 
-            {/* EXCEÇÕES DINÂMICAS */}
-            {data?.exceptions?.length > 0 && <ExceptionCenter exceptions={data.exceptions} />}
-
-            {/* 7. ÁREAS DO SISTEMA (Management Hub) */}
-            <div className="pt-8 border-t border-gray-100">
-                <SystemArchitectureHub />
-            </div>
         </div>
     )
 }

@@ -270,7 +270,7 @@ export default function CountHistoryPage() {
             <div className="bg-white border-b border-gray-100 sticky top-0 z-40">
                 <div className="p-4 flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                        <button onClick={() => router.push('/dashboard/admin')}
+                        <button onClick={() => router.push('/dashboard')}
                             className="p-2 bg-gray-50 rounded-xl text-gray-600 hover:bg-gray-100 transition">
                             <ArrowLeft className="w-5 h-5" />
                         </button>

@@ -27,59 +27,57 @@ export default function ManagerQuickActions({ lateCount, pendingOrdersCount = 0,
                 <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Ações Rápidas</h3>
             </div>
             
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-2">
                 {/* Compras & Abastecimento */}
                 <Link 
                     href="/dashboard/purchases"
-                    className="bg-white border border-gray-100 p-6 rounded-[2.5rem] shadow-sm hover:border-gray-900/10 transition-all flex items-center justify-between group active:scale-[0.98]"
+                    className="bg-white border border-gray-100 p-4 rounded-[1.5rem] shadow-sm hover:border-gray-900/10 transition-all flex items-center justify-between group active:scale-[0.98]"
                 >
-                    <div className="flex items-center gap-5">
-                        <div className="w-16 h-16 rounded-[24px] bg-orange-50 text-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform relative">
-                            <ShoppingCart className="w-7 h-7" />
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-[18px] bg-orange-50 text-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform relative">
+                            <ShoppingCart className="w-5 h-5" />
                             {pendingOrdersCount > 0 && (
-                                <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#B13A2B] text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#B13A2B] text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-white">
                                     {pendingOrdersCount}
                                 </span>
                             )}
                         </div>
                         <div className="text-left">
-                            <span className="block text-xs font-black uppercase text-gray-900 leading-none mb-1.5">Abastecimento</span>
+                            <span className="block text-[10px] font-black uppercase text-gray-900 leading-none mb-1">Abastecimento</span>
                             <span className="block text-sm font-bold text-gray-400">
                                 {pendingOrdersCount > 0
-                                    ? `${pendingOrdersCount} pedidos ativos`
-                                    : 'Pedidos para loja e cozinha central'}
+                                    ? `Revisar ${pendingOrdersCount} pedidos ativos`
+                                    : 'Gerenciar pedidos da loja'}
                             </span>
                         </div>
                     </div>
-                    <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 group-hover:bg-gray-900 group-hover:text-white transition-all">
-                        <ChevronRight className="w-5 h-5" />
-                    </div>
+                    <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-gray-900 transition-colors" />
                 </Link>
 
                 {/* Gerenciar Atrasos */}
                 <Link 
                     href="/dashboard/admin/checklists?tab=operational"
-                    className="bg-white border border-gray-100 p-6 rounded-[2.5rem] shadow-sm hover:border-gray-900/10 transition-all flex items-center justify-between group active:scale-[0.98]"
+                    className="bg-white border border-gray-100 p-4 rounded-[1.5rem] shadow-sm hover:border-gray-900/10 transition-all flex items-center justify-between group active:scale-[0.98]"
                 >
-                    <div className="flex items-center gap-5">
-                        <div className="w-16 h-16 rounded-[24px] bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                            <Clock className="w-7 h-7" />
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-[18px] bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Clock className="w-5 h-5" />
                         </div>
                         <div className="text-left">
-                            <span className="block text-xs font-black uppercase text-gray-900 leading-none mb-1.5">Gerenciar Atrasos</span>
-                            <span className="block text-sm font-bold text-gray-400">{lateText}</span>
+                            <span className="block text-[10px] font-black uppercase text-gray-900 leading-none mb-1">Checklists</span>
+                            <span className="block text-sm font-bold text-gray-400">
+                                {lateCount > 0 ? `Fechar ${lateCount} pendências do turno` : 'Verificar tarefas do dia'}
+                            </span>
                         </div>
                     </div>
-                    <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 group-hover:bg-gray-900 group-hover:text-white transition-all">
-                        <ChevronRight className="w-5 h-5" />
-                    </div>
+                    <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-gray-900 transition-colors" />
                 </Link>
 
                 {/* Cozinha Central — Apenas para Admin */}
                 {userRole === 'admin' && (
                     <KitchenCard 
                         titleOverride="Cozinha Central"
-                        descriptionOverride="Separação e produção pendente"
+                        descriptionOverride="Gerenciar envios e produção"
                     />
                 )}
             </div>

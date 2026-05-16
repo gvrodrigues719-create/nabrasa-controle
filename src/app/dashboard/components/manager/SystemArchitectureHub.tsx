@@ -78,29 +78,16 @@ export default function SystemArchitectureHub() {
     const { userRole } = useDashboardIdentity()
 
     return (
-        <section className="space-y-6">
-            <div className="flex items-center justify-between mb-2">
+        <section className="space-y-4">
+            <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
                     <span className="w-1.5 h-6 bg-gray-900 rounded-full" />
-                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Áreas do Sistema</h3>
+                    <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">Frentes de Gestão</h3>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {/* 1. Rotinas Operacionais */}
-                <AreaCard 
-                    title="ROTINAS OPERACIONAIS"
-                    icon={ClipboardList}
-                    accentColor="text-[#B13A2B]"
-                    mainModules={[
-                        { label: 'Checklists', href: '/dashboard/admin/checklists', status: 'ativo' },
-                        { label: 'Contagens', href: '/dashboard/admin/routines', status: 'ativo parcial' },
-                        { label: 'Auditoria', href: '/dashboard/admin/history/sessions', status: 'ativo' }
-                    ]}
-                    extraModule={{ label: 'Abertura & Fechamento', status: 'em desenvolvimento' }}
-                />
-
-                {/* 2. Estoque, CMV e Produção */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {/* 1. Estoque, CMV e Produção (PRIORIDADE 1) */}
                 <AreaCard 
                     title="ESTOQUE, CMV E PRODUÇÃO"
                     icon={Boxes}
@@ -113,9 +100,9 @@ export default function SystemArchitectureHub() {
                     extraModule={{ label: 'Ficha Técnica', status: 'ativo parcial' }}
                 />
 
-                {/* 3. Vendas, Delivery e Atendimento */}
+                {/* 2. Vendas, Delivery e Atendimento (PRIORIDADE 2) */}
                 <AreaCard 
-                    title="Vendas, Delivery e Atendimento"
+                    title="Vendas & Atendimento"
                     icon={ShoppingBag}
                     accentColor="text-indigo-500"
                     mainModules={[
@@ -125,7 +112,7 @@ export default function SystemArchitectureHub() {
                     extraModule={{ label: 'Atendimento', status: 'em desenvolvimento' }}
                 />
 
-                {/* 4. Equipe e Rotina */}
+                {/* 3. Equipe e Rotina (PRIORIDADE 3) */}
                 <AreaCard 
                     title="EQUIPE E ROTINA"
                     icon={Users}
@@ -138,7 +125,30 @@ export default function SystemArchitectureHub() {
                     extraModule={{ label: 'Onboarding', status: 'em desenvolvimento' }}
                 />
 
-                {/* 5. Equipamentos & Manutenção */}
+                {/* 4. Rotinas Operacionais */}
+                <AreaCard 
+                    title="ROTINAS OPERACIONAIS"
+                    icon={ClipboardList}
+                    accentColor="text-[#B13A2B]"
+                    mainModules={[
+                        { label: 'Checklists', href: '/dashboard/admin/checklists', status: 'ativo' },
+                        { label: 'Contagens', href: '/dashboard/admin/routines', status: 'ativo parcial' },
+                        { label: 'Auditoria', href: '/dashboard/admin/history/sessions', status: 'ativo' }
+                    ]}
+                />
+
+                {/* 5. Processos e Regras */}
+                <AreaCard 
+                    title="Processos e Regras"
+                    icon={ListChecks}
+                    accentColor="text-gray-600"
+                    mainModules={[
+                        { label: 'Templates', href: '/dashboard/admin/checklists?tab=management', status: 'ativo' },
+                        { label: 'Regras', href: '/dashboard/admin/checklists', status: 'ativo' }
+                    ]}
+                />
+
+                {/* 6. Equipamentos & Manutenção */}
                 <AreaCard 
                     title="Equipamentos & Manutenção"
                     icon={Wrench}
@@ -149,28 +159,15 @@ export default function SystemArchitectureHub() {
                     extraModule={{ label: 'Manutenção', status: 'em breve' }}
                 />
 
-                {/* 6. Processos e Regras */}
-                <AreaCard 
-                    title="Processos e Regras"
-                    icon={ListChecks}
-                    accentColor="text-gray-600"
-                    mainModules={[
-                        { label: 'Templates', href: '/dashboard/admin/checklists?tab=management', status: 'ativo' },
-                        { label: 'Regras', href: '/dashboard/admin/checklists', status: 'ativo' }
-                    ]}
-                    extraModule={{ label: 'Configuração', status: 'em desenvolvimento' }}
-                />
-
                 {/* 7. Indicadores e Relatórios */}
                 <AreaCard 
                     title="INDICADORES E RELATÓRIOS"
                     icon={BarChart3}
                     accentColor="text-blue-500"
-                    className="lg:col-span-3 lg:h-auto"
+                    className="lg:col-span-3"
                     mainModules={[
                         { label: 'Relatórios', href: '/dashboard/admin/reports', status: 'ativo parcial' }
                     ]}
-                    extraModule={{ label: 'Painéis', status: 'em desenvolvimento' }}
                 />
             </div>
         </section>

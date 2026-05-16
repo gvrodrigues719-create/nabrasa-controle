@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
-import { Plus, Trash2, Edit2, Loader2, Save, X, CalendarSync, CheckSquare, Square } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Plus, Trash2, Edit2, Loader2, Save, X, CalendarSync, CheckSquare, Square, ArrowLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { ConfirmModal } from '@/components/ConfirmModal'
 
@@ -20,6 +21,7 @@ type Group = {
 }
 
 export default function RoutinesPage() {
+    const router = useRouter()
     const [routines, setRoutines] = useState<Routine[]>([])
     const [groups, setGroups] = useState<Group[]>([])
     const [loading, setLoading] = useState(true)
@@ -131,8 +133,16 @@ export default function RoutinesPage() {
                 onCancel={() => setItemToDelete(null)}
                 onConfirm={confirmDelete}
             />
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">Rotinas</h2>
+            <div className="flex justify-between items-center mb-4 mt-2">
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={() => router.push('/dashboard')}
+                        className="p-2 bg-white border border-gray-200 rounded-xl shadow-sm text-gray-600 hover:bg-gray-50 transition active:scale-95 shrink-0"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">Rotinas</h2>
+                </div>
                 {!isEditing && (
                     <button onClick={() => { setIsEditing('new'); resetForm(); }} className="bg-indigo-600 text-white py-2 px-4 rounded-xl flex items-center space-x-2 shadow-sm hover:bg-indigo-700 transition active:scale-95">
                         <Plus className="w-5 h-5" />
