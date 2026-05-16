@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, CheckCircle2, Truck, AlertTriangle, Save, Store, Hash } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Truck, AlertTriangle, Save, Store, Hash, CheckCheck, Copy } from 'lucide-react'
 import { getOrderDetailAction, saveDispatchDraftAction, confirmDispatchAction } from '@/modules/purchases/actions'
 import type { PurchaseOrder } from '@/modules/purchases/types'
 import toast from 'react-hot-toast'
@@ -17,6 +17,15 @@ interface DispatchState {
     allowsDecimal: boolean
 }
 
+const QUICK_REASONS = [
+    "Estoque insuficiente",
+    "Produção não ficou pronta",
+    "Item indisponível",
+    "Ajustado pela CK",
+    "Erro no pedido da loja",
+    "Outro"
+]
+
 export default function KitchenDispatchPage() {
     const params = useParams()
     const router = useRouter()
@@ -27,6 +36,7 @@ export default function KitchenDispatchPage() {
     const [loading, setLoading] = useState(true)
     const [savingDraft, setSavingDraft] = useState(false)
     const [confirming, setConfirming] = useState(false)
+    const [globalReason, setGlobalReason] = useState('')
 
     const fetchOrder = useCallback(async () => {
         setLoading(true)
@@ -57,6 +67,30 @@ export default function KitchenDispatchPage() {
         setItems(prev => prev.map(item => 
             item.orderItemId === orderItemId ? { ...item, [field]: value } : item
         ))
+    }
+
+    const handleFillAll = () => {
+        setItems(prev => prev.map(item => ({
+            ...item,
+            dispatchedQty: item.requestedQty,
+            divergenceReason: ''
+        })))
+        toast.success('Todos os itens preenchidos conforme o pedido')
+    }
+
+    const handleApplyGlobalReason = () => {
+        if (!globalReason) {
+            toast.error('Selecione um motivo para aplicar')
+            return
+        }
+        setItems(prev => prev.map(item => {
+            const hasDiff = Math.abs(item.requestedQty - item.dispatchedQty) >= 0.0001
+            if (hasDiff && !item.divergenceReason) {
+                return { ...item, divergenceReason: globalReason }
+            }
+            return item
+        }))
+        toast.success('Motivo aplicado às divergências pendentes')
     }
 
     const handleSaveDraft = async () => {
@@ -123,10 +157,12 @@ export default function KitchenDispatchPage() {
     if (!order) return null
 
     const totalItems = items.length
-    const divergentItemsCount = items.filter(i => Math.abs(i.requestedQty - i.dispatchedQty) >= 0.0001).length
+    const realDivergences = items.filter(i => Math.abs(i.requestedQty - i.dispatchedQty) >= 0.0001)
+    const divergentItemsCount = realDivergences.length
+    const missingReasonsCount = realDivergences.filter(i => !i.divergenceReason).length
 
     return (
-        <div className="min-h-screen bg-[#F8F7F4] pb-40">
+        <div className="min-h-screen bg-[#F8F7F4] pb-48">
             {/* Header Fixo */}
             <header className="sticky top-0 z-40 bg-white border-b border-gray-100 shadow-sm">
                 <div className="max-w-md lg:max-w-4xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
@@ -169,7 +205,45 @@ export default function KitchenDispatchPage() {
                             <p className={`text-xl font-black leading-none ${divergentItemsCount > 0 ? 'text-orange-600' : 'text-gray-900'}`}>{divergentItemsCount}</p>
                         </div>
                     </div>
+
+                    <button 
+                        onClick={handleFillAll}
+                        className="w-full py-3.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border border-indigo-100"
+                    >
+                        <CheckCheck className="w-4 h-4" />
+                        Preencher tudo igual ao pedido
+                    </button>
                 </div>
+
+                {/* Ações Globais de Motivo */}
+                {missingReasonsCount > 0 && (
+                    <div className="bg-orange-50 rounded-3xl border border-orange-100 p-5 shadow-sm space-y-4 animate-in fade-in slide-in-from-top-2 duration-500">
+                        <div className="flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 text-orange-500" />
+                            <p className="text-[10px] font-black text-orange-600 uppercase tracking-widest">Ação em Lote: Motivos de Divergência</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <select
+                                value={globalReason}
+                                onChange={e => setGlobalReason(e.target.value)}
+                                className="flex-1 bg-white border border-orange-200 rounded-2xl px-4 py-3 text-[11px] font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20 appearance-none shadow-sm"
+                            >
+                                <option value="" disabled>Motivo rápido para todos...</option>
+                                {QUICK_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+                            </select>
+                            <button 
+                                onClick={handleApplyGlobalReason}
+                                className="px-4 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-md shadow-orange-100"
+                            >
+                                <Copy className="w-3.5 h-3.5" />
+                                Aplicar
+                            </button>
+                        </div>
+                        <p className="text-[9px] text-orange-400 font-bold uppercase tracking-tight text-center">
+                            Aplica apenas em itens sem motivo informado
+                        </p>
+                    </div>
+                )}
 
                 <div className="flex items-center gap-3 mb-4">
                     <div className="h-1 flex-1 bg-gray-200 rounded-full" />
@@ -185,7 +259,7 @@ export default function KitchenDispatchPage() {
                         const diff = Math.abs(item.requestedQty - item.dispatchedQty) >= 0.0001
                         
                         return (
-                            <div key={item.orderItemId} className={`bg-white rounded-[32px] border p-5 shadow-sm transition-all duration-300 ${diff ? 'border-orange-200 ring-2 ring-orange-50' : 'border-gray-100'}`}>
+                            <div key={item.orderItemId} className={`bg-white rounded-[32px] border p-5 shadow-sm transition-all duration-300 ${diff ? 'border-orange-200 ring-2 ring-orange-50 shadow-orange-50/50' : 'border-gray-100'}`}>
                                 <div className="mb-4 space-y-1">
                                     <h3 className="text-base font-black text-gray-900 leading-tight">
                                         {item.itemName}
@@ -217,7 +291,10 @@ export default function KitchenDispatchPage() {
                                             </div>
                                             
                                             <button 
-                                                onClick={() => updateItem(item.orderItemId, 'dispatchedQty', item.requestedQty)}
+                                                onClick={() => {
+                                                    updateItem(item.orderItemId, 'dispatchedQty', item.requestedQty)
+                                                    updateItem(item.orderItemId, 'divergenceReason', '')
+                                                }}
                                                 className="px-3 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors shrink-0"
                                             >
                                                 Igual
@@ -237,11 +314,7 @@ export default function KitchenDispatchPage() {
                                                 className="w-full bg-orange-50 border border-orange-200 rounded-2xl px-4 py-3 text-sm font-bold text-orange-900 focus:outline-none focus:ring-2 focus:ring-orange-500/20 appearance-none"
                                             >
                                                 <option value="" disabled>Selecione um motivo...</option>
-                                                <option value="Estoque insuficiente">Estoque insuficiente</option>
-                                                <option value="Produção não ficou pronta">Produção não ficou pronta</option>
-                                                <option value="Item indisponível">Item indisponível</option>
-                                                <option value="Erro no pedido da loja">Erro no pedido da loja</option>
-                                                <option value="Outro">Outro (Adicione nota no pedido)</option>
+                                                {QUICK_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
                                             </select>
                                         </div>
                                     )}

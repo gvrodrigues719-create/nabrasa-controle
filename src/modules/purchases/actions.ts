@@ -756,6 +756,11 @@ export async function saveDispatchDraftAction(
         const { supabase, user } = await getCurrentUser()
         if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
+        // 0. Bloquear payload vazio
+        if (!dispatchedItems || dispatchedItems.length === 0) {
+            throw new Error('Nenhum item informado para expedição.')
+        }
+
         // 1. Validar pedido e status
         const { data: order } = await supabase
             .from('purchase_orders')
@@ -818,6 +823,11 @@ export async function confirmDispatchAction(
         const { supabase, user } = await getCurrentUser()
         if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
+        // 0. Bloquear payload vazio
+        if (!dispatchedItems || dispatchedItems.length === 0) {
+            throw new Error('Nenhum item informado para expedição.')
+        }
+
         // 1. Validar pedido e status
         const { data: order } = await supabase
             .from('purchase_orders')
@@ -830,35 +840,56 @@ export async function confirmDispatchAction(
             throw new Error('Somente pedidos em separação podem ser expedidos.')
         }
 
-        // 2. Validar quantidades e motivos antes de qualquer I/O adicional
+        // 2. Buscar todos os itens do pedido no banco para validação de integridade total
+        const { data: dbItems, error: fetchErr } = await supabase
+            .from('purchase_order_items')
+            .select('id, requested_qty')
+            .eq('order_id', orderId)
+
+        if (fetchErr) throw fetchErr
+        if (!dbItems || dbItems.length === 0) throw new Error('Pedido sem itens cadastrados.')
+
+        // 3. Validar se todos os itens foram conferidos (e apenas eles)
+        const payloadIds = dispatchedItems.map(i => i.orderItemId)
+        const dbIds = dbItems.map(i => i.id)
+
+        // Check for duplicates in payload
+        const uniquePayloadIds = new Set(payloadIds)
+        if (uniquePayloadIds.size !== payloadIds.length) {
+            throw new Error('Item duplicado na conferência.')
+        }
+
+        // Check if payload has exactly all items from DB
+        if (payloadIds.length !== dbIds.length) {
+            throw new Error('Todos os itens do pedido precisam ser conferidos antes do envio.')
+        }
+
+        const allItemsPresent = dbIds.every(id => uniquePayloadIds.has(id))
+        if (!allItemsPresent) {
+            throw new Error('Item não pertence a este pedido ou itens obrigatórios ausentes.')
+        }
+
+        // 4. Criar mapa de quantidades do banco para validação segura (não confiar no requestedQty do payload)
+        const dbQtyMap = new Map<string, number>()
+        dbItems.forEach(item => dbQtyMap.set(item.id, item.requested_qty))
+
+        // 5. Validar quantidades e motivos
         for (const item of dispatchedItems) {
             if (item.dispatchedQty < 0) throw new Error('Quantidade não pode ser negativa.')
-            const diff = !qtyEqual(item.requestedQty, item.dispatchedQty)
+            
+            const dbRequestedQty = dbQtyMap.get(item.orderItemId) ?? 0
+            const diff = !qtyEqual(dbRequestedQty, item.dispatchedQty)
+            
             if (diff && !item.divergenceReason) {
                 throw new Error('Motivo de divergência é obrigatório quando a quantidade enviada difere da pedida.')
             }
         }
 
-        // 3. Validar ownership em lote — SELECT único antes de qualquer UPDATE
-        //    Garante que NENHUM orderItemId pertence a outro pedido.
-        //    Se qualquer ID for inválido: bloquear TUDO, não atualizar nenhum item,
-        //    não alterar status, não registrar evento.
-        const orderItemIds = dispatchedItems.map(i => i.orderItemId)
-        const { data: dbItems, error: fetchErr } = await supabase
-            .from('purchase_order_items')
-            .select('id')
-            .eq('order_id', orderId)
-            .in('id', orderItemIds)
-
-        if (fetchErr) throw fetchErr
-        if (!dbItems || dbItems.length !== orderItemIds.length) {
-            throw new Error('Item não pertence a este pedido.')
-        }
-
-        // 4. Todos os itens validados — executar updates
+        // 6. Executar updates
         let hasDivergence = false
         for (const item of dispatchedItems) {
-            const diff = !qtyEqual(item.requestedQty, item.dispatchedQty)
+            const dbRequestedQty = dbQtyMap.get(item.orderItemId) ?? 0
+            const diff = !qtyEqual(dbRequestedQty, item.dispatchedQty)
             if (diff) hasDivergence = true
 
             const { error } = await supabase
@@ -872,7 +903,7 @@ export async function confirmDispatchAction(
             if (error) throw error
         }
 
-        // 5. Atualizar status do pedido
+        // 7. Atualizar status do pedido
         const newStatus: OrderStatus = 'em_entrega'
         const { error: orderErr } = await supabase
             .from('purchase_orders')
@@ -880,7 +911,7 @@ export async function confirmDispatchAction(
             .eq('id', orderId)
         if (orderErr) throw orderErr
 
-        // 6. Registrar evento
+        // 8. Registrar evento
         await _logEvent(supabase, orderId, user.id, 'dispatch_completed' as any, {
             has_divergence: hasDivergence,
             status_set: newStatus
