@@ -3,7 +3,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { getCycleAnchorDate } from '@/modules/count/helpers'
 import { isTestOperator } from './routinesAction'
-import { getAccessibleCountScope } from '@/lib/server-auth-context'
+import { getAccessibleCountScope, getServerAuthContext } from '@/lib/server-auth-context'
 
 import { CountItem } from '@/modules/count/types'
 
@@ -23,8 +23,10 @@ export type InitCountSessionResult = {
     error?: string
 }
 
-export async function initCountSessionAction(routineId: string, groupId: string, userId: string): Promise<InitCountSessionResult> {
+export async function initCountSessionAction(routineId: string, groupId: string, _passedUserId: string): Promise<InitCountSessionResult> {
     try {
+        const user = await getServerAuthContext()
+        const userId = user.id
         const { data: userData } = await supabase.from('users').select('name, role, primary_group_id').eq('id', userId).single()
         const scope = await getAccessibleCountScope()
         const { data: group } = await supabase.from('groups').select('name, macro_sector').eq('id', groupId).single()
@@ -142,6 +144,26 @@ export async function syncCountSessionAction(
     console.log(`[CountAction] Iniciando sync para sessão ${sessionId}. Complete: ${complete}`);
     
     try {
+        const userContext = await getServerAuthContext()
+        const scope = await getAccessibleCountScope()
+        
+        // 0. Validar posse da sessão
+        const { data: sessionOwner } = await supabase
+            .from('count_sessions')
+            .select('user_id, unit_id, groups(macro_sector)')
+            .eq('id', sessionId)
+            .single()
+
+        if (!sessionOwner) throw new Error('Sessão não encontrada.')
+        
+        const isOwner = sessionOwner.user_id === userContext.id
+        const isAdmin = userContext.role === 'admin'
+        const isKitchen = (userContext.role === 'kitchen' || userContext.groups?.macro_sector === 'Cozinha Central') && (sessionOwner.groups as any)?.macro_sector === 'Cozinha Central'
+        
+        if (!isOwner && !isAdmin && !isKitchen) {
+            throw new Error('Acesso negado: Você não é o dono desta sessão e não possui privilégios de gestão.')
+        }
+
         // 1. Upsert dos dados atuais
         const upserts = Object.keys(currentCounts).map(itemId => {
             const qty = currentCounts[itemId]
@@ -287,6 +309,7 @@ export async function syncCountSessionAction(
 }
 
 export async function deleteCountSessionAction(sessionId: string): Promise<{ success: boolean; error?: string }> {
+    const userContext = await getServerAuthContext()
     const { data: sess } = await supabase
         .from('count_sessions')
         .select('status, user_id')
@@ -294,6 +317,10 @@ export async function deleteCountSessionAction(sessionId: string): Promise<{ suc
         .single()
         
     if (!sess) return { success: false, error: 'Sessão não encontrada.' }
+    
+    if (sess.user_id !== userContext.id && userContext.role !== 'admin') {
+        return { success: false, error: 'Acesso negado: Apenas o dono ou admin pode excluir.' }
+    }
     if (sess.status === 'completed') return { success: false, error: 'Não é possível excluir uma contagem já finalizada.' }
 
     // Apaga os itens

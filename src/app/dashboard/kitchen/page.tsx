@@ -98,39 +98,65 @@ export default function KitchenPage() {
                     </h2>
 
                     {/* Status banner — mensagem específica */}
+                    {/* Status banner — mensagem específica */}
                     {!dashLoading && operacao && (() => {
-                        const ckVelha = (operacao.idadeContagemCK_horas ?? 0) > 72
-                        const ckAtencao = !ckVelha && (operacao.idadeContagemCK_horas ?? 0) > 24
-                        const isCritico = operacao.pedidosAnalise > 0 || ckVelha
-                        const isAtencao = !isCritico && (operacao.separacaoNecessaria > 0 || ckAtencao || operacao.lojasDesatualizadas > 0)
-                        const bg = isCritico ? 'bg-red-500' : isAtencao ? 'bg-amber-500' : 'bg-emerald-500'
-                        const Icon = isCritico ? XCircle : isAtencao ? AlertTriangle : CheckCircle2
+                        const dow = new Date().getDay() // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+                        const hojeStr = new Date().toISOString().split('T')[0]
+                        const contouHoje = operacao.ultimaContagemCK_at && operacao.ultimaContagemCK_at.split('T')[0] === hojeStr
+
                         let msg = 'Operação sem pendências críticas agora.'
                         let actionUrl = ''
+                        let variant: 'critico' | 'atencao' | 'ok' = 'ok'
+
                         if (operacao.pedidosAnalise > 0) {
                             msg = `Ação recomendada: analisar ${operacao.pedidosAnalise} pedido(s) das lojas.`
                             actionUrl = '/dashboard/kitchen/planning'
+                            variant = 'critico'
                         }
-                        else if (ckVelha) {
-                            msg = 'Ação recomendada: atualizar contagem da CK antes de planejar produção.'
+                        else if (dow === 5 && !contouHoje) {
+                            msg = 'Ação Obrigatória: Realizar a contagem da Cozinha Central hoje.'
                             actionUrl = '/dashboard/kitchen/count'
+                            variant = 'critico'
                         }
-                        else if (operacao.lojasDesatualizadas > 0) {
-                            msg = `Ação recomendada: revisar Estoque das Lojas. ${operacao.lojasDesatualizadas} loja(s) com contagem antiga.`
+                        else if (dow === 1) {
+                            msg = 'Hoje as lojas fazem pedidos para entrega amanhã (Terça).'
                             actionUrl = '/dashboard/kitchen/store-stock'
+                            variant = 'atencao'
                         }
-                        else if (saude && saude.producedSemVinculoCount > 0) {
-                            msg = `Ação recomendada: resolver ${saude.producedSemVinculoCount} vínculos pendentes da base.`
-                            actionUrl = '/dashboard/kitchen/system-health'
+                        else if (dow === 4) {
+                            msg = 'Hoje as lojas fazem pedidos para entrega amanhã (Sexta).'
+                            actionUrl = '/dashboard/kitchen/store-stock'
+                            variant = 'atencao'
                         }
-                        else if (ckAtencao) {
-                            msg = `Contagem CK feita há ${formatHours(operacao.idadeContagemCK_horas!)}. Considere atualizar.`
-                            actionUrl = '/dashboard/kitchen/count'
+                        else if (operacao.producaoNecessaria > 0) {
+                            msg = `Ação recomendada: planejar produção de ${operacao.producaoNecessaria} item(s).`
+                            actionUrl = '/dashboard/kitchen/planning'
+                            variant = 'atencao'
                         }
                         else if (operacao.separacaoNecessaria > 0) {
                             msg = `${operacao.separacaoNecessaria} item(s) aguardando separação.`
                             actionUrl = '/dashboard/kitchen/planning'
+                            variant = 'atencao'
                         }
+                        else if (operacao.recebimentosAtrasados > 0) {
+                            msg = `${operacao.recebimentosAtrasados} recebimento(s) de fornecedor(es) atrasado(s).`
+                            actionUrl = '/dashboard/kitchen/receivings'
+                            variant = 'atencao'
+                        }
+                        else if (operacao.producedSemVinculoCount > 0) {
+                            msg = `Ação recomendada: resolver ${operacao.producedSemVinculoCount} vínculos pendentes da base.`
+                            actionUrl = '/dashboard/kitchen/system-health'
+                            variant = 'atencao'
+                        }
+                        else if (operacao.pedidosTesteCount > 0) {
+                            msg = `Atenção: Existem ${operacao.pedidosTesteCount} pedido(s) de teste/QA ativos.`
+                            actionUrl = '/dashboard/kitchen/system-health'
+                            variant = 'atencao'
+                        }
+
+                        const bg = variant === 'critico' ? 'bg-red-500' : variant === 'atencao' ? 'bg-amber-500' : 'bg-emerald-500'
+                        const Icon = variant === 'critico' ? XCircle : variant === 'atencao' ? AlertTriangle : CheckCircle2
+
                         const bannerContent = (
                             <>
                                 <Icon className="w-5 h-5 shrink-0" />
@@ -140,9 +166,10 @@ export default function KitchenPage() {
                                 {actionUrl && <ChevronRight className="w-4 h-4 opacity-70 shrink-0" />}
                             </>
                         )
+
                         if (actionUrl) {
                             return (
-                                <button onClick={() => router.push(actionUrl)} className={`w-full ${bg} rounded-2xl px-4 py-3 flex items-center justify-between gap-3 text-white text-left active:scale-[0.98] transition-transform`}>
+                                <button onClick={() => router.push(actionUrl)} className={`w-full ${bg} rounded-2xl px-4 py-3 flex items-center justify-between gap-3 text-white text-left active:scale-[0.98] transition-transform shadow-lg shadow-${variant === 'critico' ? 'red' : 'amber'}-200/50`}>
                                     {bannerContent}
                                 </button>
                             )
@@ -157,7 +184,7 @@ export default function KitchenPage() {
                     {/* Indicadores — só mostra cards com valor ou alerta */}
                     {dashLoading ? (
                         <div className="grid grid-cols-3 gap-2.5">
-                            {[1,2,3].map(i => <div key={i} className="h-20 bg-white rounded-2xl animate-pulse border border-gray-100" />)}
+                            {[1, 2, 3].map(i => <div key={i} className="h-20 bg-white rounded-2xl animate-pulse border border-gray-100" />)}
                         </div>
                     ) : operacao && (() => {
                         const ckH = operacao.idadeContagemCK_horas ?? 0
@@ -183,18 +210,18 @@ export default function KitchenPage() {
                                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Para Separar</p>
                                 </button>
                             ),
-                            (ckH > 0) && (
-                                <button key="ck" onClick={() => router.push('/dashboard/kitchen/count')}
-                                    className={`bg-white rounded-2xl p-3 text-left border-2 shadow-sm active:scale-[0.97] transition-all ${ckH > 72 ? 'border-red-200' : ckH > 24 ? 'border-amber-200' : 'border-gray-100'}`}>
-                                    <p className={`text-base font-black leading-none ${ckH > 72 ? 'text-red-600' : ckH > 24 ? 'text-amber-600' : 'text-emerald-600'}`}>{formatHours(ckH)}</p>
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Contagem CK</p>
+                            operacao.recebimentosAtrasados > 0 && (
+                                <button key="receb" onClick={() => router.push('/dashboard/kitchen/receivings')}
+                                    className="bg-white rounded-2xl p-3 text-left border-2 border-amber-200 shadow-sm active:scale-[0.97] transition-all">
+                                    <p className="text-2xl font-black leading-none text-amber-600">{operacao.recebimentosAtrasados}</p>
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Rec. Atrasado</p>
                                 </button>
                             ),
-                            operacao.lojasDesatualizadas > 0 && (
-                                <button key="lojas" onClick={() => router.push('/dashboard/kitchen/store-stock')}
-                                    className="bg-white rounded-2xl p-3 text-left border-2 border-amber-200 shadow-sm active:scale-[0.97] transition-all">
-                                    <p className="text-2xl font-black leading-none text-amber-600">{operacao.lojasDesatualizadas}</p>
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Loja desatualizada</p>
+                            (ckH > 0) && (
+                                <button key="ck" onClick={() => router.push('/dashboard/kitchen/count')}
+                                    className={`bg-white rounded-2xl p-3 text-left border-2 shadow-sm active:scale-[0.97] transition-all ${ckH > 24 ? 'border-amber-200' : 'border-gray-100'}`}>
+                                    <p className={`text-base font-black leading-none ${ckH > 24 ? 'text-amber-600' : 'text-emerald-600'}`}>{formatHours(ckH)}</p>
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Contagem CK</p>
                                 </button>
                             ),
                         ].filter(Boolean)

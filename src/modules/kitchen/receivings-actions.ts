@@ -10,12 +10,14 @@ import type {
 
 async function getCurrentUser() {
     const supabase = getAdminSupabase()
-    const profile = await getServerAuthContext()
-    const user = profile as any
-    if (user.role === 'operator' && user.name === 'Cozinha Central') {
-        user.role = 'kitchen'
-    }
-    return { supabase, user }
+    const user = await getServerAuthContext()
+    const isKitchen = user.role === 'admin' || user.role === 'kitchen' || user.groups?.macro_sector === 'Cozinha Central'
+    
+    // Normalize role for internal logic if needed, but the check should use isKitchen
+    const normalizedUser = { ...user, role: isKitchen ? 'kitchen' : user.role }
+    if (user.role === 'admin') normalizedUser.role = 'admin'
+
+    return { supabase, user: normalizedUser, isKitchen }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

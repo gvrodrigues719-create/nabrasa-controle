@@ -108,7 +108,29 @@ export async function getActiveOperator() {
 }
 
 export async function getActiveEmployeesAction() {
-    const { data, error } = await supabase.from('users').select('id, name, role').eq('active', true).order('name')
-    if (error) return { success: false, error: error.message }
-    return { success: true, data }
+    try {
+        const cookieStore = await cookies()
+        const session = cookieStore.get('operator_session')?.value
+        if (!session) {
+            // Fallback para admin logado via Supabase Auth
+            const { createServerClient } = await import('@/lib/supabase/server')
+            const supabaseServer = await createServerClient()
+            const { data: { user } } = await supabaseServer.auth.getUser()
+            if (!user) throw new Error('Acesso negado')
+        }
+
+        // Para simplificar, vamos usar o helper central que já trata ambos os casos
+        const { getServerAuthContext } = await import('@/lib/server-auth-context')
+        const user = await getServerAuthContext()
+        
+        if (user.role !== 'admin' && user.role !== 'manager') {
+            throw new Error('Acesso negado: Apenas gestores podem visualizar a lista de colaboradores.')
+        }
+
+        const { data, error } = await supabase.from('users').select('id, name, role').eq('active', true).order('name')
+        if (error) return { success: false, error: error.message }
+        return { success: true, data }
+    } catch (e: any) {
+        return { success: false, error: e.message }
+    }
 }

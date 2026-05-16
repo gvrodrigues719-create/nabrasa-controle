@@ -13,12 +13,28 @@ const supabase = new Proxy({} as any, {
     }
 })
 
-import { requireManagerOrAdmin } from '@/lib/auth-utils'
+import { getServerAuthContext } from '@/lib/server-auth-context'
+
+async function validateExecutionOwnership(executionId: string) {
+    const user = await getServerAuthContext()
+    if (user.role === 'admin') return user
+
+    const { data: exec } = await supabase
+        .from('routine_executions')
+        .select('unit_id')
+        .eq('id', executionId)
+        .single()
+
+    if (!exec || exec.unit_id !== user.unit_id) {
+        throw new Error('Acesso negado: Este ciclo pertence a outra unidade.')
+    }
+    return user
+}
 
 
 
 export async function saveRevenue(executionId: string, revenue: number) {
-    await requireManagerOrAdmin()
+    await validateExecutionOwnership(executionId)
     
     // O cálculo de % depende de atualizar a revenue e em seguida o cmv_percentage.
     // Lemos antes para ver se já existe cmv calculado:
@@ -47,7 +63,8 @@ export async function getCMVTarget() {
 }
 
 export async function setCMVTarget(percentage: number) {
-    await requireManagerOrAdmin()
+    const user = await getServerAuthContext()
+    if (user.role !== 'admin' && user.role !== 'manager') throw new Error('Sem permissão')
     const { error } = await supabase.from('app_settings').upsert({
         key: 'cmv_target',
         value: { percentage }
@@ -181,7 +198,7 @@ async function buildCMVCalculation(executionId: string, routineId: string) {
 }
 
 export async function calculateCMV(executionId: string) {
-    await requireManagerOrAdmin()
+    await validateExecutionOwnership(executionId)
 
     const { data: execInfo } = await supabase.from('routine_executions').select('revenue, routine_id').eq('id', executionId).single()
     if (!execInfo) throw new Error("Routine execution não encontrada.")
@@ -209,13 +226,14 @@ export async function calculateCMV(executionId: string) {
 }
 
 export async function getCMVSummary(executionId: string) {
+    await validateExecutionOwnership(executionId)
     // Mesma logica compacta apenas para recuperar a tela caso não queiram apertar "Recalcular"
     const { data: exec } = await supabase.from('routine_executions').select('revenue, cmv_total, cmv_percentage').eq('id', executionId).single()
     return { success: true, data: exec }
 }
 
 export async function getCMVItemDetail(executionId: string) {
-    await requireManagerOrAdmin()
+    await validateExecutionOwnership(executionId)
 
     const { data: execInfo } = await supabase.from('routine_executions').select('routine_id').eq('id', executionId).single()
     if (!execInfo) throw new Error("Routine execution não encontrada.")
@@ -335,7 +353,8 @@ export async function getCMVItemDetail(executionId: string) {
 }
 
 export async function getCMVConsolidated(filter: { mode: '4' | '6' | 'month' | 'custom', startDate?: string, endDate?: string }) {
-    await requireManagerOrAdmin()
+    const user = await getServerAuthContext()
+    if (user.role !== 'admin' && user.role !== 'manager') throw new Error('Sem permissão')
 
     let query = supabase
         .from('routine_executions')

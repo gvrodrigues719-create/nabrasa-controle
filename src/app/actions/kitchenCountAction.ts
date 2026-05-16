@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
-import { getActiveOperator } from '@/app/actions/pinAuth'
+import { getServerAuthContext } from '@/lib/server-auth-context'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -36,28 +36,15 @@ export interface KitchenCountRoutine {
 // ── Segurança: verifica se o caller é Cozinha Central ou admin/manager ──
 
 async function assertKitchenAccess(): Promise<{ userId: string; allowed: boolean }> {
-    const op = await getActiveOperator()
-
-    if (op) {
-        const isKitchen = op.name === 'Cozinha Central' || op.role === 'kitchen'
-        const isManager = op.role === 'admin' || op.role === 'manager'
-        return { userId: op.userId, allowed: isKitchen || isManager }
+    try {
+        const user = await getServerAuthContext()
+        const isKitchen = user.role === 'kitchen' || user.groups?.macro_sector === 'Cozinha Central'
+        const isAdmin = user.role === 'admin'
+        
+        return { userId: user.id, allowed: isKitchen || isAdmin }
+    } catch (e) {
+        return { userId: '', allowed: false }
     }
-
-    // Fallback: usuário autenticado diretamente (admin web)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { userId: '', allowed: false }
-
-    const { data: userData } = await supabase
-        .from('users')
-        .select('role, name')
-        .eq('id', user.id)
-        .single()
-
-    const isKitchen = userData?.name === 'Cozinha Central' || userData?.role === 'kitchen'
-    const isManager = userData?.role === 'admin' || userData?.role === 'manager'
-
-    return { userId: user.id, allowed: isKitchen || isManager }
 }
 
 // ── Action Principal: carrega rotina + status de sessões do dia ──

@@ -2,7 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/supabase/server'
-import { getActiveOperator } from '@/app/actions/pinAuth'
+import { getServerAuthContext } from '@/lib/server-auth-context'
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -12,29 +12,9 @@ const supabaseAdmin = createClient(
 export async function getKitchenSessionHistoryAction(filters: { date?: string, groupId?: string }) {
     const supabase = await createServerClient()
 
-    // 1. Validar acesso
-    const op = await getActiveOperator()
-    let userId = op?.userId
-    let userRole = op?.role
-    let userName = op?.name
-
-    if (!op) {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return { success: false, error: 'Não autenticado' }
-        const { data: userData } = await supabase.from('users').select('role, name').eq('id', user.id).single()
-        userId = user.id
-        userRole = userData?.role
-        userName = userData?.name
-    }
-
-    const { data: userDetails } = await supabaseAdmin
-        .from('users')
-        .select('primary_group_id, groups!primary_group_id(macro_sector)')
-        .eq('id', userId)
-        .single()
-
-    const isAdmin = userRole === 'admin' || userRole === 'manager'
-    const isKitchen = (userDetails?.groups as any)?.macro_sector === 'Cozinha Central' || userName === 'Cozinha Central'
+    const user = await getServerAuthContext()
+    const isAdmin = user.role === 'admin'
+    const isKitchen = user.role === 'kitchen' || user.groups?.macro_sector === 'Cozinha Central'
 
     if (!isAdmin && !isKitchen) {
         return { success: false, error: 'Acesso negado' }
@@ -97,6 +77,21 @@ export async function getKitchenSessionHistoryAction(filters: { date?: string, g
 
 export async function getConsolidatedKitchenDataAction(sessionIds: string[]) {
     try {
+        const user = await getServerAuthContext()
+        const isKitchen = user.role === 'admin' || user.role === 'kitchen' || user.groups?.macro_sector === 'Cozinha Central'
+        if (!isKitchen) throw new Error('Acesso negado')
+
+        // Validar que todas as sessões pertencem à Cozinha Central (Prevenção IDOR)
+        const { data: validSessions } = await supabaseAdmin
+            .from('count_sessions')
+            .select('id, groups!inner(macro_sector)')
+            .in('id', sessionIds)
+            .eq('groups.macro_sector', 'Cozinha Central')
+
+        const validIds = new Set(validSessions?.map(s => s.id) || [])
+        const allValid = sessionIds.every(id => validIds.has(id))
+        if (!allValid) throw new Error('Tentativa de acesso a sessões fora do escopo da Cozinha Central.')
+
         const { data: items, error } = await supabaseAdmin
             .from('count_session_items')
             .select(`

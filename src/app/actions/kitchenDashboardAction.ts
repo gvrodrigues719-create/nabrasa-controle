@@ -17,6 +17,9 @@ export interface KitchenOperacaoData {
     ultimaContagemCK_at: string | null
     lojasDesatualizadas: number
     lojasTotal: number
+    recebimentosAtrasados: number
+    producedSemVinculoCount: number
+    pedidosTesteCount: number
 }
 
 export interface HealthItem {
@@ -84,6 +87,7 @@ export async function getKitchenDashboardDataAction(): Promise<KitchenDashboardR
             mappingsRes,
             pedidosTesteRes,
             producaoEmAbertoRes,
+            overdueReceivingsRes,
         ] = await Promise.all([
             // 1. Pedidos pendentes (em_analise + enviado) do tipo internal_replenishment
             supabase
@@ -137,6 +141,13 @@ export async function getKitchenDashboardDataAction(): Promise<KitchenDashboardR
                 .from('production_orders')
                 .select('id, status, created_at')
                 .in('status', ['pending', 'in_progress']),
+
+            // 9. Recebimentos atrasados (scheduled com data anterior a hoje)
+            supabase
+                .from('ck_receivings')
+                .select('id', { count: 'exact', head: true })
+                .lt('delivery_date', new Date().toISOString().split('T')[0])
+                .eq('status', 'scheduled'),
         ])
 
         // ─── Process purchase order items for planning snapshot ───────────────
@@ -260,6 +271,9 @@ export async function getKitchenDashboardDataAction(): Promise<KitchenDashboardR
             ultimaContagemCK_at,
             lojasDesatualizadas,
             lojasTotal,
+            recebimentosAtrasados: overdueReceivingsRes.count ?? 0,
+            producedSemVinculoCount: producedSemVinculo.length,
+            pedidosTesteCount: pedidosTesteRes.data?.length ?? 0,
         }
 
         const saude: KitchenSaudeData = {

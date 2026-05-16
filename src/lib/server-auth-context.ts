@@ -77,7 +77,7 @@ export async function getServerAuthContext() {
 
     const { data: profile } = await adminClient
         .from('users')
-        .select('id, name, role, primary_group_id, unit_id')
+        .select('id, name, role, primary_group_id, unit_id, groups!primary_group_id(macro_sector)')
         .eq('id', userId)
         .single()
 
@@ -85,7 +85,18 @@ export async function getServerAuthContext() {
         throw new Error('Perfil não encontrado.')
     }
 
-    return profile as { id: string; name: string; role: string; primary_group_id: string | null; unit_id: string | null }
+    const rawProfile = profile as any
+    // Supabase joins can sometimes return an array even with .single()
+    const groupData = Array.isArray(rawProfile.groups) ? rawProfile.groups[0] : rawProfile.groups
+
+    return {
+        id: rawProfile.id,
+        name: rawProfile.name,
+        role: rawProfile.role,
+        primary_group_id: rawProfile.primary_group_id,
+        unit_id: rawProfile.unit_id,
+        groups: groupData || null
+    }
 }
 
 /**
@@ -99,7 +110,8 @@ export async function getAccessibleCountScope() {
     }
 
     // Cozinha Central
-    if (user.role === 'kitchen' || user.name.toLowerCase().includes('cozinha central')) {
+    const macroSector = (user.groups as any)?.macro_sector
+    if (user.role === 'kitchen' || macroSector === 'Cozinha Central') {
         return { type: 'kitchen' as const }
     }
 

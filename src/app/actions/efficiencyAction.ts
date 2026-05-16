@@ -2,6 +2,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { getStartOfOperationalWeek } from '@/lib/dateUtils'
+import { getServerAuthContext } from '@/lib/server-auth-context'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,16 +41,26 @@ export async function getOperationalHealthAction() {
         startOfToday.setHours(0, 0, 0, 0)
         const startOfWeek = getStartOfOperationalWeek()
         
+        const user = await getServerAuthContext()
+        const unitId = user.unit_id
+        const isAdmin = user.role === 'admin'
+
         const activeLeaks: Leak[] = []
         const weeklyLeaks: Leak[] = []
         let currentScore = 100
 
         // 1. SINAIS ATIVOS: CHECKLISTS PENDENTES (Hoje)
-        const { data: templates } = await supabase
+        let templatesQuery = supabase
             .from('checklist_templates')
             .select('id, name, context')
             .eq('active', true)
             .in('context', ['opening', 'closing'])
+        
+        if (!isAdmin && unitId) {
+            templatesQuery = templatesQuery.eq('unit_id', unitId)
+        }
+
+        const { data: templates } = await templatesQuery
 
         if (templates) {
             const currentHour = now.getHours()
@@ -80,12 +91,18 @@ export async function getOperationalHealthAction() {
 
         // 2. SINAIS ATIVOS: SESSÕES TRAVADAS (Hoje)
         const fourHoursAgo = new Date(now.getTime() - LIMITS.STUCK_SESSION_HOURS * 60 * 60 * 1000).toISOString()
-        const { data: stuckSessions } = await supabase
+        let stuckQuery = supabase
             .from('count_sessions')
-            .select('id, groups(name)')
+            .select('id, groups(name, unit_id)')
             .eq('status', 'in_progress')
             .lt('started_at', fourHoursAgo)
             .gte('started_at', startOfToday.toISOString())
+
+        if (!isAdmin && unitId) {
+            stuckQuery = stuckQuery.eq('unit_id', unitId)
+        }
+
+        const { data: stuckSessions } = await stuckQuery
         if (stuckSessions) {
             stuckSessions.forEach(s => {
                 activeLeaks.push({
@@ -100,10 +117,16 @@ export async function getOperationalHealthAction() {
         }
 
         // 3. PERDAS DA SEMANA: REPORTADAS
-        const { data: reportedLosses } = await supabase
+        let lossesQuery = supabase
             .from('inventory_losses')
-            .select('id, item_id, items(name)')
+            .select('id, item_id, items(name, unit_id)')
             .gte('created_at', startOfWeek)
+
+        if (!isAdmin && unitId) {
+            lossesQuery = lossesQuery.eq('unit_id', unitId)
+        }
+
+        const { data: reportedLosses } = await lossesQuery
         const reportedItemIds = new Set<string>()
         if (reportedLosses) {
             reportedLosses.forEach(rl => {
@@ -120,11 +143,17 @@ export async function getOperationalHealthAction() {
         }
 
         // 4. PERDAS DA SEMANA: RUPTURAS
-        const { data: zeroedItems } = await supabase
+        let zeroedQuery = supabase
             .from('count_session_items')
-            .select('item_id, items(name)')
+            .select('item_id, items(name, unit_id)')
             .eq('is_zeroed', true)
             .gte('created_at', startOfWeek)
+
+        if (!isAdmin && unitId) {
+            zeroedQuery = zeroedQuery.eq('items.unit_id', unitId)
+        }
+
+        const { data: zeroedItems } = await zeroedQuery
         if (zeroedItems) {
             zeroedItems.filter(zi => !reportedItemIds.has(zi.item_id)).forEach(zi => {
                 weeklyLeaks.push({
@@ -154,11 +183,20 @@ export async function getOperationalHealthAction() {
 export async function getGlobalHouseHealthAction() {
     try {
         const startOfWeek = getStartOfOperationalWeek()
-        const { data: losses, error } = await supabase
+        const user = await getServerAuthContext()
+        const unitId = user.unit_id
+        const isAdmin = user.role === 'admin'
+
+        let query = supabase
             .from('inventory_losses')
-            .select('*, items(name, unit), users(name)')
+            .select('*, items(name, unit, unit_id), users(name)')
             .gte('created_at', startOfWeek)
-            .order('created_at', { ascending: false })
+        
+        if (!isAdmin && unitId) {
+            query = query.eq('unit_id', unitId)
+        }
+
+        const { data: losses, error } = await query.order('created_at', { ascending: false })
         if (error) throw error
         const healthRes = await getOperationalHealthAction()
         return { 
