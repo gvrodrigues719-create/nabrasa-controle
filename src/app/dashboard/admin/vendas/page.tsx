@@ -27,7 +27,11 @@ function formatMoney(value: number) {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleString('pt-BR', {
+  if (!iso) return 'Data pendente'
+  const date = new Date(iso)
+  if (isNaN(date.getTime())) return 'Data inválida'
+  
+  return date.toLocaleString('pt-BR', {
     day: '2-digit', month: '2-digit',
     hour: '2-digit', minute: '2-digit',
     timeZone: 'America/Sao_Paulo'
@@ -467,17 +471,22 @@ export default function VendasPage() {
 
         <div className="space-y-3">
           {visibleSessions.map((s) => {
-            const bill = s?.bills?.[0]
+            const bills = Array.isArray(s?.bills) ? s.bills : []
+            const bill = bills[0]
             const totalProducts = parseFloat(bill?.total_price ?? '0')
             const totalService = parseFloat(bill?.total_service_price ?? '0')
             const discount = parseFloat(bill?.total_discount ?? '0')
-            const paymentNames = s?.payments?.map(p => p?.payment_method?.name).filter(Boolean).join(', ') ?? ''
             
-            // Itens: soma das quantidades (amount) para consistência com o resumo
-            const itemCount = bill?.order_baskets
-              ?.flatMap(b => b?.orders || [])
-              ?.flatMap(o => o?.order_products || [])
-              ?.reduce((acc, p) => acc + (p?.amount || 0), 0) ?? 0
+            const payments = Array.isArray(s?.payments) ? s.payments : []
+            const paymentNames = payments.map(p => p?.payment_method?.name).filter(Boolean).join(', ') || 'Nenhum'
+            
+            const baskets = Array.isArray(bill?.order_baskets) ? bill.order_baskets : []
+            const itemCount = baskets
+              .flatMap(b => Array.isArray(b?.orders) ? b.orders : [])
+              .flatMap(o => Array.isArray(o?.order_products) ? o.order_products : [])
+              .reduce((acc, p) => acc + (Number(p?.amount) || 0), 0)
+
+            const channelName = s?.channel?.name ?? 'Canal desconhecido'
 
             return (
               <div
@@ -492,7 +501,7 @@ export default function VendasPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-lg">
-                      {s?.channel?.name || 'Canal desconhecido'}
+                      {channelName}
                     </span>
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-lg ${
                       s.status === 'finished'
@@ -538,7 +547,7 @@ export default function VendasPage() {
                       <AlertCircle className="w-3 h-3" /> Desc. {formatMoney(discount)}
                     </span>
                   )}
-                  {s.nfce && (
+                  {s?.nfce?.number && (
                     <span className="flex items-center gap-1 text-emerald-600 font-semibold">
                       <FileText className="w-3 h-3" /> NFC-e #{s.nfce.number}
                     </span>
