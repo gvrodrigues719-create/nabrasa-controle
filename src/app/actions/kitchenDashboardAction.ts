@@ -15,8 +15,6 @@ export interface KitchenOperacaoData {
     pedidosSeparadosHoje: number
     idadeContagemCK_horas: number | null
     ultimaContagemCK_at: string | null
-    lojasDesatualizadas: number
-    lojasTotal: number
     recebimentosAtrasados: number
     producedSemVinculoCount: number
     pedidosTesteCount: number
@@ -269,8 +267,6 @@ export async function getKitchenDashboardDataAction(): Promise<KitchenDashboardR
             pedidosSeparadosHoje,
             idadeContagemCK_horas,
             ultimaContagemCK_at,
-            lojasDesatualizadas,
-            lojasTotal,
             recebimentosAtrasados: overdueReceivingsRes.count ?? 0,
             producedSemVinculoCount: producedSemVinculo.length,
             pedidosTesteCount: pedidosTesteRes.data?.length ?? 0,
