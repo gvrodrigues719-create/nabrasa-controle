@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, CheckCircle2, ChefHat, MessageSquare, AlertCircle, Timer, ClipboardList, Store, Printer, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, ChefHat, MessageSquare, AlertCircle, Timer, ClipboardList, Store, Printer, Plus, Trash2, Truck } from 'lucide-react'
 import {
     getOrderDetailAction,
     updateSeparatedQtyAction,
@@ -278,6 +278,27 @@ export default function KitchenOrderDetailPage() {
                             className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-[0.98] shadow-sm shadow-amber-200"
                         >
                             Iniciar Separação Física
+                        </button>
+                    </div>
+                )}
+
+                {/* Dispatch banner */}
+                {(order.status === 'em_separacao' || order.status === 'separado') && (
+                    <div className="bg-indigo-50 border border-indigo-100 rounded-3xl p-5 shadow-sm">
+                        <div className="flex items-start gap-4 mb-4">
+                            <Truck className="w-6 h-6 text-indigo-600 shrink-0 mt-1" />
+                            <div>
+                                <p className="text-sm font-black text-indigo-900">Expedição para a Loja</p>
+                                <p className="text-xs text-indigo-700 mt-1 leading-relaxed">
+                                    Confira os itens separados e libere a saída da Cozinha Central para a loja solicitante.
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => router.push(`/dashboard/kitchen/${orderId}/dispatch`)}
+                            className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-[0.98] shadow-sm shadow-indigo-200"
+                        >
+                            Conferir Saída
                         </button>
                     </div>
                 )}

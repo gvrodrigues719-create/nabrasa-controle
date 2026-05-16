@@ -150,6 +150,12 @@ export default function KitchenPage() {
                             actionUrl = '/dashboard/kitchen/planning'
                             variant = 'atencao'
                         }
+                        else if (orders.some(o => o.status === 'separado')) {
+                            const expedirCount = orders.filter(o => o.status === 'separado').length
+                            msg = `Ação recomendada: Expedir ${expedirCount} pedido(s) já separado(s).`
+                            actionUrl = `/dashboard/kitchen/order/${orders.find(o => o.status === 'separado')?.id}/dispatch`
+                            variant = 'atencao'
+                        }
                         else if (operacao.separacaoNecessaria > 0) {
                             msg = `${operacao.separacaoNecessaria} item(s) aguardando separação.`
                             actionUrl = '/dashboard/kitchen/planning'
@@ -230,6 +236,8 @@ export default function KitchenPage() {
                         } else if (ckH > 24) {
                             ckLabel = "CK sem atualizar"
                         }
+                        
+                        const paraExpedirCount = orders.filter(o => o.status === 'separado').length
 
                         const cards = [
                             operacao.pedidosAnalise > 0 && (
@@ -251,6 +259,16 @@ export default function KitchenPage() {
                                     className="bg-white rounded-2xl p-3 text-left border-2 border-gray-200 shadow-sm active:scale-[0.97] transition-all">
                                     <p className="text-2xl font-black leading-none text-gray-700">{operacao.separacaoNecessaria}</p>
                                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Para Separar</p>
+                                </button>
+                            ),
+                            paraExpedirCount > 0 && (
+                                <button key="exp" onClick={() => {
+                                    const firstOrder = orders.find(o => o.status === 'separado')
+                                    if (firstOrder) router.push(`/dashboard/kitchen/order/${firstOrder.id}/dispatch`)
+                                }}
+                                    className="bg-white rounded-2xl p-3 text-left border-2 border-indigo-200 shadow-sm active:scale-[0.97] transition-all">
+                                    <p className="text-2xl font-black leading-none text-indigo-600">{paraExpedirCount}</p>
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Para Expedir</p>
                                 </button>
                             ),
                             operacao.recebimentosAtrasados > 0 && (

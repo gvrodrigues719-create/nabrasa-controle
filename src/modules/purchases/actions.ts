@@ -745,6 +745,109 @@ export async function reopenOrderForSeparationAction(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// CONFERÊNCIA DE SAÍDA (EXPEDIÇÃO CK)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function saveDispatchDraftAction(
+    orderId: string,
+    dispatchedItems: Array<{ orderItemId: string; dispatchedQty: number; divergenceReason?: string }>
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { supabase, user } = await getCurrentUser()
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
+
+        const { data: order } = await supabase
+            .from('purchase_orders')
+            .select('status')
+            .eq('id', orderId)
+            .single()
+        
+        if (!order) throw new Error('Pedido não encontrado')
+        if (!['em_separacao', 'separado'].includes(order.status)) {
+            throw new Error('O pedido não está no status correto para conferência.')
+        }
+
+        for (const item of dispatchedItems) {
+            const { error } = await supabase
+                .from('purchase_order_items')
+                .update({
+                    separated_qty: item.dispatchedQty,
+                    separation_notes: item.divergenceReason || null
+                })
+                .eq('id', item.orderItemId)
+            if (error) throw error
+        }
+
+        await _logEvent(supabase, orderId, user.id, 'dispatch_draft_saved' as any, {})
+
+        return { success: true }
+    } catch (e: unknown) {
+        return { success: false, error: (e as Error).message }
+    }
+}
+
+export async function confirmDispatchAction(
+    orderId: string,
+    dispatchedItems: Array<{ orderItemId: string; requestedQty: number; dispatchedQty: number; divergenceReason?: string }>
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        const { supabase, user } = await getCurrentUser()
+        if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
+
+        const { data: order } = await supabase
+            .from('purchase_orders')
+            .select('status')
+            .eq('id', orderId)
+            .single()
+        
+        if (!order) throw new Error('Pedido não encontrado')
+        if (!['em_separacao', 'separado'].includes(order.status)) {
+            throw new Error('Somente pedidos em separação podem ser expedidos.')
+        }
+
+        let hasDivergence = false
+
+        // Validate and save
+        for (const item of dispatchedItems) {
+            if (item.dispatchedQty < 0) throw new Error('Quantidade não pode ser negativa.')
+            
+            const diff = !qtyEqual(item.requestedQty, item.dispatchedQty)
+            if (diff && !item.divergenceReason) {
+                throw new Error('Motivo de divergência é obrigatório quando a quantidade enviada difere da pedida.')
+            }
+
+            if (diff) hasDivergence = true
+
+            const { error } = await supabase
+                .from('purchase_order_items')
+                .update({
+                    separated_qty: item.dispatchedQty,
+                    separation_notes: item.divergenceReason || null
+                })
+                .eq('id', item.orderItemId)
+            if (error) throw error
+        }
+
+        const newStatus: OrderStatus = hasDivergence ? 'divergente' : 'em_entrega'
+
+        const { error: orderErr } = await supabase
+            .from('purchase_orders')
+            .update({ status: newStatus })
+            .eq('id', orderId)
+        if (orderErr) throw orderErr
+
+        await _logEvent(supabase, orderId, user.id, 'dispatch_completed' as any, { 
+            has_divergence: hasDivergence,
+            status_set: newStatus
+        })
+
+        return { success: true }
+    } catch (e: unknown) {
+        return { success: false, error: (e as Error).message }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // RECEBIMENTO — GERENTE
 // ─────────────────────────────────────────────────────────────────────────────
 
