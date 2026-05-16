@@ -14,7 +14,7 @@ import { useDashboardIdentity } from '../../hooks/useDashboardIdentity'
 interface ModuleItem {
     label: string;
     href?: string;
-    status: 'ativo' | 'ativo parcial' | 'em desenvolvimento' | 'demo' | 'em breve';
+    status: 'ativo' | 'ativo parcial' | 'em desenvolvimento' | 'demo' | 'em breve' | 'em breve parcial';
 }
 
 export default function SystemArchitectureHub() {
@@ -38,7 +38,7 @@ export default function SystemArchitectureHub() {
                     mainModules={[
                         { label: 'CMV & Compras', href: '/dashboard/admin/cmv', status: 'ativo' },
                         { label: 'Perdas', href: '/dashboard/admin/cmv?tab=losses', status: 'ativo' },
-                        ...(userRole === 'admin' ? [{ label: 'Produção', href: '/dashboard/kitchen/planning', status: 'ativo' }] : [])
+                        ...(userRole === 'admin' ? [{ label: 'Produção', href: '/dashboard/kitchen/planning', status: 'ativo' } as ModuleItem] : [])
                     ]}
                     extraModule={{ label: 'Ficha Técnica', status: 'em breve' }}
                 />
