@@ -756,21 +756,39 @@ export async function saveDispatchDraftAction(
         const { supabase, user } = await getCurrentUser()
         if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
+        // 1. Validar pedido e status
         const { data: order } = await supabase
             .from('purchase_orders')
             .select('status')
             .eq('id', orderId)
             .single()
-        
+
         if (!order) throw new Error('Pedido não encontrado')
         if (!['em_separacao', 'separado'].includes(order.status)) {
             throw new Error('O pedido não está no status correto para conferência.')
         }
 
-        // Validar ownership: todos os orderItemIds devem pertencer a este orderId
+        // 2. Validar quantidades antes de qualquer I/O adicional
         for (const item of dispatchedItems) {
             if (item.dispatchedQty < 0) throw new Error('Quantidade não pode ser negativa.')
+        }
 
+        // 3. Validar ownership em lote — SELECT único antes de qualquer UPDATE
+        //    Se QUALQUER orderItemId não pertencer a este orderId, bloquear tudo.
+        const orderItemIds = dispatchedItems.map(i => i.orderItemId)
+        const { data: dbItems, error: fetchErr } = await supabase
+            .from('purchase_order_items')
+            .select('id')
+            .eq('order_id', orderId)
+            .in('id', orderItemIds)
+
+        if (fetchErr) throw fetchErr
+        if (!dbItems || dbItems.length !== orderItemIds.length) {
+            throw new Error('Item não pertence a este pedido.')
+        }
+
+        // 4. Todos os itens validados — executar updates
+        for (const item of dispatchedItems) {
             const { error } = await supabase
                 .from('purchase_order_items')
                 .update({
@@ -800,31 +818,50 @@ export async function confirmDispatchAction(
         const { supabase, user } = await getCurrentUser()
         if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
 
+        // 1. Validar pedido e status
         const { data: order } = await supabase
             .from('purchase_orders')
             .select('status')
             .eq('id', orderId)
             .single()
-        
+
         if (!order) throw new Error('Pedido não encontrado')
         if (!['em_separacao', 'separado'].includes(order.status)) {
             throw new Error('Somente pedidos em separação podem ser expedidos.')
         }
 
-        let hasDivergence = false
-
-        // Validate and save — cada item deve pertencer a este orderId (proteção IDOR)
+        // 2. Validar quantidades e motivos antes de qualquer I/O adicional
         for (const item of dispatchedItems) {
             if (item.dispatchedQty < 0) throw new Error('Quantidade não pode ser negativa.')
-            
             const diff = !qtyEqual(item.requestedQty, item.dispatchedQty)
             if (diff && !item.divergenceReason) {
                 throw new Error('Motivo de divergência é obrigatório quando a quantidade enviada difere da pedida.')
             }
+        }
 
+        // 3. Validar ownership em lote — SELECT único antes de qualquer UPDATE
+        //    Garante que NENHUM orderItemId pertence a outro pedido.
+        //    Se qualquer ID for inválido: bloquear TUDO, não atualizar nenhum item,
+        //    não alterar status, não registrar evento.
+        const orderItemIds = dispatchedItems.map(i => i.orderItemId)
+        const { data: dbItems, error: fetchErr } = await supabase
+            .from('purchase_order_items')
+            .select('id')
+            .eq('order_id', orderId)
+            .in('id', orderItemIds)
+
+        if (fetchErr) throw fetchErr
+        if (!dbItems || dbItems.length !== orderItemIds.length) {
+            throw new Error('Item não pertence a este pedido.')
+        }
+
+        // 4. Todos os itens validados — executar updates
+        let hasDivergence = false
+        for (const item of dispatchedItems) {
+            const diff = !qtyEqual(item.requestedQty, item.dispatchedQty)
             if (diff) hasDivergence = true
 
-            const { error, count } = await supabase
+            const { error } = await supabase
                 .from('purchase_order_items')
                 .update({
                     separated_qty: item.dispatchedQty,
@@ -833,19 +870,18 @@ export async function confirmDispatchAction(
                 .eq('id', item.orderItemId)
                 .eq('order_id', orderId)
             if (error) throw error
-            // Se nenhuma linha foi afetada, o item não pertence a este pedido
-            if (count === 0) throw new Error('Item não pertence a este pedido.')
         }
 
+        // 5. Atualizar status do pedido
         const newStatus: OrderStatus = 'em_entrega'
-
         const { error: orderErr } = await supabase
             .from('purchase_orders')
             .update({ status: newStatus })
             .eq('id', orderId)
         if (orderErr) throw orderErr
 
-        await _logEvent(supabase, orderId, user.id, 'dispatch_completed' as any, { 
+        // 6. Registrar evento
+        await _logEvent(supabase, orderId, user.id, 'dispatch_completed' as any, {
             has_divergence: hasDivergence,
             status_set: newStatus
         })
