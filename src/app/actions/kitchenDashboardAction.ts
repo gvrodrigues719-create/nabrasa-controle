@@ -15,6 +15,7 @@ export interface KitchenOperacaoData {
     pedidosSeparadosHoje: number
     idadeContagemCK_horas: number | null
     ultimaContagemCK_at: string | null
+    ultimaContagemCK_sessionId: string | null
     recebimentosAtrasados: number
     producedSemVinculoCount: number
     pedidosTesteCount: number
@@ -56,6 +57,7 @@ export interface KitchenSaudeData {
     pedidosTeste: HealthPedidoTeste[]
     idadeContagemCK_horas: number | null
     ultimaContagemCK_at: string | null
+    ultimaContagemCK_sessionId: string | null
     lojasDesatualizadas: HealthLojaDesatualizada[]
     producaoEmAbertoCount: number
     producaoEmAberto: HealthProducaoAberta[]
@@ -178,6 +180,7 @@ export async function getKitchenDashboardDataAction(): Promise<KitchenDashboardR
         const lastCKSessions = lastCKCountRes.data ?? []
         const lastCKSession = lastCKSessions[0] as any | null
         const ultimaContagemCK_at = lastCKSession?.completed_at ?? null
+        const ultimaContagemCK_sessionId = lastCKSession?.id ?? null
         let idadeContagemCK_horas: number | null = null
         if (ultimaContagemCK_at) {
             idadeContagemCK_horas = (Date.now() - new Date(ultimaContagemCK_at).getTime()) / (1000 * 60 * 60)
@@ -267,6 +270,7 @@ export async function getKitchenDashboardDataAction(): Promise<KitchenDashboardR
             pedidosSeparadosHoje,
             idadeContagemCK_horas,
             ultimaContagemCK_at,
+            ultimaContagemCK_sessionId,
             recebimentosAtrasados: overdueReceivingsRes.count ?? 0,
             producedSemVinculoCount: producedSemVinculo.length,
             pedidosTesteCount: pedidosTesteRes.data?.length ?? 0,
@@ -282,6 +286,7 @@ export async function getKitchenDashboardDataAction(): Promise<KitchenDashboardR
             pedidosTeste: (pedidosTesteRes.data ?? []) as HealthPedidoTeste[],
             idadeContagemCK_horas,
             ultimaContagemCK_at,
+            ultimaContagemCK_sessionId,
             lojasDesatualizadas: lojasDesatualizadasList,
             producaoEmAbertoCount: producaoEmAbertoRes.data?.length ?? 0,
             producaoEmAberto: (producaoEmAbertoRes.data ?? []) as HealthProducaoAberta[],

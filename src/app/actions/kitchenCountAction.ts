@@ -31,6 +31,10 @@ export interface KitchenCountRoutine {
     totalItems: number
     totalCounted: number
     overallStatus: 'pending' | 'in_progress' | 'completed'
+    lastFinishedSession: {
+        id: string
+        completedAt: string
+    } | null
 }
 
 // ── Segurança: verifica se o caller é Cozinha Central ou admin/manager ──
@@ -183,6 +187,19 @@ export async function getKitchenCountStatusAction(): Promise<{
         const overallStatus: KitchenCountRoutine['overallStatus'] =
             allDone ? 'completed' : anyInProgress ? 'in_progress' : 'pending'
 
+        // 6. Busca a última contagem FINALIZADA da CK (histórico)
+        const { data: lastSessions } = await supabase
+            .from('count_sessions')
+            .select('id, completed_at, groups!inner(macro_sector)')
+            .eq('status', 'completed')
+            .eq('groups.macro_sector', KITCHEN_MACRO_SECTOR)
+            .order('completed_at', { ascending: false })
+            .limit(1)
+        
+        const lastFinished = lastSessions && lastSessions.length > 0 
+            ? { id: lastSessions[0].id, completedAt: lastSessions[0].completed_at }
+            : null
+
         return {
             success: true,
             data: {
@@ -191,7 +208,8 @@ export async function getKitchenCountStatusAction(): Promise<{
                 groups,
                 totalItems,
                 totalCounted,
-                overallStatus
+                overallStatus,
+                lastFinishedSession: lastFinished
             }
         }
     } catch (e: any) {

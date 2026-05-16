@@ -295,7 +295,13 @@ export default function KitchenPage() {
                                 </button>
                             ),
                             (ckH > 0) && (
-                                <button key="ck" onClick={() => router.push('/dashboard/kitchen/count')}
+                                <button key="ck" onClick={() => {
+                                    if (operacao.ultimaContagemCK_sessionId) {
+                                        router.push(`/dashboard/kitchen/history/${operacao.ultimaContagemCK_sessionId}`)
+                                    } else {
+                                        router.push('/dashboard/kitchen/history')
+                                    }
+                                }}
                                     className={`bg-white rounded-2xl p-3 text-left border-2 shadow-sm active:scale-[0.97] transition-all ${ckH > 24 ? 'border-amber-200' : 'border-gray-100'}`}>
                                     <p className={`text-base font-black leading-none ${ckH > 24 ? 'text-amber-600' : 'text-emerald-600'}`}>{ckVal}</p>
                                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">{ckLabel}</p>
@@ -476,13 +482,13 @@ export default function KitchenPage() {
                             </div>
                             <div className="flex-1">
                                 <p className="text-orange-200 text-[10px] font-black uppercase tracking-widest mb-0.5">
-                                    Estoque Físico
+                                    Rotina Operacional
                                 </p>
                                 <h3 className="font-black text-white text-xl leading-tight">
                                     Contagem da Cozinha Central
                                 </h3>
                                 <p className="text-orange-100 text-xs mt-1 leading-relaxed opacity-90">
-                                    Insumos, espetos, carnes, frios e descartáveis.
+                                    Iniciar ou continuar contagem de insumos, carnes e descartáveis.
                                 </p>
                             </div>
                             <div className="bg-white/10 px-3 py-1.5 rounded-xl shrink-0 hidden sm:block">
