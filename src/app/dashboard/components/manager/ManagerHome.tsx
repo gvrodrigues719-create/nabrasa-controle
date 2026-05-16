@@ -41,54 +41,29 @@ export default function ManagerHome() {
     const overview = data?.overview || { total: 0, completed: 0, pending: 0, late: 0, critical: 0, lossesCount: 0, pendingIssuesCount: 0, openCounts: 0 }
 
     return (
-        <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-20">
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 pb-20">
             
             {/* 1. OPERAÇÃO AGORA (DIAGNÓSTICO E MÉTRICAS) */}
-            <section className="space-y-4">
+            <section>
                 <ShiftMetrics overview={overview} />
             </section>
 
-            {/* 2. AÇÕES RÁPIDAS (TAREFAS DIRETAS) */}
+            {/* 2. AÇÕES OPERACIONAIS (TAREFAS DIRETAS) */}
             <ManagerQuickActions 
                 lateCount={overview.late} 
+                openCounts={overview.openCounts}
                 userRole={userRole}
             />
 
             {/* 3. FRENTES DE GESTÃO */}
             <SystemArchitectureHub />
 
-            {/* 4. BLOCO DE CONTAGENS (COMPACTO) */}
-            <section className="bg-gray-50 border border-gray-100 rounded-[2rem] p-5 space-y-4">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-white text-indigo-600 flex items-center justify-center shadow-sm border border-gray-100">
-                        <Package className="w-5 h-5" />
-                    </div>
-                    <div>
-                        <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-tight leading-none mb-1">Estoques</h3>
-                        <p className="text-[10px] font-bold text-gray-400">Auditoria e histórico de contagens.</p>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                    <Link href="/dashboard/admin/history/sessions"
-                        className="flex items-center justify-center gap-2 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-700 transition-all active:scale-95">
-                        <Eye className="w-3.5 h-3.5" />
-                        Ao Vivo
-                    </Link>
-                    <Link href="/dashboard/admin/counts/history"
-                        className="flex items-center justify-center gap-2 py-3 bg-white text-gray-900 border border-gray-100 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-gray-50 transition-all active:scale-95">
-                        <CalendarSearch className="w-3.5 h-3.5" />
-                        Histórico
-                    </Link>
-                </div>
-            </section>
-
             {/* EXCEÇÕES E ATENÇÃO (DINÂMICOS) */}
             {data?.exceptions?.length > 0 && <ExceptionCenter exceptions={data.exceptions} />}
             <AttentionList collaborators={data?.collaborators || []} />
 
             {/* MONITORAMENTO POR SETOR (COMPACTO) */}
-            <section className="space-y-3">
+            <section className="space-y-2">
                 <div className="flex items-center justify-between px-1">
                     <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Status das Áreas</h3>
                     <Link 

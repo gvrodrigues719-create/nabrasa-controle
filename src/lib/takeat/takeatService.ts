@@ -33,7 +33,7 @@ import type {
 
 import { MOCK_SESSIONS, MOCK_SUMMARY, MOCK_PAYMENT_METHODS } from './takeatMockData'
 
-const BASE_URL     = 'https://backend-pdv.takeat.app'
+const BASE_URL     = process.env.TAKEAT_BASE_URL || 'https://backend-pdv.takeat.app'
 const BASE_API     = `${BASE_URL}/api/v1`
 const MAX_DAYS     = 3  // limite por consulta conforme documentação
 
@@ -129,21 +129,21 @@ export function aggregatePeriodSummary(
 
   const list = Array.isArray(sessions) ? sessions : []
 
-  list.forEach((session: any) => {
+  list.forEach((session: TakeatTableSession) => {
     if (!session) return
     if (session.channel?.name) channels.add(session.channel.name)
     if (session.nfce) nfceCount++
     if (Array.isArray(session.payments)) totalPaymentsCount += session.payments.length
 
-    ;(Array.isArray(session.bills) ? session.bills : []).forEach((bill: any) => {
+    ;(Array.isArray(session.bills) ? session.bills : []).forEach((bill) => {
       if (!bill) return
       totalRevenue += parseFloat(bill.total_price || '0')
       totalWithService += parseFloat(bill.total_service_price || '0')
       totalDiscounts += parseFloat(bill.total_discount || '0')
 
-      ;(Array.isArray(bill.order_baskets) ? bill.order_baskets : []).forEach((basket: any) => {
-        ;(Array.isArray(basket?.orders) ? basket.orders : []).forEach((order: any) => {
-          ;(Array.isArray(order?.order_products) ? order.order_products : []).forEach((product: any) => {
+      ;(Array.isArray(bill.order_baskets) ? bill.order_baskets : []).forEach((basket) => {
+        ;(Array.isArray(basket?.orders) ? basket.orders : []).forEach((order) => {
+          ;(Array.isArray(order?.order_products) ? order.order_products : []).forEach((product) => {
             totalProductsSold += Number(product?.amount) || 0
           })
         })
@@ -154,10 +154,10 @@ export function aggregatePeriodSummary(
   return {
     total_sessions: list.length,
     total_products_sold: totalProductsSold,
-    total_revenue: totalRevenue,
-    total_with_service: totalWithService,
+    total_revenue: Number(totalRevenue.toFixed(2)),
+    total_with_service: Number(totalWithService.toFixed(2)),
     total_payments: totalPaymentsCount,
-    total_discounts: totalDiscounts,
+    total_discounts: Number(totalDiscounts.toFixed(2)),
     channels_found: Array.from(channels),
     nfce_available: nfceCount,
     period_start: periodStart,
@@ -169,19 +169,31 @@ export function aggregatePeriodSummary(
 // HELPER — converte data de Brasília para UTC-0 (para enviar à API)
 // -------------------------------------------------------------------
 export function brasiliaToUTC(dateStr: string, boundary: 'start' | 'end' = 'start'): string {
-  const date = new Date(dateStr)
-  
-  if (dateStr.length === 10) {
-    if (boundary === 'start') {
-      // 00:00:00 Brasília = 03:00:00 UTC
-      date.setHours(3, 0, 0, 0)
-    } else {
-      // 23:59:59 Brasília = 02:59:59 UTC do dia seguinte
-      date.setHours(3 + 24, 0, 0, 0)
-      date.setMilliseconds(-1)
-    }
+  if (!dateStr || dateStr.length < 10) {
+    throw new Error(`Data inválida recebida: "${dateStr}"`)
   }
 
-  return date.toISOString().split('.')[0] + 'Z'
+  // Forçamos o parsing tratando como data local para evitar confusão de timezone
+  // YYYY-MM-DD
+  const parts = dateStr.split('-').map(Number)
+  if (parts.length !== 3 || parts.some(isNaN)) {
+    throw new Error(`Formato de data inválido: "${dateStr}"`)
+  }
+
+  // Meses no JS são 0-indexados
+  const date = new Date(parts[0], parts[1] - 1, parts[2])
+  
+  if (isNaN(date.getTime())) {
+    throw new Error(`Data impossível: "${dateStr}"`)
+  }
+
+  if (boundary === 'start') {
+    // 00:00:00 Brasília = 03:00:00 UTC
+    // Usamos Date.UTC para garantir que o resultado seja determinístico
+    return new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], 3, 0, 0, 0)).toISOString().split('.')[0] + 'Z'
+  } else {
+    // 23:59:59 Brasília = 02:59:59 UTC do dia seguinte
+    return new Date(Date.UTC(parts[0], parts[1] - 1, parts[2] + 1, 3, 0, 0, -1)).toISOString().split('.')[0] + 'Z'
+  }
 }
 

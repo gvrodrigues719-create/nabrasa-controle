@@ -25,6 +25,17 @@ export default function SectorGrid({ bySector }: SectorGridProps) {
         { id: 'estoque', name: 'Estoque', icon: Package, data: bySector.estoque, accent: 'text-emerald-500', bg: 'bg-emerald-50' }
     ]
 
+    // Check if there is any real activity
+    const hasActivity = sectors.some(s => (s.data?.total || 0) > 0)
+
+    if (!hasActivity) {
+        return (
+            <div className="p-8 bg-gray-50/50 border border-dashed border-gray-200 rounded-[2rem] flex flex-col items-center justify-center text-center">
+                <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Nenhuma rotina ativa por área no momento</p>
+            </div>
+        )
+    }
+
     return (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {sectors.map((sector) => {
@@ -33,23 +44,25 @@ export default function SectorGrid({ bySector }: SectorGridProps) {
                     ? Math.round((sectorData.completed / sectorData.total) * 100) 
                     : 0
                 
+                if (sectorData.total === 0) return null // Hide empty individual sectors if some others have data
+                
                 const isComplete = percent === 100 && sectorData.total > 0
                 const hasLosses = sectorData.losses > 0
 
         return (
-                    <div key={sector.id} className={`p-4 rounded-[2rem] transition-all flex flex-col group border shadow-sm hover:shadow-md ${
+                    <div key={sector.id} className={`p-4 rounded-[1.5rem] transition-all flex flex-col group border shadow-sm hover:shadow-md ${
                         hasLosses && sectorData.losses > 5
                             ? 'bg-red-50/50 border-red-200 shadow-red-100/20'
                             : hasLosses
                             ? 'bg-orange-50/50 border-orange-100'
-                            : 'bg-gray-50/50 border-gray-100'
+                            : 'bg-white border-gray-100'
                     }`}>
-                        <div className="flex items-center justify-between mb-4">
-                            <div className={`w-10 h-10 rounded-xl ${hasLosses ? 'bg-white shadow-sm' : sector.bg} ${sector.accent} flex items-center justify-center transition-transform group-hover:scale-110 border border-white`}>
-                                <sector.icon className="w-5 h-5" />
+                        <div className="flex items-center justify-between mb-3">
+                            <div className={`w-8 h-8 rounded-xl ${hasLosses ? 'bg-white shadow-sm' : sector.bg} ${sector.accent} flex items-center justify-center transition-transform group-hover:scale-110 border border-white`}>
+                                <sector.icon className="w-4 h-4" />
                             </div>
                             <div className="text-right">
-                                <p className={`text-lg font-black leading-none ${isComplete ? 'text-green-600' : 'text-gray-900'}`}>{percent}%</p>
+                                <p className={`text-base font-black leading-none ${isComplete ? 'text-green-600' : 'text-gray-900'}`}>{percent}%</p>
                                 <p className="text-[7px] font-black text-gray-400 uppercase tracking-widest mt-1">{sector.name}</p>
                             </div>
                         </div>

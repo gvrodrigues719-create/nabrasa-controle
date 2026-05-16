@@ -64,37 +64,58 @@ async function getOrRenewToken(): Promise<string> {
 /**
  * Action principal para buscar dados reais da Takeat
  */
-export async function getTakeatDataAction(startDate: string, endDate: string): Promise<{
+export async function getTakeatDataAction(
+  startDate: string, 
+  endDate: string,
+  unitId?: string
+): Promise<{
   success: boolean
   data?: {
     sessions: TakeatTableSession[]
     summary: TakeatPeriodSummary
   }
   error?: string
-  code?: 'MISSING_CONFIG' | 'AUTH_ERROR' | 'FETCH_ERROR' | 'INVALID_RANGE'
+  code?: 'MISSING_CONFIG' | 'AUTH_ERROR' | 'FETCH_ERROR' | 'INVALID_RANGE' | 'INVALID_INPUT'
 }> {
+  const startTime = Date.now()
   try {
-    // 1. Verificação de Configuração
+    // 1. Verificação de Entrada Básica
+    if (!startDate || !endDate) {
+      return { success: false, error: 'As datas de início e fim são obrigatórias.', code: 'INVALID_INPUT' }
+    }
+
+    console.info(`[TakeatAction] Solicitação recebida: Periodo ${startDate} a ${endDate} | Unidade: ${unitId || 'Todas'}`)
+
+    // 2. Verificação de Configuração
     const email = process.env.TAKEAT_EMAIL
     const password = process.env.TAKEAT_PASSWORD
     if (!email || !password) {
-      return { success: false, error: 'Configuração pendente: TAKEAT_EMAIL ou PASSWORD ausentes.', code: 'MISSING_CONFIG' }
+      console.warn('[TakeatAction] TAKEAT_EMAIL ou TAKEAT_PASSWORD não configurados.')
+      return { success: false, error: 'Configuração pendente no servidor.', code: 'MISSING_CONFIG' }
     }
 
-    // 2. Validação de Intervalo (3 dias)
-    const start = new Date(startDate)
-    const end = new Date(endDate)
+    // 3. Validação de Intervalo (3 dias)
+    const startObj = new Date(startDate)
+    const endObj = new Date(endDate)
     
-    if (end < start) {
+    if (isNaN(startObj.getTime()) || isNaN(endObj.getTime())) {
+      return { success: false, error: 'Formato de data inválido.', code: 'INVALID_INPUT' }
+    }
+
+    if (endObj < startObj) {
       return { success: false, error: 'Data final deve ser maior ou igual à data inicial.', code: 'INVALID_RANGE' }
     }
 
-    const diffDays = Math.ceil(Math.abs(end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+    const diffTime = Math.abs(endObj.getTime() - startObj.getTime())
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    // A API Takeat é rígida com 3 dias. Se diffDays for 3.1, já pode dar erro.
+    // Usando uma margem pequena para o cálculo de dias
     if (diffDays > 3) {
       return { success: false, error: 'A API Takeat permite no máximo 3 dias por consulta.', code: 'INVALID_RANGE' }
     }
 
-    // 3. Autenticação (Cache/Refresh)
+    // 4. Autenticação (Cache/Refresh)
     let token: string
     try {
       token = await getOrRenewToken()
@@ -103,19 +124,22 @@ export async function getTakeatDataAction(startDate: string, endDate: string): P
       return { success: false, error: 'Falha na autenticação com a API Takeat.', code: 'AUTH_ERROR' }
     }
 
-    // 4. Chamada Real ao Endpoint
-    console.info(`[TakeatAction] Buscando sessões: ${startDate} até ${endDate}`)
-    
+    // 5. Chamada Real ao Endpoint
     const startUTC = brasiliaToUTC(startDate, 'start')
     const endUTC = brasiliaToUTC(endDate, 'end')
-
+    
+    console.info(`[TakeatAction] Consultando API Takeat: ${startUTC} até ${endUTC}`)
+    
     const sessions = await getTableSessions(token, {
       start_date: startUTC,
       end_date: endUTC
     })
 
-    // 5. Agregação do Resumo
+    // 6. Agregação do Resumo
     const summary = aggregatePeriodSummary(sessions, startDate, endDate)
+    const duration = Date.now() - startTime
+
+    console.info(`[TakeatAction] Sucesso! ${sessions.length} sessões encontradas em ${duration}ms.`)
 
     return {
       success: true,
@@ -125,10 +149,13 @@ export async function getTakeatDataAction(startDate: string, endDate: string): P
       }
     }
   } catch (err: any) {
-    console.error('[TakeatAction] Erro inesperado:', err.message)
+    const duration = Date.now() - startTime
+    console.error(`[TakeatAction] Erro inesperado após ${duration}ms:`, err.message)
+    
+    // Se for um erro conhecido de dentro do brasiliaToUTC ou fetch
     return { 
       success: false, 
-      error: `Erro ao buscar dados: ${err.message}`, 
+      error: err.message.includes('Fetch') ? 'Erro de comunicação com a API externa.' : err.message, 
       code: 'FETCH_ERROR' 
     }
   }

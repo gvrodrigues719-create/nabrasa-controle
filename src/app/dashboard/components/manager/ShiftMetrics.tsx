@@ -41,25 +41,46 @@ function MetricItem({ label, value, icon: Icon, color, bg, isCritical }: { label
 }
 
 export default function ShiftMetrics({ overview }: ShiftMetricsProps) {
-    const hasAlerts = overview.late > 0 || overview.critical > 0 || overview.pendingIssuesCount > 0 || overview.openCounts > 0
-    const isCriticalState = overview.late > 0 || overview.critical > 0
+    const totalAlerts = (overview.late || 0) + (overview.critical || 0) + (overview.pendingIssuesCount || 0)
+    const hasAlerts = totalAlerts > 0 || overview.openCounts > 0
+    const isCriticalState = (overview.late || 0) > 0 || (overview.critical || 0) > 0
 
     const diagnosis = isCriticalState 
-        ? { message: "Ação necessária agora.", status: "critical", color: "text-red-600", bg: "bg-red-50", icon: AlertCircle }
+        ? { 
+            message: `Ação necessária agora. ${totalAlerts} alertas pendentes.`, 
+            status: "critical", 
+            color: "text-red-600", 
+            bg: "bg-red-50", 
+            icon: AlertCircle 
+          }
         : hasAlerts
-        ? { message: "Existem pendências para resolver hoje.", status: "attention", color: "text-amber-600", bg: "bg-amber-50", icon: Clock3 }
-        : { message: "Operação sob controle.", status: "ok", color: "text-emerald-600", bg: "bg-emerald-50", icon: CheckCircle2 }
+        ? { 
+            message: totalAlerts > 0 
+                ? `Existem ${totalAlerts} pendências para resolver hoje.` 
+                : "Operação ativa com contagens em andamento.", 
+            status: "attention", 
+            color: "text-amber-600", 
+            bg: "bg-amber-50", 
+            icon: Clock3 
+          }
+        : { 
+            message: "Operação sob controle.", 
+            status: "ok", 
+            color: "text-emerald-600", 
+            bg: "bg-emerald-50", 
+            icon: CheckCircle2 
+          }
 
     return (
         <div className="space-y-3">
             {/* Bloco de Diagnóstico Prominente */}
-            <div className={`p-5 rounded-[2rem] border-2 shadow-sm flex items-center justify-between ${
+            <div className={`p-5 rounded-[2rem] border-2 shadow-sm flex items-center justify-between transition-all ${
                 isCriticalState ? 'bg-red-50 border-red-200' : 
                 hasAlerts ? 'bg-amber-50 border-amber-200' : 
                 'bg-emerald-50 border-emerald-200'
             }`}>
                 <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border border-white/40 shadow-inner ${
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border border-white/40 shadow-inner shrink-0 ${
                         isCriticalState ? 'bg-red-100 text-red-600' : 
                         hasAlerts ? 'bg-amber-100 text-amber-600' : 
                         'bg-emerald-100 text-emerald-600'
@@ -68,9 +89,16 @@ export default function ShiftMetrics({ overview }: ShiftMetricsProps) {
                     </div>
                     <div>
                         <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1.5">Status da Unidade</h4>
-                        <p className={`text-lg font-black tracking-tight ${diagnosis.color}`}>{diagnosis.message}</p>
+                        <p className={`text-base font-black tracking-tight leading-tight ${diagnosis.color}`}>{diagnosis.message}</p>
                     </div>
                 </div>
+                {hasAlerts && (
+                    <div className="hidden sm:block">
+                         <button className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-white shadow-sm active:scale-95 transition-all ${isCriticalState ? 'bg-red-600' : 'bg-amber-600'}`}>
+                            Ver
+                        </button>
+                    </div>
+                )}
             </div>
 
             <div className="grid grid-cols-2 gap-2">

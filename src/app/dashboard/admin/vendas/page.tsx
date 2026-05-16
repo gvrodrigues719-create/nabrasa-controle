@@ -7,6 +7,7 @@ import {
   getTakeatDataAction,
   testTakeatConnectivityAction
 } from '@/app/actions/takeatAction'
+import { getScopedFilterMetadataAction } from '@/app/actions/commonMetadataAction'
 import { toast } from 'react-hot-toast'
 import {
   ArrowLeft, Zap, CheckCircle2, Clock, AlertCircle,
@@ -110,6 +111,8 @@ export default function VendasPage() {
   // Estados para o Seletor de Datas
   const [startDate, setStartDate] = useState(MOCK_PERIOD.start.split('T')[0])
   const [endDate, setEndDate] = useState(MOCK_PERIOD.end.split('T')[0])
+  const [selectedUnit, setSelectedUnit] = useState<string>('')
+  const [availableUnits, setAvailableUnits] = useState<{id: string, name: string}[]>([])
   const [dateError, setDateError] = useState<string | null>(null)
   const [testingConnection, setTestingConnection] = useState(false)
 
@@ -132,7 +135,19 @@ export default function VendasPage() {
         setLoadingConfig(false)
       }
     }
+    async function loadMetadata() {
+      try {
+        const res = await getScopedFilterMetadataAction()
+        if (res.success && res.units) {
+          setAvailableUnits(res.units)
+          if (res.units.length === 1) setSelectedUnit(res.units[0].id)
+        }
+      } catch (err) {
+        console.error("Falha ao carregar unidades:", err)
+      }
+    }
     checkConfig()
+    loadMetadata()
   }, [])
 
   // Validação de 3 dias (Regra Takeat)
@@ -153,11 +168,17 @@ export default function VendasPage() {
 
   // Handler para Atualização Real
   async function handleUpdateDashboard() {
+    // Validação extra antes de chamar a action
+    if (!startDate || !endDate) {
+      setDateError("As datas de início e fim são obrigatórias.")
+      return
+    }
+
     setStatus('loading')
     setErrorMessage(null)
 
     try {
-      const result = await getTakeatDataAction(startDate, endDate)
+      const result = await getTakeatDataAction(startDate, endDate, selectedUnit)
       
       if (result.success && result.data) {
         setData(result.data)
@@ -173,9 +194,9 @@ export default function VendasPage() {
           setStatus('error')
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro no dashboard:", err)
-      setErrorMessage("Erro de conexão ou erro inesperado no servidor.")
+      setErrorMessage(err.message || "Erro de conexão ou erro inesperado no servidor.")
       setStatus('error')
     }
   }
@@ -254,6 +275,20 @@ export default function VendasPage() {
         </div>
         
         <div className="p-4 space-y-3">
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Unidade / Loja</label>
+            <select 
+              value={selectedUnit}
+              onChange={(e) => setSelectedUnit(e.target.value)}
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none transition-all appearance-none cursor-pointer"
+            >
+              <option value="">Todas as unidades</option>
+              {availableUnits.map(unit => (
+                <option key={unit.id} value={unit.id}>{unit.name}</option>
+              ))}
+            </select>
+          </div>
+
           <div className="flex items-center gap-3">
             <div className="flex-1 space-y-1">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Início</label>
@@ -432,17 +467,17 @@ export default function VendasPage() {
 
         <div className="space-y-3">
           {visibleSessions.map((s) => {
-            const bill = s.bills[0]
+            const bill = s?.bills?.[0]
             const totalProducts = parseFloat(bill?.total_price ?? '0')
             const totalService = parseFloat(bill?.total_service_price ?? '0')
             const discount = parseFloat(bill?.total_discount ?? '0')
-            const paymentNames = s.payments.map(p => p.payment_method.name).join(', ')
+            const paymentNames = s?.payments?.map(p => p?.payment_method?.name).filter(Boolean).join(', ') ?? ''
             
             // Itens: soma das quantidades (amount) para consistência com o resumo
             const itemCount = bill?.order_baskets
-              .flatMap(b => b.orders)
-              .flatMap(o => o.order_products)
-              .reduce((acc, p) => acc + (p.amount || 0), 0) ?? 0
+              ?.flatMap(b => b?.orders || [])
+              ?.flatMap(o => o?.order_products || [])
+              ?.reduce((acc, p) => acc + (p?.amount || 0), 0) ?? 0
 
             return (
               <div
@@ -457,7 +492,7 @@ export default function VendasPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-lg">
-                      {s.channel.name}
+                      {s?.channel?.name || 'Canal desconhecido'}
                     </span>
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-lg ${
                       s.status === 'finished'

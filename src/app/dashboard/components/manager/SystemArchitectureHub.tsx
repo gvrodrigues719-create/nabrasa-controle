@@ -7,8 +7,6 @@ import {
     ShoppingBag, 
     Users, 
     ListChecks, 
-    BarChart3,
-    ExternalLink,
     Wrench
 } from 'lucide-react'
 import { useDashboardIdentity } from '../../hooks/useDashboardIdentity'
@@ -17,61 +15,6 @@ interface ModuleItem {
     label: string;
     href?: string;
     status: 'ativo' | 'ativo parcial' | 'em desenvolvimento' | 'demo' | 'em breve';
-}
-
-interface AreaProps {
-    title: string;
-    icon: any;
-    accentColor: string;
-    mainModules: ModuleItem[];
-    extraModule?: ModuleItem;
-    className?: string;
-}
-
-function AreaCard({ title, icon: Icon, accentColor, mainModules, extraModule, className = "" }: AreaProps) {
-    return (
-        <div className={`bg-white rounded-[2.5rem] p-7 border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col h-full group ${className}`}>
-            <div className="flex items-center justify-between mb-6">
-                <div className={`w-11 h-11 rounded-2xl bg-gray-50 flex items-center justify-center group-hover:bg-white group-hover:shadow-sm transition-all border border-transparent group-hover:border-gray-100`}>
-                    <Icon className={`w-5 h-5 ${accentColor} transition-colors`} />
-                </div>
-                <div className="w-1.5 h-1.5 rounded-full bg-gray-200" />
-            </div>
-            
-            <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight mb-5">{title}</h3>
-            
-            <div className="space-y-4 flex-1">
-                <div className="flex flex-wrap gap-x-3 gap-y-2">
-                    {mainModules.map((m, idx) => (
-                        <div key={idx} className="flex items-center gap-1.5">
-                            {(m.status === 'ativo' || m.status === 'ativo parcial') && m.href ? (
-                                <Link 
-                                    href={m.href}
-                                    className="text-xs font-black text-gray-900 hover:text-[#B13A2B] flex items-center gap-1 transition-colors border-b border-gray-100 pb-0.5"
-                                >
-                                    {m.label}
-                                </Link>
-                            ) : (
-                                <span className="text-xs font-black text-gray-300 uppercase tracking-tighter decoration-dotted underline decoration-gray-200">{m.label}</span>
-                            )}
-                            {idx < mainModules.length - 1 && <span className="text-gray-200 font-bold">•</span>}
-                        </div>
-                    ))}
-                </div>
-
-                {extraModule && (
-                    <div className="pt-2 border-t border-gray-50">
-                        <span className={`text-[10px] font-bold ${extraModule.status === 'em desenvolvimento' ? 'text-gray-400 italic' : 'text-gray-300'}`}>
-                            {extraModule.label}
-                            <span className="ml-2 text-[7px] px-1.5 py-0.5 rounded-md uppercase not-italic font-black bg-gray-50 text-gray-400 border border-gray-100">
-                                {extraModule.status === 'em desenvolvimento' ? 'Em desenvolvimento' : 'Em breve'}
-                            </span>
-                        </span>
-                    </div>
-                )}
-            </div>
-        </div>
-    )
 }
 
 export default function SystemArchitectureHub() {
@@ -87,40 +30,40 @@ export default function SystemArchitectureHub() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {/* 1. Estoque, CMV e Produção (PRIORIDADE 1) */}
+                {/* 1. Estoque, CMV e Produção */}
                 <AreaCard 
                     title="ESTOQUE, CMV E PRODUÇÃO"
                     icon={Boxes}
                     accentColor="text-emerald-500"
-                    mainModules={([
-                        { label: 'CMV & Compras', href: '/dashboard/admin/cmv', status: 'ativo parcial' },
-                        { label: 'Perdas', href: '/dashboard/admin/cmv?tab=losses', status: 'ativo parcial' },
-                        ...(userRole === 'admin' ? [{ label: 'Planejamento Cozinha', href: '/dashboard/kitchen/planning', status: 'ativo' }] : [])
-                    ] as ModuleItem[]).filter(Boolean)}
-                    extraModule={{ label: 'Ficha Técnica', status: 'ativo parcial' }}
+                    mainModules={[
+                        { label: 'CMV & Compras', href: '/dashboard/admin/cmv', status: 'ativo' },
+                        { label: 'Perdas', href: '/dashboard/admin/cmv?tab=losses', status: 'ativo' },
+                        ...(userRole === 'admin' ? [{ label: 'Produção', href: '/dashboard/kitchen/planning', status: 'ativo' }] : [])
+                    ]}
+                    extraModule={{ label: 'Ficha Técnica', status: 'em breve' }}
                 />
 
-                {/* 2. Vendas, Delivery e Atendimento (PRIORIDADE 2) */}
+                {/* 2. Vendas & Atendimento */}
                 <AreaCard 
                     title="Vendas & Atendimento"
                     icon={ShoppingBag}
                     accentColor="text-indigo-500"
                     mainModules={[
-                        { label: 'Vendas', href: '/dashboard/admin/vendas', status: 'ativo parcial' },
-                        { label: 'Delivery', status: 'em breve' }
+                        { label: 'Vendas', href: '/dashboard/admin/vendas', status: 'ativo' },
+                        { label: 'Relatórios', href: '/dashboard/admin/reports', status: 'ativo' }
                     ]}
-                    extraModule={{ label: 'Atendimento', status: 'em desenvolvimento' }}
+                    extraModule={{ label: 'Delivery', status: 'em breve' }}
                 />
 
-                {/* 3. Equipe e Rotina (PRIORIDADE 3) */}
+                {/* 3. Equipe e Rotina */}
                 <AreaCard 
                     title="EQUIPE E ROTINA"
                     icon={Users}
                     accentColor="text-amber-500"
                     mainModules={[
-                        { label: 'Ranking', href: '/dashboard/admin/checklists?tab=ranking', status: 'ativo' },
                         { label: 'Equipe', href: '/dashboard/admin/users', status: 'ativo' },
-                        { label: 'Mural', href: '/dashboard/admin/communication', status: 'ativo' }
+                        { label: 'Mural', href: '/dashboard/admin/communication', status: 'ativo' },
+                        { label: 'Ranking', href: '/dashboard/admin/checklists?tab=ranking', status: 'ativo' }
                     ]}
                     extraModule={{ label: 'Onboarding', status: 'em desenvolvimento' }}
                 />
@@ -132,7 +75,7 @@ export default function SystemArchitectureHub() {
                     accentColor="text-[#B13A2B]"
                     mainModules={[
                         { label: 'Checklists', href: '/dashboard/admin/checklists', status: 'ativo' },
-                        { label: 'Contagens', href: '/dashboard/admin/routines', status: 'ativo parcial' },
+                        { label: 'Contagens', href: '/dashboard/admin/routines', status: 'ativo' },
                         { label: 'Auditoria', href: '/dashboard/admin/history/sessions', status: 'ativo' }
                     ]}
                 />
@@ -144,7 +87,7 @@ export default function SystemArchitectureHub() {
                     accentColor="text-gray-600"
                     mainModules={[
                         { label: 'Templates', href: '/dashboard/admin/checklists?tab=management', status: 'ativo' },
-                        { label: 'Regras', href: '/dashboard/admin/checklists', status: 'ativo' }
+                        { label: 'Configuração', status: 'em breve' }
                     ]}
                 />
 
@@ -154,22 +97,68 @@ export default function SystemArchitectureHub() {
                     icon={Wrench}
                     accentColor="text-slate-500"
                     mainModules={[
-                        { label: 'Ativos', status: 'em desenvolvimento' }
+                        { label: 'Ativos', status: 'em breve' }
                     ]}
                     extraModule={{ label: 'Manutenção', status: 'em breve' }}
                 />
-
-                {/* 7. Indicadores e Relatórios */}
-                <AreaCard 
-                    title="INDICADORES E RELATÓRIOS"
-                    icon={BarChart3}
-                    accentColor="text-blue-500"
-                    className="lg:col-span-3"
-                    mainModules={[
-                        { label: 'Relatórios', href: '/dashboard/admin/reports', status: 'ativo parcial' }
-                    ]}
-                />
             </div>
         </section>
+    )
+}
+
+function AreaCard({ title, icon: Icon, accentColor, mainModules, extraModule, className = "" }: { 
+    title: string, 
+    icon: any, 
+    accentColor: string, 
+    mainModules: ModuleItem[], 
+    extraModule?: ModuleItem,
+    className?: string 
+}) {
+    return (
+        <div className={`bg-white border border-gray-100 p-4 rounded-[1.5rem] shadow-sm flex flex-col gap-3 group transition-all hover:border-gray-200 ${className}`}>
+            <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center ${accentColor} group-hover:scale-110 transition-transform`}>
+                    <Icon className="w-4 h-4" />
+                </div>
+                <h4 className="text-[10px] font-black text-gray-900 uppercase tracking-widest">{title}</h4>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+                {mainModules.map((mod, idx) => (
+                    <ModuleLink key={idx} {...mod} />
+                ))}
+                {extraModule && (
+                    <ModuleLink {...extraModule} isExtra />
+                )}
+            </div>
+        </div>
+    )
+}
+
+function ModuleLink({ label, href, status, isExtra }: ModuleItem & { isExtra?: boolean }) {
+    const isSoon = status === 'em breve' || status === 'em desenvolvimento' || status === 'em breve parcial' || status === 'ativo parcial'
+    
+    const content = (
+        <div className={`
+            px-3 py-2 rounded-xl text-[10px] font-bold transition-all flex items-center justify-between
+            ${isSoon 
+                ? 'bg-gray-50/50 text-gray-400 border border-transparent' 
+                : 'bg-gray-50 text-gray-700 border border-gray-100 hover:bg-gray-900 hover:text-white hover:border-gray-900'
+            }
+            ${isExtra ? 'opacity-60' : ''}
+        `}>
+            <span>{label}</span>
+            {isSoon && (
+                <span className="text-[7px] font-black uppercase tracking-tighter opacity-50">...</span>
+            )}
+        </div>
+    )
+
+    if (isSoon || !href) return content
+
+    return (
+        <Link href={href}>
+            {content}
+        </Link>
     )
 }
