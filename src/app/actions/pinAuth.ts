@@ -134,3 +134,36 @@ export async function getActiveEmployeesAction() {
         return { success: false, error: e.message }
     }
 }
+
+export async function getPinLoginOperatorsAction() {
+    try {
+        // Busca apenas usuários ativos que tenham PIN configurado
+        // Não requer autenticação, mas retorna apenas id e name para não vazar dados
+        const { data, error } = await supabase
+            .from('users')
+            .select(`
+                id,
+                name,
+                user_pin_credentials!inner (user_id)
+            `)
+            .eq('active', true)
+            .in('role', ['operator', 'kitchen', 'manager', 'admin'])
+            .order('name');
+
+        if (error) {
+            console.error("Erro ao buscar operadores com PIN:", error);
+            return { success: false, error: 'Erro ao buscar operadores' };
+        }
+
+        // Limpa o retorno para não expor os detalhes do inner join
+        const cleanData = data.map(user => ({
+            id: user.id,
+            name: user.name
+        }));
+
+        return { success: true, data: cleanData };
+    } catch (e: any) {
+        console.error("Exceção ao buscar operadores com PIN:", e);
+        return { success: false, error: 'Erro interno ao buscar operadores' };
+    }
+}

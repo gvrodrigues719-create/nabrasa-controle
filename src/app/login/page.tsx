@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { Flame, Lock, Loader2, ArrowLeft, X, Settings } from 'lucide-react'
-import { loginOperatorWithPin, getActiveEmployeesAction, syncManagerCookie } from '../actions/pinAuth'
+import { loginOperatorWithPin, getPinLoginOperatorsAction, syncManagerCookie } from '../actions/pinAuth'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
@@ -13,7 +13,7 @@ export default function LoginPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
 
-    const [employees, setEmployees] = useState<{ id: string, name: string, role: string }[]>([])
+    const [employees, setEmployees] = useState<{ id: string, name: string }[]>([])
     const [selectedOp, setSelectedOp] = useState<any>(null)
     const [pin, setPin] = useState('')
 
@@ -29,11 +29,15 @@ export default function LoginPage() {
 
     const fetchEmployees = async () => {
         setLoading(true)
-        const res = await getActiveEmployeesAction()
+        const res = await getPinLoginOperatorsAction()
         if (res.success && res.data) {
             setEmployees(res.data)
         } else {
             console.error("Erro ao buscar ops:", res.error)
+            // Em ambiente de desenvolvimento, mostra o erro no console
+            if (process.env.NODE_ENV !== 'production') {
+                 console.error("Detalhe do erro técnico:", res.error);
+            }
         }
         setLoading(false)
     }
@@ -210,7 +214,7 @@ export default function LoginPage() {
                                 <div className="flex justify-center p-8"><Loader2 className="w-8 h-8 animate-spin text-[#B13A2B]" /></div>
                             ) : employees.length === 0 ? (
                                 <div className="text-center text-[#58413e] p-6 text-sm font-semibold border-2 border-dashed border-[#dfbfba] rounded-xl m-2">
-                                    Nenhum operador ativo.<br /><span className="text-xs font-normal">Execute a migration_pins.sql no banco para ativar.</span>
+                                    Nenhum operador disponível para acesso.<br /><span className="text-xs font-normal">Verifique se os PINs dos colaboradores foram cadastrados.</span>
                                 </div>
                             ) : employees.map(emp => (
                                 <button
