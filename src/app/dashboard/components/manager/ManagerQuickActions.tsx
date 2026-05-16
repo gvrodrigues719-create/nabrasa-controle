@@ -44,7 +44,7 @@ export default function ManagerQuickActions({ lateCount, pendingOrdersCount = 0,
                         <div className="text-left">
                             <span className="block text-[10px] font-black uppercase text-gray-900 leading-none mb-1">Abastecimento</span>
                             <span className="block text-sm font-bold text-gray-400">
-                                {pendingOrdersCount > 0 ? `${pendingOrdersCount} pedidos ativos` : 'Compras e Recebimento'}
+                                {pendingOrdersCount > 0 ? `${pendingOrdersCount} pedidos ativos` : 'Pedidos e recebimentos'}
                             </span>
                         </div>
                     </div>
@@ -66,9 +66,9 @@ export default function ManagerQuickActions({ lateCount, pendingOrdersCount = 0,
                             )}
                         </div>
                         <div className="text-left">
-                            <span className="block text-[10px] font-black uppercase text-gray-900 leading-none mb-1">Contagens ao Vivo</span>
+                            <span className="block text-[10px] font-black uppercase text-gray-900 leading-none mb-1">Contagens abertas</span>
                             <span className="block text-sm font-bold text-gray-400">
-                                {openCounts > 0 ? `${openCounts} setores em contagem` : 'Auditar operação agora'}
+                                {openCounts > 0 ? `${openCounts} setores em contagem` : 'Acompanhar inventário agora'}
                             </span>
                         </div>
                     </div>

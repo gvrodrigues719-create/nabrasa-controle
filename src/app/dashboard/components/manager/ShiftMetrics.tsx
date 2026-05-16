@@ -119,7 +119,7 @@ export default function ShiftMetrics({ overview }: ShiftMetricsProps) {
                     isCritical
                 />
                 <MetricItem 
-                    label="Contagens" 
+                    label="Contagens abertas" 
                     value={overview.openCounts} 
                     icon={Eye} 
                     color={overview.openCounts > 0 ? 'text-indigo-600' : 'text-gray-400'} 
@@ -136,22 +136,24 @@ export default function ShiftMetrics({ overview }: ShiftMetricsProps) {
             </div>
 
             {/* Métricas secundárias (extremamente compactas) */}
-            <div className="flex items-center justify-between px-2 pt-1">
-                <div className="flex gap-4">
-                    <div className="flex flex-col">
-                        <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">Concluídos</span>
-                        <span className="text-xs font-black text-gray-900">{overview.completed}/{overview.total}</span>
+            {overview.total > 0 && (
+                <div className="flex items-center justify-between px-2 pt-1">
+                    <div className="flex gap-4">
+                        <div className="flex flex-col">
+                            <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">Concluídos</span>
+                            <span className="text-xs font-black text-gray-900">{overview.completed}/{overview.total}</span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">Perdas 24h</span>
+                            <span className="text-xs font-black text-gray-900">{overview.lossesCount}</span>
+                        </div>
                     </div>
-                    <div className="flex flex-col">
-                        <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">Perdas 24h</span>
-                        <span className="text-xs font-black text-gray-900">{overview.lossesCount}</span>
+                    <div className="flex flex-col text-right">
+                        <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">Execução</span>
+                        <span className="text-xs font-black text-gray-900">{Math.round((overview.completed / overview.total) * 100)}%</span>
                     </div>
                 </div>
-                <div className="flex flex-col text-right">
-                    <span className="text-[8px] font-black text-gray-300 uppercase tracking-widest">Execução</span>
-                    <span className="text-xs font-black text-gray-900">{overview.total > 0 ? Math.round((overview.completed / overview.total) * 100) : 0}%</span>
-                </div>
-            </div>
+            )}
         </div>
     )
 }
