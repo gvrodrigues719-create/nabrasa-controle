@@ -37,6 +37,31 @@ function decryptId(text: string) {
 }
 
 export async function getServerAuthContext() {
+    // 0. Bypass para TESTE (usado em scripts de validação)
+    if (process.env.TEST_USER_ID) {
+        const adminClient = getServiceSupabase()
+        if (adminClient) {
+            const { data: testUser } = await adminClient
+                .from('users')
+                .select('id, name, role, primary_group_id, unit_id, groups!primary_group_id(macro_sector)')
+                .eq('id', process.env.TEST_USER_ID)
+                .single()
+            
+            if (testUser) {
+                const rawProfile = testUser as any
+                const groupData = Array.isArray(rawProfile.groups) ? rawProfile.groups[0] : rawProfile.groups
+                return {
+                    id: rawProfile.id,
+                    name: rawProfile.name,
+                    role: rawProfile.role,
+                    primary_group_id: rawProfile.primary_group_id,
+                    unit_id: rawProfile.unit_id,
+                    groups: groupData || null
+                }
+            }
+        }
+    }
+
     // 1. Tentar ler sessão de operador (PIN) diretamente (sem "use server" limits)
     const cookieStore = await cookies()
     const opSession = cookieStore.get('operator_session')?.value

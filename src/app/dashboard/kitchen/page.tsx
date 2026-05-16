@@ -101,10 +101,12 @@ export default function KitchenPage() {
                     {/* Status banner — mensagem específica */}
                     {!dashLoading && operacao && (() => {
                         const dow = new Date().getDay() // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+                        const isAfterLimit = new Date().getHours() >= 16 // 16h como limite
                         const hojeStr = new Date().toISOString().split('T')[0]
                         const contouHoje = operacao.ultimaContagemCK_at && operacao.ultimaContagemCK_at.split('T')[0] === hojeStr
 
                         let msg = 'Operação sem pendências críticas agora.'
+                        let subMsg = ''
                         let actionUrl = ''
                         let variant: 'critico' | 'atencao' | 'ok' = 'ok'
 
@@ -114,9 +116,17 @@ export default function KitchenPage() {
                             variant = 'critico'
                         }
                         else if (dow === 5 && !contouHoje) {
-                            msg = 'Ação Obrigatória: Realizar a contagem da Cozinha Central hoje.'
-                            actionUrl = '/dashboard/kitchen/count'
-                            variant = 'critico'
+                            if (isAfterLimit) {
+                                msg = 'Contagem CK obrigatória pendente.'
+                                subMsg = 'Finalize agora.'
+                                actionUrl = '/dashboard/kitchen/count'
+                                variant = 'critico'
+                            } else {
+                                msg = 'Hoje é dia de contagem obrigatória da CK.'
+                                subMsg = 'Finalize até o fim do turno.'
+                                actionUrl = '/dashboard/kitchen/count'
+                                variant = 'atencao'
+                            }
                         }
                         else if (dow === 1) {
                             msg = 'Hoje as lojas fazem pedidos para entrega amanhã (Terça).'
@@ -143,8 +153,14 @@ export default function KitchenPage() {
                             actionUrl = '/dashboard/kitchen/receivings'
                             variant = 'atencao'
                         }
+                        else if (dow === 5 && contouHoje) {
+                            msg = 'Contagem CK realizada hoje.'
+                            subMsg = `Última atualização há ${formatHours(operacao.idadeContagemCK_horas ?? 0)}.`
+                            actionUrl = ''
+                            variant = 'ok'
+                        }
                         else if (operacao.producedSemVinculoCount > 0) {
-                            msg = `Ação recomendada: resolver ${operacao.producedSemVinculoCount} vínculos pendentes da base.`
+                            msg = `Ação recomendada: resolver ${operacao.producedSemVinculoCount} itens sem vínculo.`
                             actionUrl = '/dashboard/kitchen/system-health'
                             variant = 'atencao'
                         }
@@ -162,6 +178,7 @@ export default function KitchenPage() {
                                 <Icon className="w-5 h-5 shrink-0" />
                                 <div className="min-w-0 flex-1">
                                     <p className="text-xs font-black leading-snug">{msg}</p>
+                                    {subMsg && <p className="text-[10px] font-bold text-white/80 mt-0.5">{subMsg}</p>}
                                 </div>
                                 {actionUrl && <ChevronRight className="w-4 h-4 opacity-70 shrink-0" />}
                             </>
@@ -188,6 +205,18 @@ export default function KitchenPage() {
                         </div>
                     ) : operacao && (() => {
                         const ckH = operacao.idadeContagemCK_horas ?? 0
+                        const dow = new Date().getDay()
+                        const hojeStr = new Date().toISOString().split('T')[0]
+                        const contouHoje = operacao.ultimaContagemCK_at && operacao.ultimaContagemCK_at.split('T')[0] === hojeStr
+                        
+                        let ckLabel = "Última contagem CK"
+                        let ckVal = `há ${formatHours(ckH)}`
+                        if (dow === 5 && contouHoje) {
+                            ckLabel = "Contagem de sexta feita"
+                        } else if (ckH > 24) {
+                            ckLabel = "CK sem atualizar"
+                        }
+
                         const cards = [
                             operacao.pedidosAnalise > 0 && (
                                 <button key="analise" onClick={() => router.push('/dashboard/kitchen/planning')}
@@ -220,8 +249,8 @@ export default function KitchenPage() {
                             (ckH > 0) && (
                                 <button key="ck" onClick={() => router.push('/dashboard/kitchen/count')}
                                     className={`bg-white rounded-2xl p-3 text-left border-2 shadow-sm active:scale-[0.97] transition-all ${ckH > 24 ? 'border-amber-200' : 'border-gray-100'}`}>
-                                    <p className={`text-base font-black leading-none ${ckH > 24 ? 'text-amber-600' : 'text-emerald-600'}`}>{formatHours(ckH)}</p>
-                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Contagem CK</p>
+                                    <p className={`text-base font-black leading-none ${ckH > 24 ? 'text-amber-600' : 'text-emerald-600'}`}>{ckVal}</p>
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">{ckLabel}</p>
                                 </button>
                             ),
                         ].filter(Boolean)
@@ -500,10 +529,10 @@ export default function KitchenPage() {
                         <div className="h-28 bg-white rounded-3xl animate-pulse border border-gray-100" />
                     ) : saude ? (() => {
                         const items = [
-                            { label: 'Vínculos pendentes', val: saude.producedSemVinculoCount, icon: Link2, alert: saude.producedSemVinculoCount > 0, isRed: true },
-                            { label: 'Sem classificação', val: saude.unclassifiedCount, icon: Tag, alert: saude.unclassifiedCount > 0, isRed: true },
-                            { label: 'Para revisar', val: saude.itensParaRevisarCount, icon: AlertTriangle, alert: saude.itensParaRevisarCount > 0, isRed: true },
-                            { label: 'Pedidos teste', val: saude.pedidosTesteCount, icon: AlertTriangle, alert: saude.pedidosTesteCount > 0, isRed: true },
+                            { label: 'Itens sem vínculo', val: saude.producedSemVinculoCount, icon: Link2, alert: saude.producedSemVinculoCount > 0, isRed: false },
+                            { label: 'Sem classificação', val: saude.unclassifiedCount, icon: Tag, alert: saude.unclassifiedCount > 0, isRed: false },
+                            { label: 'Para revisar', val: saude.itensParaRevisarCount, icon: AlertTriangle, alert: saude.itensParaRevisarCount > 0, isRed: false },
+                            { label: 'Pedidos teste', val: saude.pedidosTesteCount, icon: AlertTriangle, alert: saude.pedidosTesteCount > 0, isRed: false },
                             { label: 'Contagem CK', val: saude.idadeContagemCK_horas !== null ? formatHours(saude.idadeContagemCK_horas) : '—', icon: Clock, alert: (saude.idadeContagemCK_horas ?? 0) > 24, isRed: (saude.idadeContagemCK_horas ?? 0) > 72 },
                             { label: 'Loja desatualizada', val: saude.lojasDesatualizadas.length, icon: Store, alert: saude.lojasDesatualizadas.length > 0, isRed: false },
                         ].filter(item => item.alert)
