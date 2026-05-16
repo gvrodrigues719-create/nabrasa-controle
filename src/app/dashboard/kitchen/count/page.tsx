@@ -114,7 +114,7 @@ function GroupCard({
     )
 }
 
-function LastCountContext({ session, onHistory }: { session: { id: string, completedAt: string }, onHistory: (id: string) => void }) {
+function LastCountContext({ session, onHistory }: { session: { id: string, completedAt: string }, onHistory: () => void }) {
     const ageH = (Date.now() - new Date(session.completedAt).getTime()) / (1000 * 60 * 60)
     
     return (
@@ -129,10 +129,10 @@ function LastCountContext({ session, onHistory }: { session: { id: string, compl
                 </div>
             </div>
             <button
-                onClick={() => onHistory(session.id)}
+                onClick={() => onHistory()}
                 className="px-4 py-2 bg-gray-50 text-gray-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-100 active:scale-95 transition-all"
             >
-                Ver Detalhes
+                Ver última rodada
             </button>
         </div>
     )
@@ -271,7 +271,7 @@ export default function KitchenCountPage() {
                 {data?.lastFinishedSession && data.overallStatus !== 'completed' && (
                     <LastCountContext 
                         session={data.lastFinishedSession} 
-                        onHistory={(id) => router.push(`/dashboard/kitchen/history/${id}`)}
+                        onHistory={() => router.push('/dashboard/kitchen/history/latest')}
                     />
                 )}
 

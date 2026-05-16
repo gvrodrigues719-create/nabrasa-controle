@@ -134,3 +134,66 @@ export async function getConsolidatedKitchenDataAction(sessionIds: string[]) {
         return { success: false, error: e.message }
     }
 }
+
+export async function getLatestKitchenRoundAction() {
+    try {
+        const user = await getServerAuthContext()
+        const isKitchen = user.role === 'admin' || user.role === 'kitchen' || user.groups?.macro_sector === 'Cozinha Central'
+        if (!isKitchen) return { success: false, error: 'Acesso negado' }
+
+        // 1. Buscar a última sessão finalizada da CK
+        const { data: lastSession } = await supabaseAdmin
+            .from('count_sessions')
+            .select('completed_at, groups!inner(macro_sector)')
+            .eq('status', 'completed')
+            .eq('groups.macro_sector', 'Cozinha Central')
+            .order('completed_at', { ascending: false })
+            .limit(1)
+            .single()
+
+        if (!lastSession) {
+            return { success: true, data: null }
+        }
+
+        // 2. Determinar a data operacional (America/Sao_Paulo)
+        const completedAt = new Date(lastSession.completed_at)
+        const dateStr = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'America/Sao_Paulo',
+            year: 'numeric', month: '2-digit', day: '2-digit'
+        }).format(completedAt)
+
+        // 3. Buscar todas as sessões da mesma rodada (mesmo dia operacional)
+        // Usamos o mesmo range de 00h-23h59 no fuso -03:00 que o histórico usa
+        const { data: roundSessions, error } = await supabaseAdmin
+            .from('count_sessions')
+            .select(`
+                id,
+                status,
+                started_at,
+                completed_at,
+                validation_status,
+                validated_at,
+                groups(id, name, macro_sector),
+                users:user_id(name)
+            `)
+            .eq('status', 'completed')
+            .eq('groups.macro_sector', 'Cozinha Central')
+            .gte('started_at', `${dateStr}T00:00:00-03:00`)
+            .lte('started_at', `${dateStr}T23:59:59-03:00`)
+            .order('completed_at', { ascending: false })
+
+        if (error) throw error
+
+        return { 
+            success: true, 
+            data: {
+                date: dateStr,
+                sessions: roundSessions || []
+            } 
+        }
+    } catch (e: any) {
+        console.error('[getLatestKitchenRoundAction] Erro:', e.message)
+        return { success: false, error: e.message }
+    }
+}
+

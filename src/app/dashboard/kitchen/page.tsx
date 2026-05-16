@@ -295,13 +295,7 @@ export default function KitchenPage() {
                                 </button>
                             ),
                             (ckH > 0) && (
-                                <button key="ck" onClick={() => {
-                                    if (operacao.ultimaContagemCK_sessionId) {
-                                        router.push(`/dashboard/kitchen/history/${operacao.ultimaContagemCK_sessionId}`)
-                                    } else {
-                                        router.push('/dashboard/kitchen/history')
-                                    }
-                                }}
+                                <button key="ck" onClick={() => router.push('/dashboard/kitchen/history/latest')}
                                     className={`bg-white rounded-2xl p-3 text-left border-2 shadow-sm active:scale-[0.97] transition-all ${ckH > 24 ? 'border-amber-200' : 'border-gray-100'}`}>
                                     <p className={`text-base font-black leading-none ${ckH > 24 ? 'text-amber-600' : 'text-emerald-600'}`}>{ckVal}</p>
                                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">{ckLabel}</p>
