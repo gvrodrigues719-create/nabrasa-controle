@@ -38,6 +38,17 @@ function formatDate(iso: string) {
   })
 }
 
+function getBrazilDate(offsetDays = 0): string {
+  const date = new Date()
+  date.setDate(date.getDate() - offsetDays)
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date)
+}
+
 // -------------------------------------------------------------------
 // COMPONENTES INTERNOS
 // -------------------------------------------------------------------
@@ -113,8 +124,8 @@ export default function VendasPage() {
   const [loadingConfig, setLoadingConfig] = useState(true)
   
   // Estados para o Seletor de Datas
-  const [startDate, setStartDate] = useState(MOCK_PERIOD.start.split('T')[0])
-  const [endDate, setEndDate] = useState(MOCK_PERIOD.end.split('T')[0])
+  const [startDate, setStartDate] = useState(() => getBrazilDate())
+  const [endDate, setEndDate] = useState(() => getBrazilDate())
   const [selectedUnit, setSelectedUnit] = useState<string>('')
   const [availableUnits, setAvailableUnits] = useState<{id: string, name: string}[]>([])
   const [dateError, setDateError] = useState<string | null>(null)
@@ -313,6 +324,40 @@ export default function VendasPage() {
               />
             </div>
           </div>
+          
+          {/* Atalhos Rápidos */}
+          <div className="flex items-center gap-2 py-1">
+            <button 
+              onClick={() => { setStartDate(getBrazilDate()); setEndDate(getBrazilDate()); }}
+              className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight transition-all border ${
+                startDate === getBrazilDate() && endDate === getBrazilDate()
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-300'
+              }`}
+            >
+              Hoje
+            </button>
+            <button 
+              onClick={() => { setStartDate(getBrazilDate(1)); setEndDate(getBrazilDate(1)); }}
+              className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight transition-all border ${
+                startDate === getBrazilDate(1) && endDate === getBrazilDate(1)
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-300'
+              }`}
+            >
+              Ontem
+            </button>
+            <button 
+              onClick={() => { setStartDate(getBrazilDate(2)); setEndDate(getBrazilDate()); }}
+              className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tight transition-all border ${
+                startDate === getBrazilDate(2) && endDate === getBrazilDate()
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-300'
+              }`}
+            >
+              Últimos 3 dias
+            </button>
+          </div>
 
           {dateError ? (
             <div className="flex items-center gap-2 p-3 bg-rose-50 border border-rose-100 rounded-xl">
@@ -401,7 +446,7 @@ export default function VendasPage() {
             </span>
           ) : (
             <span className="text-[10px] font-bold px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full uppercase tracking-wider">
-              {status === 'loading' ? 'Carregando...' : 'Modo Visualização (Mock)'}
+              {status === 'loading' ? 'Carregando...' : 'Aguardando consulta'}
             </span>
           )}
         </div>
@@ -465,7 +510,7 @@ export default function VendasPage() {
             Sessões do Período
           </h3>
           <span className="text-[10px] font-bold px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full uppercase tracking-wider">
-            {isViewingRealData ? 'API Real' : 'Mock'}
+            {isViewingRealData ? 'API Real' : 'Demonstração'}
           </span>
         </div>
 
@@ -641,8 +686,10 @@ export default function VendasPage() {
         <p className="text-xs text-gray-400 text-center leading-relaxed">
           Módulo de Vendas · Integração Takeat v1.0<br />
           {status === 'real' 
-            ? <span className="text-emerald-600 font-bold uppercase">Conectado à API Real</span>
-            : 'Modo de visualização com dados de demonstração'
+            ? <span className="text-emerald-600 font-bold uppercase tracking-widest">Conectado à API Real</span>
+            : status === 'mock' 
+              ? 'Pronto para consulta operacional' 
+              : 'Status da conexão pendente'
           }
         </p>
       </div>
