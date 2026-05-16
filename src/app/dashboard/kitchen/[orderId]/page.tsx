@@ -16,6 +16,7 @@ import {
 import type { PurchaseOrder, PurchaseOrderItem } from '@/modules/purchases/types'
 import { OrderStatusBadge } from '../../purchases/components/OrderStatusBadge'
 import { ItemSearchDrawer } from '../../purchases/components/ItemSearchDrawer'
+import { OrderCommentsBlock } from '@/components/OrderCommentsBlock'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import toast from 'react-hot-toast'
@@ -303,6 +304,22 @@ export default function KitchenOrderDetailPage() {
                     </div>
                 )}
 
+                {/* Divergence banner */}
+                {order.status === 'divergente' && (
+                    <div className="bg-red-50 border border-red-100 rounded-3xl p-5 shadow-sm">
+                        <div className="flex items-start gap-4 mb-4">
+                            <AlertCircle className="w-6 h-6 text-red-600 shrink-0 mt-1" />
+                            <div>
+                                <p className="text-sm font-black text-red-900">Recebimento com Divergência</p>
+                                <p className="text-xs text-red-700 mt-1 leading-relaxed">
+                                    A loja relatou problemas ou quantidades diferentes ao receber este pedido.
+                                    Utilize os Comentários do Pedido abaixo para tratar a ocorrência.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Reopen action for Separated */}
                 {order.status === 'separado' && (
                     <div className="bg-emerald-50 border border-emerald-100 rounded-3xl p-5 shadow-sm">
@@ -495,6 +512,11 @@ export default function KitchenOrderDetailPage() {
                         </div>
                     </section>
                 )}
+
+                {/* Comentários do Pedido */}
+                <div className="pt-2">
+                    <OrderCommentsBlock orderId={orderId} />
+                </div>
             </div>
 
             {/* Bottom action bar */}

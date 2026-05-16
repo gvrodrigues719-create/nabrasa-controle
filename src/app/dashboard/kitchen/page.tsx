@@ -148,7 +148,12 @@ export default function KitchenPage() {
                         else if (operacao.producaoNecessaria > 0) {
                             msg = `Ação recomendada: planejar produção de ${operacao.producaoNecessaria} item(s).`
                             actionUrl = '/dashboard/kitchen/planning'
-                            variant = 'atencao'
+                        }
+                        else if (orders.some(o => o.status === 'divergente')) {
+                            const divCount = orders.filter(o => o.status === 'divergente').length
+                            msg = `Atenção: ${divCount} pedido(s) com divergência no recebimento da loja.`
+                            actionUrl = `/dashboard/kitchen/${orders.find(o => o.status === 'divergente')?.id}`
+                            variant = 'critico'
                         }
                         else if (orders.some(o => o.status === 'separado')) {
                             const expedirCount = orders.filter(o => o.status === 'separado').length
@@ -238,6 +243,7 @@ export default function KitchenPage() {
                         }
                         
                         const paraExpedirCount = orders.filter(o => o.status === 'separado').length
+                        const divergentesCount = orders.filter(o => o.status === 'divergente').length
 
                         const cards = [
                             operacao.pedidosAnalise > 0 && (
@@ -269,6 +275,16 @@ export default function KitchenPage() {
                                     className="bg-white rounded-2xl p-3 text-left border-2 border-indigo-200 shadow-sm active:scale-[0.97] transition-all">
                                     <p className="text-2xl font-black leading-none text-indigo-600">{paraExpedirCount}</p>
                                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Para Expedir</p>
+                                </button>
+                            ),
+                            divergentesCount > 0 && (
+                                <button key="div" onClick={() => {
+                                    const firstOrder = orders.find(o => o.status === 'divergente')
+                                    if (firstOrder) router.push(`/dashboard/kitchen/${firstOrder.id}`)
+                                }}
+                                    className="bg-white rounded-2xl p-3 text-left border-2 border-red-300 shadow-sm active:scale-[0.97] transition-all">
+                                    <p className="text-2xl font-black leading-none text-red-600">{divergentesCount}</p>
+                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-wide mt-1.5 leading-tight">Divergências</p>
                                 </button>
                             ),
                             operacao.recebimentosAtrasados > 0 && (

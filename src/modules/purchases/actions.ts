@@ -828,7 +828,7 @@ export async function confirmDispatchAction(
             if (error) throw error
         }
 
-        const newStatus: OrderStatus = hasDivergence ? 'divergente' : 'em_entrega'
+        const newStatus: OrderStatus = 'em_entrega'
 
         const { error: orderErr } = await supabase
             .from('purchase_orders')
@@ -864,8 +864,39 @@ export async function confirmReceivedAction(
         const { supabase, user } = await getCurrentUser()
         if (!['admin', 'manager'].includes(user.role)) throw new Error('Sem permissão')
 
-        // 1. Gravar received_qty e received_notes de cada item
+        // 1. Validar IDOR e Status do Pedido
+        const { data: order } = await supabase
+            .from('purchase_orders')
+            .select('status, store_id')
+            .eq('id', orderId)
+            .single()
+
+        if (!order) throw new Error('Pedido não encontrado')
+        if (order.status !== 'em_entrega') throw new Error('O pedido não está pronto para recebimento (status inválido).')
+
+        // Validar permissão de loja (Admin pode tudo, mas se for Manager, o pedido TEM que ser da loja dele)
+        if (user.role !== 'admin' && order.store_id !== user.primary_group_id) {
+            throw new Error('Sem permissão: Você só pode confirmar recebimento de pedidos da sua própria loja.')
+        }
+
+        // 2. Gravar received_qty e received_notes de cada item
         for (const ri of receivedItems) {
+            if (ri.receivedQty < 0) throw new Error('A quantidade recebida não pode ser negativa.')
+            
+            // Vamos buscar o separated_qty para ver se houve diferença
+            const { data: itemData } = await supabase
+                .from('purchase_order_items')
+                .select('separated_qty')
+                .eq('id', ri.orderItemId)
+                .single()
+
+            if (itemData) {
+                const sepQty = itemData.separated_qty ?? 0
+                if (!qtyEqual(sepQty, ri.receivedQty) && !ri.receivedNotes) {
+                    throw new Error('Você deve informar um motivo se a quantidade recebida for diferente da enviada pela CK.')
+                }
+            }
+
             const { error } = await supabase
                 .from('purchase_order_items')
                 .update({
@@ -938,6 +969,66 @@ export async function confirmReceivedWithDivergenceAction(
         orderId,
         receivedItems.map(ri => ({ orderItemId: ri.orderItemId, receivedQty: ri.receivedQty, receivedNotes: ri.notes }))
     )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COMENTÁRIOS DO PEDIDO
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function addOrderCommentAction(
+    orderId: string,
+    message: string
+): Promise<{ success: boolean; error?: string }> {
+    try {
+        if (!message || message.trim() === '') throw new Error('Mensagem vazia')
+
+        const { supabase, user } = await getCurrentUser()
+        
+        // Verifica se a mensagem é permitida
+        const { data: order } = await supabase
+            .from('purchase_orders')
+            .select('store_id')
+            .eq('id', orderId)
+            .single()
+        
+        if (!order) throw new Error('Pedido não encontrado')
+
+        if (user.role === 'manager' && order.store_id !== user.primary_group_id) {
+            throw new Error('Sem permissão para comentar neste pedido')
+        }
+
+        const { error } = await supabase.from('purchase_order_comments').insert({
+            order_id: orderId,
+            user_id: user.id,
+            user_name: user.name,
+            user_role: user.role,
+            message: message.trim()
+        })
+        if (error) throw error
+
+        await _logEvent(supabase, orderId, user.id, 'comment_added' as any, { message: message.trim() })
+
+        return { success: true }
+    } catch (e: unknown) {
+        return { success: false, error: (e as Error).message }
+    }
+}
+
+export async function getOrderCommentsAction(
+    orderId: string
+): Promise<{ success: boolean; data?: any[]; error?: string }> {
+    try {
+        const { supabase } = await getCurrentUser()
+        const { data, error } = await supabase
+            .from('purchase_order_comments')
+            .select('*')
+            .eq('order_id', orderId)
+            .order('created_at', { ascending: true })
+        if (error) throw error
+        return { success: true, data }
+    } catch (e: unknown) {
+        return { success: false, error: (e as Error).message }
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -19,6 +19,7 @@ import { EDITABLE_STATUSES } from '@/modules/purchases/types'
 import { OrderStatusBadge } from '../components/OrderStatusBadge'
 import { OrderItemRow } from '../components/OrderItemRow'
 import { ItemSearchDrawer } from '../components/ItemSearchDrawer'
+import { OrderCommentsBlock } from '@/components/OrderCommentsBlock'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import toast from 'react-hot-toast'
@@ -55,7 +56,7 @@ export default function OrderDetailPage() {
     const [localItems, setLocalItems] = useState<PurchaseOrderItem[]>([])
 
     const isEditable = order ? EDITABLE_STATUSES.includes(order.status) : false
-    const canReceive = order?.status === 'entregue' || order?.status === 'separado'
+    const canReceive = order?.status === 'em_entrega'
 
     const fetchOrder = useCallback(async () => {
         setLoading(true)
@@ -225,7 +226,7 @@ export default function OrderDetailPage() {
                         </div>
                     )}
 
-                    {(order.status === 'separado' || order.status === 'entregue') && (
+                    {(order.status === 'em_entrega') && (
                         <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex items-start gap-3">
                             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                             <div>
@@ -294,6 +295,9 @@ export default function OrderDetailPage() {
                             </div>
                         )}
                     </section>
+
+                    {/* Comentários do Pedido */}
+                    <OrderCommentsBlock orderId={orderId} />
 
                     {/* Histórico de eventos */}
                     <section>
