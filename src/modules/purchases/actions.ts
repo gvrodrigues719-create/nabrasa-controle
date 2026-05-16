@@ -767,7 +767,10 @@ export async function saveDispatchDraftAction(
             throw new Error('O pedido não está no status correto para conferência.')
         }
 
+        // Validar ownership: todos os orderItemIds devem pertencer a este orderId
         for (const item of dispatchedItems) {
+            if (item.dispatchedQty < 0) throw new Error('Quantidade não pode ser negativa.')
+
             const { error } = await supabase
                 .from('purchase_order_items')
                 .update({
@@ -775,10 +778,13 @@ export async function saveDispatchDraftAction(
                     separation_notes: item.divergenceReason || null
                 })
                 .eq('id', item.orderItemId)
+                .eq('order_id', orderId)
             if (error) throw error
         }
 
-        await _logEvent(supabase, orderId, user.id, 'dispatch_draft_saved' as any, {})
+        await _logEvent(supabase, orderId, user.id, 'dispatch_draft_saved' as any, {
+            item_count: dispatchedItems.length
+        })
 
         return { success: true }
     } catch (e: unknown) {
@@ -807,7 +813,7 @@ export async function confirmDispatchAction(
 
         let hasDivergence = false
 
-        // Validate and save
+        // Validate and save — cada item deve pertencer a este orderId (proteção IDOR)
         for (const item of dispatchedItems) {
             if (item.dispatchedQty < 0) throw new Error('Quantidade não pode ser negativa.')
             
@@ -818,14 +824,17 @@ export async function confirmDispatchAction(
 
             if (diff) hasDivergence = true
 
-            const { error } = await supabase
+            const { error, count } = await supabase
                 .from('purchase_order_items')
                 .update({
                     separated_qty: item.dispatchedQty,
                     separation_notes: item.divergenceReason || null
                 })
                 .eq('id', item.orderItemId)
+                .eq('order_id', orderId)
             if (error) throw error
+            // Se nenhuma linha foi afetada, o item não pertence a este pedido
+            if (count === 0) throw new Error('Item não pertence a este pedido.')
         }
 
         const newStatus: OrderStatus = 'em_entrega'
@@ -883,18 +892,21 @@ export async function confirmReceivedAction(
         for (const ri of receivedItems) {
             if (ri.receivedQty < 0) throw new Error('A quantidade recebida não pode ser negativa.')
             
-            // Vamos buscar o separated_qty para ver se houve diferença
-            const { data: itemData } = await supabase
+            // Buscar separated_qty validando ownership (proteção IDOR: item deve pertencer ao orderId)
+            const { data: itemData, error: itemFetchErr } = await supabase
                 .from('purchase_order_items')
                 .select('separated_qty')
                 .eq('id', ri.orderItemId)
+                .eq('order_id', orderId)
                 .single()
 
-            if (itemData) {
-                const sepQty = itemData.separated_qty ?? 0
-                if (!qtyEqual(sepQty, ri.receivedQty) && !ri.receivedNotes) {
-                    throw new Error('Você deve informar um motivo se a quantidade recebida for diferente da enviada pela CK.')
-                }
+            if (itemFetchErr || !itemData) {
+                throw new Error('Item não pertence a este pedido.')
+            }
+
+            const sepQty = itemData.separated_qty ?? 0
+            if (!qtyEqual(sepQty, ri.receivedQty) && !ri.receivedNotes) {
+                throw new Error('Você deve informar um motivo se a quantidade recebida for diferente da enviada pela CK.')
             }
 
             const { error } = await supabase
@@ -904,6 +916,7 @@ export async function confirmReceivedAction(
                     received_notes: ri.receivedNotes ?? null,
                 })
                 .eq('id', ri.orderItemId)
+                .eq('order_id', orderId)
             if (error) throw error
         }
 

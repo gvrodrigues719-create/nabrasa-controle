@@ -158,7 +158,7 @@ export default function KitchenPage() {
                         else if (orders.some(o => o.status === 'separado')) {
                             const expedirCount = orders.filter(o => o.status === 'separado').length
                             msg = `Ação recomendada: Expedir ${expedirCount} pedido(s) já separado(s).`
-                            actionUrl = `/dashboard/kitchen/order/${orders.find(o => o.status === 'separado')?.id}/dispatch`
+                            actionUrl = `/dashboard/kitchen/${orders.find(o => o.status === 'separado')?.id}/dispatch`
                             variant = 'atencao'
                         }
                         else if (operacao.separacaoNecessaria > 0) {
@@ -270,7 +270,7 @@ export default function KitchenPage() {
                             paraExpedirCount > 0 && (
                                 <button key="exp" onClick={() => {
                                     const firstOrder = orders.find(o => o.status === 'separado')
-                                    if (firstOrder) router.push(`/dashboard/kitchen/order/${firstOrder.id}/dispatch`)
+                                    if (firstOrder) router.push(`/dashboard/kitchen/${firstOrder.id}/dispatch`)
                                 }}
                                     className="bg-white rounded-2xl p-3 text-left border-2 border-indigo-200 shadow-sm active:scale-[0.97] transition-all">
                                     <p className="text-2xl font-black leading-none text-indigo-600">{paraExpedirCount}</p>
