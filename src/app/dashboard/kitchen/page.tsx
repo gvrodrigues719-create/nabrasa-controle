@@ -100,10 +100,17 @@ export default function KitchenPage() {
                     {/* Status banner — mensagem específica */}
                     {/* Status banner — mensagem específica */}
                     {!dashLoading && operacao && (() => {
-                        const dow = new Date().getDay() // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
-                        const isAfterLimit = new Date().getHours() >= 16 // 16h como limite
-                        const hojeStr = new Date().toISOString().split('T')[0]
-                        const contouHoje = operacao.ultimaContagemCK_at && operacao.ultimaContagemCK_at.split('T')[0] === hojeStr
+                        const now = new Date()
+                        const dow = now.getDay() // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+                        const isAfterLimit = now.getHours() >= 16 // 16h como limite
+                        const hojeStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0')
+                        
+                        let contouHoje = false
+                        if (operacao.ultimaContagemCK_at) {
+                            const ckDate = new Date(operacao.ultimaContagemCK_at)
+                            const ckStr = ckDate.getFullYear() + '-' + String(ckDate.getMonth() + 1).padStart(2, '0') + '-' + String(ckDate.getDate()).padStart(2, '0')
+                            contouHoje = ckStr === hojeStr
+                        }
 
                         let msg = 'Operação sem pendências críticas agora.'
                         let subMsg = ''
@@ -205,9 +212,16 @@ export default function KitchenPage() {
                         </div>
                     ) : operacao && (() => {
                         const ckH = operacao.idadeContagemCK_horas ?? 0
-                        const dow = new Date().getDay()
-                        const hojeStr = new Date().toISOString().split('T')[0]
-                        const contouHoje = operacao.ultimaContagemCK_at && operacao.ultimaContagemCK_at.split('T')[0] === hojeStr
+                        const now = new Date()
+                        const dow = now.getDay()
+                        const hojeStr = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0')
+                        
+                        let contouHoje = false
+                        if (operacao.ultimaContagemCK_at) {
+                            const ckDate = new Date(operacao.ultimaContagemCK_at)
+                            const ckStr = ckDate.getFullYear() + '-' + String(ckDate.getMonth() + 1).padStart(2, '0') + '-' + String(ckDate.getDate()).padStart(2, '0')
+                            contouHoje = ckStr === hojeStr
+                        }
                         
                         let ckLabel = "Última contagem CK"
                         let ckVal = `há ${formatHours(ckH)}`
