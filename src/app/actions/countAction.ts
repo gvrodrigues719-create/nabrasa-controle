@@ -147,7 +147,7 @@ export async function syncCountSessionAction(
         const userContext = await getServerAuthContext()
         const scope = await getAccessibleCountScope()
         
-        // 0. Validar posse da sessão
+        // 0. Validar posse da sessão e escopo de acesso
         const { data: sessionOwner } = await supabase
             .from('count_sessions')
             .select('user_id, unit_id, groups(macro_sector)')
@@ -158,10 +158,22 @@ export async function syncCountSessionAction(
         
         const isOwner = sessionOwner.user_id === userContext.id
         const isAdmin = userContext.role === 'admin'
-        const isKitchen = (userContext.role === 'kitchen' || userContext.groups?.macro_sector === 'Cozinha Central') && (sessionOwner.groups as any)?.macro_sector === 'Cozinha Central'
         
-        if (!isOwner && !isAdmin && !isKitchen) {
-            throw new Error('Acesso negado: Você não é o dono desta sessão e não possui privilégios de gestão.')
+        const isCentralKitchenSession = (sessionOwner.groups as any)?.macro_sector === 'Cozinha Central'
+        
+        // Kitchen/OP Cozinha Central só pode finalizar contagens da CK (Cozinha Central)
+        const isKitchenUser = userContext.role === 'kitchen' || userContext.groups?.macro_sector === 'Cozinha Central'
+        const isAuthorizedKitchen = isKitchenUser && isCentralKitchenSession
+        
+        // Manager só pode sincronizar/finalizar contagens da própria unidade.
+        // E manager de loja não pode finalizar contagem da Cozinha Central.
+        const isSameUnitManager = userContext.role === 'manager' && 
+                                  userContext.unit_id && 
+                                  sessionOwner.unit_id === userContext.unit_id && 
+                                  !isCentralKitchenSession
+        
+        if (!isOwner && !isAdmin && !isAuthorizedKitchen && !isSameUnitManager) {
+            throw new Error('Acesso negado: Você não possui permissão para sincronizar ou finalizar esta contagem.')
         }
 
         // 1. Upsert dos dados atuais
