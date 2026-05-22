@@ -213,6 +213,39 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         setShowSummary(true)
     }
 
+    const recoverAndCompleteSession = async (userId: string) => {
+        toast("Sessão anterior não encontrada. Tentando recuperar sua contagem...", { icon: '🔄', duration: 4000 });
+        
+        try {
+            const initRes = await initCountSessionAction(routineId, groupId, userId)
+            if (initRes.error || !initRes.sessionId) {
+                throw new Error(initRes.error || "Não foi possível criar uma nova sessão.")
+            }
+            
+            const newSid = initRes.sessionId
+            setSessionId(newSid)
+            sessionIdRef.current = newSid
+            
+            // Sincronizar e finalizar a contagem na nova sessão
+            const syncRes = await syncCountSessionAction(newSid, counts, true, zeroed)
+            if (syncRes.error) {
+                throw new Error(syncRes.error)
+            }
+            
+            setSyncMessage('Sucesso!')
+            console.log('[BlindCount] Grupo recuperado e finalizado com sucesso.')
+            localStorage.removeItem(LOCAL_KEY)
+            localStorage.removeItem(ZEROED_KEY)
+            setShowSummary(false)
+            setShowFinished(true)
+            toast.success("Contagem recuperada e finalizada com sucesso!")
+        } catch (err: any) {
+            console.error('[BlindCount] Falha catastrófica na recuperação da sessão:', err)
+            setSyncStatus('offline')
+            toast.error(`Não conseguimos finalizar agora, mas seu progresso continua salvo neste aparelho. Erro: ${err.message}`, { duration: 8000 })
+        }
+    }
+
     const executeCompleteGroup = async () => {
         setSyncStatus('saving')
         setSyncMessage('Validando itens...')
@@ -233,6 +266,20 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
             const res = await syncCountSessionAction(sid, counts, true, zeroed)
             
             if (res.error) {
+                // FLUXO DE RECUPERAÇÃO AUTOMÁTICA SE A SESSÃO NÃO FOR ENCONTRADA
+                if (res.error.includes("Sessão não encontrada") || res.error.includes("não encontrada")) {
+                    const op = await getActiveOperator()
+                    let userId = op?.userId
+                    if (!userId) {
+                        const { data: { user } } = await supabase.auth.getUser()
+                        if (user) userId = user.id
+                    }
+                    if (userId) {
+                        await recoverAndCompleteSession(userId)
+                        return
+                    }
+                }
+
                 console.warn(`[CountPage] Falha na finalização: ${res.error}`);
                 setSyncStatus('offline') // Destrava o botão
                 toast.error(res.error, { duration: 5000 })

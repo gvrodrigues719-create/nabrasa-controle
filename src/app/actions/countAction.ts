@@ -27,7 +27,7 @@ export async function initCountSessionAction(routineId: string, groupId: string,
     try {
         const user = await getServerAuthContext()
         const userId = user.id
-        const { data: userData } = await supabase.from('users').select('name, role, primary_group_id').eq('id', userId).single()
+        const { data: userData } = await supabase.from('users').select('name, role, primary_group_id, unit_id').eq('id', userId).single()
         const scope = await getAccessibleCountScope()
         const { data: group } = await supabase.from('groups').select('name, macro_sector').eq('id', groupId).single()
 
@@ -86,10 +86,14 @@ export async function initCountSessionAction(routineId: string, groupId: string,
         const { data: exec } = await supabase.from('routine_executions').select('id').eq('routine_id', routineId).eq('status', 'active').maybeSingle()
 
         if (!existingSession) {
+            // Para loja: unit_id deve ser o do usuário. Para CK: unit_id pode ser null
+            const sessionUnitId = isKitchenGroup ? null : (userData?.unit_id || null);
+
             const { data: newSession, error: insErr } = await supabase.from('count_sessions').insert([{
                 routine_id: routineId,
                 group_id: groupId,
                 user_id: userId,
+                unit_id: sessionUnitId,
                 status: 'in_progress',
                 started_at: new Date().toISOString(),
                 execution_id: exec?.id || null
@@ -148,18 +152,52 @@ export async function syncCountSessionAction(
         const scope = await getAccessibleCountScope()
         
         // 0. Validar posse da sessão e escopo de acesso
-        const { data: sessionOwner } = await supabase
+        const { data: sessionOwner, error: sessionErr } = await supabase
             .from('count_sessions')
-            .select('user_id, unit_id, groups(macro_sector)')
+            .select('user_id, unit_id, group_id, routine_id')
             .eq('id', sessionId)
             .single()
 
-        if (!sessionOwner) throw new Error('Sessão não encontrada.')
+        if (sessionErr) {
+            console.error(`[CountAction] Erro ao buscar sessão ${sessionId}: ${sessionErr.message}`);
+            return { error: `Erro ao validar sessão: ${sessionErr.message}` }
+        }
+        if (!sessionOwner) {
+            return { error: 'Sessão não encontrada. Tentaremos recuperar a contagem.' }
+        }
+        
+        // Buscar grupo separadamente para evitar embed frágil
+        let isCentralKitchenSession = false;
+        if (sessionOwner.group_id) {
+            const { data: groupData, error: groupErr } = await supabase
+                .from('groups')
+                .select('macro_sector')
+                .eq('id', sessionOwner.group_id)
+                .single()
+            if (groupErr) {
+                console.error(`[CountAction] Erro ao buscar grupo ${sessionOwner.group_id}: ${groupErr.message}`);
+                return { error: `Erro ao validar grupo da sessão: ${groupErr.message}` }
+            }
+            if (groupData?.macro_sector === 'Cozinha Central') {
+                isCentralKitchenSession = true;
+            }
+        }
+        
+        // Fallback robusto para unit_id a partir do perfil do dono da sessão caso seja nulo na sessão
+        let sessionUnitId = sessionOwner.unit_id;
+        if (!sessionUnitId && sessionOwner.user_id) {
+            const { data: ownerUser } = await supabase
+                .from('users')
+                .select('unit_id')
+                .eq('id', sessionOwner.user_id)
+                .single()
+            if (ownerUser?.unit_id) {
+                sessionUnitId = ownerUser.unit_id;
+            }
+        }
         
         const isOwner = sessionOwner.user_id === userContext.id
         const isAdmin = userContext.role === 'admin'
-        
-        const isCentralKitchenSession = (sessionOwner.groups as any)?.macro_sector === 'Cozinha Central'
         
         // Kitchen/OP Cozinha Central só pode finalizar contagens da CK (Cozinha Central)
         const isKitchenUser = userContext.role === 'kitchen' || userContext.groups?.macro_sector === 'Cozinha Central'
@@ -169,11 +207,11 @@ export async function syncCountSessionAction(
         // E manager de loja não pode finalizar contagem da Cozinha Central.
         const isSameUnitManager = userContext.role === 'manager' && 
                                   userContext.unit_id && 
-                                  sessionOwner.unit_id === userContext.unit_id && 
+                                  sessionUnitId === userContext.unit_id && 
                                   !isCentralKitchenSession
         
         if (!isOwner && !isAdmin && !isAuthorizedKitchen && !isSameUnitManager) {
-            throw new Error('Acesso negado: Você não possui permissão para sincronizar ou finalizar esta contagem.')
+            return { error: 'Sem permissão para finalizar esta contagem.' }
         }
 
         // 1. Upsert dos dados atuais
