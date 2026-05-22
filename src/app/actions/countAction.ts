@@ -86,14 +86,10 @@ export async function initCountSessionAction(routineId: string, groupId: string,
         const { data: exec } = await supabase.from('routine_executions').select('id').eq('routine_id', routineId).eq('status', 'active').maybeSingle()
 
         if (!existingSession) {
-            // Para loja: unit_id deve ser o do usuário. Para CK: unit_id pode ser null
-            const sessionUnitId = isKitchenGroup ? null : (userData?.unit_id || null);
-
             const { data: newSession, error: insErr } = await supabase.from('count_sessions').insert([{
                 routine_id: routineId,
                 group_id: groupId,
                 user_id: userId,
-                unit_id: sessionUnitId,
                 status: 'in_progress',
                 started_at: new Date().toISOString(),
                 execution_id: exec?.id || null
@@ -154,12 +150,15 @@ export async function syncCountSessionAction(
         // 0. Validar posse da sessão e escopo de acesso
         const { data: sessionOwner, error: sessionErr } = await supabase
             .from('count_sessions')
-            .select('user_id, unit_id, group_id, routine_id')
+            .select('user_id, group_id, routine_id')
             .eq('id', sessionId)
             .single()
 
         if (sessionErr) {
             console.error(`[CountAction] Erro ao buscar sessão ${sessionId}: ${sessionErr.message}`);
+            if (sessionErr.code === 'PGRST116') {
+                return { error: 'Sessão não encontrada. Tentaremos recuperar a contagem.' }
+            }
             return { error: `Erro ao validar sessão: ${sessionErr.message}` }
         }
         if (!sessionOwner) {
@@ -184,8 +183,8 @@ export async function syncCountSessionAction(
         }
         
         // Fallback robusto para unit_id a partir do perfil do dono da sessão caso seja nulo na sessão
-        let sessionUnitId = sessionOwner.unit_id;
-        if (!sessionUnitId && sessionOwner.user_id) {
+        let sessionUnitId = null;
+        if (sessionOwner.user_id) {
             const { data: ownerUser } = await supabase
                 .from('users')
                 .select('unit_id')
