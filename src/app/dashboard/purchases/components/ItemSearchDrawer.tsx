@@ -318,7 +318,7 @@ export function ItemSearchDrawer({
                             <p className="text-xs text-gray-400 mt-1">Tente outro termo ou categoria</p>
                         </div>
                     ) : (
-                        <div className="pb-8">
+                        <div className={totalSelected > 0 ? 'pb-36' : 'pb-8'}>
                             {Object.entries(grouped).map(([category, catItems]) => (
                                 <div key={category}>
                                     <div className="px-5 py-2 bg-gray-50/80">
