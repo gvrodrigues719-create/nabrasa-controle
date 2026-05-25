@@ -29,7 +29,7 @@ export async function getKitchenStoreStockAction() {
                 groups!inner(name, macro_sector)
             `)
             .eq('status', 'completed')
-            .neq('groups.macro_sector', 'Cozinha Central')
+            .or('macro_sector.neq.Cozinha Central,macro_sector.is.null', { foreignTable: 'groups' })
             .order('completed_at', { ascending: false })
 
         if (sessionsError) throw sessionsError

@@ -31,11 +31,17 @@ export async function getKitchenSessionDetailAction(sessionId: string) {
                 items(name, unit)
             `)
             .eq('session_id', sessionId)
-            .order('items(name)')
 
         if (iErr) throw iErr
 
-        return { success: true, session, items }
+        // Ordenar os itens alfabeticamente pelo nome em memória no JS
+        const sortedItems = (items || []).sort((a: any, b: any) => {
+            const nameA = a.items?.name || ''
+            const nameB = b.items?.name || ''
+            return nameA.localeCompare(nameB)
+        })
+
+        return { success: true, session, items: sortedItems }
     } catch (e: any) {
         console.error('[getKitchenSessionDetailAction] Erro:', e.message)
         return { success: false, error: e.message }

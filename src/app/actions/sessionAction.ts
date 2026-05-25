@@ -27,7 +27,7 @@ export async function getScopedSessionsAction(filters: {
                 validation_status,
                 group_id,
                 user_id,
-                users!user_id!inner(name, unit_id, units(name)),
+                users!user_id!inner(name, unit_id),
                 groups!group_id!inner(name, macro_sector)
             `)
             .order('completed_at', { ascending: false })
@@ -37,7 +37,7 @@ export async function getScopedSessionsAction(filters: {
         if (scope.type === 'kitchen') {
             query = query.eq('groups.macro_sector', 'Cozinha Central')
         } else if (scope.type === 'store') {
-            query = query.eq('users.unit_id', scope.unitId).neq('groups.macro_sector', 'Cozinha Central')
+            query = query.eq('users.unit_id', scope.unitId).or('macro_sector.neq.Cozinha Central,macro_sector.is.null', { foreignTable: 'groups' })
         }
 
         // FILTROS DO USUÁRIO
@@ -52,10 +52,28 @@ export async function getScopedSessionsAction(filters: {
         const { data, error } = await query
         if (error) throw error
 
+        // Buscar nomes das unidades (groups de type = 'unit') manualmente
+        const unitIds = [...new Set(data?.map((s: any) => {
+            const userData = Array.isArray(s.users) ? s.users[0] : s.users
+            return userData?.unit_id
+        }).filter(Boolean) || [])]
+
+        let unitMap = new Map<string, string>()
+        if (unitIds.length > 0) {
+            const { data: unitsRaw, error: unitsError } = await supabase
+                .from('groups')
+                .select('id, name')
+                .in('id', unitIds)
+            if (!unitsError && unitsRaw) {
+                unitMap = new Map(unitsRaw.map(u => [u.id, u.name]))
+            }
+        }
+
         // Transformar para o formato esperado pelo componente (renomear joins se necessário)
         const sessions = data?.map((s: any) => {
             const groupData = Array.isArray(s.groups) ? s.groups[0] : s.groups
             const userData = Array.isArray(s.users) ? s.users[0] : s.users
+            const unitName = userData?.unit_id ? unitMap.get(userData.unit_id) : null
             
             return {
                 ...s,
@@ -63,7 +81,7 @@ export async function getScopedSessionsAction(filters: {
                 users: { 
                     name: userData?.name, 
                     unit_id: userData?.unit_id, 
-                    units: { name: userData?.units?.name } 
+                    units: { name: unitName || 'Unidade —' } 
                 }
             }
         })

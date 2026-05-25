@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
       query = query.eq('groups.macro_sector', 'Cozinha Central')
     } else if (scope.type === 'store') {
       // Lojas só vêem sua unidade e NUNCA vêem Cozinha Central
-      query = query.eq('users.unit_id', scope.unitId).neq('groups.macro_sector', 'Cozinha Central')
+      query = query.eq('users.unit_id', scope.unitId).or('macro_sector.neq.Cozinha Central,macro_sector.is.null', { foreignTable: 'groups' })
     } else if (scope.type === 'restricted') {
       // Sem permissão clara
       return NextResponse.json({ sessions: [] })

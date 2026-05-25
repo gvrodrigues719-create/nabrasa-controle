@@ -149,6 +149,39 @@ export default function KitchenSessionDetailPage({ params }: { params: Promise<{
             </div>
 
             <div className="p-4 space-y-4">
+                {/* Warning Banner if in_progress */}
+                {session.status === 'in_progress' && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-[28px] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+                        <div className="flex items-start gap-3.5">
+                            <div className="w-10 h-10 bg-amber-100 rounded-2xl flex items-center justify-center shrink-0">
+                                <AlertTriangle className="w-5 h-5 text-amber-700" />
+                            </div>
+                            <div>
+                                <h4 className="text-xs font-black text-amber-900 uppercase tracking-wide">Contagem em aberto</h4>
+                                <p className="text-[10px] font-bold text-amber-700 uppercase tracking-widest mt-0.5">Esta sessão ainda não foi finalizada.</p>
+                            </div>
+                        </div>
+                        <button 
+                            onClick={() => router.push(`/dashboard/count/${session.routine_id}/${session.group_id}`)}
+                            className="bg-amber-600 hover:bg-amber-700 text-white rounded-xl py-3 px-5 text-[10px] font-black uppercase tracking-widest transition flex items-center justify-center gap-2 self-start sm:self-auto shrink-0 shadow-md shadow-amber-200"
+                        >
+                            Continuar contagem
+                        </button>
+                    </div>
+                )}
+
+                {/* Warning Banner if items is empty */}
+                {items.length === 0 && (
+                    <div className="bg-red-50 border border-red-200 rounded-[28px] p-5 flex items-center gap-3.5 shadow-sm">
+                        <div className="w-10 h-10 bg-red-100 rounded-2xl flex items-center justify-center shrink-0">
+                            <AlertTriangle className="w-5 h-5 text-red-700" />
+                        </div>
+                        <div>
+                            <h4 className="text-xs font-black text-red-900 uppercase tracking-wide">Nenhum item foi salvo nesta sessão.</h4>
+                        </div>
+                    </div>
+                )}
+
                 {/* Info Card */}
                 <div className="bg-white p-5 rounded-[32px] border border-gray-100 shadow-sm">
                     <div className="flex items-center gap-4 mb-4">
@@ -163,7 +196,7 @@ export default function KitchenSessionDetailPage({ params }: { params: Promise<{
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="bg-gray-50 p-3 rounded-2xl">
-                            <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Status</p>
+                            <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Status da contagem</p>
                             <div className="flex items-center gap-2">
                                 <div className={`w-1.5 h-1.5 rounded-full ${session.status === 'completed' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
                                 <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest">

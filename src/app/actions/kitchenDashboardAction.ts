@@ -115,7 +115,7 @@ export async function getKitchenDashboardDataAction(): Promise<KitchenDashboardR
                 .from('count_sessions')
                 .select('id, completed_at, group_id, user_id, groups!inner(name, macro_sector)')
                 .eq('status', 'completed')
-                .neq('groups.macro_sector', 'Cozinha Central')
+                .or('macro_sector.neq.Cozinha Central,macro_sector.is.null', { foreignTable: 'groups' })
                 .order('completed_at', { ascending: false }),
 
             // 5. Itens sem classificação

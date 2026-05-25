@@ -26,7 +26,7 @@ export async function getScopedFilterMetadataAction() {
         if (scope.type === 'kitchen') {
             groupsQuery = groupsQuery.eq('macro_sector', 'Cozinha Central')
         } else if (scope.type === 'store') {
-            groupsQuery = groupsQuery.neq('macro_sector', 'Cozinha Central')
+            groupsQuery = groupsQuery.or('macro_sector.neq.Cozinha Central,macro_sector.is.null')
         }
 
         // 3. Fetch Routines

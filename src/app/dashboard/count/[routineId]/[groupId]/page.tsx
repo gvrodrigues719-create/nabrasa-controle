@@ -232,13 +232,17 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                 throw new Error(syncRes.error)
             }
             
-            setSyncMessage('Sucesso!')
-            console.log('[BlindCount] Grupo recuperado e finalizado com sucesso.')
-            localStorage.removeItem(LOCAL_KEY)
-            localStorage.removeItem(ZEROED_KEY)
-            setShowSummary(false)
-            setShowFinished(true)
-            toast.success("Contagem recuperada e finalizada com sucesso!")
+            if (syncRes.success && syncRes.status === 'completed' && syncRes.savedCount && syncRes.savedCount > 0 && syncRes.completedAt) {
+                setSyncMessage('Sucesso!')
+                console.log('[BlindCount] Grupo recuperado e finalizado com sucesso.')
+                localStorage.removeItem(LOCAL_KEY)
+                localStorage.removeItem(ZEROED_KEY)
+                setShowSummary(false)
+                setShowFinished(true)
+                toast.success("Contagem recuperada e finalizada com sucesso!")
+            } else {
+                throw new Error("O servidor não confirmou a gravação segura de todos os itens.")
+            }
         } catch (err: any) {
             console.error('[BlindCount] Falha catastrófica na recuperação da sessão:', err)
             setSyncStatus('offline')
@@ -286,12 +290,18 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                 return
             }
 
-            setSyncMessage('Sucesso!')
-            console.log('[BlindCount] Grupo finalizado com sucesso.');
-            localStorage.removeItem(LOCAL_KEY)
-            localStorage.removeItem(ZEROED_KEY)
-            setShowSummary(false)
-            setShowFinished(true)
+            if (res.success && res.status === 'completed' && res.savedCount && res.savedCount > 0 && res.completedAt) {
+                setSyncMessage('Sucesso!')
+                console.log('[BlindCount] Grupo finalizado com sucesso.');
+                localStorage.removeItem(LOCAL_KEY)
+                localStorage.removeItem(ZEROED_KEY)
+                setShowSummary(false)
+                setShowFinished(true)
+            } else {
+                console.error('[BlindCount] Inconsistência nos dados retornados pelo servidor:', res);
+                setSyncStatus('offline')
+                toast.error('Erro de validação: O servidor não confirmou a gravação segura de todos os itens. Seu progresso continua salvo localmente.', { duration: 6000 })
+            }
         } catch (e: any) {
             console.error('[BlindCount] Erro inesperado em executeCompleteGroup:', e);
             setSyncStatus('offline')

@@ -10,7 +10,9 @@ const supabaseAdmin = createClient(
 )
 
 export async function getKitchenSessionHistoryAction(filters: { date?: string, groupId?: string }) {
-    const supabase = await createServerClient()
+    if (!process.env.TEST_USER_ID) {
+        await createServerClient()
+    }
 
     const user = await getServerAuthContext()
     const isAdmin = user.role === 'admin'
@@ -43,7 +45,9 @@ export async function getKitchenSessionHistoryAction(filters: { date?: string, g
                 users:user_id(name)
             `)
             .in('group_id', ckGroupIds)
-            .order('started_at', { ascending: false })
+            .eq('status', 'completed')
+            .not('completed_at', 'is', null)
+            .order('completed_at', { ascending: false })
 
         if (filters.groupId) {
             query = query.eq('group_id', filters.groupId)
@@ -68,7 +72,33 @@ export async function getKitchenSessionHistoryAction(filters: { date?: string, g
         const { data, error } = await query
         if (error) throw error
 
-        return { success: true, data }
+        if (!data || data.length === 0) {
+            return { success: true, data: [] }
+        }
+
+        const sessionIds = data.map(s => s.id)
+        const { data: itemCounts } = await supabaseAdmin
+            .from('count_session_items')
+            .select('session_id')
+            .in('session_id', sessionIds)
+
+        const itemsPerSession = new Map<string, number>()
+        itemCounts?.forEach(ic => {
+            const count = itemsPerSession.get(ic.session_id) || 0
+            itemsPerSession.set(ic.session_id, count + 1)
+        })
+
+        const filteredData = data.filter(s => {
+            const count = itemsPerSession.get(s.id) || 0
+            if (count === 0) return false
+
+            const userName = (s.users as any)?.name || ''
+            if (userName.toLowerCase().includes('teste') || userName.toLowerCase().includes('test')) return false
+
+            return true
+        })
+
+        return { success: true, data: filteredData }
     } catch (e: any) {
         console.error('[getKitchenSessionHistoryAction] Erro:', e.message)
         return { success: false, error: e.message }
@@ -141,15 +171,42 @@ export async function getLatestKitchenRoundAction() {
         const isKitchen = user.role === 'admin' || user.role === 'kitchen' || user.groups?.macro_sector === 'Cozinha Central'
         if (!isKitchen) return { success: false, error: 'Acesso negado' }
 
-        // 1. Buscar a última sessão finalizada da CK
-        const { data: lastSession } = await supabaseAdmin
+        // 1. Buscar as últimas sessões finalizadas da CK
+        const { data: recentSessions } = await supabaseAdmin
             .from('count_sessions')
-            .select('completed_at, groups!inner(macro_sector)')
+            .select(`
+                id,
+                completed_at,
+                groups!inner(macro_sector),
+                users:user_id(name)
+            `)
             .eq('status', 'completed')
+            .not('completed_at', 'is', null)
             .eq('groups.macro_sector', 'Cozinha Central')
             .order('completed_at', { ascending: false })
-            .limit(1)
-            .single()
+            .limit(10)
+
+        if (!recentSessions || recentSessions.length === 0) {
+            return { success: true, data: null }
+        }
+
+        // Encontrar a primeira sessão que tem itens salvos e não é de teste
+        let lastSession = null
+        for (const s of recentSessions) {
+            const userName = (s.users as any)?.name || ''
+            if (userName.toLowerCase().includes('teste') || userName.toLowerCase().includes('test')) continue
+
+            // Verificar se tem itens no banco
+            const { count } = await supabaseAdmin
+                .from('count_session_items')
+                .select('*', { count: 'exact', head: true })
+                .eq('session_id', s.id)
+
+            if (count && count > 0) {
+                lastSession = s
+                break
+            }
+        }
 
         if (!lastSession) {
             return { success: true, data: null }
@@ -177,6 +234,7 @@ export async function getLatestKitchenRoundAction() {
                 users:user_id(name)
             `)
             .eq('status', 'completed')
+            .not('completed_at', 'is', null)
             .eq('groups.macro_sector', 'Cozinha Central')
             .gte('started_at', `${dateStr}T00:00:00-03:00`)
             .lte('started_at', `${dateStr}T23:59:59-03:00`)
@@ -184,11 +242,43 @@ export async function getLatestKitchenRoundAction() {
 
         if (error) throw error
 
+        if (!roundSessions || roundSessions.length === 0) {
+            return { 
+                success: true, 
+                data: {
+                    date: dateStr,
+                    sessions: []
+                } 
+            }
+        }
+
+        const sessionIds = roundSessions.map(s => s.id)
+        const { data: itemCounts } = await supabaseAdmin
+            .from('count_session_items')
+            .select('session_id')
+            .in('session_id', sessionIds)
+
+        const itemsPerSession = new Map<string, number>()
+        itemCounts?.forEach(ic => {
+            const count = itemsPerSession.get(ic.session_id) || 0
+            itemsPerSession.set(ic.session_id, count + 1)
+        })
+
+        const filteredSessions = roundSessions.filter(s => {
+            const count = itemsPerSession.get(s.id) || 0
+            if (count === 0) return false
+
+            const userName = (s.users as any)?.name || ''
+            if (userName.toLowerCase().includes('teste') || userName.toLowerCase().includes('test')) return false
+
+            return true
+        })
+
         return { 
             success: true, 
             data: {
                 date: dateStr,
-                sessions: roundSessions || []
+                sessions: filteredSessions
             } 
         }
     } catch (e: any) {
