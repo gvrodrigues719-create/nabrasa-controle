@@ -359,77 +359,84 @@ export default function KitchenPage() {
                             <h3 className="text-base font-black text-gray-900 mb-1">Acesso Negado</h3>
                             <p className="text-sm text-gray-500">Sem permissão para acessar a Cozinha Central.</p>
                         </div>
-                    ) : pedidosComAcao.length === 0 ? (
-                        <div className="bg-white rounded-2xl px-4 py-4 border border-gray-100 shadow-sm flex items-center justify-between">
-                            <div>
-                                <p className="text-sm font-black text-gray-900">Sem pedidos pendentes agora.</p>
-                                {separadosHoje.length > 0 && (
-                                    <p className="text-[11px] text-gray-400 font-bold mt-0.5">{separadosHoje.length} pedido(s) separado(s) hoje</p>
-                                )}
-                                {separadosHoje.length === 0 && separadosAntigos.length > 0 && (
-                                    <p className="text-[11px] text-gray-400 font-bold mt-0.5">{separadosAntigos.length} separado(s) anteriores</p>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {(separadosHoje.length > 0 || separadosAntigos.length > 0) && (
-                                    <button onClick={() => router.push('/dashboard/kitchen/planning')} className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-3 py-1.5 bg-gray-50 rounded-xl hover:bg-gray-100 active:scale-95 transition-transform">
-                                        Ver histórico →
-                                    </button>
-                                )}
-                                <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                            </div>
-                        </div>
                     ) : (
                         <div className="space-y-6">
-                            {/* Prioridade: Divergentes → Em análise → Enviados → Em Separação */}
-                            {divergentes.length > 0 && (
-                                <div>
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="h-px flex-1 bg-red-100" />
-                                        <span className="text-[10px] font-black text-red-500 uppercase tracking-widest whitespace-nowrap">Divergências · {divergentes.length}</span>
-                                        <div className="h-px flex-1 bg-red-100" />
+                            {/* Actionable orders or Empty State banner */}
+                            {pedidosComAcao.length === 0 ? (
+                                <div className="bg-white rounded-2xl px-4 py-4 border border-gray-100 shadow-sm flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-black text-gray-900">Sem pedidos pendentes agora.</p>
+                                        {separadosHoje.length > 0 && (
+                                            <p className="text-[11px] text-gray-400 font-bold mt-0.5">{separadosHoje.length} pedido(s) separado(s) hoje</p>
+                                        )}
+                                        {separadosHoje.length === 0 && separadosAntigos.length > 0 && (
+                                            <p className="text-[11px] text-gray-400 font-bold mt-0.5">{separadosAntigos.length} separado(s) anteriores</p>
+                                        )}
                                     </div>
-                                    <div className="grid md:grid-cols-2 gap-3">
-                                        {divergentes.map(o => <KitchenOrderCard key={o.id} order={o} onUpdate={() => fetchOrders(true)} />)}
-                                    </div>
-                                </div>
-                            )}
-                            {emAnalise.length > 0 && (
-                                <div>
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="h-px flex-1 bg-gray-100" />
-                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Em análise · {emAnalise.length}</span>
-                                        <div className="h-px flex-1 bg-gray-100" />
-                                    </div>
-                                    <div className="grid md:grid-cols-2 gap-3">
-                                        {emAnalise.map(o => <KitchenOrderCard key={o.id} order={o} onUpdate={() => fetchOrders(true)} />)}
+                                    <div className="flex items-center gap-2">
+                                        {(separadosHoje.length > 0 || separadosAntigos.length > 0) && (
+                                            <button onClick={() => router.push('/dashboard/kitchen/planning')} className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-3 py-1.5 bg-gray-50 rounded-xl hover:bg-gray-100 active:scale-95 transition-transform">
+                                                Ver histórico →
+                                            </button>
+                                        )}
+                                        <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
                                     </div>
                                 </div>
+                            ) : (
+                                <>
+                                    {/* Prioridade: Divergentes → Em análise → Enviados → Em Separação */}
+                                    {divergentes.length > 0 && (
+                                        <div>
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <div className="h-px flex-1 bg-red-100" />
+                                                <span className="text-[10px] font-black text-red-500 uppercase tracking-widest whitespace-nowrap">Divergências · {divergentes.length}</span>
+                                                <div className="h-px flex-1 bg-red-100" />
+                                            </div>
+                                            <div className="grid md:grid-cols-2 gap-3">
+                                                {divergentes.map(o => <KitchenOrderCard key={o.id} order={o} onUpdate={() => fetchOrders(true)} />)}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {emAnalise.length > 0 && (
+                                        <div>
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <div className="h-px flex-1 bg-gray-100" />
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Em análise · {emAnalise.length}</span>
+                                                <div className="h-px flex-1 bg-gray-100" />
+                                            </div>
+                                            <div className="grid md:grid-cols-2 gap-3">
+                                                {emAnalise.map(o => <KitchenOrderCard key={o.id} order={o} onUpdate={() => fetchOrders(true)} />)}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {enviados.length > 0 && (
+                                        <div>
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <div className="h-px flex-1 bg-gray-100" />
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Novos pedidos · {enviados.length}</span>
+                                                <div className="h-px flex-1 bg-gray-100" />
+                                            </div>
+                                            <div className="grid md:grid-cols-2 gap-3">
+                                                {enviados.map(o => <KitchenOrderCard key={o.id} order={o} onUpdate={() => fetchOrders(true)} />)}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {emSeparacao.length > 0 && (
+                                        <div>
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <div className="h-px flex-1 bg-gray-100" />
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Em separação · {emSeparacao.length}</span>
+                                                <div className="h-px flex-1 bg-gray-100" />
+                                            </div>
+                                            <div className="grid md:grid-cols-2 gap-3">
+                                                {emSeparacao.map(o => <KitchenOrderCard key={o.id} order={o} onUpdate={() => fetchOrders(true)} />)}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
                             )}
-                            {enviados.length > 0 && (
-                                <div>
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="h-px flex-1 bg-gray-100" />
-                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Novos pedidos · {enviados.length}</span>
-                                        <div className="h-px flex-1 bg-gray-100" />
-                                    </div>
-                                    <div className="grid md:grid-cols-2 gap-3">
-                                        {enviados.map(o => <KitchenOrderCard key={o.id} order={o} onUpdate={() => fetchOrders(true)} />)}
-                                    </div>
-                                </div>
-                            )}
-                            {emSeparacao.length > 0 && (
-                                <div>
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="h-px flex-1 bg-gray-100" />
-                                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">Em separação · {emSeparacao.length}</span>
-                                        <div className="h-px flex-1 bg-gray-100" />
-                                    </div>
-                                    <div className="grid md:grid-cols-2 gap-3">
-                                        {emSeparacao.map(o => <KitchenOrderCard key={o.id} order={o} onUpdate={() => fetchOrders(true)} />)}
-                                    </div>
-                                </div>
-                            )}
+
+                            {/* Separated orders section - rendered always, regardless of active orders count */}
                             {separadosHoje.length > 0 && (
                                 <div>
                                     <div className="flex items-center gap-3 mb-3">
