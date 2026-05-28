@@ -138,6 +138,7 @@ export default function OperatorHome({
                     <PriorityActionCard
                         action={actions.primary}
                         loading={false}
+                        isIcarai={isIcarai}
                     />
                 )}
 
@@ -200,7 +201,7 @@ export default function OperatorHome({
                 routinesCount={routinesCount}
                 countsPending={countsPending}
                 checklistsPending={checklistsPending}
-                onReportLoss={onReportLoss}
+                onReportLoss={isIcarai ? undefined : onReportLoss}
                 recommendedActions={actions.recommended}
                 isDemoMode={isDemoMode}
                 isTester={isTester}
@@ -218,52 +219,58 @@ export default function OperatorHome({
             )}
 
             {/* 2.3 MINHA EVOLUÇÃO — ONDA 1 (compact, dados da onda 1) */}
-            <WeeklyProgressBar 
-                variant="compact"
-                weeklyPoints={monthlyPoints}
-                totalPoints={totalPoints}
-                rankPosition={rankPosition}
-                lastSealing={lastSealing}
-                topRanking={topRanking}
-                coinBalance={isDemoMode ? 120 : 0}
-                onOpenRewards={onOpenRewards}
-                isManagerView={userRole === 'manager' || userRole === 'admin'}
-                showTop3Recognition={true}
-                showFullTeamRanking={false}
-            />
+            {!isIcarai && (
+                <WeeklyProgressBar 
+                    variant="compact"
+                    weeklyPoints={monthlyPoints}
+                    totalPoints={totalPoints}
+                    rankPosition={rankPosition}
+                    lastSealing={lastSealing}
+                    topRanking={topRanking}
+                    coinBalance={isDemoMode ? 120 : 0}
+                    onOpenRewards={onOpenRewards}
+                    isManagerView={userRole === 'manager' || userRole === 'admin'}
+                    showTop3Recognition={true}
+                    showFullTeamRanking={false}
+                />
+            )}
 
             {/* 2.4 VISÃO DA CASA — ONDA 1 (self-contained, busca seus próprios dados) */}
             {!isIcarai && <HouseView />}
 
             {/* 3. MURAL — ONDA 2 */}
-            <div id="mural">
-                {loadingWave2 ? (
-                    <SkeletonCard h="h-32" />
-                ) : (
-                    <OperationalNoticeCard notices={notices} birthdays={birthdays} userId={userId} isDemoMode={isDemoMode} />
-                )}
-            </div>
+            {!isIcarai && (
+                <div id="mural">
+                    {loadingWave2 ? (
+                        <SkeletonCard h="h-32" />
+                    ) : (
+                        <OperationalNoticeCard notices={notices} birthdays={birthdays} userId={userId} isDemoMode={isDemoMode} />
+                    )}
+                </div>
+            )}
 
             {/* 4. HERO — ONDA 2 */}
-            {loadingWave2 ? (
-                <SkeletonCard h="h-52" />
-            ) : (
-                <OperationHeroCard
-                    score={healthScore}
-                    activeLeaks={activeLeaks}
-                    weeklyLeaks={weeklyLeaks}
-                    cmvCurrent={isIcarai ? undefined : cmvStatus?.current}
-                    cmvTarget={isIcarai ? undefined : cmvStatus?.target}
-                    cmvStatus={isIcarai ? undefined : cmvStatus?.status}
-                    focus={weeklyFocus}
-                    userRole={userRole}
-                    onViewGlobalClick={onViewGlobalClick}
-                    onUpdateFocus={onUpdateFocus}
-                />
+            {!isIcarai && (
+                loadingWave2 ? (
+                    <SkeletonCard h="h-52" />
+                ) : (
+                    <OperationHeroCard
+                        score={healthScore}
+                        activeLeaks={activeLeaks}
+                        weeklyLeaks={weeklyLeaks}
+                        cmvCurrent={undefined}
+                        cmvTarget={undefined}
+                        cmvStatus={undefined}
+                        focus={weeklyFocus}
+                        userRole={userRole}
+                        onViewGlobalClick={onViewGlobalClick}
+                        onUpdateFocus={onUpdateFocus}
+                    />
+                )
             )}
 
             {/* 6. APOIO — IA — ONDA 2 */}
-            {!loadingWave2 && (
+            {!isIcarai && !loadingWave2 && (
                 <button
                     onClick={onOpenAI}
                     className="w-full flex items-center gap-3 p-4 rounded-2xl bg-[#fffcf0] border border-[#fef3c7] shadow-sm active:scale-[0.98] transition-all text-left cursor-pointer group animate-in fade-in duration-700"

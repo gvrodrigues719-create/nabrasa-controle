@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase/client'
 import { ConfirmModal } from '@/components/ConfirmModal'
 import { logoutOperator } from '@/app/actions/pinAuth'
 import BottomNav from './components/operator/BottomNav'
+import IcaraiRouteGuard from './components/operator/IcaraiRouteGuard'
 
 export default function ClientDashboardLayout({
     children,
@@ -66,7 +67,9 @@ export default function ClientDashboardLayout({
                 </div>
             </header>
             <main className={`max-w-md lg:max-w-6xl mx-auto relative z-0 ${showBottomNav ? 'pb-24' : 'pb-6'}`}>
-                {children}
+                <IcaraiRouteGuard>
+                    {children}
+                </IcaraiRouteGuard>
             </main>
             {showBottomNav && <BottomNav />}
         </div>

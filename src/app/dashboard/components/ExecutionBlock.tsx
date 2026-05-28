@@ -10,7 +10,7 @@ interface Props {
     routinesCount: number
     countsPending: number
     checklistsPending: number
-    onReportLoss: () => void
+    onReportLoss?: () => void
     recommendedActions: DashboardAction[]
     isDemoMode?: boolean
     isTester?: boolean
@@ -70,24 +70,26 @@ export default function ExecutionBlock({
                 {/* 2. Ações Secundárias */}
 
                 {/* SECONDARY ACTION: REGISTRAR PERDA */}
-                <button 
-                    onClick={onReportLoss}
-                    className="w-full bg-white rounded-[1.5rem] p-4.5 flex items-center justify-between active:scale-[0.98] transition-all group shadow-sm border border-[#fde68a]/50 hover:border-[#fde68a] min-h-[64px]"
-                    style={{ background: 'linear-gradient(135deg, #ffffff 0%, #fffcf0 100%)' }}
-                >
-                    <div className="flex items-center gap-3.5">
-                        <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 transition-transform group-hover:scale-105 border border-amber-100">
-                            <PackageX className="w-5 h-5" />
+                {onReportLoss && (
+                    <button 
+                        onClick={onReportLoss}
+                        className="w-full bg-white rounded-[1.5rem] p-4.5 flex items-center justify-between active:scale-[0.98] transition-all group shadow-sm border border-[#fde68a]/50 hover:border-[#fde68a] min-h-[64px]"
+                        style={{ background: 'linear-gradient(135deg, #ffffff 0%, #fffcf0 100%)' }}
+                    >
+                        <div className="flex items-center gap-3.5">
+                            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 transition-transform group-hover:scale-105 border border-amber-100">
+                                <PackageX className="w-5 h-5" />
+                            </div>
+                            <div className="text-left font-sans">
+                                <p className="text-[14px] font-black text-[#1b1c1a] tracking-tight leading-none mb-1">Registrar perda</p>
+                                <p className="text-[10px] font-bold text-[#8c716c] uppercase tracking-widest">Desperdício, avaria ou descarte</p>
+                            </div>
                         </div>
-                        <div className="text-left font-sans">
-                            <p className="text-[14px] font-black text-[#1b1c1a] tracking-tight leading-none mb-1">Registrar perda</p>
-                            <p className="text-[10px] font-bold text-[#8c716c] uppercase tracking-widest">Desperdício, avaria ou descarte</p>
+                        <div className="bg-amber-50 p-1.5 rounded-lg text-amber-300 group-hover:text-amber-600 transition-colors">
+                            <ArrowRight className="w-4 h-4" />
                         </div>
-                    </div>
-                    <div className="bg-amber-50 p-1.5 rounded-lg text-amber-300 group-hover:text-amber-600 transition-colors">
-                        <ArrowRight className="w-4 h-4" />
-                    </div>
-                </button>
+                    </button>
+                )}
             </div>
         </section>
     )

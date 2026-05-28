@@ -8,9 +8,10 @@ import { DashboardAction } from '../../hooks/useDashboardData'
 interface PriorityActionCardProps {
     action?: DashboardAction;
     loading?: boolean;
+    isIcarai?: boolean;
 }
 
-export default function PriorityActionCard({ action, loading }: PriorityActionCardProps) {
+export default function PriorityActionCard({ action, loading, isIcarai }: PriorityActionCardProps) {
     if (loading) {
         return (
             <div className="mx-1 h-32 bg-white rounded-[2.5rem] animate-pulse border border-gray-100 shadow-sm" />
@@ -27,8 +28,12 @@ export default function PriorityActionCard({ action, loading }: PriorityActionCa
                     </div>
                     <div>
                         <p className="text-[10px] font-black text-green-600 uppercase tracking-widest mb-1.5">Status da Casa</p>
-                        <h4 className="text-xl font-black text-gray-900 tracking-tight leading-none">Tudo em dia!</h4>
-                        <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-tight">Nenhuma tarefa pendente agora</p>
+                        <h4 className="text-xl font-black text-gray-900 tracking-tight leading-none">
+                            {isIcarai ? 'Contagem em dia!' : 'Tudo em dia!'}
+                        </h4>
+                        <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-tight">
+                            {isIcarai ? 'Nenhuma contagem pendente agora' : 'Nenhuma tarefa pendente agora'}
+                        </p>
                     </div>
                 </div>
             </div>

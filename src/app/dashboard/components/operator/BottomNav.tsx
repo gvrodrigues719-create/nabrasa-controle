@@ -4,17 +4,24 @@ import React from 'react'
 import { Home, ClipboardList, LayoutGrid, Bell, User } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useDashboardIdentity } from '../../hooks/useDashboardIdentity'
 
 export default function BottomNav() {
   const pathname = usePathname()
+  const { unitName } = useDashboardIdentity()
+  const isIcarai = unitName?.includes('Icaraí')
   
-  const navItems = [
+  const allNavItems = [
     { id: 'home', label: 'Hoje', icon: Home, url: '/dashboard' },
     { id: 'tasks', label: 'Tarefas', icon: ClipboardList, url: '/dashboard/routines' },
     { id: 'areas', label: 'Áreas', icon: LayoutGrid, url: '/dashboard/areas' },
     { id: 'mural', label: 'Mural', icon: Bell, url: '/dashboard/mural' },
     { id: 'profile', label: 'Perfil', icon: User, url: '/dashboard/profile' },
   ]
+
+  const navItems = isIcarai 
+    ? allNavItems.filter(item => item.id === 'home' || item.id === 'profile')
+    : allNavItems
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden pb-safe">
