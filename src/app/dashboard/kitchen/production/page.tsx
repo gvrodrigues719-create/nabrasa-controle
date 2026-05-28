@@ -14,10 +14,21 @@ import {
     searchProducedItemsAction,
     searchInputItemsAction,
     getCurrentUserDisplayAction,
-    LOSS_REASONS,
 } from '@/modules/kitchen/production-actions'
 import type { ProductionLog, ItemSuggestion } from '@/modules/kitchen/production-actions'
 import toast from 'react-hot-toast'
+
+const LOSS_REASONS = [
+    'Limpeza / aparas',
+    'Porcionamento',
+    'Quebra / erro de preparo',
+    'Queima',
+    'Queda / contaminação',
+    'Sobra sem aproveitamento',
+    'Validade / descarte',
+    'Ajuste de rendimento',
+    'Outro',
+] as const
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
