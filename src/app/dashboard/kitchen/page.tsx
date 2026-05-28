@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, RefreshCw, Inbox, Timer, PackageCheck, AlertTriangle, Send, Calculator, ClipboardList, Truck, CheckCircle2, XCircle, Link2, Tag, Clock, Store, ChevronRight } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Inbox, Timer, PackageCheck, AlertTriangle, Send, Calculator, ClipboardList, Truck, CheckCircle2, XCircle, Link2, Tag, Clock, Store, ChevronRight, Factory } from 'lucide-react'
 import { getOrdersForKitchenAction } from '@/modules/purchases/actions'
 import { getKitchenDashboardDataAction } from '@/app/actions/kitchenDashboardAction'
 import type { PurchaseOrder } from '@/modules/purchases/types'
@@ -528,6 +528,23 @@ export default function KitchenPage() {
                                     </h3>
                                     <p className="text-gray-400 text-[10px] font-bold mt-0.5 uppercase tracking-wider">Contagens Anteriores</p>
                                 </div>
+                            </button>
+
+                            {/* Registro de Produção */}
+                            <button
+                                onClick={() => router.push('/dashboard/kitchen/production')}
+                                className="bg-white p-5 rounded-[28px] flex items-center text-left border-2 border-emerald-100 shadow-sm space-x-4 active:scale-[0.97] transition-all hover:border-emerald-300 sm:col-span-2"
+                            >
+                                <div className="bg-emerald-50 p-3 rounded-xl shrink-0">
+                                    <Factory className="w-6 h-6 text-emerald-600" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="font-black text-gray-900 text-base leading-tight truncate">
+                                        Registro de Produção
+                                    </h3>
+                                    <p className="text-emerald-500 text-[10px] font-bold mt-0.5 uppercase tracking-wider">O que foi produzido hoje</p>
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-emerald-400 shrink-0" />
                             </button>
                         </div>
                     </div>
