@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
-import { getAuthenticatedUserId, getAuthenticatedUserContext } from '@/lib/auth-utils'
+import { getAuthenticatedUserId, getAuthenticatedUserContext, requireNotIcarai } from '@/lib/auth-utils'
 import { revalidatePath } from 'next/cache'
 
 function getServiceSupabase() {
@@ -212,6 +212,8 @@ export async function createNoticeAction(params: {
         const authId = await getAuthenticatedUserId()
         if (!authId) throw new Error('Não autenticado')
 
+        await requireNotIcarai()
+
         const supabase = getServiceSupabase()
         if (!supabase) throw new Error('Database indisponível')
 
@@ -264,6 +266,8 @@ export async function toggleNoticeReactionAction(noticeId: string, emoji: string
     try {
         const authId = await getAuthenticatedUserId()
         if (!authId) throw new Error('Não autenticado')
+
+        await requireNotIcarai()
 
         const supabase = getServiceSupabase()
         if (!supabase) throw new Error('Database indisponível')
@@ -318,6 +322,8 @@ export async function addNoticeResponseAction(noticeId: string, message: string)
     try {
         const authId = await getAuthenticatedUserId()
         if (!authId) throw new Error('Não autenticado')
+
+        await requireNotIcarai()
 
         const supabase = getServiceSupabase()
         if (!supabase) throw new Error('Database indisponível')

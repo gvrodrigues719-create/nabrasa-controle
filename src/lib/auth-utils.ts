@@ -84,6 +84,16 @@ export async function getAuthenticatedUserId() {
 }
 
 /**
+ * Bloqueia chamadas de API/Server Actions para a unidade Icaraí (Contagem Only).
+ */
+export async function requireNotIcarai() {
+    const ctx = await getAuthenticatedUserContext()
+    if (ctx?.name?.includes('Icaraí')) {
+        throw new Error('Acesso negado: Funcionalidade não liberada para a Operação Icaraí no momento.')
+    }
+}
+
+/**
  * Middleware para Server Actions e API Routes que exige perfil administrativo.
  * Revalida o role DIRETAMENTE NO BANCO para evitar uso de cookies antigos/rebaixados.
  */

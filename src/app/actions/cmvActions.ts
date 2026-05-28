@@ -14,6 +14,7 @@ const supabase = new Proxy({} as any, {
 })
 
 import { getServerAuthContext } from '@/lib/server-auth-context'
+import { requireNotIcarai } from '@/lib/auth-utils'
 
 async function validateExecutionOwnership(executionId: string) {
     const user = await getServerAuthContext()
@@ -465,6 +466,8 @@ export async function getCMVConsolidated(filter: { mode: '4' | '6' | 'month' | '
  */
 export async function getPublicCMVStatusAction() {
     try {
+        await requireNotIcarai()
+
         // Busca a última execução concluída
         const { data: lastExec } = await supabase
             .from('routine_executions')

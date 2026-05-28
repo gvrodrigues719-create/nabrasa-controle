@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@supabase/supabase-js'
-import { getAuthenticatedUserId } from '@/lib/auth-utils'
+import { getAuthenticatedUserId, requireNotIcarai } from '@/lib/auth-utils'
 import { revalidatePath } from 'next/cache'
 
 const supabase = createClient(
@@ -26,6 +26,9 @@ export async function recordLossAction(data: LossInput) {
         // SEGURANÇA: Resolver usuário no servidor (Anti-spoofing)
         const authId = await getAuthenticatedUserId()
         if (!authId) throw new Error('Operação não autorizada: Usuário não autenticado.')
+
+        // Icaraí (Contagem Only) não pode registrar perdas ainda
+        await requireNotIcarai()
 
         // 1. Inserir registro de perda
         const { data: loss, error: lErr } = await supabase
