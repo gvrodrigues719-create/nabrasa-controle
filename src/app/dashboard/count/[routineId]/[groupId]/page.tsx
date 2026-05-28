@@ -44,8 +44,11 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     const defaultBack = `/dashboard/routines/${routineId}`
     const backUrl = getSafeReturnTo(returnTo, defaultBack)
 
-    const LOCAL_KEY = `count_${routineId}_${groupId}`
-    const ZEROED_KEY = `zeroed_${routineId}_${groupId}`
+    const [operatorId, setOperatorId] = useState<string | null>(null)
+    const [operatorUnitId, setOperatorUnitId] = useState<string | null>(null)
+    const safeUnitId = operatorUnitId || 'no-unit'
+    const LOCAL_KEY = operatorId ? `count_${operatorId}_${safeUnitId}_${routineId}_${groupId}` : `count_${routineId}_${groupId}`
+    const ZEROED_KEY = operatorId ? `zeroed_${operatorId}_${safeUnitId}_${routineId}_${groupId}` : `zeroed_${routineId}_${groupId}`
 
     useEffect(() => {
         initSession()
@@ -65,6 +68,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         }
 
         if (!userId) return router.push('/login')
+        setOperatorId(userId)
 
         // Load Ranking Data for Badge
         getOperatorSummaryAction(userId).then(res => {
@@ -97,10 +101,33 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         }
         if (res.items) setItems(res.items)
 
-        const stored = localStorage.getItem(LOCAL_KEY)
+        const uId = res.unitId || 'no-unit'
+        setOperatorUnitId(uId)
+
+        const currentLocalKey = `count_${userId}_${uId}_${routineId}_${groupId}`
+        const currentZeroedKey = `zeroed_${userId}_${uId}_${routineId}_${groupId}`
+
+        const oldLocalKey1 = `count_${routineId}_${groupId}`
+        const oldZeroedKey1 = `zeroed_${routineId}_${groupId}`
+        const oldLocalKey2 = `count_${userId}_${routineId}_${groupId}`
+        const oldZeroedKey2 = `zeroed_${userId}_${routineId}_${groupId}`
+
+        // Legacy cleanup: move old data to new scoped key if scoped doesn't exist yet
+        const storedOld = localStorage.getItem(oldLocalKey2) || localStorage.getItem(oldLocalKey1)
+        const storedOldZeroed = localStorage.getItem(oldZeroedKey2) || localStorage.getItem(oldZeroedKey1)
+        
+        if (storedOld && !localStorage.getItem(currentLocalKey)) localStorage.setItem(currentLocalKey, storedOld)
+        if (storedOldZeroed && !localStorage.getItem(currentZeroedKey)) localStorage.setItem(currentZeroedKey, storedOldZeroed)
+        
+        localStorage.removeItem(oldLocalKey1)
+        localStorage.removeItem(oldZeroedKey1)
+        localStorage.removeItem(oldLocalKey2)
+        localStorage.removeItem(oldZeroedKey2)
+
+        const stored = localStorage.getItem(currentLocalKey)
         const localDict = stored ? JSON.parse(stored) : {}
 
-        const storedZeroed = localStorage.getItem(ZEROED_KEY)
+        const storedZeroed = localStorage.getItem(currentZeroedKey)
         const localZeroed = storedZeroed ? JSON.parse(storedZeroed) : {}
         const mergedZeroed = { ...(res.dbZeroed || {}), ...localZeroed }
         setZeroed(mergedZeroed)
@@ -203,7 +230,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         if (syncStatus === 'saving') return toast.error('Aguarde o salvamento online terminar.')
         const uncounted = items.filter(i => !zeroed[i.id] && (counts[i.id] === undefined || counts[i.id] === ''))
         if (uncounted.length > 0) {
-            toast.error(`Ainda há ${uncounted.length} itens não contados.`)
+            toast.error(`Existem ${uncounted.length} itens pendentes antes de finalizar.`)
             return
         }
         if (!navigator.onLine) {
