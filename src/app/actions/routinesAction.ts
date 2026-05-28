@@ -16,24 +16,28 @@ export async function getActiveRoutinesAction() {
     
     let query = supabase.from('routines').select('*').eq('active', true)
 
-    // Se for loja, filtrar para não mostrar rotinas da Cozinha Central
-    // Nota: Como routines não tem macro_sector direto, idealmente filtraríamos pelos grupos vinculados.
-    // Mas por simplicidade e segurança, podemos filtrar pelo nome ou macro_sector dos grupos na query.
+    // Se for loja, filtrar para mostrar APENAS as rotinas da sua própria loja
     
     const { data, error } = await query.order('created_at', { ascending: false })
     if (error) return { error: error.message }
 
-    // Filtro pós-busca se necessário (mais seguro que query complexa se não houver campo direto)
     let filtered = data
     if (scope.type === 'store') {
-        // Busca quais rotinas tem grupos da CK
+        // Remove rotinas da Cozinha Central E filtra rotinas que pertencem a outra loja
         const { data: ckRoutines } = await supabase
             .from('routine_groups')
             .select('routine_id, groups!inner(macro_sector)')
             .eq('groups.macro_sector', 'Cozinha Central')
         
         const ckRoutineIds = new Set(ckRoutines?.map(r => r.routine_id) || [])
-        filtered = data.filter(r => !ckRoutineIds.has(r.id))
+        
+        filtered = data.filter(r => {
+            // Se for da CK, remove
+            if (ckRoutineIds.has(r.id)) return false
+            // Se tiver unit_id e não for o unit_id da loja do operador, remove
+            if (r.unit_id && r.unit_id !== scope.unitId) return false
+            return true
+        })
     } else if (scope.type === 'kitchen') {
         const { data: ckRoutines } = await supabase
             .from('routine_groups')
@@ -53,7 +57,7 @@ export async function getRoutineDetailsAction(routineId: string) {
     const startOfDayBR = `${brDate}T03:00:00Z` // meia-noite BRT = 03:00 UTC
 
     const scope = await getAccessibleCountScope()
-    const { data: routine } = await supabase.from('routines').select('name, snapshot_started_at, routine_type').eq('id', routineId).single()
+    const { data: routine } = await supabase.from('routines').select('name, snapshot_started_at, routine_type, unit_id').eq('id', routineId).single()
     if (!routine) return { error: 'Rotina não encontrada' }
 
     let isStartedToday = false
@@ -67,7 +71,10 @@ export async function getRoutineDetailsAction(routineId: string) {
 
     // ── APLICAR ESCOPO DE SEGURANÇA ──────────────────────────────────────────
     const hasKitchen = rGroups?.some(rg => (rg.groups as any)?.macro_sector === 'Cozinha Central')
-    if (scope.type === 'store' && hasKitchen) return { error: 'Acesso negado: Esta rotina pertence à Cozinha Central.' }
+    if (scope.type === 'store') {
+        if (hasKitchen) return { error: 'Acesso negado: Esta rotina pertence à Cozinha Central.' }
+        if (routine.unit_id && routine.unit_id !== scope.unitId) return { error: 'Acesso negado: Esta rotina pertence a outra unidade.' }
+    }
     if (scope.type === 'kitchen' && !hasKitchen) return { error: 'Acesso negado: Esta rotina não pertence à Cozinha Central.' }
     
     // Escolhe a tabela de sessões baseada no tipo de rotina
@@ -207,6 +214,15 @@ export async function getOperatorDailyTasksAction(userId: string) {
                 // Regra de Ouro: Bloqueio Total entre Macro Setores (Cozinha vs Lojas)
                 if (scope.type === 'kitchen' && macroSector !== 'Cozinha Central') return
                 if (scope.type === 'store' && macroSector === 'Cozinha Central') return
+                
+                // Isolamento entre lojas (Camboinhas vs Icaraí)
+                // Usando a nova coluna unit_id na rotina (se preenchida) ou no grupo (se preenchida)
+                // Para garantir retrocompatibilidade enquanto não houver backfill 100%, 
+                // assumimos que se a rotina ou grupo TEM unit_id, DEVE bater com o do user.
+                if (scope.type === 'store' && scope.unitId) {
+                    if (routine.unit_id && routine.unit_id !== scope.unitId) return
+                    if (groupData?.unit_id && groupData.unit_id !== scope.unitId) return
+                }
 
                 // REGRA: Se for contagem, só exibe se houver itens ativos no grupo
                 if (type === 'count') {

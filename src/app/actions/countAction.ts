@@ -25,6 +25,7 @@ export type InitCountSessionResult = {
     items?: CountItem[]
     dbCounts?: Record<string, string>
     dbZeroed?: Record<string, boolean>
+    unitId?: string | null
     blocked?: string
     error?: string
 }
@@ -35,7 +36,7 @@ export async function initCountSessionAction(routineId: string, groupId: string,
         const userId = user.id
         const { data: userData } = await supabase.from('users').select('name, role, primary_group_id, unit_id').eq('id', userId).single()
         const scope = await getAccessibleCountScope()
-        const { data: group } = await supabase.from('groups').select('name, macro_sector').eq('id', groupId).single()
+        const { data: group } = await supabase.from('groups').select('name, macro_sector, unit_id').eq('id', groupId).single()
 
         const isKitchenGroup = group?.macro_sector === 'Cozinha Central'
         
@@ -56,10 +57,15 @@ export async function initCountSessionAction(routineId: string, groupId: string,
         if (scope.type === 'store' && !isManager && !isMyArea) {
             return { blocked: 'Você não tem permissão para realizar contagens fora da sua área designada.' }
         }
+        if (scope.type === 'store' && scope.unitId) {
+            if (group?.unit_id && group.unit_id !== scope.unitId) {
+                return { blocked: 'Acesso negado: Este setor pertence a outra unidade.' }
+            }
+        }
 
         const { data: routineRow } = await supabase
             .from('routines')
-            .select('snapshot_started_at')
+            .select('snapshot_started_at, unit_id')
             .eq('id', routineId)
             .single()
 
@@ -220,7 +226,8 @@ export async function initCountSessionAction(routineId: string, groupId: string,
             groupName: group?.name || '',
             items: items || [],
             dbCounts,
-            dbZeroed
+            dbZeroed,
+            unitId: userData?.unit_id || null
         }
     } catch (e: any) {
         return { error: e.message || 'Erro ao inicializar sessão' }
