@@ -28,7 +28,7 @@ function DashboardContent() {
     const isDemoMode = searchParams.get('demo') === 'true' || searchParams.get('demo') === '1'
 
     // ── IDENTIDADE ──────────────────────────────────────────────────────────
-    const { userRole, userName, fullName, userId, loadingIdentity } = useDashboardIdentity()
+    const { userRole, userName, fullName, userId, loadingIdentity, unitName } = useDashboardIdentity()
 
     const isManager = userRole === 'admin' || userRole === 'manager'
 
@@ -121,6 +121,7 @@ function DashboardContent() {
 
                 <Header
                     userName={userName}
+                    unitName={unitName}
                     isDemoMode={isDemoMode}
                     isManager={isManager}
                     viewMode={viewMode}
@@ -176,6 +177,7 @@ function DashboardContent() {
                             onUpdateFocus={async (title) => {
                                 setWeeklyFocus(prev => prev ? { ...prev, title, source: 'manual' } : null)
                             }}
+                            unitName={unitName}
                         />
                     )}
                 </div>

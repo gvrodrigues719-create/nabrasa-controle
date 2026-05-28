@@ -69,6 +69,7 @@ interface OperatorHomeProps {
     onOpenRewards: () => void;
     onOpenAI: () => void;
     onUpdateFocus: (title: string) => Promise<void>;
+    unitName?: string;
 }
 
 export default function OperatorHome({
@@ -108,7 +109,8 @@ export default function OperatorHome({
     onReportLoss,
     onOpenRewards,
     onOpenAI,
-    onUpdateFocus
+    onUpdateFocus,
+    unitName
 }: OperatorHomeProps) {
     const [isRaffleOpen, setIsRaffleOpen] = useState(false)
 
@@ -116,6 +118,8 @@ export default function OperatorHome({
     const SkeletonCard = ({ h = 'h-24' }: { h?: string }) => (
         <div className={`${h} rounded-3xl bg-gray-100 animate-pulse`} />
     )
+
+    const isIcarai = unitName?.includes('Icaraí')
 
     return (
         <div className="space-y-4 md:space-y-6 pb-20 md:pb-6">
@@ -229,7 +233,7 @@ export default function OperatorHome({
             />
 
             {/* 2.4 VISÃO DA CASA — ONDA 1 (self-contained, busca seus próprios dados) */}
-            <HouseView />
+            {!isIcarai && <HouseView />}
 
             {/* 3. MURAL — ONDA 2 */}
             <div id="mural">
@@ -248,9 +252,9 @@ export default function OperatorHome({
                     score={healthScore}
                     activeLeaks={activeLeaks}
                     weeklyLeaks={weeklyLeaks}
-                    cmvCurrent={cmvStatus?.current}
-                    cmvTarget={cmvStatus?.target}
-                    cmvStatus={cmvStatus?.status}
+                    cmvCurrent={isIcarai ? undefined : cmvStatus?.current}
+                    cmvTarget={isIcarai ? undefined : cmvStatus?.target}
+                    cmvStatus={isIcarai ? undefined : cmvStatus?.status}
                     focus={weeklyFocus}
                     userRole={userRole}
                     onViewGlobalClick={onViewGlobalClick}

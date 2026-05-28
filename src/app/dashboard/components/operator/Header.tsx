@@ -6,6 +6,7 @@ import Link from 'next/link'
 
 interface HeaderProps {
     userName?: string
+    unitName?: string
     isDemoMode?: boolean
     isManager?: boolean
     viewMode?: 'manager' | 'operator'
@@ -16,6 +17,7 @@ interface HeaderProps {
 
 export default function Header({ 
     userName, 
+    unitName,
     isDemoMode, 
     isManager, 
     viewMode, 
@@ -44,7 +46,7 @@ export default function Header({
                         <Flame className="w-4.5 h-4.5 md:w-5 md:h-5 text-white" fill="currentColor" />
                     </div>
                     <div>
-                        <p className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-0.5 md:mb-1">NaBrasa Camboinhas</p>
+                        <p className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-0.5 md:mb-1">{unitName || 'NaBrasa Camboinhas'}</p>
                         <h1 className="text-base md:text-lg font-black text-gray-900 tracking-tight leading-tight">
                             {getGreeting()}, {userName || 'Colaborador'}
                         </h1>

@@ -10,6 +10,7 @@ export function useDashboardIdentity() {
     const [fullName, setFullName] = useState<string>('')
     const [userId, setUserId] = useState<string>('')
     const [primaryAreaName, setPrimaryAreaName] = useState<string | null>(null)
+    const [unitName, setUnitName] = useState<string>('NaBrasa Camboinhas')
     const [loadingIdentity, setLoadingIdentity] = useState(true)
 
     useEffect(() => {
@@ -57,6 +58,14 @@ export function useDashboardIdentity() {
                         .single()
                     if (gData) setPrimaryAreaName(gData.name)
                 }
+                if (profile?.unit_id) {
+                    const { data: uData } = await supabase
+                        .from('groups')
+                        .select('name')
+                        .eq('id', profile.unit_id)
+                        .single()
+                    if (uData) setUnitName(uData.name)
+                }
             }
 
             setLoadingIdentity(false)
@@ -64,5 +73,5 @@ export function useDashboardIdentity() {
         loadIdentity()
     }, [])
 
-    return { userRole, userName, fullName, userId, loadingIdentity, primaryAreaName }
+    return { userRole, userName, fullName, userId, loadingIdentity, primaryAreaName, unitName }
 }
