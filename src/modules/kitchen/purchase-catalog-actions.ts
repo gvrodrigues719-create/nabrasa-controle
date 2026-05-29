@@ -6,7 +6,8 @@ import { getServerAuthContext } from '@/lib/server-auth-context'
 async function getCurrentUser() {
     const supabase = getAdminSupabase()
     const user = await getServerAuthContext()
-    if (!['admin', 'kitchen'].includes(user.role)) throw new Error('Sem permissão')
+    const isKitchen = user.role === 'admin' || user.role === 'kitchen' || user.groups?.macro_sector === 'Cozinha Central'
+    if (!isKitchen) throw new Error('Acesso Bloqueado. Apenas admin ou cozinha central.')
     return { supabase, user }
 }
 

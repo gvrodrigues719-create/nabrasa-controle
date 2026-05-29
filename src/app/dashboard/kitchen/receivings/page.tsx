@@ -154,7 +154,7 @@ export default function ReceivingsPage() {
         if (query.length < 2) { setItemSearching(prev => ({ ...prev, [idx]: false })); return }
         setItemSearching(prev => ({ ...prev, [idx]: true }))
         debounceRef.current[idx] = setTimeout(async () => {
-            const res = await searchPurchaseItemsAction(query, createForm.supplier_id || undefined)
+            const res = await searchPurchaseItemsAction(query, createForm.supplier_id === 'manual' ? undefined : (createForm.supplier_id || undefined))
             setItemSearching(prev => ({ ...prev, [idx]: false }))
             if (res.success && res.data) setItemSuggestions(prev => ({ ...prev, [idx]: res.data! }))
         }, 300)
@@ -232,7 +232,7 @@ export default function ReceivingsPage() {
         setEditingId(r.id)
         setCreateForm({
             title: r.title,
-            supplier_id: r.supplier_id || '',
+            supplier_id: r.supplier_id || (r.supplier_name && !r.supplier_id ? 'manual' : ''),
             supplier_name: r.supplier_name || '',
             delivery_date: r.delivery_date,
             delivery_period: r.delivery_period || '',
@@ -277,7 +277,7 @@ export default function ReceivingsPage() {
 
         const payload = {
             title: createForm.title,
-            supplier_id: createForm.supplier_id || undefined,
+            supplier_id: createForm.supplier_id === 'manual' ? undefined : (createForm.supplier_id || undefined),
             supplier_name: createForm.supplier_name || undefined,
             delivery_date: createForm.delivery_date,
             delivery_period: createForm.delivery_period || undefined,
@@ -411,7 +411,7 @@ export default function ReceivingsPage() {
                         <button onClick={() => {
                             setCreateForm({
                                 title: `Cópia: ${r.title}`,
-                                supplier_id: r.supplier_id || '',
+                                supplier_id: r.supplier_id || (r.supplier_name && !r.supplier_id ? 'manual' : ''),
                                 supplier_name: r.supplier_name || '',
                                 delivery_date: todayStr,
                                 delivery_period: r.delivery_period || '',
@@ -612,12 +612,13 @@ export default function ReceivingsPage() {
                                         }}
                                         className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 bg-white"
                                     >
-                                        <option value="">Nenhum / Digitar manualmente</option>
+                                        <option value="" disabled>Selecione um fornecedor cadastrado</option>
                                         {suppliers.map(s => (
                                             <option key={s.id} value={s.id}>{s.name}</option>
                                         ))}
+                                        <option value="manual">Outro / digitar manualmente</option>
                                     </select>
-                                    {!createForm.supplier_id && (
+                                    {createForm.supplier_id === 'manual' && (
                                         <input 
                                             value={createForm.supplier_name} 
                                             onChange={e => setCreateForm(f => ({ ...f, supplier_name: e.target.value }))} 
