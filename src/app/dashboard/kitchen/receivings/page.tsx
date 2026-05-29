@@ -90,6 +90,8 @@ export default function ReceivingsPage() {
     const todayStr = new Date().toISOString().split('T')[0]
 
     const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([])
+    const [supplierQuery, setSupplierQuery] = useState('')
+    const [supplierDropdownOpen, setSupplierDropdownOpen] = useState(false)
 
     async function fetchData() {
         setLoading(true)
@@ -623,23 +625,68 @@ export default function ReceivingsPage() {
                         </div>
                         <div className="p-5 space-y-4">
                             <div>
-                                <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Fornecedor, se souber</label>
-                                <div className="mt-1 flex flex-col gap-2">
-                                    <select 
-                                        value={createForm.supplier_id || ''} 
-                                        onChange={e => {
-                                            const id = e.target.value
-                                            const sup = suppliers.find(s => s.id === id)
-                                            setCreateForm(f => ({ ...f, supplier_id: id, supplier_name: sup ? sup.name : (id ? '' : f.supplier_name) }))
-                                        }}
-                                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 bg-white"
-                                    >
-                                        <option value="" disabled>Selecione um fornecedor cadastrado</option>
-                                        {suppliers.map(s => (
-                                            <option key={s.id} value={s.id}>{s.name}</option>
-                                        ))}
-                                        <option value="manual">Outro / digitar manualmente</option>
-                                    </select>
+                                <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Fornecedor</label>
+                                <div className="mt-1 relative flex flex-col gap-2">
+                                    <div className="relative">
+                                        <div 
+                                            className="w-full flex items-center justify-between px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-400 bg-white cursor-pointer"
+                                            onClick={() => setSupplierDropdownOpen(!supplierDropdownOpen)}
+                                        >
+                                            <span className={createForm.supplier_id ? "text-gray-900" : "text-gray-500"}>
+                                                {createForm.supplier_id === 'manual' ? 'Outro / digitar manualmente' : (createForm.supplier_name || 'Buscar fornecedor...')}
+                                            </span>
+                                            <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />
+                                        </div>
+
+                                        {supplierDropdownOpen && (
+                                            <>
+                                                <div className="fixed inset-0 z-40" onClick={() => setSupplierDropdownOpen(false)}></div>
+                                                <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white border border-gray-100 rounded-xl shadow-lg max-h-60 flex flex-col overflow-hidden">
+                                                <div className="p-2 border-b border-gray-50 shrink-0">
+                                                    <div className="relative">
+                                                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                                        <input 
+                                                            autoFocus
+                                                            value={supplierQuery}
+                                                            onChange={e => setSupplierQuery(e.target.value)}
+                                                            placeholder="Buscar fornecedor..."
+                                                            className="w-full pl-9 pr-3 py-2 bg-gray-50 border-transparent rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="overflow-y-auto p-1 scrollbar-hide flex-1">
+                                                    {suppliers.filter(s => s.name.toLowerCase().includes(supplierQuery.toLowerCase())).map(s => (
+                                                        <button 
+                                                            key={s.id}
+                                                            onClick={() => {
+                                                                setCreateForm(f => ({ ...f, supplier_id: s.id, supplier_name: s.name }))
+                                                                setSupplierDropdownOpen(false)
+                                                                setSupplierQuery('')
+                                                            }}
+                                                            className="w-full text-left px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                                                        >
+                                                            {s.name}
+                                                        </button>
+                                                    ))}
+                                                    {suppliers.filter(s => s.name.toLowerCase().includes(supplierQuery.toLowerCase())).length === 0 && (
+                                                        <div className="px-3 py-4 text-center text-xs text-gray-400">Nenhum fornecedor encontrado</div>
+                                                    )}
+                                                    <div className="my-1 border-t border-gray-50"></div>
+                                                    <button 
+                                                        onClick={() => {
+                                                            setCreateForm(f => ({ ...f, supplier_id: 'manual', supplier_name: '' }))
+                                                            setSupplierDropdownOpen(false)
+                                                            setSupplierQuery('')
+                                                        }}
+                                                        className="w-full text-left px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                    >
+                                                        Outro / digitar manualmente
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            </>
+                                        )}
+                                    </div>
                                     {createForm.supplier_id === 'manual' && (
                                         <input 
                                             value={createForm.supplier_name} 
