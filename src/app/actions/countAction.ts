@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { getCycleAnchorDate } from '@/modules/count/helpers'
 import { isTestOperator } from './routinesAction'
 import { getAccessibleCountScope, getServerAuthContext } from '@/lib/server-auth-context'
+import { getUnitFeatureFlags } from '@/lib/feature-flags'
 
 import { CountItem } from '@/modules/count/types'
 
@@ -53,12 +54,23 @@ export async function initCountSessionAction(routineId: string, groupId: string,
         // Para lojas, verificar se o grupo é da área do usuário (se não for gerente)
         const isManager = userData?.role === 'admin' || userData?.role === 'manager'
         const isMyArea = userData?.primary_group_id === groupId
+        const flags = getUnitFeatureFlags(scope.unitId)
+        // Para unidades Contagem Only (ex: Icaraí), o operador pode acessar qualquer grupo da própria unidade
+        const isContagemOnlyStoreOperator =
+            scope.type === 'store' &&
+            userData?.role === 'operator' &&
+            flags.isContagemOnly
 
-        if (scope.type === 'store' && !isManager && !isMyArea) {
+        if (scope.type === 'store' && !isManager && !isMyArea && !isContagemOnlyStoreOperator) {
             return { blocked: 'Você não tem permissão para realizar contagens fora da sua área designada.' }
         }
         if (scope.type === 'store' && scope.unitId) {
-            if (group?.unit_id && group.unit_id !== scope.unitId) {
+            // Para isContagemOnly, grupo DEVE ter unit_id da loja — sem fallback global
+            if (isContagemOnlyStoreOperator) {
+                if (!group?.unit_id || group.unit_id !== scope.unitId) {
+                    return { blocked: 'Acesso negado: Este setor não pertence à sua unidade.' }
+                }
+            } else if (group?.unit_id && group.unit_id !== scope.unitId) {
                 return { blocked: 'Acesso negado: Este setor pertence a outra unidade.' }
             }
         }

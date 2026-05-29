@@ -68,7 +68,7 @@ export async function getRoutineDetailsAction(routineId: string) {
         isStartedToday = snapBrDate === brDate
     }
 
-    const { data: rGroups } = await supabase.from('routine_groups').select('groups(id, name, macro_sector)').eq('routine_id', routineId)
+    const { data: rGroups } = await supabase.from('routine_groups').select('groups(id, name, macro_sector, unit_id)').eq('routine_id', routineId)
 
     // ── APLICAR ESCOPO DE SEGURANÇA ──────────────────────────────────────────
     const hasKitchen = rGroups?.some(rg => (rg.groups as any)?.macro_sector === 'Cozinha Central')

@@ -10,6 +10,8 @@ import { getOperatorDailyTasksAction } from '@/app/actions/routinesAction'
 import { getActiveOperator } from '@/app/actions/pinAuth'
 import { supabase } from '@/lib/supabase/client'
 import { useDashboardUI } from '../hooks/useDashboardUI'
+import { useDashboardIdentity } from '../hooks/useDashboardIdentity'
+import { getUnitFeatureFlags } from '@/lib/feature-flags'
 import Header from '../components/operator/Header'
 
 const freqLabel: Record<string, string> = {
@@ -37,6 +39,8 @@ export default function ActiveRoutinesPage() {
     const [top3, setTop3] = useState<RankingEntry[]>([])
 
     const { viewMode, setViewMode } = useDashboardUI(rawRole)
+    const { unitId, unitName: realUnitName, loadingIdentity } = useDashboardIdentity()
+    const flags = getUnitFeatureFlags(unitId, loadingIdentity)
     const searchParams = useSearchParams()
     const returnTo = searchParams.get('returnTo')
     const backUrl = getSafeReturnTo(returnTo, '/dashboard')
@@ -104,6 +108,7 @@ export default function ActiveRoutinesPage() {
 
             <Header 
                 userName={userName}
+                unitName={realUnitName || undefined}
                 isDemoMode={false}
                 isManager={rawRole === 'admin' || rawRole === 'manager'}
                 viewMode={viewMode}
@@ -218,7 +223,8 @@ export default function ActiveRoutinesPage() {
                     </section>
                 )}
 
-                {/* ── 3. CARD MINHA EVOLUÇÃO (AGORA NO FINAL) ── */}
+                {/* ── 3. CARD MINHA EVOLUÇÃO (AGORA NO FINAL) — só aparece se gamification ativo ── */}
+                {flags.gamification && (
                 <div className="bg-white rounded-[32px] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e9e8e5] relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-24 h-24 bg-red-50/50 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-110" />
                     
@@ -277,6 +283,7 @@ export default function ActiveRoutinesPage() {
                         </div>
                     </div>
                 </div>
+                )}
             </div>
         </div>
     )
