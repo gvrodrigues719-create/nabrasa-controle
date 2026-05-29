@@ -618,7 +618,7 @@ export default function ReceivingsPage() {
             {/* Create Modal */}
             {showCreate && (
                 <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm">
-                    <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
+                    <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden shadow-2xl box-border">
                         <div className="p-5 border-b border-gray-100 flex items-center justify-between">
                             <h2 className="text-base font-black text-gray-900">{editingId ? 'Editar Entrega' : 'Nova Entrega'}</h2>
                             <button onClick={() => { setShowCreate(false); setEditingId(null) }} className="p-2 hover:bg-gray-100 rounded-xl"><X className="w-5 h-5 text-gray-400" /></button>
@@ -627,12 +627,12 @@ export default function ReceivingsPage() {
                             <div>
                                 <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Fornecedor</label>
                                 <div className="mt-1 relative flex flex-col gap-2">
-                                    <div className="relative">
+                                    <div className="relative w-full max-w-full box-border">
                                         <div 
-                                            className="w-full flex items-center justify-between px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-400 bg-white cursor-pointer"
+                                            className="w-full flex items-center justify-between px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-400 bg-white cursor-pointer box-border"
                                             onClick={() => setSupplierDropdownOpen(!supplierDropdownOpen)}
                                         >
-                                            <span className={createForm.supplier_id ? "text-gray-900" : "text-gray-500"}>
+                                            <span className={`truncate mr-2 ${createForm.supplier_id ? "text-gray-900" : "text-gray-500"}`}>
                                                 {createForm.supplier_id === 'manual' ? 'Outro / digitar manualmente' : (createForm.supplier_name || 'Buscar fornecedor...')}
                                             </span>
                                             <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />
@@ -641,9 +641,9 @@ export default function ReceivingsPage() {
                                         {supplierDropdownOpen && (
                                             <>
                                                 <div className="fixed inset-0 z-40" onClick={() => setSupplierDropdownOpen(false)}></div>
-                                                <div className="absolute top-full left-0 right-0 mt-1 z-50 bg-white border border-gray-100 rounded-xl shadow-lg max-h-60 flex flex-col overflow-hidden">
-                                                <div className="p-2 border-b border-gray-50 shrink-0">
-                                                    <div className="relative">
+                                                <div className="absolute top-full left-0 right-0 w-full mt-1 z-50 bg-white border border-gray-100 rounded-xl shadow-lg max-h-60 flex flex-col overflow-hidden box-border">
+                                                <div className="p-2 border-b border-gray-50 shrink-0 box-border">
+                                                    <div className="relative w-full box-border">
                                                         <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                                         <input 
                                                             autoFocus
