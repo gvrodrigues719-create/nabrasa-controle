@@ -263,6 +263,24 @@ export async function syncCountSessionAction(
 }> {
     console.log(`[CountAction] Iniciando sync para sessão ${sessionId}. Complete: ${complete}`);
     
+    // Função auxiliar para gravar logs seguros
+    const logCountError = async (user_id: string, group_id: string, routine_id: string, expected_count: number, saved_count: number, message: string) => {
+        console.error(`[P0_COUNT_COMPLETE_ERROR] ${message}`);
+        try {
+            await supabase.from('count_operation_logs').insert([{
+                user_id,
+                group_id,
+                routine_id,
+                session_id: sessionId,
+                expected_count,
+                saved_count,
+                message
+            }]);
+        } catch(e) {
+            console.error('[CountAction] Falha ao gravar log no banco:', e);
+        }
+    };
+
     try {
         const userContext = await getServerAuthContext()
         const scope = await getAccessibleCountScope()
@@ -270,7 +288,7 @@ export async function syncCountSessionAction(
         // 0. Validar posse da sessão e escopo de acesso
         const { data: sessionOwner, error: sessionErr } = await supabase
             .from('count_sessions')
-            .select('user_id, group_id, routine_id')
+            .select('status, completed_at, user_id, group_id, routine_id')
             .eq('id', sessionId)
             .single()
 
@@ -283,6 +301,39 @@ export async function syncCountSessionAction(
         }
         if (!sessionOwner) {
             return { error: 'Sessão não encontrada. Tentaremos recuperar a contagem.' }
+        }
+
+        if (complete && sessionOwner.status === 'completed') {
+            console.log(`[CountAction] Verificando integridade para Idempotência: Sessão ${sessionId}`);
+            // Busca itens ativos
+            const { data: activeItems } = await supabase.from('items').select('id, name').eq('group_id', sessionOwner.group_id).eq('active', true)
+            // Busca o que foi salvo
+            const { data: savedItems } = await supabase.from('count_session_items').select('item_id, counted_quantity, is_zeroed').eq('session_id', sessionId)
+
+            const savedItemsFiltered = (savedItems || []).filter(si => si.counted_quantity !== null || si.is_zeroed)
+            const savedCount = savedItemsFiltered.length
+            const expectedCount = activeItems?.length || 0
+
+            const savedIds = new Set(savedItemsFiltered.map(si => si.item_id))
+            const missingItems = (activeItems || []).filter(ai => !savedIds.has(ai.id))
+
+            if (missingItems.length > 0) {
+                const missingNames = missingItems.slice(0, 3).map(m => m.name).join(', ')
+                const msg = `Sessão finalizada no banco, mas contagem corrompida localmente. Faltam ${missingItems.length} itens (${missingNames}${missingItems.length > 3 ? '...' : ''}).`
+                await logCountError(sessionOwner.user_id, sessionOwner.group_id, sessionOwner.routine_id, expectedCount, savedCount, msg)
+                return { error: msg }
+            }
+
+            console.log(`[CountAction] Idempotência com integridade confirmada. Retornando sucesso para sessão ${sessionId}.`);
+            return {
+                success: true,
+                sessionId,
+                status: 'completed',
+                completedAt: sessionOwner.completed_at || new Date().toISOString(),
+                savedCount: savedCount, 
+                expectedItems: expectedCount,
+                zeroedCount: savedItemsFiltered.filter(si => si.is_zeroed).length
+            }
         }
         
         // Buscar grupo separadamente para evitar embed frágil
@@ -379,21 +430,19 @@ export async function syncCountSessionAction(
             const savedItemsFiltered = (savedItems || []).filter(si => si.counted_quantity !== null || si.is_zeroed)
             savedCount = savedItemsFiltered.length
             if (savedCount === 0) {
-                console.warn(`[CountAction] Bloqueio de finalização: 0 itens salvos para a sessão ${sessionId}`);
-                return {
-                    error: 'Não foi possível finalizar: nenhum item foi salvo no banco. Seu progresso continua salvo neste aparelho.'
-                }
+                const msg = 'Não foi possível finalizar: nenhum item foi salvo no banco. Seu progresso continua salvo neste aparelho.'
+                await logCountError(sessData.user_id, sessData.group_id, sessData.routine_id, activeItems.length, 0, msg)
+                return { error: msg }
             }
 
             const savedIds = new Set(savedItemsFiltered.map(si => si.item_id))
             const missingItems = activeItems.filter(ai => !savedIds.has(ai.id))
 
             if (missingItems.length > 0) {
-                console.warn(`[CountAction] Bloqueio de finalização: ${missingItems.length} itens faltantes na sessão ${sessionId}`);
                 const missingNames = missingItems.slice(0, 3).map(m => m.name).join(', ')
-                return { 
-                    error: `Inconsistência: Faltam ${missingItems.length} itens para completar este grupo (${missingNames}${missingItems.length > 3 ? '...' : ''}). Por favor, revise a contagem.` 
-                }
+                const msg = `Inconsistência: Faltam ${missingItems.length} itens para completar este grupo (${missingNames}${missingItems.length > 3 ? '...' : ''}). Por favor, revise a contagem.`
+                await logCountError(sessData.user_id, sessData.group_id, sessData.routine_id, activeItems.length, savedCount, msg)
+                return { error: msg }
             }
 
             expectedItems = activeItems?.length || 0

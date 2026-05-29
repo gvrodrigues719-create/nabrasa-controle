@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
     ArrowLeft, RefreshCw, ClipboardList, CheckCircle2,
     Clock, AlertCircle, ChevronRight, Loader2, Package,
-    Flame
+    Flame, Wrench
 } from 'lucide-react'
 import { getKitchenCountStatusAction, KitchenCountRoutine, KitchenCountGroup } from '@/app/actions/kitchenCountAction'
 import toast from 'react-hot-toast'
@@ -145,6 +145,8 @@ export default function KitchenCountPage() {
     const [data, setData] = useState<KitchenCountRoutine | null>(null)
     const [loading, setLoading] = useState(true)
     const [refreshing, setRefreshing] = useState(false)
+    const [showDiagnostic, setShowDiagnostic] = useState(false)
+    const [localDrafts, setLocalDrafts] = useState<{key: string, size: number, type: string}[]>([])
 
     const load = useCallback(async (isRefresh = false) => {
         if (isRefresh) setRefreshing(true)
@@ -174,6 +176,29 @@ export default function KitchenCountPage() {
 
         // Reuse the existing count engine, returnTo this page
         router.push(`/dashboard/count/${data.routineId}/${groupId}?returnTo=/dashboard/kitchen/count`)
+    }
+
+    function openDiagnostic() {
+        const drafts: {key: string, size: number, type: string}[] = []
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i)
+            if (key && (key.startsWith('count_') || key.startsWith('zeroed_'))) {
+                const val = localStorage.getItem(key)
+                if (val) {
+                    try {
+                        const parsed = JSON.parse(val)
+                        const size = Object.keys(parsed).length
+                        if (size > 0) {
+                            drafts.push({ key, size, type: key.startsWith('count_') ? 'Quantidades' : 'Zerados' })
+                        }
+                    } catch (e) {
+                        // ignore invalid JSON
+                    }
+                }
+            }
+        }
+        setLocalDrafts(drafts)
+        setShowDiagnostic(true)
     }
 
     // ── Loading State
@@ -322,7 +347,76 @@ export default function KitchenCountPage() {
                         </p>
                     </div>
                 )}
+
+                <div className="flex justify-center pt-8">
+                    <button onClick={openDiagnostic} className="text-[10px] text-gray-500 font-bold uppercase tracking-widest hover:text-orange-600 transition-colors flex items-center gap-1.5 bg-white px-4 py-2.5 rounded-xl shadow-sm border border-gray-100">
+                        <Wrench className="w-3.5 h-3.5" />
+                        Diagnóstico do Aparelho
+                    </button>
+                </div>
             </div>
+
+            {/* Modal de Diagnóstico */}
+            {showDiagnostic && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-5 max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-base font-black text-gray-900">Diagnóstico Local</h2>
+                            <button onClick={() => setShowDiagnostic(false)} className="text-gray-400 hover:text-gray-600 text-sm font-bold">Fechar</button>
+                        </div>
+                        <div className="space-y-2 mb-4">
+                            <p className="text-xs text-gray-500 leading-relaxed">
+                                Estas são as contagens salvas apenas neste aparelho. Se uma contagem sumiu ou não finalizou, abra a categoria correspondente e o sistema carregará esses itens para reenvio.
+                            </p>
+                            {localDrafts.length > 0 ? (
+                                <ul className="space-y-2 mt-3">
+                                    {localDrafts.map(d => (
+                                        <li key={d.key} className="bg-gray-50 p-3 rounded-lg text-[10px] font-mono break-all border border-gray-100 flex flex-col gap-1">
+                                            <span className="font-bold text-gray-700">{d.key}</span>
+                                            <span className="text-orange-600 font-bold">{d.type}: {d.size} itens</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-sm font-bold text-center py-4 text-emerald-600 bg-emerald-50 rounded-xl mt-3">
+                                    Nenhum rascunho preso neste aparelho.
+                                </p>
+                            )}
+                        </div>
+                        <button onClick={() => {
+                            const allData: Record<string, any> = {}
+                            for (let i = 0; i < localStorage.length; i++) {
+                                const key = localStorage.key(i)
+                                if (key && (key.startsWith('count_') || key.startsWith('zeroed_'))) {
+                                    try {
+                                        allData[key] = JSON.parse(localStorage.getItem(key) || '{}')
+                                    } catch (e) {}
+                                }
+                            }
+                            navigator.clipboard.writeText(JSON.stringify(allData, null, 2))
+                                .then(() => alert("Dados copiados para a área de transferência! Envie para o Suporte."))
+                                .catch(() => alert("Erro ao copiar. Tente tirar print da tela."))
+                        }} className="w-full py-2.5 mt-4 bg-gray-900 text-white hover:bg-gray-800 rounded-xl text-xs font-bold transition-colors">
+                            Copiar Dados p/ Suporte
+                        </button>
+                        
+                        <button onClick={() => {
+                            if (window.confirm("Isso apagará TODOS os rascunhos locais. Use apenas se orientado pelo suporte.")) {
+                                for (let i = localStorage.length - 1; i >= 0; i--) {
+                                    const key = localStorage.key(i)
+                                    if (key && (key.startsWith('count_') || key.startsWith('zeroed_'))) {
+                                        localStorage.removeItem(key)
+                                    }
+                                }
+                                setLocalDrafts([])
+                                alert("Dados apagados.")
+                            }
+                        }} className="w-full py-2.5 mt-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl text-xs font-bold transition-colors">
+                            Limpar Dados Locais (Perigoso)
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

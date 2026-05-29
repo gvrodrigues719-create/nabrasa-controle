@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getSafeReturnTo } from '@/lib/navigation'
-import { ArrowLeft, Loader2, Save, Check, ShieldAlert, CloudOff, AlertTriangle, ChevronDown, Edit3, Lock, X, User, CheckCircle2, Trophy, Trash2 } from 'lucide-react'
+import { ArrowLeft, Loader2, Save, Check, ShieldAlert, CloudOff, AlertTriangle, ChevronDown, Edit3, Lock, X, User, CheckCircle2, Trophy, Trash2, AlertCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import React, { use } from 'react'
 import { initCountSessionAction, syncCountSessionAction, deleteCountSessionAction } from '@/app/actions/countAction'
@@ -26,6 +26,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     const [zeroed, setZeroed] = useState<Record<string, boolean>>({})
     const [groupName, setGroupName] = useState('')
     const [blocked, setBlocked] = useState<string | null>(null)
+    const [hasUnsavedDraft, setHasUnsavedDraft] = useState(false)
     const [syncStatus, setSyncStatus] = useState<'synced' | 'saving' | 'offline'>('synced')
     const [showSummary, setShowSummary] = useState(false)
     const [showFinished, setShowFinished] = useState(false)
@@ -142,6 +143,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         if (localItemsCount > dbItemsCount && res.sessionId) {
             console.log('[CountPage] Detectada discrepncia local/DB. Sincronizando recuperao...');
             toast("Recuperando dados salvos localmente...", { icon: '🔄' });
+            setHasUnsavedDraft(true)
             syncCountSessionAction(res.sessionId, merged, false, mergedZeroed);
         }
 
@@ -488,6 +490,19 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                     </div>
                 </div>
             </div>
+
+            {hasUnsavedDraft && !showSummary && (
+                <div className="mx-5 mt-4 p-3.5 bg-orange-50 border border-orange-200 rounded-2xl flex items-start gap-3 shadow-sm animate-pulse-slow">
+                    <AlertCircle className="w-5 h-5 text-orange-600 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                        <h4 className="text-sm font-black text-orange-800 leading-tight">Você tem dados não finalizados neste aparelho.</h4>
+                        <p className="text-xs text-orange-700 font-medium mt-1 leading-relaxed">
+                            Uma tentativa anterior de finalizar falhou ou não foi enviada. Os dados foram carregados na tela. 
+                            Revise e clique em finalizar novamente.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {showSummary ? (
                 <div className="p-5 space-y-6">
