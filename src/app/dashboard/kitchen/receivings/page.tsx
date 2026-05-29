@@ -256,11 +256,36 @@ export default function ReceivingsPage() {
     }
 
     async function handleSaveForm() {
-        if (!createForm.title.trim() || !createForm.delivery_date) {
-            toast.error('Nome da entrega e data são obrigatórios')
+        if (!createForm.delivery_date) {
+            toast.error('A data da entrega é obrigatória')
             return
         }
         setCreating(true)
+
+        let finalTitle = createForm.title
+        if (!editingId) {
+            const finalSupplierName = createForm.supplier_id === 'manual' ? createForm.supplier_name : (createForm.supplier_id ? suppliers.find(s => s.id === createForm.supplier_id)?.name : undefined)
+            
+            const parts = []
+            if (finalSupplierName) parts.push(finalSupplierName)
+            else parts.push('Entrega avulsa')
+            
+            const dateParts = createForm.delivery_date.split('-')
+            if (dateParts.length === 3) {
+                parts.push(`${dateParts[2]}/${dateParts[1]}`)
+            } else {
+                parts.push(createForm.delivery_date)
+            }
+            
+            if (createForm.delivery_period) {
+                if (createForm.delivery_period === 'manha') parts.push('Manhã')
+                else if (createForm.delivery_period === 'tarde') parts.push('Tarde')
+                else if (createForm.delivery_period === 'noite') parts.push('Noite')
+                else parts.push(createForm.delivery_period)
+            }
+            
+            finalTitle = parts.join(' — ')
+        }
 
         const payloadItems = createItems.filter(i => i.item_name.trim()).map(i => ({
             id: i.id,
@@ -276,7 +301,7 @@ export default function ReceivingsPage() {
         }))
 
         const payload = {
-            title: createForm.title,
+            title: finalTitle,
             supplier_id: createForm.supplier_id === 'manual' ? undefined : (createForm.supplier_id || undefined),
             supplier_name: createForm.supplier_name || undefined,
             delivery_date: createForm.delivery_date,
@@ -351,14 +376,15 @@ export default function ReceivingsPage() {
             <div key={r.id} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm space-y-3">
                 <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-black text-gray-900 truncate">
-                            {r.title}
+                        <h4 className="text-sm font-black text-gray-900 line-clamp-1">
+                            {r.supplier_name || r.title || 'Entrega avulsa'}
                             {(r.title.toUpperCase().includes('TESTE') || r.title.toUpperCase().includes('QA')) && (
                                 <span className="ml-2 text-[9px] font-black text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-md uppercase tracking-tighter">Ambiente QA</span>
                             )}
                         </h4>
                         <p className="text-xs text-gray-400 font-medium mt-0.5">
-                            {r.supplier_name || 'Fornecedor não informado'} {r.delivery_period ? `• ${PERIOD_LABELS[r.delivery_period] || r.delivery_period}` : ''}
+                            {r.delivery_date ? `${r.delivery_date.split('-')[2]}/${r.delivery_date.split('-')[1]}` : ''}
+                            {r.delivery_period ? ` • ${PERIOD_LABELS[r.delivery_period] || r.delivery_period}` : ''}
                             {r.delivery_time ? ` ${r.delivery_time}` : ''}
                             {r.items && r.items.length > 0 ? ` • ${r.items.length} ${r.items.length === 1 ? 'item' : 'itens'}` : ''}
                         </p>
@@ -596,10 +622,6 @@ export default function ReceivingsPage() {
                             <button onClick={() => { setShowCreate(false); setEditingId(null) }} className="p-2 hover:bg-gray-100 rounded-xl"><X className="w-5 h-5 text-gray-400" /></button>
                         </div>
                         <div className="p-5 space-y-4">
-                            <div>
-                                <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Nome da entrega *</label>
-                                <input value={createForm.title} onChange={e => setCreateForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Hortifruti da semana, Compra de limpeza, Carnes bovinas" className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
-                            </div>
                             <div>
                                 <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Fornecedor, se souber</label>
                                 <div className="mt-1 flex flex-col gap-2">
