@@ -19,10 +19,16 @@ export interface CKReceivingItem {
     receiving_id: string
     purchase_item_id?: string | null
     receiving_catalog_item_id?: string | null
+    catalog_item_id?: string | null
+    supplier_id?: string | null
     item_name: string
     expected_qty?: number | null
+    expected_unit_price?: number | null
+    expected_total?: number | null
     received_qty?: number | null
     unit?: string | null
+    item_name_snapshot?: string | null
+    unit_snapshot?: string | null
     item_status: ReceivingItemStatus
     notes?: string | null
     created_at: string
@@ -33,6 +39,7 @@ export interface CKReceiving {
     id: string
     title: string
     supplier_name?: string | null
+    supplier_id?: string | null
     delivery_date: string // YYYY-MM-DD
     delivery_period?: DeliveryPeriod | null
     delivery_time?: string | null

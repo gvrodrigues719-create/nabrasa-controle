@@ -63,7 +63,7 @@ export default function ReceivingsPage() {
     const [actionLoading, setActionLoading] = useState(false)
 
     // Create form
-    const [createForm, setCreateForm] = useState({ title: '', supplier_name: '', delivery_date: '', delivery_period: '', delivery_time: '', notes: '' })
+    const [createForm, setCreateForm] = useState({ title: '', supplier_id: '', supplier_name: '', delivery_date: '', delivery_period: '', delivery_time: '', notes: '' })
     const [createItems, setCreateItems] = useState<{ 
         id?: string;
         purchase_item_id?: string; 
@@ -76,7 +76,7 @@ export default function ReceivingsPage() {
     const [creating, setCreating] = useState(false)
     const [userRole, setUserRole] = useState<string>('')
     // Autocomplete per item
-    const [itemSuggestions, setItemSuggestions] = useState<Record<number, { id: string; name: string; order_unit: string; category?: string; source: 'catalog' | 'purchase' }[]>>({})
+    const [itemSuggestions, setItemSuggestions] = useState<Record<number, { id: string; name: string; order_unit: string; category?: string; source: 'catalog' | 'purchase' | 'ck_purchase'; expected_unit_price?: number; expected_total?: number; supplier_id?: string }[]>>({})
     const [itemSearching, setItemSearching] = useState<Record<number, boolean>>({})
     const [itemQuery, setItemQuery] = useState<Record<number, string>>({})
     const debounceRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({})
@@ -89,14 +89,23 @@ export default function ReceivingsPage() {
     const week = useMemo(() => getWeekRange(weekOffset), [weekOffset])
     const todayStr = new Date().toISOString().split('T')[0]
 
+    const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([])
+
     async function fetchData() {
         setLoading(true)
-        const res = await getWeeklyReceivingsAction(week.start, week.end)
+        // Buscamos recebimentos e também fornecedores
+        const [res, suppRes] = await Promise.all([
+            getWeeklyReceivingsAction(week.start, week.end),
+            import('@/modules/kitchen/purchase-catalog-actions').then(m => m.getCkSuppliersAction())
+        ])
         if (res.success && res.data) {
             setReceivings(res.data.receivings)
             setOverdue(res.data.overdue)
         } else {
             toast.error(res.error || 'Erro ao carregar recebimentos')
+        }
+        if (suppRes.data) {
+            setSuppliers(suppRes.data)
         }
         setLoading(false)
     }
@@ -145,23 +154,29 @@ export default function ReceivingsPage() {
         if (query.length < 2) { setItemSearching(prev => ({ ...prev, [idx]: false })); return }
         setItemSearching(prev => ({ ...prev, [idx]: true }))
         debounceRef.current[idx] = setTimeout(async () => {
-            const res = await searchPurchaseItemsAction(query)
+            const res = await searchPurchaseItemsAction(query, createForm.supplier_id || undefined)
             setItemSearching(prev => ({ ...prev, [idx]: false }))
             if (res.success && res.data) setItemSuggestions(prev => ({ ...prev, [idx]: res.data! }))
         }, 300)
     }
 
-    function selectItemSuggestion(idx: number, s: { id: string; name: string; order_unit: string; source?: 'catalog' | 'purchase' }) {
+    function selectItemSuggestion(idx: number, s: { id: string; name: string; order_unit: string; expected_unit_price?: number; expected_total?: number; supplier_id?: string; source?: 'catalog' | 'purchase' | 'ck_purchase' }) {
         const n = [...createItems]
         const isCatalog = s.source === 'catalog'
+        const isCkPurchase = s.source === 'ck_purchase'
+        
         n[idx] = { 
             ...n[idx], 
-            purchase_item_id: isCatalog ? undefined : s.id,
+            purchase_item_id: isCatalog || isCkPurchase ? undefined : s.id,
             receiving_catalog_item_id: isCatalog ? s.id : undefined,
+            catalog_item_id: isCkPurchase ? s.id : undefined,
+            supplier_id: s.supplier_id,
             item_name: s.name, 
             unit: s.order_unit, 
+            expected_unit_price: s.expected_unit_price,
+            expected_total: s.expected_total,
             is_free: false 
-        }
+        } as any
         setCreateItems(n)
         setItemQuery(prev => ({ ...prev, [idx]: '' }))
         setItemSuggestions(prev => ({ ...prev, [idx]: [] }))
@@ -172,11 +187,13 @@ export default function ReceivingsPage() {
         n[idx] = { 
             purchase_item_id: undefined, 
             receiving_catalog_item_id: undefined,
+            catalog_item_id: undefined,
+            supplier_id: undefined,
             item_name: '', 
             expected_qty: n[idx].expected_qty, 
             unit: '', 
             is_free: true 
-        }
+        } as any
         setCreateItems(n)
         setItemQuery(prev => ({ ...prev, [idx]: '' }))
     }
@@ -215,6 +232,7 @@ export default function ReceivingsPage() {
         setEditingId(r.id)
         setCreateForm({
             title: r.title,
+            supplier_id: r.supplier_id || '',
             supplier_name: r.supplier_name || '',
             delivery_date: r.delivery_date,
             delivery_period: r.delivery_period || '',
@@ -225,11 +243,15 @@ export default function ReceivingsPage() {
             id: i.id,
             purchase_item_id: i.purchase_item_id || undefined,
             receiving_catalog_item_id: i.receiving_catalog_item_id || undefined,
+            catalog_item_id: i.catalog_item_id || undefined,
+            supplier_id: i.supplier_id || undefined,
             item_name: i.item_name,
             expected_qty: i.expected_qty ? i.expected_qty.toString() : '',
+            expected_unit_price: i.expected_unit_price,
+            expected_total: i.expected_total,
             unit: i.unit || 'un',
-            is_free: !i.purchase_item_id && !i.receiving_catalog_item_id
-        })) || [])
+            is_free: !i.purchase_item_id && !i.receiving_catalog_item_id && !i.catalog_item_id
+        } as any)) || [])
         setShowCreate(true)
     }
 
@@ -245,20 +267,27 @@ export default function ReceivingsPage() {
             item_name: i.item_name,
             purchase_item_id: i.purchase_item_id,
             receiving_catalog_item_id: i.receiving_catalog_item_id,
-            expected_qty: parseFloat(i.expected_qty) || undefined,
+            catalog_item_id: (i as any).catalog_item_id,
+            supplier_id: (i as any).supplier_id,
+            expected_qty: parseFloat(i.expected_qty as string) || undefined,
+            expected_unit_price: (i as any).expected_unit_price,
+            expected_total: (i as any).expected_total,
             unit: i.unit || undefined,
         }))
 
+        const payload = {
+            title: createForm.title,
+            supplier_id: createForm.supplier_id || undefined,
+            supplier_name: createForm.supplier_name || undefined,
+            delivery_date: createForm.delivery_date,
+            delivery_period: createForm.delivery_period || undefined,
+            delivery_time: createForm.delivery_time || undefined,
+            notes: createForm.notes || undefined,
+            items: payloadItems
+        }
+
         if (editingId) {
-            const res = await updateReceivingAction(editingId, {
-                title: createForm.title,
-                supplier_name: createForm.supplier_name || undefined,
-                delivery_date: createForm.delivery_date,
-                delivery_period: createForm.delivery_period || undefined,
-                delivery_time: createForm.delivery_time || undefined,
-                notes: createForm.notes || undefined,
-                items: payloadItems
-            })
+            const res = await updateReceivingAction(editingId, payload)
             if (res.success) {
                 toast.success('Entrega atualizada!')
                 setShowCreate(false)
@@ -268,19 +297,11 @@ export default function ReceivingsPage() {
                 toast.error(res.error || 'Erro ao atualizar')
             }
         } else {
-            const res = await createReceivingAction({
-                title: createForm.title,
-                supplier_name: createForm.supplier_name || undefined,
-                delivery_date: createForm.delivery_date,
-                delivery_period: createForm.delivery_period || undefined,
-                delivery_time: createForm.delivery_time || undefined,
-                notes: createForm.notes || undefined,
-                items: payloadItems
-            })
+            const res = await createReceivingAction(payload)
             if (res.success) {
                 toast.success('Entrega criada!')
                 setShowCreate(false)
-                setCreateForm({ title: '', supplier_name: '', delivery_date: '', delivery_period: '', delivery_time: '', notes: '' })
+                setCreateForm({ title: '', supplier_id: '', supplier_name: '', delivery_date: '', delivery_period: '', delivery_time: '', notes: '' })
                 setCreateItems([])
                 fetchData()
             } else {
@@ -390,6 +411,7 @@ export default function ReceivingsPage() {
                         <button onClick={() => {
                             setCreateForm({
                                 title: `Cópia: ${r.title}`,
+                                supplier_id: r.supplier_id || '',
                                 supplier_name: r.supplier_name || '',
                                 delivery_date: todayStr,
                                 delivery_period: r.delivery_period || '',
@@ -580,7 +602,30 @@ export default function ReceivingsPage() {
                             </div>
                             <div>
                                 <label className="text-[10px] font-black text-gray-700 uppercase tracking-wider">Fornecedor, se souber</label>
-                                <input value={createForm.supplier_name} onChange={e => setCreateForm(f => ({ ...f, supplier_name: e.target.value }))} placeholder="Ex: Hortifruti São José" className="w-full mt-1 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                                <div className="mt-1 flex flex-col gap-2">
+                                    <select 
+                                        value={createForm.supplier_id || ''} 
+                                        onChange={e => {
+                                            const id = e.target.value
+                                            const sup = suppliers.find(s => s.id === id)
+                                            setCreateForm(f => ({ ...f, supplier_id: id, supplier_name: sup ? sup.name : (id ? '' : f.supplier_name) }))
+                                        }}
+                                        className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 bg-white"
+                                    >
+                                        <option value="">Nenhum / Digitar manualmente</option>
+                                        {suppliers.map(s => (
+                                            <option key={s.id} value={s.id}>{s.name}</option>
+                                        ))}
+                                    </select>
+                                    {!createForm.supplier_id && (
+                                        <input 
+                                            value={createForm.supplier_name} 
+                                            onChange={e => setCreateForm(f => ({ ...f, supplier_name: e.target.value }))} 
+                                            placeholder="Ou digite o nome do fornecedor..." 
+                                            className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" 
+                                        />
+                                    )}
+                                </div>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 <div>

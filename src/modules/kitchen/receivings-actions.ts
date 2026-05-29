@@ -38,7 +38,8 @@ export async function getWeeklyReceivingsAction(weekStart: string, weekEnd: stri
             .from('ck_receivings')
             .select(`
                 *,
-                ck_receiving_items (*)
+                ck_receiving_items (*),
+                ck_suppliers:supplier_id (id, name, normalized_name)
             `)
             .gte('delivery_date', weekStart)
             .lte('delivery_date', weekEnd)
@@ -52,7 +53,8 @@ export async function getWeeklyReceivingsAction(weekStart: string, weekEnd: stri
             .from('ck_receivings')
             .select(`
                 *,
-                ck_receiving_items (*)
+                ck_receiving_items (*),
+                ck_suppliers:supplier_id (id, name, normalized_name)
             `)
             .lt('delivery_date', weekStart <= today ? weekStart : today)
             .in('status', ['scheduled'])
@@ -62,6 +64,7 @@ export async function getWeeklyReceivingsAction(weekStart: string, weekEnd: stri
 
         const toReceiving = (r: any): CKReceiving => ({
             ...r,
+            supplier_name: r.ck_suppliers?.name || r.supplier_name,
             items: r.ck_receiving_items || [],
             is_overdue: r.status === 'scheduled' && r.delivery_date < today,
         })
@@ -85,6 +88,7 @@ export async function getWeeklyReceivingsAction(weekStart: string, weekEnd: stri
 export async function createReceivingAction(input: {
     title: string
     supplier_name?: string
+    supplier_id?: string
     delivery_date: string
     delivery_period?: string
     delivery_time?: string
@@ -94,8 +98,14 @@ export async function createReceivingAction(input: {
         item_name: string
         purchase_item_id?: string
         receiving_catalog_item_id?: string
+        catalog_item_id?: string
+        supplier_id?: string
         expected_qty?: number
+        expected_unit_price?: number
+        expected_total?: number
         unit?: string
+        item_name_snapshot?: string
+        unit_snapshot?: string
     }[]
 }): Promise<{ success: boolean; data?: CKReceiving; error?: string }> {
     try {
@@ -108,6 +118,7 @@ export async function createReceivingAction(input: {
             .insert({
                 title: input.title,
                 supplier_name: input.supplier_name || null,
+                supplier_id: input.supplier_id || null,
                 delivery_date: input.delivery_date,
                 delivery_period: input.delivery_period || null,
                 delivery_time: input.delivery_time || null,
@@ -131,8 +142,14 @@ export async function createReceivingAction(input: {
                         item_name: item.item_name,
                         purchase_item_id: item.purchase_item_id || null,
                         receiving_catalog_item_id: item.receiving_catalog_item_id || null,
+                        catalog_item_id: item.catalog_item_id || null,
+                        supplier_id: item.supplier_id || input.supplier_id || null,
                         expected_qty: item.expected_qty || null,
+                        expected_unit_price: item.expected_unit_price || null,
+                        expected_total: item.expected_total || null,
                         unit: item.unit || null,
+                        item_name_snapshot: item.item_name_snapshot || item.item_name || null,
+                        unit_snapshot: item.unit_snapshot || item.unit || null,
                         item_status: 'pending',
                     }))
                 )
@@ -393,18 +410,25 @@ export async function updateReceivingAction(
     input: {
         title?: string
         supplier_name?: string
+        supplier_id?: string
         delivery_date?: string
         delivery_period?: string
         delivery_time?: string
         priority?: string
         notes?: string
         items?: {
-            id?: string // Se existir, atualiza; senão, cria. (Itens removidos da tela serão excluídos se o status permitir)
+            id?: string // Se existir, atualiza; senão, cria.
             item_name: string
             purchase_item_id?: string
             receiving_catalog_item_id?: string
+            catalog_item_id?: string
+            supplier_id?: string
             expected_qty?: number
+            expected_unit_price?: number
+            expected_total?: number
             unit?: string
+            item_name_snapshot?: string
+            unit_snapshot?: string
         }[]
     }
 ): Promise<{ success: boolean; data?: CKReceiving; error?: string }> {
@@ -428,6 +452,7 @@ export async function updateReceivingAction(
         const updates: any = {}
         if (input.title !== undefined) updates.title = input.title
         if (input.supplier_name !== undefined) updates.supplier_name = input.supplier_name || null
+        if (input.supplier_id !== undefined) updates.supplier_id = input.supplier_id || null
         if (input.delivery_date !== undefined) updates.delivery_date = input.delivery_date
         if (input.delivery_period !== undefined) updates.delivery_period = input.delivery_period || null
         if (input.delivery_time !== undefined) updates.delivery_time = input.delivery_time || null
@@ -444,7 +469,6 @@ export async function updateReceivingAction(
 
         // 2. Sincronizar itens (se enviado no input)
         if (input.items !== undefined) {
-            // Pegar itens atuais
             const { data: currentItems, error: itemsErr } = await supabase
                 .from('ck_receiving_items')
                 .select('id, item_status')
@@ -454,7 +478,6 @@ export async function updateReceivingAction(
             const currentMap = new Map(currentItems.map(i => [i.id, i]))
             const inputIds = new Set(input.items.filter(i => i.id).map(i => i.id))
 
-            // A. Deletar os que não estão mais no input (somente se pending/not_delivered)
             for (const cItem of currentItems) {
                 if (!inputIds.has(cItem.id)) {
                     if (['pending', 'not_delivered'].includes(cItem.item_status)) {
@@ -465,16 +488,21 @@ export async function updateReceivingAction(
                 }
             }
 
-            // B. Atualizar ou Criar
             for (const item of input.items) {
                 if (item.id && currentMap.has(item.id)) {
                     // Update
                     await supabase.from('ck_receiving_items').update({
                         item_name: item.item_name,
                         expected_qty: item.expected_qty || null,
+                        expected_unit_price: item.expected_unit_price || null,
+                        expected_total: item.expected_total || null,
                         unit: item.unit || null,
+                        item_name_snapshot: item.item_name_snapshot || item.item_name || null,
+                        unit_snapshot: item.unit_snapshot || item.unit || null,
                         purchase_item_id: item.purchase_item_id || null,
                         receiving_catalog_item_id: item.receiving_catalog_item_id || null,
+                        catalog_item_id: item.catalog_item_id || null,
+                        supplier_id: item.supplier_id || input.supplier_id || null,
                     }).eq('id', item.id)
                 } else {
                     // Insert
@@ -482,9 +510,15 @@ export async function updateReceivingAction(
                         receiving_id: receivingId,
                         item_name: item.item_name,
                         expected_qty: item.expected_qty || null,
+                        expected_unit_price: item.expected_unit_price || null,
+                        expected_total: item.expected_total || null,
                         unit: item.unit || null,
+                        item_name_snapshot: item.item_name_snapshot || item.item_name || null,
+                        unit_snapshot: item.unit_snapshot || item.unit || null,
                         purchase_item_id: item.purchase_item_id || null,
                         receiving_catalog_item_id: item.receiving_catalog_item_id || null,
+                        catalog_item_id: item.catalog_item_id || null,
+                        supplier_id: item.supplier_id || input.supplier_id || null,
                         item_status: 'pending'
                     })
                 }
@@ -509,9 +543,9 @@ export async function updateReceivingAction(
 // READ — Buscar itens do catálogo para autocomplete
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function searchPurchaseItemsAction(q: string): Promise<{
+export async function searchPurchaseItemsAction(q: string, supplierId?: string): Promise<{
     success: boolean
-    data?: { id: string; name: string; order_unit: string; category?: string; source: 'catalog' | 'purchase' }[]
+    data?: { id: string; name: string; order_unit: string; category?: string; supplier_id?: string; expected_unit_price?: number; expected_total?: number; source: 'catalog' | 'purchase' | 'ck_purchase' }[]
     error?: string
 }> {
     try {
@@ -520,16 +554,30 @@ export async function searchPurchaseItemsAction(q: string): Promise<{
 
         const term = q.trim()
 
-        // 1. Busca no catálogo de insumos de recebimento
+        // 1. Busca no NOVO catálogo de compras CK
+        let newCatQuery = supabase
+            .from('ck_purchase_catalog_items')
+            .select('id, fiscal_item_name, unit, category, last_unit_price, last_total_price, supplier_id')
+            .ilike('fiscal_item_name', `%${term}%`)
+            .eq('active', true)
+            .order('fiscal_item_name')
+            .limit(15)
+
+        if (supplierId) {
+            newCatQuery = newCatQuery.eq('supplier_id', supplierId)
+        }
+        const { data: newCatData } = await newCatQuery
+
+        // 2. Busca no catálogo antigo de insumos de recebimento (fallback)
         const { data: catalogData } = await supabase
             .from('ck_receiving_catalog_items')
             .select('id, name, unit, category')
             .ilike('name', `%${term}%`)
             .eq('is_active', true)
             .order('name')
-            .limit(15)
+            .limit(10)
 
-        // 2. Busca no purchase_items (catálogo geral)
+        // 3. Busca no purchase_items (catálogo geral)
         const { data: purchaseData } = await supabase
             .from('purchase_items')
             .select('id, name, order_unit, category')
@@ -537,6 +585,17 @@ export async function searchPurchaseItemsAction(q: string): Promise<{
             .eq('is_active', true)
             .order('name')
             .limit(10)
+
+        const newCatResults = (newCatData || []).map(r => ({
+            id: r.id,
+            name: r.fiscal_item_name,
+            order_unit: r.unit || 'UN',
+            category: r.category,
+            supplier_id: r.supplier_id,
+            expected_unit_price: r.last_unit_price,
+            expected_total: r.last_total_price,
+            source: 'ck_purchase' as const,
+        }))
 
         const catalogResults = (catalogData || []).map(r => ({
             id: r.id,
@@ -554,14 +613,20 @@ export async function searchPurchaseItemsAction(q: string): Promise<{
             source: 'purchase' as const,
         }))
 
-        // Catálogo próprio primeiro, depois purchase_items (sem duplicar pelo nome)
-        const catalogNames = new Set(catalogResults.map(r => r.name.toLowerCase()))
+        // NOVO catálogo primeiro, depois os antigos
+        const ckNames = new Set(newCatResults.map(r => r.name.toLowerCase()))
         const merged = [
-            ...catalogResults,
-            ...purchaseResults.filter(r => !catalogNames.has(r.name.toLowerCase())),
+            ...newCatResults,
+            ...catalogResults.filter(r => !ckNames.has(r.name.toLowerCase())),
+        ]
+
+        const currentNames = new Set(merged.map(r => r.name.toLowerCase()))
+        const finalMerged = [
+            ...merged,
+            ...purchaseResults.filter(r => !currentNames.has(r.name.toLowerCase())),
         ].slice(0, 20)
 
-        return { success: true, data: merged }
+        return { success: true, data: finalMerged }
     } catch (e: any) {
         return { success: false, error: e.message }
     }
