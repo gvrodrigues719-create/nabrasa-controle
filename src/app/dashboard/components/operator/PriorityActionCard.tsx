@@ -9,9 +9,10 @@ interface PriorityActionCardProps {
     action?: DashboardAction;
     loading?: boolean;
     isIcarai?: boolean;
+    routinesCount?: number;
 }
 
-export default function PriorityActionCard({ action, loading, isIcarai }: PriorityActionCardProps) {
+export default function PriorityActionCard({ action, loading, isIcarai, routinesCount }: PriorityActionCardProps) {
     if (loading) {
         return (
             <div className="mx-1 h-32 bg-white rounded-[2.5rem] animate-pulse border border-gray-100 shadow-sm" />
@@ -45,7 +46,7 @@ export default function PriorityActionCard({ action, loading, isIcarai }: Priori
 
     return (
         <Link 
-            href={action.url}
+            href={isIcarai ? "/dashboard/routines?returnTo=/dashboard" : action.url}
             className={`mx-1 block p-6 rounded-[2.5rem] border-2 transition-all active:scale-[0.98] group overflow-hidden relative shadow-lg ${
                 isOverdue 
                     ? 'bg-[#1b1c1a] border-[#1b1c1a] shadow-black/10' 
@@ -64,7 +65,7 @@ export default function PriorityActionCard({ action, loading, isIcarai }: Priori
                             ? 'bg-white/10 text-white backdrop-blur-sm border border-white/20' 
                             : 'bg-[#1b1c1a] text-[#B13A2B]'
                     }`}>
-                        {action.type === 'checklist' ? <ListChecks className="w-8 h-8" /> : <Boxes className="w-8 h-8" />}
+                        {action.type === 'checklist' && !isIcarai ? <ListChecks className="w-8 h-8" /> : <Boxes className="w-8 h-8" />}
                     </div>
                     
                     <div>
@@ -76,26 +77,30 @@ export default function PriorityActionCard({ action, loading, isIcarai }: Priori
                                         ? 'bg-amber-100 text-amber-700'
                                         : 'bg-red-50 text-[#B13A2B]'
                             }`}>
-                                {isOverdue ? 'Atraso Crítico' : isInProgress ? 'Em Andamento' : 'Ação Prioritária'}
+                                {isIcarai ? 'Ação Prioritária' : isOverdue ? 'Atraso Crítico' : isInProgress ? 'Em Andamento' : 'Ação Prioritária'}
                             </span>
-                            {isInProgress && (
+                            {isInProgress && !isIcarai && (
                                 <span className="flex h-2 w-2 relative">
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                                     <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
                                 </span>
                             )}
                         </div>
-                        <h4 className={`text-xl font-black tracking-tight leading-none mb-1 ${isOverdue ? 'text-white' : 'text-gray-900 group-hover:text-[#B13A2B] transition-colors'}`}>
-                            {action.label}
+                        <h4 className={`text-xl font-black tracking-tight leading-none mb-1 ${isOverdue && !isIcarai ? 'text-white' : 'text-gray-900 group-hover:text-[#B13A2B] transition-colors'}`}>
+                            {isIcarai ? 'Contagem da Loja Icaraí' : action.label}
                         </h4>
                         <div className="flex items-center gap-2">
-                            <p className={`text-[10px] font-bold uppercase tracking-tight ${isOverdue ? 'text-white/60' : 'text-gray-400'}`}>
-                                {action.description}
+                            <p className={`text-[10px] font-bold uppercase tracking-tight ${isOverdue && !isIcarai ? 'text-white/60' : 'text-gray-400'}`}>
+                                {isIcarai ? `${routinesCount || 0} setores de contagem disponíveis` : action.description}
                             </p>
-                            <span className={`w-1 h-1 rounded-full ${isOverdue ? 'bg-white/20' : 'bg-gray-200'}`} />
-                            <p className={`text-[10px] font-black uppercase tracking-widest ${isOverdue ? 'text-[#B13A2B]' : 'text-[#B13A2B]'}`}>
-                                {action.type === 'count' ? 'Contagem' : 'Checklist'}
-                            </p>
+                            {!isIcarai && (
+                                <>
+                                    <span className={`w-1 h-1 rounded-full ${isOverdue ? 'bg-white/20' : 'bg-gray-200'}`} />
+                                    <p className={`text-[10px] font-black uppercase tracking-widest ${isOverdue ? 'text-[#B13A2B]' : 'text-[#B13A2B]'}`}>
+                                        {action.type === 'count' ? 'Contagem' : 'Checklist'}
+                                    </p>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>

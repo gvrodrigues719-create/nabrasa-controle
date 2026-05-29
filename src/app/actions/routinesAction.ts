@@ -5,6 +5,7 @@ import { getActiveOperator } from './pinAuth'
 import { mapRoutineGroupsToStatus } from '@/modules/count/mappers'
 import { requireManagerOrAdmin } from '@/lib/auth-utils'
 import { getAccessibleCountScope } from '@/lib/server-auth-context'
+import { getUnitFeatureFlags } from '@/lib/feature-flags'
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -203,7 +204,8 @@ export async function getOperatorDailyTasksAction(userId: string) {
                 const session = sessionMap.get(`${routine.id}-${rg.group_id}`)
                 const isCompleted = session?.status === 'completed'
                 const isInProgress = session?.status === 'in_progress'
-                const isMyArea = rg.group_id === primaryGroupId
+                const flags = getUnitFeatureFlags(scope.unitId)
+                const isMyArea = (rg.group_id === primaryGroupId) || (flags.isContagemOnly && userRole === 'operator')
                 // ── RESOLVER METADADOS DO GRUPO ──────────────────────────────
                 const groupData = rg.groups as any
                 const groupName = groupData?.name || 'Setor'

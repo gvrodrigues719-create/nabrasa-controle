@@ -142,6 +142,7 @@ export default function OperatorHome({
                         action={actions.primary}
                         loading={false}
                         isIcarai={flags.isContagemOnly}
+                        routinesCount={routinesCount}
                     />
                 )}
 

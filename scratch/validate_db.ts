@@ -1,41 +1,31 @@
 import { createClient } from '@supabase/supabase-js'
-import * as dotenv from 'dotenv'
-import * as path from 'path'
+import dotenv from 'dotenv'
+import path from 'path'
 
-// Load env
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
 
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const supabase = createClient(supabaseUrl, supabaseKey)
 
-async function validate() {
-    console.log('--- DIAGNÓSTICO DB: COZINHA CENTRAL ---')
+async function validateDb() {
+    console.log('--- VALIDATING DB ---')
 
-    // 1. Rotina
-    const { data: routine } = await supabase.from('routines').select('*').eq('name', 'Contagem Cozinha Central').single()
-    console.log('Rotina CK:', routine ? '✅ EXISTE' : '❌ NÃO ENCONTRADA')
+    const { data: camboGrp, error: err1 } = await supabase.from('groups').select('id, name, unit_id').ilike('name', 'Salão%').limit(2)
+    console.log('Salão group:', camboGrp, 'err:', err1?.message)
 
-    // 2. Grupos
-    const { data: groups } = await supabase.from('groups').select('*').eq('macro_sector', 'Cozinha Central')
-    console.log('Grupos CK:', groups?.length === 6 ? `✅ 6 GRUPOS ENCONTRADOS` : `❌ ERRO: ${groups?.length} grupos`)
-    groups?.forEach(g => console.log(`  - ${g.name}`))
+    const { data: icGrp, error: err2 } = await supabase.from('groups').select('id, name, type, unit_id').eq('id', 'e44cfad2-d8b6-4263-8d29-da25bda6518e').single()
+    console.log('Icaraí Unit:', icGrp, 'err:', err2?.message)
 
-    // 3. Vínculos
-    if (routine) {
-        const { data: rg } = await supabase.from('routine_groups').select('group_id').eq('routine_id', routine.id)
-        console.log('Vínculos Routine-Groups:', rg?.length === 6 ? '✅ 6 VÍNCULOS' : `❌ ERRO: ${rg?.length} vínculos`)
-    }
+    const { data: icGroups } = await supabase.from('groups').select('id, name, unit_id').eq('unit_id', 'e44cfad2-d8b6-4263-8d29-da25bda6518e').neq('type', 'unit')
+    console.log(`Icaraí has ${icGroups?.length || 0} counting groups:`, icGroups?.map(g => g.name))
 
-    // 4. Itens
-    const { data: itemsCount } = await supabase.from('items').select('id', { count: 'exact' }).in('group_id', groups?.map(g => g.id) || [])
-    console.log('Itens CK:', itemsCount && itemsCount.length >= 70 ? `✅ ${itemsCount.length} ITENS` : `❌ ERRO: ${itemsCount?.length} itens`)
-
-    // 5. Usuário
-    const { data: user } = await supabase.from('users').select('name, primary_group_id').eq('name', 'Cozinha Central').single()
-    const isLinked = groups?.some(g => g.id === user?.primary_group_id)
-    console.log('Usuário CK Linkado:', isLinked ? '✅ SIM' : '❌ NÃO (Primary Group ID não aponta para grupo CK)')
+    const { data: icRout } = await supabase.from('routines').select('id, name, unit_id').eq('unit_id', 'e44cfad2-d8b6-4263-8d29-da25bda6518e')
+    console.log(`Icaraí has ${icRout?.length || 0} routines:`, icRout?.map(r => r.name))
+    
+    // Check Camboinhas routines
+    const { data: cbRout } = await supabase.from('routines').select('id, name, unit_id').eq('unit_id', '3e52d6b2-755d-4bc5-a808-b8ac37ffcee1')
+    console.log(`Camboinhas has ${cbRout?.length || 0} routines.`)
 }
 
-validate()
+validateDb().catch(console.error)
