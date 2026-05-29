@@ -12,6 +12,7 @@ export interface UnitFeatureFlags {
   cmv: boolean;
   copilot: boolean;
   gamification: boolean;
+  operationHero: boolean;
   isContagemOnly: boolean; // helper extra flag
 }
 
@@ -27,6 +28,7 @@ const DEFAULT_FLAGS: UnitFeatureFlags = {
   cmv: true,
   copilot: true,
   gamification: true,
+  operationHero: true,
   isContagemOnly: false
 };
 
@@ -42,6 +44,7 @@ const ICARAI_FLAGS: UnitFeatureFlags = {
   cmv: false,
   copilot: false,
   gamification: false,
+  operationHero: false,
   isContagemOnly: true
 };
 

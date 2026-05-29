@@ -248,7 +248,7 @@ export default function OperatorHome({
             )}
 
             {/* 4. HERO — ONDA 2 */}
-            {!loadingWave2 && flags.mural && (
+            {!loadingWave2 && flags.operationHero && (
                 <OperationHeroCard
                     score={healthScore}
                     activeLeaks={activeLeaks}
@@ -262,7 +262,7 @@ export default function OperatorHome({
             )}
 
             {/* 6. APOIO — IA — ONDA 2 */}
-            {!loadingWave2 && (
+            {!loadingWave2 && flags.copilot && (
                 <button
                     onClick={onOpenAI}
                     className="w-full flex items-center gap-3 p-4 rounded-2xl bg-[#fffcf0] border border-[#fef3c7] shadow-sm active:scale-[0.98] transition-all text-left cursor-pointer group animate-in fade-in duration-700"
