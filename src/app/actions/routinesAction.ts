@@ -166,7 +166,7 @@ export async function getOperatorDailyTasksAction(userId: string) {
 
         const [routinesRes, groupsRes, itemsRes] = await Promise.all([
             supabase.from('routines').select('*').eq('active', true),
-            supabase.from('routine_groups').select('routine_id, group_id, groups!group_id(name, macro_sector)'),
+            supabase.from('routine_groups').select('routine_id, group_id, groups!group_id(name, macro_sector, unit_id)'),
             supabase.from('items').select('group_id').eq('active', true)
         ])
 

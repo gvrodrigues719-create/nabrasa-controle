@@ -48,7 +48,26 @@ const ICARAI_FLAGS: UnitFeatureFlags = {
   isContagemOnly: true
 };
 
-export function getUnitFeatureFlags(unitId?: string | null): UnitFeatureFlags {
+const LOADING_SAFE_FLAGS: UnitFeatureFlags = {
+  counting: false,
+  countHistory: false,
+  profile: false,
+  losses: false,
+  mural: false,
+  tasks: false,
+  checklists: false,
+  houseView: false,
+  cmv: false,
+  copilot: false,
+  gamification: false,
+  operationHero: false,
+  isContagemOnly: true
+};
+
+export function getUnitFeatureFlags(unitId?: string | null, isLoading: boolean = false): UnitFeatureFlags {
+  if (isLoading) {
+    return LOADING_SAFE_FLAGS;
+  }
   if (unitId === ICARAI_UNIT_ID) {
     return ICARAI_FLAGS;
   }

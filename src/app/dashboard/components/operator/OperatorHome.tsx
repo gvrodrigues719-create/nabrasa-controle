@@ -121,8 +121,8 @@ export default function OperatorHome({
         <div className={`${h} rounded-3xl bg-gray-100 animate-pulse`} />
     )
 
-    const { unitId } = useDashboardIdentity()
-    const flags = getUnitFeatureFlags(unitId)
+    const { unitId, loadingIdentity } = useDashboardIdentity()
+    const flags = getUnitFeatureFlags(unitId, loadingIdentity)
 
     return (
         <div className="space-y-4 md:space-y-6 pb-20 md:pb-6">

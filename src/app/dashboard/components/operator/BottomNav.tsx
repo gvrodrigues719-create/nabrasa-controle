@@ -9,8 +9,8 @@ import { getUnitFeatureFlags } from '@/lib/feature-flags'
 
 export default function BottomNav() {
   const pathname = usePathname()
-  const { unitId } = useDashboardIdentity()
-  const flags = getUnitFeatureFlags(unitId)
+  const { unitId, loadingIdentity } = useDashboardIdentity()
+  const flags = getUnitFeatureFlags(unitId, loadingIdentity)
 
   const navItems = [
     {

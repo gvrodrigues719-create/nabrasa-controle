@@ -10,7 +10,7 @@ export function useDashboardIdentity() {
     const [fullName, setFullName] = useState<string>('')
     const [userId, setUserId] = useState<string>('')
     const [primaryAreaName, setPrimaryAreaName] = useState<string | null>(null)
-    const [unitName, setUnitName] = useState<string>('NaBrasa Camboinhas')
+    const [unitName, setUnitName] = useState<string>('')
     const [unitId, setUnitId] = useState<string | null>(null)
     const [loadingIdentity, setLoadingIdentity] = useState(true)
 
