@@ -14,6 +14,7 @@ interface Props {
     recommendedActions: DashboardAction[]
     isDemoMode?: boolean
     isTester?: boolean
+    flags?: any
 }
 
 export default function ExecutionBlock({ 
@@ -23,7 +24,8 @@ export default function ExecutionBlock({
     onReportLoss, 
     recommendedActions,
     isDemoMode,
-    isTester
+    isTester,
+    flags
 }: Props) {
     const topRecommended = recommendedActions[0]
     const baseUrl = isDemoMode ? '/moc-demo' : '/dashboard'

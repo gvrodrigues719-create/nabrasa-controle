@@ -18,6 +18,8 @@ import MyAreaTodayCard from './MyAreaTodayCard'
 import PriorityActionCard from './PriorityActionCard'
 import { ActiveSession, DashboardActions } from '../../hooks/useDashboardData'
 import KitchenCard from '../KitchenCard'
+import { getUnitFeatureFlags } from '@/lib/feature-flags'
+import { useDashboardIdentity } from '../../hooks/useDashboardIdentity'
 
 
 interface OperatorHomeProps {
@@ -119,12 +121,13 @@ export default function OperatorHome({
         <div className={`${h} rounded-3xl bg-gray-100 animate-pulse`} />
     )
 
-    const isIcarai = unitName?.includes('Icaraí')
+    const { unitId } = useDashboardIdentity()
+    const flags = getUnitFeatureFlags(unitId)
 
     return (
         <div className="space-y-4 md:space-y-6 pb-20 md:pb-6">
             {/* COZINHA CENTRAL — Acesso restrito (admin ou kitchen) */}
-            {!loadingWave1 && (userRole === 'kitchen' || userRole === 'admin') && (
+            {!loadingWave1 && (userRole === 'kitchen' || userRole === 'admin') && flags.tasks && (
                 <div className="mb-4">
                     <KitchenCard />
                 </div>
@@ -138,12 +141,13 @@ export default function OperatorHome({
                     <PriorityActionCard
                         action={actions.primary}
                         loading={false}
-                        isIcarai={isIcarai}
+                        isIcarai={flags.isContagemOnly}
                     />
                 )}
 
                 {/* 0.1 CONTINUIDADE */}
-                {!loadingWave1 && (
+                {!loadingWave1 && activeSession && (
+                    (flags.isContagemOnly ? activeSession.type === 'count' : true) && 
                     <ContinueRoutineCard session={activeSession} isDemoMode={isDemoMode} />
                 )}
 
@@ -171,13 +175,13 @@ export default function OperatorHome({
                 )}
             </div>
 
-            {/* 1. ALERTAS — ONDA 1 */}
-            {!loadingWave1 && (
-                <OperationalAlertBanner lateCount={lateCount} isDemoMode={isDemoMode} />
+            {/* MAPA DA CASA — ONDA 2 */}
+            {!loadingWave2 && flags.houseView && (
+                <HouseView />
             )}
 
             {/* DESTAQUE DO MÊS — ONDA 2 */}
-            {!loadingWave2 && rankPosition === 1 && highlightScore > 0 && (
+            {!loadingWave2 && flags.gamification && rankPosition === 1 && highlightScore > 0 && (
                 <div className="mx-1 p-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 shadow-lg shadow-orange-200/50 flex items-center justify-between overflow-hidden relative group animate-in slide-in-from-top duration-500">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/20 blur-3xl rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-1000" />
                     <div className="flex items-center gap-4 relative z-10">
@@ -193,33 +197,34 @@ export default function OperatorHome({
                 </div>
             )}
 
+            {/* 1. ALERTAS — ONDA 1 */}
+            {!loadingWave1 && flags.tasks && (
+                <OperationalAlertBanner lateCount={lateCount} isDemoMode={isDemoMode} />
+            )}
+
             {/* 2. EXECUÇÃO — ONDA 1 */}
             {loadingWave1 ? (
                 <SkeletonCard h="h-40" />
             ) : (
                 <ExecutionBlock
-                routinesCount={routinesCount}
-                countsPending={countsPending}
-                checklistsPending={checklistsPending}
-                onReportLoss={isIcarai ? undefined : onReportLoss}
-                recommendedActions={actions.recommended}
-                isDemoMode={isDemoMode}
-                isTester={isTester}
-            />
-            )}
-
-            {/* 2.2 SUA ÁREA — ONDA 1 */}
-            {loadingWave1 ? (
-                <SkeletonCard h="h-28" />
-            ) : (
-                <MyAreaTodayCard 
-                    stats={myAreaStats} 
-                    primaryAction={actions.area}
+                    routinesCount={routinesCount}
+                    countsPending={countsPending}
+                    checklistsPending={checklistsPending}
+                    onReportLoss={flags.losses ? onReportLoss : undefined}
+                    recommendedActions={flags.tasks ? actions.recommended : []}
+                    isDemoMode={isDemoMode}
+                    isTester={isTester}
+                    flags={flags}
                 />
             )}
 
-            {/* 2.3 MINHA EVOLUÇÃO — ONDA 1 (compact, dados da onda 1) */}
-            {!isIcarai && (
+            {/* 2.2 SUA ÁREA — ONDA 1 */}
+            {!loadingWave1 && myAreaStats && flags.tasks && (
+                <MyAreaTodayCard stats={myAreaStats} primaryAction={actions.area} />
+            )}
+
+            {/* SEMANA PERFEITA — ONDA 2 */}
+            {!loadingWave2 && flags.gamification && (
                 <WeeklyProgressBar 
                     variant="compact"
                     weeklyPoints={monthlyPoints}
@@ -235,42 +240,29 @@ export default function OperatorHome({
                 />
             )}
 
-            {/* 2.4 VISÃO DA CASA — ONDA 1 (self-contained, busca seus próprios dados) */}
-            {!isIcarai && <HouseView />}
-
             {/* 3. MURAL — ONDA 2 */}
-            {!isIcarai && (
+            {!loadingWave2 && flags.mural && (
                 <div id="mural">
-                    {loadingWave2 ? (
-                        <SkeletonCard h="h-32" />
-                    ) : (
-                        <OperationalNoticeCard notices={notices} birthdays={birthdays} userId={userId} isDemoMode={isDemoMode} />
-                    )}
+                    <OperationalNoticeCard notices={notices} birthdays={birthdays} userId={userId} isDemoMode={isDemoMode} />
                 </div>
             )}
 
             {/* 4. HERO — ONDA 2 */}
-            {!isIcarai && (
-                loadingWave2 ? (
-                    <SkeletonCard h="h-52" />
-                ) : (
-                    <OperationHeroCard
-                        score={healthScore}
-                        activeLeaks={activeLeaks}
-                        weeklyLeaks={weeklyLeaks}
-                        cmvCurrent={undefined}
-                        cmvTarget={undefined}
-                        cmvStatus={undefined}
-                        focus={weeklyFocus}
-                        userRole={userRole}
-                        onViewGlobalClick={onViewGlobalClick}
-                        onUpdateFocus={onUpdateFocus}
-                    />
-                )
+            {!loadingWave2 && flags.mural && (
+                <OperationHeroCard
+                    score={healthScore}
+                    activeLeaks={activeLeaks}
+                    weeklyLeaks={weeklyLeaks}
+                    cmvStatus={cmvStatus?.status}
+                    focus={weeklyFocus}
+                    userRole={userRole}
+                    onViewGlobalClick={onViewGlobalClick}
+                    onUpdateFocus={onUpdateFocus}
+                />
             )}
 
             {/* 6. APOIO — IA — ONDA 2 */}
-            {!isIcarai && !loadingWave2 && (
+            {!loadingWave2 && (
                 <button
                     onClick={onOpenAI}
                     className="w-full flex items-center gap-3 p-4 rounded-2xl bg-[#fffcf0] border border-[#fef3c7] shadow-sm active:scale-[0.98] transition-all text-left cursor-pointer group animate-in fade-in duration-700"
@@ -286,11 +278,14 @@ export default function OperatorHome({
                 </button>
             )}
 
-            <RaffleDrawer 
-                isOpen={isRaffleOpen} 
-                onClose={() => setIsRaffleOpen(false)} 
-                ticketCount={isDemoMode ? 12 : 0} 
-            />
+            {/* GAVETA DE PRÊMIOS — ONDA 2 */}
+            {!loadingWave2 && flags.gamification && (
+                <RaffleDrawer
+                    isOpen={isRaffleOpen}
+                    onClose={() => setIsRaffleOpen(false)}
+                    ticketCount={isDemoMode ? 12 : 0}
+                />
+            )}
         </div>
     )
 }

@@ -1,27 +1,56 @@
 'use client'
 
 import React from 'react'
-import { Home, ClipboardList, LayoutGrid, Bell, User } from 'lucide-react'
+import { Home, ClipboardList, LayoutGrid, Bell, User, CalendarDays, RadioReceiver, Trophy, PackageX } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useDashboardIdentity } from '../../hooks/useDashboardIdentity'
+import { getUnitFeatureFlags } from '@/lib/feature-flags'
 
 export default function BottomNav() {
   const pathname = usePathname()
-  const { unitName } = useDashboardIdentity()
-  const isIcarai = unitName?.includes('Icaraí')
-  
-  const allNavItems = [
-    { id: 'home', label: 'Hoje', icon: Home, url: '/dashboard' },
-    { id: 'tasks', label: 'Tarefas', icon: ClipboardList, url: '/dashboard/routines' },
-    { id: 'areas', label: 'Áreas', icon: LayoutGrid, url: '/dashboard/areas' },
-    { id: 'mural', label: 'Mural', icon: Bell, url: '/dashboard/mural' },
-    { id: 'profile', label: 'Perfil', icon: User, url: '/dashboard/profile' },
+  const { unitId } = useDashboardIdentity()
+  const flags = getUnitFeatureFlags(unitId)
+
+  const navItems = [
+    {
+      label: 'Hoje',
+      icon: CalendarDays,
+      href: '/dashboard',
+      activePattern: /^\/dashboard(\/(routines|count|checklist)(\/.*)?)?$/,
+      show: true
+    },
+    {
+      label: 'Mural',
+      icon: RadioReceiver,
+      href: '/dashboard/mural',
+      activePattern: /^\/dashboard\/mural(\/.*)?$/,
+      show: flags.mural
+    },
+    {
+      label: 'Ranking',
+      icon: Trophy,
+      href: '/dashboard/ranking',
+      activePattern: /^\/dashboard\/ranking(\/.*)?$/,
+      show: flags.gamification
+    },
+    {
+      label: 'Perdas',
+      icon: PackageX,
+      href: '/dashboard/losses',
+      activePattern: /^\/dashboard\/losses(\/.*)?$/,
+      show: flags.losses
+    },
+    {
+      label: 'Perfil',
+      icon: User,
+      href: '/dashboard/profile',
+      activePattern: /^\/dashboard\/profile(\/.*)?$/,
+      show: flags.profile
+    }
   ]
 
-  const navItems = isIcarai 
-    ? allNavItems.filter(item => item.id === 'home' || item.id === 'profile')
-    : allNavItems
+  const visibleItems = navItems.filter(item => item.show)
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden pb-safe">
@@ -29,17 +58,17 @@ export default function BottomNav() {
       <div className="absolute inset-0 bg-white/80 backdrop-blur-xl border-t border-gray-100 shadow-[0_-8px_24px_rgba(0,0,0,0.05)]" />
       
       <div className="relative flex items-center justify-around h-16 px-2">
-        {navItems.map((item) => {
-          const isActive = item.url === '/dashboard' 
+        {visibleItems.map((item) => {
+          const isActive = item.href === '/dashboard' 
             ? pathname === '/dashboard' 
-            : pathname.startsWith(item.url)
+            : pathname.startsWith(item.href) || item.activePattern.test(pathname)
           
           const Icon = item.icon
           
           return (
             <Link 
-              key={item.id} 
-              href={item.url}
+              key={item.label} 
+              href={item.href}
               className={`flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all active:scale-90 ${
                 isActive ? 'text-[#B13A2B]' : 'text-gray-400'
               }`}

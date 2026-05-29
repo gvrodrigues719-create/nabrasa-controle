@@ -104,7 +104,7 @@ export async function getActiveOperator() {
     if (!session) return null
     const decrypted = decryptId(session)
     if (!decrypted) return null
-    return JSON.parse(decrypted) as { userId: string, name: string, role: string }
+    return JSON.parse(decrypted) as { userId: string, name: string, role: string, unitId?: string }
 }
 
 export async function getActiveEmployeesAction() {

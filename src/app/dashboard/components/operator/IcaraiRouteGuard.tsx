@@ -3,37 +3,36 @@
 import { useEffect } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useDashboardIdentity } from '../../hooks/useDashboardIdentity'
+import { getUnitFeatureFlags } from '@/lib/feature-flags'
 
 export default function IcaraiRouteGuard({ children }: { children: React.ReactNode }) {
-    const { unitName, loadingIdentity } = useDashboardIdentity()
+    const { unitId, loadingIdentity } = useDashboardIdentity()
     const router = useRouter()
     const pathname = usePathname()
 
     useEffect(() => {
-        if (loadingIdentity || !unitName) return
+        if (loadingIdentity) return
 
-        const isIcarai = unitName.includes('Icaraí')
+        const flags = getUnitFeatureFlags(unitId)
         
-        if (isIcarai && pathname) {
-            // Blocked routes for Icaraí
-            const blockedPaths = [
-                '/dashboard/mural',
-                '/dashboard/areas',
-                '/dashboard/checklist',
-                '/dashboard/kitchen',
-                '/dashboard/admin',
-                '/dashboard/losses',
-                '/dashboard/cmv'
+        if (flags.isContagemOnly && pathname) {
+            // Allowlist para Icaraí (Contagem Only)
+            const allowedPaths = [
+                '/dashboard',
+                '/dashboard/profile',
+                '/dashboard/routines',
+                '/dashboard/count',
+                '/dashboard/history'
             ]
 
-            const isBlocked = blockedPaths.some(p => pathname.startsWith(p))
+            const isAllowed = allowedPaths.some(p => pathname === p || pathname.startsWith(p + '/'))
 
-            if (isBlocked) {
-                // Redirect back to dashboard home if trying to access a blocked route
+            if (!isAllowed) {
+                // Redireciona de volta para a Home se tentar acessar uma rota não permitida (Mural, Perdas, etc.)
                 router.replace('/dashboard')
             }
         }
-    }, [unitName, loadingIdentity, pathname, router])
+    }, [unitId, loadingIdentity, pathname, router])
 
     return <>{children}</>
 }

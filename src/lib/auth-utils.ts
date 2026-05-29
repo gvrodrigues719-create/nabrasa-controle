@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/supabase/server'
 import { getActiveOperator } from '@/app/actions/pinAuth'
+import { ICARAI_UNIT_ID } from '@/lib/feature-flags'
 
 function getServiceSupabase() {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -41,7 +42,7 @@ export async function getAuthenticatedUserContext() {
             if (supabaseAdmin) {
                 const { data: profile } = await supabaseAdmin
                     .from('users')
-                    .select('name, role, active')
+                    .select('name, role, active, unit_id')
                     .eq('id', user.id)
                     .single()
 
@@ -49,6 +50,7 @@ export async function getAuthenticatedUserContext() {
                     userId: user.id,
                     name: profile?.name || user.email,
                     role: profile?.role || 'operator',
+                    unitId: profile?.unit_id,
                     source: 'supabase'
                 }
             }
@@ -61,10 +63,21 @@ export async function getAuthenticatedUserContext() {
     try {
         const op = await getActiveOperator()
         if (op) {
+            // Need to fetch unit_id since cookie payload might not have it
+            let unitId = op.unitId;
+            if (!unitId) {
+                const supabaseAdmin = getServiceSupabase()
+                if (supabaseAdmin) {
+                    const { data: profile } = await supabaseAdmin.from('users').select('unit_id').eq('id', op.userId).single()
+                    unitId = profile?.unit_id
+                }
+            }
+
             return {
                 userId: op.userId,
                 name: op.name,
                 role: op.role,
+                unitId: unitId,
                 source: 'pin'
             }
         }
@@ -88,7 +101,7 @@ export async function getAuthenticatedUserId() {
  */
 export async function requireNotIcarai() {
     const ctx = await getAuthenticatedUserContext()
-    if (ctx?.name?.includes('Icaraí')) {
+    if (ctx?.unitId === ICARAI_UNIT_ID) {
         throw new Error('Acesso negado: Funcionalidade não liberada para a Operação Icaraí no momento.')
     }
 }
