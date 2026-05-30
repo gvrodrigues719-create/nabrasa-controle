@@ -1,23 +1,29 @@
-import { createClient } from '@supabase/supabase-js'
-import * as dotenv from 'dotenv'
-import * as fs from 'fs'
-import * as path from 'path'
+import * as dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+import fs from 'fs';
+import path from 'path';
+import { Client } from 'pg';
 
-dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
-
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
-async function runMigration() {
-    const sql = fs.readFileSync(path.join(process.cwd(), 'supabase/migrations/20260508_kitchen_count_adjustments.sql'), 'utf8')
-    const { data, error } = await supabase.rpc('exec_sql', { sql })
-    if (error) {
-        console.error('ERROR:', error)
-        return
+async function run() {
+    const connectionString = process.env.SUPABASE_DB_URL;
+    if (!connectionString) {
+        console.error("Missing SUPABASE_DB_URL in .env.local");
+        return;
     }
-    console.log('Migration executed successfully')
+    
+    const client = new Client({ connectionString });
+    await client.connect();
+
+    const sql = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20260529_count_operation_logs.sql'), 'utf-8');
+    
+    try {
+        await client.query(sql);
+        console.log("Migration executada com sucesso!");
+    } catch (e) {
+        console.error("Erro na migration:", e);
+    } finally {
+        await client.end();
+    }
 }
 
-runMigration()
+run();

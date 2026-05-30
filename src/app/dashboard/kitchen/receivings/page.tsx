@@ -397,18 +397,23 @@ export default function ReceivingsPage() {
                 </div>
                 {r.items && r.items.length > 0 ? (
                     <div className="space-y-1">
-                        {r.items.slice(0, 3).map(item => (
+                        {!isExpanded && r.items.slice(0, 3).map(item => (
                             <div key={item.id} className="flex items-center justify-between text-xs">
                                 <span className="text-gray-600 font-medium truncate">{item.item_name}</span>
                                 <span className="text-gray-400 shrink-0 ml-2">{item.expected_qty ? `${item.expected_qty} ${item.unit || 'un'}` : '—'}</span>
                             </div>
                         ))}
-                        {r.items.length > 3 && (
-                            <p className="text-[10px] font-bold text-gray-400 italic pt-1">+ {r.items.length - 3} itens</p>
-                        )}
+                        <button onClick={() => setExpandedCardId(isExpanded ? null : r.id)} className="w-full text-left py-1 text-[11px] font-bold text-blue-600 hover:text-blue-800 transition-colors">
+                            {isExpanded ? 'Ocultar itens ↑' : (r.items.length > 3 ? `Ver todos os ${r.items.length} itens ↓` : 'Ver itens da entrega ↓')}
+                        </button>
                     </div>
                 ) : (
-                    <p className="text-[11px] text-gray-300 italic">Itens não detalhados</p>
+                    <div className="flex items-center justify-between">
+                        <p className="text-[11px] text-gray-300 italic">Itens não detalhados</p>
+                        <button onClick={() => setExpandedCardId(isExpanded ? null : r.id)} className="text-[11px] font-bold text-blue-600 hover:text-blue-800 transition-colors">
+                            {isExpanded ? 'Ocultar detalhes ↑' : 'Ver detalhes ↓'}
+                        </button>
+                    </div>
                 )}
                 {r.notes && r.notes !== 'Importado do De-Para' && <p className="text-[11px] text-gray-400 bg-gray-50 p-2 rounded-lg">{r.notes}</p>}
                 {r.reception_notes && <p className="text-[11px] text-green-600 bg-green-50 p-2 rounded-lg">Obs: {r.reception_notes}</p>}
@@ -416,12 +421,9 @@ export default function ReceivingsPage() {
                 {r.priority === 'alta' && <span className="inline-block text-[10px] font-black text-red-600 bg-red-50 px-2 py-0.5 rounded-md uppercase">Alta prioridade</span>}
                 {isActionable && (
                     <div className="flex gap-2 pt-1">
-                        <button onClick={() => { setActionModal({ type: 'deliver', receiving: r }); setActionNotes('') }} className="flex-1 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition-colors">Recebido</button>
+                        <button onClick={() => { setActionModal({ type: 'deliver', receiving: r }); setActionNotes('') }} className="flex-1 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition-colors">Receber</button>
                         <button onClick={() => { setActionModal({ type: 'partial', receiving: r }); setActionNotes(''); setActionReason('') }} className="flex-1 py-2 rounded-xl bg-yellow-50 text-yellow-700 text-xs font-bold hover:bg-yellow-100 transition-colors">Parcial</button>
                         <button onClick={() => { setActionModal({ type: 'refuse', receiving: r }); setActionNotes(''); setActionReason('') }} className="flex-1 py-2 rounded-xl bg-red-50 text-red-700 text-xs font-bold hover:bg-red-100 transition-colors">Recusar</button>
-                        <button onClick={() => setExpandedCardId(isExpanded ? null : r.id)} className="px-3 py-2 rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors">
-                            <MoreHorizontal className="w-4 h-4" />
-                        </button>
                     </div>
                 )}
                 {(!isActionable && r.status === 'partial') && (
@@ -429,9 +431,6 @@ export default function ReceivingsPage() {
                         <button onClick={() => openEdit(r)} className="flex-1 py-2 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100 transition-colors">Editar</button>
                         <button onClick={() => { setActionModal({ type: 'deliver', receiving: r }); setActionNotes('') }} className="flex-1 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition-colors">Receber Restante</button>
                         <button onClick={() => { setActionModal({ type: 'refuse', receiving: r }); setActionNotes(''); setActionReason('') }} className="flex-1 py-2 rounded-xl bg-red-50 text-red-700 text-xs font-bold hover:bg-red-100 transition-colors">Recusar Restante</button>
-                        <button onClick={() => setExpandedCardId(isExpanded ? null : r.id)} className="px-3 py-2 rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors">
-                            <MoreHorizontal className="w-4 h-4" />
-                        </button>
                     </div>
                 )}
                 {!isActionable && r.status !== 'partial' && (
@@ -456,7 +455,6 @@ export default function ReceivingsPage() {
                             })) || []);
                             setShowCreate(true);
                         }} className="flex-1 py-2 rounded-xl bg-gray-50 text-gray-600 text-xs font-bold hover:bg-gray-100 transition-colors">Duplicar para hoje</button>
-                        <button onClick={() => setExpandedCardId(isExpanded ? null : r.id)} className="flex-1 py-2 rounded-xl bg-white border border-gray-100 text-gray-500 text-xs font-bold hover:bg-gray-50 transition-colors">Ver detalhes</button>
                     </div>
                 )}
                 {isExpanded && (
