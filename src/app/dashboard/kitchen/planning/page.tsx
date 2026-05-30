@@ -444,7 +444,7 @@ export default function ProductionPlanningPage() {
             </main>
 
             {/* Footer Action */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-orange-100/50">
+            <div className="fixed bottom-16 md:bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-orange-100/50 pb-safe">
                 <div className="max-w-5xl mx-auto flex justify-end">
                     <button 
                         onClick={handleApprove}

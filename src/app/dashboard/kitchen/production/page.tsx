@@ -497,7 +497,7 @@ export default function ProductionPage() {
 
             {/* ── FAB ─────────────────────────────────────────────────────── */}
             {canRegister && (
-                <div className="fixed bottom-6 left-0 right-0 flex justify-center z-30 pointer-events-none">
+                <div className="fixed bottom-24 md:bottom-6 left-0 right-0 flex justify-center z-30 pointer-events-none">
                     <button onClick={openForm} id="btn-open-production-form"
                         className="pointer-events-auto flex items-center gap-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black text-sm px-6 py-3.5 rounded-2xl shadow-xl shadow-emerald-300/50 transition-all">
                         <Plus className="w-5 h-5" />

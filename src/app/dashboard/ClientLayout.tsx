@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase/client'
 import { ConfirmModal } from '@/components/ConfirmModal'
 import { logoutOperator } from '@/app/actions/pinAuth'
 import BottomNav from './components/operator/BottomNav'
+import KitchenBottomNav from './components/operator/KitchenBottomNav'
 import IcaraiRouteGuard from './components/operator/IcaraiRouteGuard'
 
 export default function ClientDashboardLayout({
@@ -23,8 +24,13 @@ export default function ClientDashboardLayout({
     const router = useRouter()
     const pathname = usePathname()
 
-    const isExecutionPage = pathname?.includes('/routines/') || pathname?.includes('/checklist/') || pathname?.includes('/count/') || pathname?.includes('/purchases') || pathname?.includes('/kitchen')
-    const showBottomNav = !isExecutionPage
+    const isKitchen = initialOp?.role === 'kitchen' || initialOp?.name === 'Cozinha Central'
+    const isNormalExecutionPage = pathname?.includes('/routines/') || pathname?.includes('/checklist/') || pathname?.includes('/count/') || pathname?.includes('/purchases')
+    const showNormalBottomNav = !isKitchen && !isNormalExecutionPage
+
+    const isKitchenExecutionPage = pathname?.match(/\/dashboard\/count\/.+/) || pathname?.match(/\/dispatch$/) || pathname?.match(/\/dashboard\/purchases\/.+/) || pathname?.match(/\/history\/[0-9a-fA-F-]+$/)
+    const showKitchenBottomNav = isKitchen && !isKitchenExecutionPage
+    const isAnyNavVisible = showNormalBottomNav || showKitchenBottomNav
 
     // Guarda complementar: detecta expiração de sessão em tempo real
     useEffect(() => {
@@ -66,12 +72,13 @@ export default function ClientDashboardLayout({
                     </div>
                 </div>
             </header>
-            <main className={`max-w-md lg:max-w-6xl mx-auto relative z-0 ${showBottomNav ? 'pb-24' : 'pb-6'}`}>
+            <main className={`max-w-md lg:max-w-6xl mx-auto relative z-0 ${isAnyNavVisible ? 'pb-24' : 'pb-6'}`}>
                 <IcaraiRouteGuard>
                     {children}
                 </IcaraiRouteGuard>
             </main>
-            {showBottomNav && <BottomNav />}
+            {showNormalBottomNav && <BottomNav />}
+            {showKitchenBottomNav && <KitchenBottomNav />}
         </div>
     )
 }
