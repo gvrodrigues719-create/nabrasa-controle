@@ -403,14 +403,14 @@ export default function ReceivingsPage() {
                                 <span className="text-gray-400 shrink-0 ml-2">{item.expected_qty ? `${item.expected_qty} ${item.unit || 'un'}` : '—'}</span>
                             </div>
                         ))}
-                        <button onClick={() => setExpandedCardId(isExpanded ? null : r.id)} className="w-full text-left py-1 text-[11px] font-bold text-blue-600 hover:text-blue-800 transition-colors">
-                            {isExpanded ? 'Ocultar itens ↑' : (r.items.length > 3 ? `Ver todos os ${r.items.length} itens ↓` : 'Ver itens da entrega ↓')}
+                        <button onClick={() => setExpandedCardId(isExpanded ? null : r.id)} className="w-full text-center py-2.5 mt-1 rounded-xl bg-blue-50/50 text-xs font-bold text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors border border-blue-100/50">
+                            {isExpanded ? 'Ocultar detalhes ↑' : (r.items.length > 3 ? `Ver todos os ${r.items.length} itens ↓` : 'Ver detalhes da entrega ↓')}
                         </button>
                     </div>
                 ) : (
-                    <div className="flex items-center justify-between">
-                        <p className="text-[11px] text-gray-300 italic">Itens não detalhados</p>
-                        <button onClick={() => setExpandedCardId(isExpanded ? null : r.id)} className="text-[11px] font-bold text-blue-600 hover:text-blue-800 transition-colors">
+                    <div className="flex items-center justify-between gap-2 mt-1">
+                        <p className="text-[11px] text-gray-300 italic flex-1">Itens não detalhados</p>
+                        <button onClick={() => setExpandedCardId(isExpanded ? null : r.id)} className="px-4 py-2 rounded-xl bg-blue-50/50 text-xs font-bold text-blue-600 hover:bg-blue-100 hover:text-blue-800 transition-colors border border-blue-100/50">
                             {isExpanded ? 'Ocultar detalhes ↑' : 'Ver detalhes ↓'}
                         </button>
                     </div>
