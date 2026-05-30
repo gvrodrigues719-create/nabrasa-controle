@@ -79,7 +79,6 @@ export default function ItemsPage() {
 
         toast.success(`Item ${isEditing === 'new' ? 'criado' : 'atualizado'} com sucesso!`)
         setIsEditing(null)
-        setSearchQuery('') // Bug 6: limpa busca após salvar
         resetForm()
         fetchData()
     }

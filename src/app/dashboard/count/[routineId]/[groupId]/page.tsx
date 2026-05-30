@@ -29,9 +29,10 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     const [syncStatus, setSyncStatus] = useState<'synced' | 'saving' | 'offline'>('synced')
     const [isConfirming, setIsConfirming] = useState(false)
 
-    const LOCAL_KEY = `count_${routineId}_${groupId}`
-    // Keep a ref so debouncedSync always sees the current sessionId
+    // Keep refs so closures always see current values without stale captures
     const sessionIdRef = useRef<string | null>(null)
+    // localKeyRef.current includes userId to prevent cross-user contamination on shared devices
+    const localKeyRef = useRef<string>('')
 
     useEffect(() => {
         initSession()
@@ -48,6 +49,8 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                 router.push('/login')
                 return
             }
+
+            localKeyRef.current = `count_${user.id}_${routineId}_${groupId}`
 
             const { data: group, error: groupErr } = await supabase
                 .from('groups').select('name').eq('id', groupId).single()
@@ -142,7 +145,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
             if (itemsData) setItems(itemsData)
 
             // Load previous answers: start with localStorage, then overlay DB values (DB wins)
-            const stored = localStorage.getItem(LOCAL_KEY)
+            const stored = localStorage.getItem(localKeyRef.current)
             const localDict: Record<string, string> = stored ? JSON.parse(stored) : {}
 
             if (currentSessionId) {
@@ -264,7 +267,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     const handleChange = (itemId: string, val: string) => {
         const newCounts = { ...counts, [itemId]: val }
         setCounts(newCounts)
-        localStorage.setItem(LOCAL_KEY, JSON.stringify(newCounts))
+        localStorage.setItem(localKeyRef.current, JSON.stringify(newCounts))
         debouncedSync(newCounts)
     }
 
@@ -363,7 +366,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
             return
         }
 
-        localStorage.removeItem(LOCAL_KEY)
+        localStorage.removeItem(localKeyRef.current)
         router.push(`/dashboard/routines/${routineId}`)
     }
 
@@ -478,7 +481,8 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                 </button>
                 <button
                     onClick={handleCompleteGroup}
-                    className={`flex-1 py-4 rounded-2xl font-bold flex justify-center items-center text-lg active:scale-95 transition shadow-sm ${itemsPendentes === 0 ? 'bg-green-500 text-white shadow-green-500/30' : 'bg-gray-200 text-gray-400'}`}
+                    disabled={isConfirming || syncStatus === 'saving'}
+                    className={`flex-1 py-4 rounded-2xl font-bold flex justify-center items-center text-lg transition shadow-sm ${isConfirming || syncStatus === 'saving' ? 'opacity-50 cursor-not-allowed' : 'active:scale-95'} ${itemsPendentes === 0 ? 'bg-green-500 text-white shadow-green-500/30' : 'bg-gray-200 text-gray-400'}`}
                 >
                     <Check className="w-6 h-6 mr-2" />
                     Concluir Grupo {itemsPendentes > 0 ? `(${itemsPendentes})` : ''}

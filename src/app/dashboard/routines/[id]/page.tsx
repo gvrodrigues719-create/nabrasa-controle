@@ -50,11 +50,14 @@ export default function RoutineDetailsPage({ params }: { params: Promise<{ id: s
             setHasSnapshot(isStartedToday)
 
             const { data: rGroups } = await supabase.from('routine_groups').select('groups(id, name)').eq('routine_id', routineId)
+            // Query all non-completed sessions (any date) to match the count page's
+            // session-lookup logic and prevent groups from appearing as "available"
+            // when an in_progress session from a previous day still exists.
             const { data: sessions } = await supabase
                 .from('count_sessions')
                 .select('id, group_id, status, updated_at, users(name)')
                 .eq('routine_id', routineId)
-                .gte('started_at', `${today}T00:00:00Z`)
+                .neq('status', 'completed')
 
             const mappedGroups: GroupStatus[] = rGroups?.map(rg => {
                 const group: any = rg.groups
