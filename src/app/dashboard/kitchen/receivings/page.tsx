@@ -410,14 +410,14 @@ export default function ReceivingsPage() {
                 ) : (
                     <p className="text-[11px] text-gray-300 italic">Itens não detalhados</p>
                 )}
-                {r.notes && <p className="text-[11px] text-gray-400 bg-gray-50 p-2 rounded-lg">{r.notes}</p>}
+                {r.notes && r.notes !== 'Importado do De-Para' && <p className="text-[11px] text-gray-400 bg-gray-50 p-2 rounded-lg">{r.notes}</p>}
                 {r.reception_notes && <p className="text-[11px] text-green-600 bg-green-50 p-2 rounded-lg">Obs: {r.reception_notes}</p>}
                 {r.refusal_reason && <p className="text-[11px] text-red-600 bg-red-50 p-2 rounded-lg">Motivo: {r.refusal_reason}</p>}
                 {r.priority === 'alta' && <span className="inline-block text-[10px] font-black text-red-600 bg-red-50 px-2 py-0.5 rounded-md uppercase">Alta prioridade</span>}
                 {isActionable && (
                     <div className="flex gap-2 pt-1">
                         <button onClick={() => { setActionModal({ type: 'deliver', receiving: r }); setActionNotes('') }} className="flex-1 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition-colors">Recebido</button>
-                        <button onClick={() => { setActionModal({ type: 'partial', receiving: r }); setActionNotes('') }} className="flex-1 py-2 rounded-xl bg-yellow-50 text-yellow-700 text-xs font-bold hover:bg-yellow-100 transition-colors">Parcial</button>
+                        <button onClick={() => { setActionModal({ type: 'partial', receiving: r }); setActionNotes(''); setActionReason('') }} className="flex-1 py-2 rounded-xl bg-yellow-50 text-yellow-700 text-xs font-bold hover:bg-yellow-100 transition-colors">Parcial</button>
                         <button onClick={() => { setActionModal({ type: 'refuse', receiving: r }); setActionNotes(''); setActionReason('') }} className="flex-1 py-2 rounded-xl bg-red-50 text-red-700 text-xs font-bold hover:bg-red-100 transition-colors">Recusar</button>
                         <button onClick={() => setExpandedCardId(isExpanded ? null : r.id)} className="px-3 py-2 rounded-xl bg-gray-50 text-gray-700 hover:bg-gray-100 transition-colors">
                             <MoreHorizontal className="w-4 h-4" />
@@ -460,7 +460,27 @@ export default function ReceivingsPage() {
                     </div>
                 )}
                 {isExpanded && (
-                    <div className="flex gap-2 pt-2 border-t border-gray-100 mt-2">
+                    <div className="pt-2 border-t border-gray-100 mt-2 space-y-2">
+                        {r.items && r.items.length > 0 && (
+                            <div className="space-y-1.5 mb-2">
+                                <h5 className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Itens da Entrega</h5>
+                                {r.items.map(item => (
+                                    <div key={item.id} className="text-[11px] bg-gray-50 rounded p-1.5 flex flex-col gap-1 border border-gray-100">
+                                        <div className="flex justify-between items-center font-bold text-gray-700">
+                                            <span>{item.item_name}</span>
+                                            <span>{item.expected_qty} {item.unit || 'un'}</span>
+                                        </div>
+                                        {item.notes && item.notes !== 'Importado do De-Para' && (
+                                            <p className="text-gray-500 italic text-[10px]">Obs: {item.notes}</p>
+                                        )}
+                                        {item.item_status && item.item_status !== 'pending' && (
+                                            <p className="text-blue-500 text-[10px] font-medium">Status: {item.item_status}</p>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        <div className="flex gap-2">
                         {(r.status === 'scheduled' || r.status === 'partial') && (
                             <>
                                 <button onClick={() => openEdit(r)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100 transition-colors">
@@ -471,6 +491,7 @@ export default function ReceivingsPage() {
                                 </button>
                             </>
                         )}
+                        </div>
                     </div>
                 )}
             </div>
@@ -805,36 +826,50 @@ export default function ReceivingsPage() {
             {/* Action Modal */}
             {actionModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-                    <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl">
-                        <div className="p-5 border-b border-gray-100">
+                    <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+                        <div className="p-5 border-b border-gray-100 shrink-0">
                             <h2 className="text-base font-black text-gray-900">
-                                {actionModal.type === 'deliver' ? 'Confirmar recebimento?' : actionModal.type === 'partial' ? 'Entrega parcial' : actionModal.type === 'refuse' ? 'Recusar entrega' : 'Cancelar Entrega'}
+                                {actionModal.type === 'deliver' ? `Confirmar recebimento da entrega ${actionModal.receiving.supplier_name || actionModal.receiving.title}?` : actionModal.type === 'partial' ? 'Conferência de Entrega Parcial' : actionModal.type === 'refuse' ? 'Recusar entrega' : 'Cancelar Entrega'}
                             </h2>
-                            <p className="text-xs text-gray-400 mt-1">{actionModal.receiving.title}{actionModal.receiving.supplier_name ? ` — ${actionModal.receiving.supplier_name}` : ''}</p>
+                            {actionModal.type !== 'deliver' && (
+                                <p className="text-xs text-gray-400 mt-1">{actionModal.receiving.title}{actionModal.receiving.supplier_name ? ` — ${actionModal.receiving.supplier_name}` : ''}</p>
+                            )}
                             {actionModal.type === 'deliver' && <p className="text-xs text-gray-500 mt-2">Essa entrega será marcada como recebida.</p>}
                         </div>
-                        <div className="p-5 space-y-3">
+                        <div className="p-5 space-y-4 overflow-y-auto">
                             {actionModal.type === 'refuse' && (
                                 <div>
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1 block">Motivo *</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1 block">Motivo da Recusa *</label>
                                     <div className="space-y-1">
                                         {REFUSAL_REASONS.map(r => (
                                             <button key={r} onClick={() => setActionReason(r)} className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-colors ${actionReason === r ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-transparent'}`}>{r}</button>
                                         ))}
                                     </div>
-                                    <textarea value={actionNotes} onChange={e => setActionNotes(e.target.value)} rows={2} placeholder="Observação adicional..." className="w-full mt-2 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 resize-none" />
+                                    <textarea value={actionNotes} onChange={e => setActionNotes(e.target.value)} rows={2} placeholder="Observação adicional detalhando a recusa..." className="w-full mt-2 px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-400 resize-none" />
                                 </div>
                             )}
                             {actionModal.type === 'partial' && (
                                 <div>
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1 block">Motivo *</label>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-2 block">Itens da entrega (Conferência)</label>
+                                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1 mb-3">
+                                        {actionModal.receiving.items?.map(item => (
+                                            <div key={item.id} className="text-[11px] border border-gray-200 rounded-lg p-2 bg-gray-50 flex justify-between items-center shadow-sm">
+                                                <span className="font-bold text-gray-700">{item.item_name}</span>
+                                                <span className="text-gray-500">{item.expected_qty} {item.unit || 'un'}</span>
+                                            </div>
+                                        ))}
+                                        {(!actionModal.receiving.items || actionModal.receiving.items.length === 0) && (
+                                            <p className="text-xs text-gray-400 italic text-center py-2">Nenhum item detalhado nesta entrega.</p>
+                                        )}
+                                    </div>
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1 block">Motivo / Divergência Encontrada *</label>
                                     <div className="space-y-1 mb-2">
                                         {['Faltou item', 'Veio quantidade menor', 'Produto errado', 'Qualidade ruim', 'Fornecedor entregou incompleto', 'Outro'].map(r => (
                                             <button key={r} onClick={() => setActionReason(r)} className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-colors ${actionReason === r ? 'bg-yellow-100 text-yellow-700 border border-yellow-200' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-transparent'}`}>{r}</button>
                                         ))}
                                     </div>
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1 block">Observação *</label>
-                                    <textarea value={actionNotes} onChange={e => setActionNotes(e.target.value)} rows={3} placeholder="Descreva o que aconteceu..." className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-400 resize-none" />
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1 block">Observação Específica *</label>
+                                    <textarea value={actionNotes} onChange={e => setActionNotes(e.target.value)} rows={3} placeholder="Descreva quais itens vieram divergentes ou o que faltou..." className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-400 resize-none" />
                                 </div>
                             )}
                             {actionModal.type === 'deliver' && (
@@ -856,11 +891,11 @@ export default function ReceivingsPage() {
                                 </div>
                             )}
                         </div>
-                        <div className="px-5 pb-5 flex gap-3">
-                            <button onClick={() => { setActionModal(null); setActionNotes(''); setActionReason('') }} disabled={actionLoading} className="flex-1 py-3 rounded-2xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">Voltar</button>
+                        <div className="p-5 border-t border-gray-100 flex gap-3 bg-gray-50 shrink-0">
+                            <button onClick={() => { setActionModal(null); setActionNotes(''); setActionReason('') }} disabled={actionLoading} className="flex-1 py-3 rounded-2xl border border-gray-200 bg-white text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors">Cancelar</button>
                             <button onClick={handleAction} disabled={actionLoading} className={`flex-1 py-3 rounded-2xl text-sm font-bold text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50 ${actionModal.type === 'deliver' ? 'bg-emerald-600 hover:bg-emerald-700' : actionModal.type === 'partial' ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-red-500 hover:bg-red-600'}`}>
                                 {actionLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                                Confirmar
+                                {actionModal.type === 'deliver' ? 'Confirmar recebimento' : 'Confirmar'}
                             </button>
                         </div>
                     </div>
