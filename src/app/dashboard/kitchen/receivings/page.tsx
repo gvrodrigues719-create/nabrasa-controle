@@ -575,20 +575,31 @@ export default function ReceivingsPage() {
                             const isToday = dateStr === todayStr
                             const dateLabel = dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
                             return (
-                                <section key={dateStr}>
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <h2 className={`text-sm font-black ${isToday ? 'text-blue-700' : 'text-gray-700'}`}>
-                                            {isToday ? '📦 Hoje' : dayName} <span className="font-bold text-gray-400">— {dateLabel}</span>
-                                        </h2>
-                                        {items.length > 0 && <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">{items.length}</span>}
-                                    </div>
-                                    {items.length > 0 ? (
-                                        <div className="space-y-3">{items.map(renderCard)}</div>
-                                    ) : (
-                                        <div className="pl-1 flex items-center gap-2">
-                                            <p className="text-[11px] text-gray-300 italic">Nenhuma entrega prevista.</p>
-                                            <button onClick={() => { setShowCreate(true); setCreateForm(f => ({ ...f, delivery_date: dateStr })) }} className="text-[10px] font-bold text-gray-400 hover:text-blue-500 transition-colors">+</button>
+                                <section key={dateStr} className={isToday ? "pt-1" : "pt-4"}>
+                                    <div className={`mb-4 p-3.5 rounded-2xl border ${isToday ? 'bg-blue-50/50 border-blue-100' : 'bg-[#f4f2ee] border-gray-200/60'} flex items-center justify-between shadow-sm`}>
+                                        <div>
+                                            <h2 className={`text-sm font-black uppercase tracking-wider ${isToday ? 'text-blue-700' : 'text-gray-800'}`}>
+                                                {isToday ? 'Hoje' : dayName}
+                                            </h2>
+                                            <div className="flex items-center gap-1.5 mt-0.5">
+                                                <p className={`text-[11px] font-bold ${isToday ? 'text-blue-500' : 'text-gray-500'}`}>
+                                                    {dateLabel}
+                                                </p>
+                                                {items.length === 0 && (
+                                                    <p className="text-[11px] font-medium text-gray-400 italic">
+                                                        · nenhuma entrega prevista
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
+                                        {items.length > 0 && (
+                                            <span className={`text-[10px] font-black uppercase px-2.5 py-1.5 rounded-lg ${isToday ? 'bg-blue-100 text-blue-700' : 'bg-white border border-gray-200 text-gray-600 shadow-sm'}`}>
+                                                {items.length} {items.length === 1 ? 'entrega' : 'entregas'}
+                                            </span>
+                                        )}
+                                    </div>
+                                    {items.length > 0 && (
+                                        <div className="space-y-3">{items.map(renderCard)}</div>
                                     )}
                                 </section>
                             )
