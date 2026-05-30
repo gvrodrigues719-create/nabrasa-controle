@@ -1,0 +1,169 @@
+'use server'
+
+import { cookies } from 'next/headers'
+import { createClient } from '@supabase/supabase-js'
+import crypto from 'crypto'
+
+// Acesso irrestrito de backend (service_role) para poder verificar a tabela fechada
+const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+)
+
+function getSecret() {
+    const key = process.env.SESSION_ENCRYPTION_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (!key) return null
+    // Se a chave for menor que 32, o AES vai reclamar. Garantimos o tamanho.
+    if (key.length < 32) {
+        return Buffer.from(key.padEnd(32, '0')).slice(0, 32)
+    }
+    return Buffer.from(key).slice(0, 32)
+}
+
+function encryptId(text: string) {
+    const secret = getSecret()
+    if (!secret) return text 
+    const iv = crypto.randomBytes(16)
+    const cipher = crypto.createCipheriv('aes-256-cbc', secret, iv)
+    let encrypted = cipher.update(text)
+    encrypted = Buffer.concat([encrypted, cipher.final()])
+    return iv.toString('hex') + ':' + encrypted.toString('hex')
+}
+
+function decryptId(text: string) {
+    try {
+        const secret = getSecret()
+        if (!secret) return null
+        const textParts = text.split(':')
+        const iv = Buffer.from(textParts.shift()!, 'hex')
+        const encryptedText = Buffer.from(textParts.join(':'), 'hex')
+        const decipher = crypto.createDecipheriv('aes-256-cbc', secret, iv)
+        let decrypted = decipher.update(encryptedText)
+        decrypted = Buffer.concat([decrypted, decipher.final()])
+        return decrypted.toString()
+    } catch {
+        return null
+    }
+}
+
+export async function loginOperatorWithPin(userId: string, pin: string) {
+    const { data: isValid, error } = await supabase.rpc('verify_user_pin', { p_user_id: userId, p_pin: pin })
+
+    if (error || !isValid) {
+        return { success: false, error: 'PIN Incorreto ou usuário sem PIN configurado.' }
+    }
+
+    const { data: usr } = await supabase.from('users').select('name, role').eq('id', userId).single()
+
+    const payload = JSON.stringify({ userId, name: usr?.name, role: usr?.role })
+    const cookieStore = await cookies()
+    cookieStore.set('operator_session', encryptId(payload), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 12 // 12 horas de sessão operacional
+    })
+
+    return { success: true }
+}
+
+export async function syncManagerCookie(userId: string) {
+    const { data: usr } = await supabase.from('users').select('name, role').eq('id', userId).single()
+    if (!usr) return { success: false, error: 'User info not found' }
+
+    const payload = JSON.stringify({ userId, name: usr.name, role: usr.role })
+    const cookieStore = await cookies()
+    cookieStore.set('operator_session', encryptId(payload), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7 // 7 dias para gerente
+    })
+    return { success: true }
+}
+
+export async function logoutOperator() {
+    const cookieStore = await cookies()
+    cookieStore.delete('operator_session')
+    return { success: true }
+}
+
+export async function getActiveOperator() {
+    if (process.env.DEV_AUTH_BYPASS === 'true') {
+        const isProd = process.env.NODE_ENV === 'production'
+        if (!isProd) {
+            return { userId: 'b4ac5ffd-40c3-46b1-9508-a1219cb925b6', name: 'Admin (Bypass)', role: 'admin' }
+        } else {
+            console.error("❌ DEV_AUTH_BYPASS proibido em produção!")
+        }
+    }
+    const cookieStore = await cookies()
+    const session = cookieStore.get('operator_session')?.value
+    if (!session) return null
+    const decrypted = decryptId(session)
+    if (!decrypted) return null
+    return JSON.parse(decrypted) as { userId: string, name: string, role: string, unitId?: string }
+}
+
+export async function getActiveEmployeesAction() {
+    try {
+        const cookieStore = await cookies()
+        const session = cookieStore.get('operator_session')?.value
+        if (!session) {
+            // Fallback para admin logado via Supabase Auth
+            const { createServerClient } = await import('@/lib/supabase/server')
+            const supabaseServer = await createServerClient()
+            const { data: { user } } = await supabaseServer.auth.getUser()
+            if (!user) throw new Error('Acesso negado')
+        }
+
+        // Para simplificar, vamos usar o helper central que já trata ambos os casos
+        const { getServerAuthContext } = await import('@/lib/server-auth-context')
+        const user = await getServerAuthContext()
+        
+        if (user.role !== 'admin' && user.role !== 'manager') {
+            throw new Error('Acesso negado: Apenas gestores podem visualizar a lista de colaboradores.')
+        }
+
+        const { data, error } = await supabase.from('users').select('id, name, role').eq('active', true).order('name')
+        if (error) return { success: false, error: error.message }
+        return { success: true, data }
+    } catch (e: any) {
+        return { success: false, error: e.message }
+    }
+}
+
+export async function getPinLoginOperatorsAction() {
+    try {
+        // Busca apenas usuários ativos que tenham PIN configurado
+        // Não requer autenticação, mas retorna apenas id e name para não vazar dados
+        const { data, error } = await supabase
+            .from('users')
+            .select(`
+                id,
+                name,
+                user_pin_credentials!inner (user_id)
+            `)
+            .eq('active', true)
+            .in('role', ['operator', 'kitchen', 'manager', 'admin'])
+            .order('name');
+
+        if (error) {
+            console.error("Erro ao buscar operadores com PIN:", error);
+            return { success: false, error: 'Erro ao buscar operadores' };
+        }
+
+        // Limpa o retorno para não expor os detalhes do inner join
+        const cleanData = data.map(user => ({
+            id: user.id,
+            name: user.name
+        }));
+
+        return { success: true, data: cleanData };
+    } catch (e: any) {
+        console.error("Exceção ao buscar operadores com PIN:", e);
+        return { success: false, error: 'Erro interno ao buscar operadores' };
+    }
+}

@@ -1,12 +1,48 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { LayoutGrid, Package, CalendarSync, History, TrendingUp } from 'lucide-react'
+import { LayoutGrid, Package, CalendarSync, History, TrendingUp, ClipboardCheck, Bell, Activity, ShoppingCart, Eye, CalendarSearch } from 'lucide-react'
 
 export default function AdminHome() {
     const router = useRouter()
     return (
         <div className="p-4 space-y-2">
+
+            {/* ── AUDITORIA MASTER — DESTAQUE PRINCIPAL ──────────── */}
+            <button
+                onClick={() => router.push('/dashboard/admin/history/sessions')}
+                className="w-full bg-gradient-to-br from-indigo-600 to-indigo-800 p-6 rounded-[28px] flex items-center text-left shadow-xl shadow-indigo-200 space-x-4 active:scale-95 transition-all"
+            >
+                <div className="bg-white/20 p-3.5 rounded-2xl shrink-0">
+                    <Eye className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1">
+                    <p className="text-indigo-200 text-[10px] font-black uppercase tracking-widest mb-0.5">Acesso Rápido</p>
+                    <h3 className="font-black text-white text-xl leading-tight">Ver Contagens</h3>
+                    <p className="text-indigo-200 text-sm mt-0.5">Todas as sessões em tempo real</p>
+                </div>
+                <div className="bg-white/10 px-3 py-1.5 rounded-xl">
+                    <span className="text-white text-[10px] font-black uppercase tracking-widest">Abrir →</span>
+                </div>
+            </button>
+
+            {/* ── HISTÓRICO DE CONTAGENS ──────────────────────────── */}
+            <button
+                onClick={() => router.push('/dashboard/admin/counts/history')}
+                className="w-full bg-gradient-to-br from-emerald-600 to-emerald-800 p-5 rounded-[28px] flex items-center text-left shadow-lg shadow-emerald-200 space-x-4 active:scale-95 transition-all mb-4"
+            >
+                <div className="bg-white/20 p-3 rounded-2xl shrink-0">
+                    <CalendarSearch className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                    <p className="text-emerald-200 text-[10px] font-black uppercase tracking-widest mb-0.5">Conferência & Auditoria</p>
+                    <h3 className="font-black text-white text-lg leading-tight">Histórico de Contagens</h3>
+                    <p className="text-emerald-200 text-xs mt-0.5">Filtrar, conferir e exportar Excel</p>
+                </div>
+                <div className="bg-white/10 px-3 py-1.5 rounded-xl">
+                    <span className="text-white text-[10px] font-black uppercase tracking-widest">Abrir →</span>
+                </div>
+            </button>
 
             {/* ── MÓDULOS DE ESTOQUE / OPERAÇÃO ──────────────────── */}
             <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest pl-1 mb-3">Operação</h2>
@@ -51,26 +87,56 @@ export default function AdminHome() {
                 </div>
             </button>
 
-            {/* ── NOVO EIXO — VENDAS ─────────────────────────────── */}
-            <div className="pt-4">
-                <div className="flex items-center gap-2 pl-1 mb-3">
-                    <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Vendas</h2>
-                    <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full uppercase tracking-wider">Novo</span>
+            <button onClick={() => router.push('/dashboard/admin/auditoria')} className="w-full bg-white border border-gray-200 p-5 rounded-2xl flex items-center text-left hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm space-x-4 active:scale-95">
+                <div className="bg-red-50 p-3 rounded-xl">
+                    <Activity className="w-6 h-6 text-[#B13A2B]" />
                 </div>
+                <div>
+                    <h3 className="font-bold text-gray-900 text-lg">Auditoria Operacional</h3>
+                    <p className="text-sm text-gray-500">Conformidade, histórico e ranking da equipe</p>
+                </div>
+            </button>
 
-                <button
-                    onClick={() => router.push('/dashboard/admin/vendas')}
-                    className="w-full bg-gradient-to-r from-indigo-600 to-indigo-500 text-white p-5 rounded-2xl flex items-center text-left hover:from-indigo-700 hover:to-indigo-600 transition-all shadow-md space-x-4 active:scale-95"
-                >
-                    <div className="bg-white/20 p-3 rounded-xl shrink-0">
-                        <TrendingUp className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                        <h3 className="font-bold text-white text-lg">Módulo de Vendas</h3>
-                        <p className="text-sm text-indigo-100">Integração Takeat · estrutura inicial</p>
-                    </div>
-                </button>
-            </div>
+            <button onClick={() => router.push('/dashboard/admin/templates')} className="w-full bg-white border border-gray-200 p-5 rounded-2xl flex items-center text-left hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm space-x-4 active:scale-95">
+                <div className="bg-gray-50 p-3 rounded-xl">
+                    <ClipboardCheck className="w-6 h-6 text-gray-600" />
+                </div>
+                <div>
+                    <h3 className="font-bold text-gray-900 text-lg">Templates de Checklist</h3>
+                    <p className="text-sm text-gray-500">Criar, editar e organizar checklists</p>
+                </div>
+            </button>
+
+            {/* --- NOVO: MURAL --- */}
+            <button onClick={() => router.push('/dashboard/admin/communication')} className="w-full bg-white border border-gray-200 p-5 rounded-2xl flex items-center text-left hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm space-x-4 active:scale-95">
+                <div className="bg-amber-100 p-3 rounded-xl">
+                    <Bell className="w-6 h-6 text-amber-600" />
+                </div>
+                <div>
+                    <h3 className="font-bold text-gray-900 text-lg">Mural & Comunicados</h3>
+                    <p className="text-sm text-gray-500">Postar avisos e gerenciar o mural da casa</p>
+                </div>
+            </button>
+
+            <button onClick={() => router.push('/dashboard/admin/purchases')} className="w-full bg-orange-50 border border-orange-100 p-5 rounded-2xl flex items-center text-left hover:bg-orange-100 hover:border-orange-200 transition-all shadow-sm space-x-4 active:scale-95">
+                <div className="bg-orange-100 p-3 rounded-xl">
+                    <ShoppingCart className="w-6 h-6 text-orange-600" />
+                </div>
+                <div>
+                    <h3 className="font-bold text-gray-900 text-lg">Compras &amp; Abastecimento</h3>
+                    <p className="text-sm text-gray-500">Catálogo, pedidos e histórico de abastecimento</p>
+                </div>
+            </button>
+
+            <button onClick={() => router.push('/dashboard/admin/cmv')} className="w-full bg-[#B13A2B] border border-[#8F2E21] p-5 rounded-2xl flex items-center text-left hover:bg-[#8F2E21] transition-all shadow-sm space-x-4 active:scale-95">
+                <div className="bg-white/20 p-3 rounded-xl">
+                    <TrendingUp className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                    <h3 className="font-bold text-white text-lg">CMV &amp; Compras</h3>
+                    <p className="text-sm text-white/80">Faturamento, custo médio e indicador financeiro</p>
+                </div>
+            </button>
 
         </div>
     )

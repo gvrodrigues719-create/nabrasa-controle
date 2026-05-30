@@ -1,38 +1,55 @@
-'use client'
+"use client"
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
-import { ArrowLeft, Loader2, Save, Check, ShieldAlert, CloudOff, AlertTriangle, RefreshCw } from 'lucide-react'
-import { ConfirmModal } from '@/components/ConfirmModal'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { getSafeReturnTo } from '@/lib/navigation'
+import { ArrowLeft, Loader2, Save, Check, ShieldAlert, CloudOff, AlertTriangle, ChevronDown, Edit3, Lock, X, User, CheckCircle2, Trophy, Trash2, AlertCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import React, { use } from 'react'
-
-type Item = {
-    id: string
-    name: string
-    unit: string
-    unit_observation: string
-}
+import { initCountSessionAction, syncCountSessionAction, deleteCountSessionAction } from '@/app/actions/countAction'
+import { getActiveOperator } from '@/app/actions/pinAuth'
+import { getOperatorSummaryAction } from '@/app/actions/gamificationAction'
+import { CountItem } from '@/modules/count/types'
+import { isIntegerUnit, calculateCountProgress } from '@/modules/count/helpers'
 
 export default function BlindCountPage({ params }: { params: Promise<{ routineId: string, groupId: string }> }) {
     const router = useRouter()
     const { routineId, groupId } = use(params)
 
     const [loadingInit, setLoadingInit] = useState(true)
-    const [initFailed, setInitFailed] = useState(false)
     const [sessionId, setSessionId] = useState<string | null>(null)
-    const [items, setItems] = useState<Item[]>([])
+    const sessionIdRef = useRef<string | null>(null)
+    const [initFailed, setInitFailed] = useState(false)
+    const [items, setItems] = useState<CountItem[]>([])
     const [counts, setCounts] = useState<Record<string, string>>({})
+    const [zeroed, setZeroed] = useState<Record<string, boolean>>({})
     const [groupName, setGroupName] = useState('')
     const [blocked, setBlocked] = useState<string | null>(null)
+    const [hasUnsavedDraft, setHasUnsavedDraft] = useState(false)
     const [syncStatus, setSyncStatus] = useState<'synced' | 'saving' | 'offline'>('synced')
-    const [isConfirming, setIsConfirming] = useState(false)
+    const [showSummary, setShowSummary] = useState(false)
+    const [showFinished, setShowFinished] = useState(false)
+    const [expandZeroed, setExpandZeroed] = useState(false)
+    const [expandUncounted, setExpandUncounted] = useState(false)
+    const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+    const [operator, setOperator] = useState<{ name: string, role: string } | null>(null)
+    const [rankPosition, setRankPosition] = useState<number | null>(null)
+    const [weeklyPoints, setWeeklyPoints] = useState<number>(0)
+    const [isDeleting, setIsDeleting] = useState(false)
+    const [syncMessage, setSyncMessage] = useState('Salvando...')
+    const [sessionStatus, setSessionStatus] = useState<string>('in_progress')
+    
+    const searchParams = useSearchParams()
+    const returnTo = searchParams.get('returnTo')
+    const defaultBack = `/dashboard/routines/${routineId}`
+    const backUrl = getSafeReturnTo(returnTo, defaultBack)
 
-    // Keep refs so closures always see current values without stale captures
-    const sessionIdRef = useRef<string | null>(null)
-    // localKeyRef.current includes userId to prevent cross-user contamination on shared devices
-    const localKeyRef = useRef<string>('')
+    const [operatorId, setOperatorId] = useState<string | null>(null)
+    const [operatorUnitId, setOperatorUnitId] = useState<string | null>(null)
+    const safeUnitId = operatorUnitId || 'no-unit'
+    const LOCAL_KEY = operatorId ? `count_${operatorId}_${safeUnitId}_${routineId}_${groupId}` : `count_${routineId}_${groupId}`
+    const ZEROED_KEY = operatorId ? `zeroed_${operatorId}_${safeUnitId}_${routineId}_${groupId}` : `zeroed_${routineId}_${groupId}`
 
     useEffect(() => {
         initSession()
@@ -40,161 +57,145 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
 
     const initSession = async () => {
         setLoadingInit(true)
-        setInitFailed(false)
 
-        try {
-            const { data: { user }, error: authErr } = await supabase.auth.getUser()
-            if (authErr || !user) {
-                console.error('[CountPage] Auth error:', authErr)
-                router.push('/login')
-                return
-            }
-
-            localKeyRef.current = `count_${user.id}_${routineId}_${groupId}`
-
-            const { data: group, error: groupErr } = await supabase
-                .from('groups').select('name').eq('id', groupId).single()
-            if (groupErr) console.error('[CountPage] Group fetch error:', groupErr)
-            if (group) setGroupName(group.name)
-
-            // FIX: search for ANY non-completed session (no date filter) to prevent
-            // unique constraint conflict when an old in_progress session exists.
-            const { data: existingSession, error: sessionErr } = await supabase
-                .from('count_sessions')
-                .select('id, status, user_id, users(name)')
-                .eq('routine_id', routineId)
-                .eq('group_id', groupId)
-                .neq('status', 'completed')
-                .order('started_at', { ascending: false })
-                .limit(1)
-                .maybeSingle()
-
-            if (sessionErr) console.error('[CountPage] Session query error:', sessionErr)
-
-            let currentSessionId: string | null = existingSession?.id ?? null
-
-            if (existingSession) {
-                if (existingSession.status === 'in_progress' && existingSession.user_id !== user.id) {
-                    const uName = (existingSession.users as any)?.name || 'Outro usuário'
-                    setBlocked(`Este grupo está em andamento por ${uName}. Contagem paralela no mesmo grupo não é permitida.`)
-                    setLoadingInit(false)
-                    return
-                }
-            } else {
-                // No active session found — create one
-                const { data: exec } = await supabase
-                    .from('routine_executions')
-                    .select('id')
-                    .eq('routine_id', routineId)
-                    .eq('status', 'in_progress')
-                    .maybeSingle()
-
-                const { data: newSession, error: insertErr } = await supabase
-                    .from('count_sessions')
-                    .insert([{
-                        routine_id: routineId,
-                        group_id: groupId,
-                        user_id: user.id,
-                        status: 'in_progress',
-                        started_at: new Date().toISOString(),
-                        execution_id: exec?.id || null
-                    }])
-                    .select('id')
-                    .single()
-
-                if (insertErr) {
-                    console.error('[CountPage] Session insert error (possible constraint conflict):', insertErr)
-                    // Constraint conflict: an in_progress session for this group already exists.
-                    // Recover by fetching it directly without filters.
-                    const { data: conflictSession, error: conflictErr } = await supabase
-                        .from('count_sessions')
-                        .select('id, status, user_id')
-                        .eq('routine_id', routineId)
-                        .eq('group_id', groupId)
-                        .neq('status', 'completed')
-                        .order('started_at', { ascending: false })
-                        .limit(1)
-                        .maybeSingle()
-
-                    if (conflictErr) console.error('[CountPage] Conflict session recovery error:', conflictErr)
-
-                    if (conflictSession) {
-                        console.error('[CountPage] Recovered existing session after conflict:', conflictSession.id)
-                        currentSessionId = conflictSession.id
-                    } else {
-                        console.error('[CountPage] Could not recover session after constraint conflict.')
-                        setInitFailed(true)
-                        setLoadingInit(false)
-                        return
-                    }
-                } else if (newSession) {
-                    currentSessionId = newSession.id
-                }
-            }
-
-            sessionIdRef.current = currentSessionId
-            setSessionId(currentSessionId)
-
-            const { data: itemsData, error: itemsErr } = await supabase
-                .from('items')
-                .select('id, name, unit, unit_observation')
-                .eq('group_id', groupId)
-                .eq('active', true)
-                .order('name', { ascending: true })
-            if (itemsErr) console.error('[CountPage] Items fetch error:', itemsErr)
-            if (itemsData) setItems(itemsData)
-
-            // Load previous answers: start with localStorage, then overlay DB values (DB wins)
-            const stored = localStorage.getItem(localKeyRef.current)
-            const localDict: Record<string, string> = stored ? JSON.parse(stored) : {}
-
-            if (currentSessionId) {
-                const { data: dbItems, error: dbItemsErr } = await supabase
-                    .from('count_session_items')
-                    .select('item_id, counted_quantity')
-                    .eq('session_id', currentSessionId)
-                if (dbItemsErr) console.error('[CountPage] DB items fetch error:', dbItemsErr)
-
-                const newCounts = { ...localDict }
-                if (dbItems) {
-                    dbItems.forEach(d => {
-                        if (d.counted_quantity !== null && d.counted_quantity !== undefined) {
-                            newCounts[d.item_id] = d.counted_quantity.toString()
-                        }
-                    })
-                }
-                setCounts(newCounts)
-
-                // FIX: Auto-recover unsynced localStorage data. If localStorage had
-                // items but DB had fewer (sync previously failed), trigger an immediate sync.
-                const localItemCount = Object.keys(localDict).length
-                const dbItemCount = dbItems?.length ?? 0
-                if (localItemCount > 0 && dbItemCount < localItemCount) {
-                    console.error('[CountPage] localStorage has unsynced data — auto-recovering:', { localItemCount, dbItemCount })
-                    toast('Recuperando dados salvos localmente...', { icon: '💾', id: 'recovery' })
-                    // Trigger sync after state settles
-                    setTimeout(() => debouncedSyncDirect(newCounts, currentSessionId!), 500)
-                }
-            }
-        } catch (err) {
-            console.error('[CountPage] Unexpected initSession error:', err)
-            setInitFailed(true)
-        } finally {
-            setLoadingInit(false)
+        const op = await getActiveOperator()
+        let userId = op?.userId
+        
+        if (op) {
+            setOperator({ name: op.name, role: op.role })
+        } else {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) userId = user.id
         }
+
+        if (!userId) return router.push('/login')
+        setOperatorId(userId)
+
+        // Load Ranking Data for Badge
+        getOperatorSummaryAction(userId).then(res => {
+            if (res.success) {
+                setRankPosition(res.rankPosition ?? null)
+                setWeeklyPoints(res.weeklyPoints ?? 0)
+            }
+        })
+
+        const res = await initCountSessionAction(routineId, groupId, userId)
+
+        if (res.blocked) {
+            setBlocked(res.blocked)
+            setLoadingInit(false)
+            return
+        }
+
+        if (res.error) {
+            console.error(`[CountPage] Falha ao inicializar sesso: ${res.error}`);
+            setInitFailed(true)
+            setLoadingInit(false)
+            return
+        }
+
+        if (res.groupName) setGroupName(res.groupName)
+        if (res.sessionStatus) setSessionStatus(res.sessionStatus)
+        if (res.sessionId) {
+            setSessionId(res.sessionId)
+            sessionIdRef.current = res.sessionId
+        }
+        if (res.items) setItems(res.items)
+
+        const uId = res.unitId || 'no-unit'
+        setOperatorUnitId(uId)
+
+        const currentLocalKey = `count_${userId}_${uId}_${routineId}_${groupId}`
+        const currentZeroedKey = `zeroed_${userId}_${uId}_${routineId}_${groupId}`
+
+        const oldLocalKey1 = `count_${routineId}_${groupId}`
+        const oldZeroedKey1 = `zeroed_${routineId}_${groupId}`
+        const oldLocalKey2 = `count_${userId}_${routineId}_${groupId}`
+        const oldZeroedKey2 = `zeroed_${userId}_${routineId}_${groupId}`
+
+        // Legacy cleanup: move old data to new scoped key if scoped doesn't exist yet
+        const storedOld = localStorage.getItem(oldLocalKey2) || localStorage.getItem(oldLocalKey1)
+        const storedOldZeroed = localStorage.getItem(oldZeroedKey2) || localStorage.getItem(oldZeroedKey1)
+        
+        if (storedOld && !localStorage.getItem(currentLocalKey)) localStorage.setItem(currentLocalKey, storedOld)
+        if (storedOldZeroed && !localStorage.getItem(currentZeroedKey)) localStorage.setItem(currentZeroedKey, storedOldZeroed)
+        
+        localStorage.removeItem(oldLocalKey1)
+        localStorage.removeItem(oldZeroedKey1)
+        localStorage.removeItem(oldLocalKey2)
+        localStorage.removeItem(oldZeroedKey2)
+
+        const stored = localStorage.getItem(currentLocalKey)
+        const localDict = stored ? JSON.parse(stored) : {}
+
+        const storedZeroed = localStorage.getItem(currentZeroedKey)
+        const localZeroed = storedZeroed ? JSON.parse(storedZeroed) : {}
+        const mergedZeroed = { ...(res.dbZeroed || {}), ...localZeroed }
+        setZeroed(mergedZeroed)
+
+        const merged = { ...res.dbCounts, ...localDict }
+        setCounts(merged)
+
+        // Recuperao Automtica: Se temos mais dados locais do que no banco, dispara um sync imediato
+        const localItemsCount = Object.keys(localDict).length + Object.keys(localZeroed).length;
+        const dbItemsCount = Object.keys(res.dbCounts || {}).length + Object.keys(res.dbZeroed || {}).length;
+        
+        if (localItemsCount > dbItemsCount && res.sessionId) {
+            console.log('[CountPage] Detectada discrepncia local/DB. Sincronizando recuperao...');
+            toast("Recuperando dados salvos localmente...", { icon: '🔄' });
+            setHasUnsavedDraft(true)
+            syncCountSessionAction(res.sessionId, merged, false, mergedZeroed);
+        }
+
+        setLoadingInit(false)
+    }
+
+    const handleChange = (item: CountItem, val: string) => {
+        const isInt = isIntegerUnit(item.unit)
+        if (isInt) {
+            val = val.split(/[.,]/)[0].replace(/\D/g, '')
+        }
+
+        if (zeroed[item.id]) {
+            const newZeroed = { ...zeroed }
+            delete newZeroed[item.id]
+            setZeroed(newZeroed)
+            localStorage.setItem(ZEROED_KEY, JSON.stringify(newZeroed))
+        }
+
+        const newCounts = { ...counts, [item.id]: val }
+        setCounts(newCounts)
+        localStorage.setItem(LOCAL_KEY, JSON.stringify(newCounts))
+
+        const numVal = parseFloat(val)
+        if (!isNaN(numVal) && numVal > 0) {
+            if (item.max_expected != null && numVal > item.max_expected * 2) {
+                toast(`Valor alto para ${item.name}: ${val} ${item.unit}. Confere se está certo.`, { icon: '⚠️', id: `range-high-${item.id}` })
+            }
+            if (item.min_expected != null && numVal < item.min_expected * 0.1) {
+                toast(`Valor baixo para ${item.name}: ${val} ${item.unit}. Confere se está certo.`, { icon: '⚠️', id: `range-low-${item.id}` })
+            }
+        }
+
+        debouncedSync(newCounts, zeroed)
+    }
+
+    const handleZerado = (item: CountItem) => {
+        const newCounts = { ...counts, [item.id]: '0' }
+        const newZeroed = { ...zeroed, [item.id]: true }
+        setCounts(newCounts)
+        setZeroed(newZeroed)
+        localStorage.setItem(LOCAL_KEY, JSON.stringify(newCounts))
+        localStorage.setItem(ZEROED_KEY, JSON.stringify(newZeroed))
+        debouncedSync(newCounts, newZeroed)
     }
 
     const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-    // Direct sync (no debounce) — used for recovery on init
-    const debouncedSyncDirect = async (currentCounts: Record<string, string>, sid: string) => {
-        setSyncStatus('saving')
-        await persistCounts(currentCounts, sid)
-    }
-
-    const debouncedSync = useCallback((currentCounts: Record<string, string>) => {
+    const debouncedSync = (currentCounts: Record<string, string>, currentZeroed?: Record<string, boolean>) => {
         if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current)
         setSyncStatus('saving')
+        setSyncMessage('Salvando...')
 
         if (!navigator.onLine) {
             setSyncStatus('offline')
@@ -202,302 +203,471 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         }
 
         syncTimeoutRef.current = setTimeout(async () => {
-            const sid = sessionIdRef.current
+            const sid = sessionIdRef.current;
             if (!sid) {
-                // FIX: sessionId is null — data cannot be saved remotely; warn user.
-                console.error('[CountPage] debouncedSync called but sessionId is null. Data remains local only.')
+                console.error('[CountPage] Falha crítica: Tentativa de sync sem sessionId.');
+                toast.error('Erro de sincronização. Recarregue a página.', { id: 'sync-sid-error' });
+                return;
+            }
+            const res = await syncCountSessionAction(sid, currentCounts, false, currentZeroed || zeroed)
+            if (res.error) {
+                console.error(`[CountPage] Erro de rede ao sincronizar: ${res.error}`);
                 setSyncStatus('offline')
-                toast.error('Sessão não iniciada. Dados salvos apenas localmente. Recarregue a página.', { id: 'no-session' })
+                toast.error(res.error, { id: 'sync-err' })
                 return
             }
-            await persistCounts(currentCounts, sid)
+            setSyncStatus('synced')
         }, 2000)
-    }, [])
-
-    // Core persistence: delete old rows then insert new ones. Isolated so both
-    // debouncedSync and executeCompleteGroup share the same logic.
-    const persistCounts = async (currentCounts: Record<string, string>, sid: string): Promise<boolean> => {
-        const upserts = Object.keys(currentCounts).map(itemId => ({
-            session_id: sid,
-            item_id: itemId,
-            counted_quantity: currentCounts[itemId] === '' ? null : parseFloat(currentCounts[itemId].replace(',', '.'))
-        }))
-
-        const { error: delErr } = await supabase
-            .from('count_session_items')
-            .delete()
-            .eq('session_id', sid)
-
-        if (delErr) {
-            console.error('[CountPage] persistCounts delete error:', delErr)
-            setSyncStatus('offline')
-            toast.error('Falha de comunicação: salvamento aguardará recarga.', { id: 'sync-err' })
-            return false
-        }
-
-        if (upserts.length > 0) {
-            const { error: insErr } = await supabase
-                .from('count_session_items')
-                .insert(upserts)
-
-            if (insErr) {
-                console.error('[CountPage] persistCounts insert error:', insErr)
-                setSyncStatus('offline')
-                toast.error('Erro ao registrar dados na nuvem. Tente novamente.', { id: 'sync-err' })
-                return false
-            }
-        }
-
-        const { error: updErr } = await supabase
-            .from('count_sessions')
-            .update({ updated_at: new Date().toISOString() })
-            .eq('id', sid)
-
-        if (updErr) {
-            console.error('[CountPage] persistCounts session update error:', updErr)
-            setSyncStatus('offline')
-            return false
-        }
-
-        setSyncStatus('synced')
-        toast.success('Progresso salvo!', { icon: '☁️', id: 'sync-success' })
-        return true
-    }
-
-    const handleChange = (itemId: string, val: string) => {
-        const newCounts = { ...counts, [itemId]: val }
-        setCounts(newCounts)
-        localStorage.setItem(localKeyRef.current, JSON.stringify(newCounts))
-        debouncedSync(newCounts)
     }
 
     const handleManualSave = () => {
         if (!navigator.onLine) {
-            toast.success('Progresso salvo localmente. Será enviado quando houver rede.', { icon: '💾' })
+            toast.success("Progresso salvo localmente!", { icon: '💾' })
             return
         }
         debouncedSync(counts)
     }
 
     const handleCompleteGroup = async () => {
-        if (syncStatus === 'saving') {
-            toast.error('Aguarde o salvamento online terminar.')
-            return
-        }
-
-        const uncounted = items.filter(i => counts[i.id] === undefined || counts[i.id] === '')
+        if (syncStatus === 'saving') return toast.error('Aguarde o salvamento online terminar.')
+        const uncounted = items.filter(i => !zeroed[i.id] && (counts[i.id] === undefined || counts[i.id] === ''))
         if (uncounted.length > 0) {
-            toast.error(`Ainda há ${uncounted.length} itens não contados. Vazio ≠ Zero.`)
+            toast.error(`Existem ${uncounted.length} itens pendentes antes de finalizar.`)
             return
         }
-
         if (!navigator.onLine) {
-            toast.error('Dispositivo offline. Conecte-se para concluir este grupo.')
+            toast.error("Dispositivo offline.")
             return
         }
+        setShowSummary(true)
+    }
 
-        setIsConfirming(true)
+    const recoverAndCompleteSession = async (userId: string) => {
+        toast("Sessão anterior não encontrada. Tentando recuperar sua contagem...", { icon: '🔄', duration: 4000 });
+        
+        try {
+            const initRes = await initCountSessionAction(routineId, groupId, userId)
+            if (initRes.error || !initRes.sessionId) {
+                throw new Error(initRes.error || "Não foi possível criar uma nova sessão.")
+            }
+            
+            const newSid = initRes.sessionId
+            setSessionId(newSid)
+            sessionIdRef.current = newSid
+            
+            // Sincronizar e finalizar a contagem na nova sessão
+            const syncRes = await syncCountSessionAction(newSid, counts, true, zeroed)
+            if (syncRes.error) {
+                throw new Error(syncRes.error)
+            }
+            
+            if (syncRes.success && syncRes.status === 'completed' && syncRes.savedCount && syncRes.savedCount > 0 && syncRes.completedAt) {
+                setSyncMessage('Sucesso!')
+                console.log('[BlindCount] Grupo recuperado e finalizado com sucesso.')
+                localStorage.removeItem(LOCAL_KEY)
+                localStorage.removeItem(ZEROED_KEY)
+                setShowSummary(false)
+                setShowFinished(true)
+                toast.success("Contagem recuperada e finalizada com sucesso!")
+            } else {
+                throw new Error("O servidor não confirmou a gravação segura de todos os itens.")
+            }
+        } catch (err: any) {
+            console.error('[BlindCount] Falha catastrófica na recuperação da sessão:', err)
+            setSyncStatus('offline')
+            toast.error(`Não conseguimos finalizar agora, mas seu progresso continua salvo neste aparelho. Erro: ${err.message}`, { duration: 8000 })
+        }
     }
 
     const executeCompleteGroup = async () => {
-        setIsConfirming(false)
-
-        const sid = sessionIdRef.current
-        if (!sid) {
-            console.error('[CountPage] executeCompleteGroup: sessionId is null, aborting.')
-            toast.error('Sessão inválida. Recarregue a página e tente novamente.')
-            return
-        }
-
         setSyncStatus('saving')
+        setSyncMessage('Validando itens...')
+        console.log(`[BlindCount] Iniciando finalização do grupo. SessionId: ${sessionId}`);
 
-        const finalPayload = items.map(i => ({
-            session_id: sid,
-            item_id: i.id,
-            counted_quantity: parseFloat(counts[i.id].replace(',', '.'))
-        }))
+        if (!sessionId) {
+            console.error('[BlindCount] Tentativa de finalizar sem sessionId válido.');
+            toast.error('Erro de sessão. Recarregue a página.')
+            setSyncStatus('synced')
+            return
+        }
 
-        const { error: delErr } = await supabase
-            .from('count_session_items')
-            .delete()
-            .eq('session_id', sid)
+        try {
+            const sid = sessionIdRef.current;
+            if (!sid) throw new Error('Session ID is missing');
 
-        if (delErr) {
-            console.error('[CountPage] executeCompleteGroup delete error:', delErr)
+            setSyncMessage('Finalizando grupo...')
+            const res = await syncCountSessionAction(sid, counts, true, zeroed)
+            
+            if (res.error) {
+                // FLUXO DE RECUPERAÇÃO AUTOMÁTICA SE A SESSÃO NÃO FOR ENCONTRADA
+                if (res.error.includes("Sessão não encontrada") || res.error.includes("não encontrada")) {
+                    const op = await getActiveOperator()
+                    let userId = op?.userId
+                    if (!userId) {
+                        const { data: { user } } = await supabase.auth.getUser()
+                        if (user) userId = user.id
+                    }
+                    if (userId) {
+                        await recoverAndCompleteSession(userId)
+                        return
+                    }
+                }
+
+                console.warn(`[CountPage] Falha na finalização: ${res.error}`);
+                setSyncStatus('offline') // Destrava o botão
+                toast.error(res.error, { duration: 5000 })
+                return
+            }
+
+            if (res.success && res.status === 'completed' && res.savedCount && res.savedCount > 0 && res.completedAt) {
+                setSyncMessage('Sucesso!')
+                console.log('[BlindCount] Grupo finalizado com sucesso.');
+                localStorage.removeItem(LOCAL_KEY)
+                localStorage.removeItem(ZEROED_KEY)
+                setShowSummary(false)
+                setShowFinished(true)
+            } else {
+                console.error('[BlindCount] Inconsistência nos dados retornados pelo servidor:', res);
+                setSyncStatus('offline')
+                toast.error('Erro de validação: O servidor não confirmou a gravação segura de todos os itens. Seu progresso continua salvo localmente.', { duration: 6000 })
+            }
+        } catch (e: any) {
+            console.error('[BlindCount] Erro inesperado em executeCompleteGroup:', e);
             setSyncStatus('offline')
-            toast.error('Erro ao preparar conclusão. Verifique conexão e tente novamente.')
-            return
+            toast.error('Ocorreu um erro técnico ao finalizar. Verifique sua conexão e tente novamente.')
         }
-
-        const { data: insertedItems, error: insErr } = await supabase
-            .from('count_session_items')
-            .insert(finalPayload)
-            .select('id')
-
-        if (insErr) {
-            console.error('[CountPage] executeCompleteGroup insert error:', insErr)
-            setSyncStatus('offline')
-            toast.error('Erro ao salvar itens finais. Dados seguros localmente. Tente novamente.')
-            return
-        }
-
-        // FIX: verify all items were persisted before marking session completed
-        if (!insertedItems || insertedItems.length !== finalPayload.length) {
-            console.error('[CountPage] executeCompleteGroup item count mismatch:', {
-                expected: finalPayload.length,
-                inserted: insertedItems?.length ?? 0
-            })
-            toast.error('Contagem incompleta detectada. Tente novamente.')
-            return
-        }
-
-        const { error: updErr } = await supabase
-            .from('count_sessions')
-            .update({
-                status: 'completed',
-                updated_at: new Date().toISOString(),
-                completed_at: new Date().toISOString()
-            })
-            .eq('id', sid)
-
-        if (updErr) {
-            console.error('[CountPage] executeCompleteGroup status update error:', updErr)
-            toast.error('Erro ao marcar como concluído. Verifique a rede.')
-            return
-        }
-
-        localStorage.removeItem(localKeyRef.current)
-        router.push(`/dashboard/routines/${routineId}`)
     }
 
-    if (loadingInit) return (
-        <div className="min-h-screen flex items-center justify-center">
-            <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
-        </div>
-    )
+    const handleDeleteSession = async () => {
+        const sid = sessionIdRef.current;
+        if (!sid) return
+        const confirmed = window.confirm("Atenção: Você tem certeza que deseja excluir esta contagem em andamento? Todo o progresso deste local será perdido.")
+        if (!confirmed) return
+        
+        setIsDeleting(true)
+        const res = await deleteCountSessionAction(sid)
+        if (res.error) {
+            toast.error(res.error)
+            setIsDeleting(false)
+            return
+        }
+        
+        toast.success("Contagem excluída com sucesso.")
+        localStorage.removeItem(LOCAL_KEY)
+        localStorage.removeItem(ZEROED_KEY)
+        router.push(backUrl)
+    }
+
+    if (loadingInit) return <div className="min-h-screen flex items-center justify-center bg-[#F8F7F4]"><Loader2 className="w-10 h-10 text-[#B13A2B] animate-spin" /></div>
 
     if (initFailed) return (
-        <div className="p-4 flex flex-col items-center justify-center min-h-[50vh] text-center space-y-4">
-            <AlertTriangle className="w-16 h-16 text-red-500" />
-            <h2 className="text-xl font-bold text-gray-900">Falha ao Iniciar Sessão</h2>
-            <p className="text-gray-600 font-medium">Não foi possível criar ou recuperar a sessão de contagem. Verifique sua conexão.</p>
-            <button onClick={initSession} className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2">
-                <RefreshCw className="w-4 h-4" /> Tentar Novamente
+        <div className="p-8 flex flex-col items-center justify-center min-h-screen bg-white text-center space-y-6">
+            <div className="p-6 bg-amber-50 rounded-3xl">
+                <AlertTriangle className="w-16 h-16 text-amber-600" />
+            </div>
+            <div>
+                <h2 className="text-2xl font-black text-[#1b1c1a]">Erro de Conexão</h2>
+                <p className="text-sm text-[#8c716c] font-medium mt-2">Não conseguimos iniciar sua sessão de contagem. Verifique sua internet e tente novamente.</p>
+            </div>
+            <button onClick={() => { setInitFailed(false); initSession(); }} className="w-full max-w-xs py-4 bg-[#B13A2B] text-white rounded-2xl font-black text-lg shadow-xl active:scale-95 transition">
+                Tentar Novamente
             </button>
-            <button onClick={() => router.push(`/dashboard/routines/${routineId}`)} className="text-gray-500 text-sm underline">
-                Voltar para Locais
+            <button onClick={() => router.push(backUrl)} className="w-full max-w-xs py-2 text-[#8c716c] font-bold text-sm uppercase tracking-widest">
+                Voltar
             </button>
         </div>
     )
 
     if (blocked) return (
-        <div className="p-4 flex flex-col items-center justify-center min-h-[50vh] text-center space-y-4">
-            <ShieldAlert className="w-16 h-16 text-orange-500" />
-            <h2 className="text-xl font-bold text-gray-900">Acesso Bloqueado</h2>
-            <p className="text-gray-600 font-medium">{blocked}</p>
-            <button onClick={() => router.push(`/dashboard/routines/${routineId}`)} className="bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold mt-4 shrink-0 shadow-sm">
-                Voltar para Locais
+        <div className="p-8 flex flex-col items-center justify-center min-h-screen bg-white text-center space-y-6">
+            <div className="p-6 bg-red-50 rounded-3xl">
+                <ShieldAlert className="w-16 h-16 text-[#B13A2B]" />
+            </div>
+            <div>
+                <h2 className="text-2xl font-black text-[#1b1c1a]">Acesso Bloqueado</h2>
+                <p className="text-sm text-[#8c716c] font-medium mt-2">{blocked}</p>
+            </div>
+            <button onClick={() => router.push(backUrl)} className="w-full max-w-xs py-4 bg-[#1b1c1a] text-white rounded-2xl font-black text-lg shadow-xl active:scale-95 transition">
+                Voltar
             </button>
         </div>
     )
 
-    const itemsPendentes = items.filter(i => counts[i.id] === undefined || counts[i.id] === '').length
+    const itemsPendentes = items.filter(i => !zeroed[i.id] && (counts[i.id] === undefined || counts[i.id] === '')).length
+    const progressPerc = calculateCountProgress(items.length, itemsPendentes)
+
+    if (showFinished) {
+        return (
+            <div className="min-h-screen bg-[#F8F7F4] flex flex-col items-center justify-center p-6 text-center">
+                <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center mb-8 shadow-xl border border-[#e9e8e5] animate-bounce">
+                    <CheckCircle2 className="w-12 h-12 text-green-500" />
+                </div>
+                
+                <h2 className="text-3xl font-black text-[#1b1c1a] mb-2 tracking-tight">Grupo Concluído!</h2>
+                <p className="text-[#8c716c] font-medium text-base mb-10 px-4">
+                    Tudo certo com a contagem do local <strong>{groupName}</strong>. 
+                </p>
+
+                <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-[#e9e8e5] mb-12">
+                    <div className="flex items-center justify-between border-b border-[#F8F7F4] pb-4 mb-4">
+                        <span className="text-sm font-bold text-[#8c716c] uppercase tracking-wider">Itens Contados</span>
+                        <span className="text-lg font-black text-[#1b1c1a]">{items.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                            <Trophy className="w-5 h-5 text-amber-500" />
+                            <span className="text-sm font-bold text-[#8c716c] uppercase tracking-wider">Premiação</span>
+                        </div>
+                        <span className="text-lg font-black text-amber-600">+50 pontos</span>
+                    </div>
+                </div>
+
+                <button 
+                    onClick={() => router.push(backUrl)} 
+                    className="w-full max-w-sm py-5 bg-[#1b1c1a] text-white rounded-2xl font-black text-lg shadow-xl active:scale-95 transition"
+                >
+                    {returnTo === '/dashboard' ? 'Voltar para Home' : 'Próximo Grupo'}
+                </button>
+            </div>
+        )
+    }
 
     return (
-        <div className="bg-gray-50 min-h-screen pb-32">
-            {/* HEADER */}
-            <div className="bg-indigo-600 text-white p-4 sticky top-0 z-40 shadow-md">
-                <div className="flex justify-between items-center mb-2">
-                    <button onClick={() => router.push(`/dashboard/routines/${routineId}`)} className="p-2 bg-indigo-700/50 rounded-lg hover:bg-indigo-700 transition">
-                        <ArrowLeft className="w-5 h-5 text-white" />
+        <div className="bg-[#F8F7F4] min-h-screen pb-32">
+            {/* OPERATIONAL HEADER */}
+            <div className="bg-white border-b border-[#e9e8e5] sticky top-0 z-40 shadow-sm">
+                <div className="p-4 md:p-5 flex justify-between items-center bg-white">
+                    <button onClick={() => router.push(backUrl)} className="p-2.5 bg-white rounded-xl shadow-sm border border-[#e9e8e5] text-[#58413e] hover:bg-gray-50 active:scale-95 transition-all">
+                        <ArrowLeft className="w-5 h-5" />
                     </button>
-                    <div className="flex items-center space-x-2 text-xs font-semibold bg-indigo-800/40 px-3 py-1 rounded-full">
-                        {syncStatus === 'synced'
-                            ? <><Check className="w-3 h-3 text-green-300" /><span className="text-indigo-100">Sincronizado</span></>
-                            : syncStatus === 'saving'
-                                ? <><Loader2 className="w-3 h-3 text-white animate-spin" /><span className="text-indigo-100">Salvando...</span></>
-                                : <><CloudOff className="w-3 h-3 text-red-300" /><span className="text-red-100">Modo Offline (Local)</span></>
-                        }
+                    
+                    <div className="flex flex-col items-center">
+                        <h1 className="text-sm font-black text-[#1b1c1a] uppercase tracking-wider leading-none">{groupName}</h1>
+                        <div className="flex items-center mt-1 space-x-1.5 opacity-60">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-[#8c716c]">
+                                {sessionStatus === 'completed' ? 'Revisando Contagem Finalizada' : 'Contagem em andamento'}
+                            </span>
+                        </div>
                     </div>
-                </div>
-                <h1 className="text-2xl font-extrabold tracking-tight">{groupName}</h1>
-                <div className="mt-3 flex items-center space-x-2">
-                    <div className="bg-indigo-500/30 h-2 flex-1 rounded-full overflow-hidden">
-                        <div className="bg-green-400 h-full rounded-full transition-all" style={{ width: `${((items.length - itemsPendentes) / (items.length || 1)) * 100}%` }}></div>
-                    </div>
-                    <span className="text-xs font-bold w-12 text-right">{items.length - itemsPendentes}/{items.length}</span>
-                </div>
-            </div>
 
-            {/* LISTA BLIND COUNT */}
-            <div className="p-4 space-y-4">
-                {items.length === 0 ? (
-                    <p className="text-center mt-10 text-gray-500 font-medium">Não há itens vinculados a este local.</p>
-                ) : items.map((item, index) => {
-                    const val = counts[item.id] ?? ''
-                    const isFilled = val !== ''
-
-                    return (
-                        <div key={item.id} className={`p-5 rounded-2xl border-2 transition-colors shadow-sm ${isFilled ? 'bg-white border-green-200' : 'bg-white border-gray-100'}`}>
-                            <div className="flex justify-between items-start mb-3 border-b border-gray-50 pb-3">
-                                <div>
-                                    <p className="text-xs font-bold text-gray-400 mb-1">#{index + 1}</p>
-                                    <h3 className="text-lg font-bold text-gray-900 leading-tight">{item.name}</h3>
-                                    {item.unit_observation && (
-                                        <p className="text-sm font-medium text-amber-600 mt-1 flex items-center">
-                                            <AlertTriangle className="w-4 h-4 mr-1 shrink-0" /> {item.unit_observation}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="flex items-center space-x-4">
-                                <div className="flex-1">
-                                    <label className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-1 block">Quantidade Física</label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        inputMode="decimal"
-                                        className="w-full text-3xl font-extrabold text-gray-900 p-4 border border-gray-200 rounded-xl outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 transition-all text-center bg-gray-50"
-                                        placeholder=" "
-                                        value={val}
-                                        onChange={(e) => handleChange(item.id, e.target.value)}
-                                    />
-                                </div>
-                                <div className="flex flex-col items-center justify-center shrink-0 min-w-[70px] bg-indigo-50 py-3 rounded-xl border border-indigo-100 mt-5">
-                                    <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-1">UND</span>
-                                    <span className="text-xl font-black text-indigo-600">{item.unit}</span>
-                                </div>
+                    <div className="flex items-center space-x-3">
+                        <div className="hidden sm:flex flex-col items-end mr-1">
+                            <span className="text-[10px] font-black uppercase text-[#1b1c1a] leading-tight">{operator?.name?.split(' ')[0]}</span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-[8px] font-bold uppercase text-[#8c716c] leading-none">{operator?.role}</span>
+                                {rankPosition && weeklyPoints > 0 && (
+                                    <span className="text-[8px] font-black text-[#b13a2b] bg-red-50 px-1.5 py-0.5 rounded uppercase tracking-tighter border border-red-100/50">
+                                        #{rankPosition} na semana
+                                    </span>
+                                )}
                             </div>
                         </div>
-                    )
-                })}
+                        <div className="w-10 h-10 rounded-xl bg-[#F8F7F4] border border-[#eeedea] flex items-center justify-center shadow-sm">
+                            <User className="w-5 h-5 text-[#b13a2b]" />
+                        </div>
+                    </div>
+                </div>
+
+                {/* PROGRESS BAR */}
+                <div className="px-5 pb-4 bg-white">
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest">Progresso do Local</span>
+                        <div className="flex items-center space-x-1.5 font-black text-[10px]">
+                            {syncStatus === 'synced' ? <><Check className="w-3 h-3 text-green-500" /><span className="text-green-600 uppercase tracking-tighter">Sincronizado</span></> :
+                                syncStatus === 'saving' ? <><Loader2 className="w-3 h-3 text-[#b13a2b] animate-spin" /><span className="text-[#b13a2b] uppercase tracking-tighter">{syncMessage}</span></> :
+                                    <><CloudOff className="w-3 h-3 text-amber-500" /><span className="text-amber-500 uppercase tracking-tighter">Modo Offline</span></>
+                            }
+                        </div>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                        <div className="bg-[#F8F7F4] h-3 flex-1 rounded-full border border-[#eeedea] overflow-hidden">
+                            <div 
+                                className="bg-[#B13A2B] h-full rounded-full transition-all duration-500 ease-out shadow-sm" 
+                                style={{ width: `${progressPerc}%` }}
+                            ></div>
+                        </div>
+                        <span className="text-[11px] font-black text-[#1b1c1a] w-12 text-right">{items.length - itemsPendentes} / {items.length}</span>
+                    </div>
+                </div>
             </div>
 
-            {/* FLOAT BUTTON CONCLUDE */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 flex space-x-3 max-w-md mx-auto">
-                <button onClick={handleManualSave} className="p-4 bg-gray-100 text-gray-700 rounded-2xl active:scale-95 transition">
-                    <Save className="w-6 h-6" />
-                </button>
-                <button
-                    onClick={handleCompleteGroup}
-                    disabled={isConfirming || syncStatus === 'saving'}
-                    className={`flex-1 py-4 rounded-2xl font-bold flex justify-center items-center text-lg transition shadow-sm ${isConfirming || syncStatus === 'saving' ? 'opacity-50 cursor-not-allowed' : 'active:scale-95'} ${itemsPendentes === 0 ? 'bg-green-500 text-white shadow-green-500/30' : 'bg-gray-200 text-gray-400'}`}
-                >
-                    <Check className="w-6 h-6 mr-2" />
-                    Concluir Grupo {itemsPendentes > 0 ? `(${itemsPendentes})` : ''}
-                </button>
-            </div>
+            {hasUnsavedDraft && !showSummary && (
+                <div className="mx-5 mt-4 p-3.5 bg-orange-50 border border-orange-200 rounded-2xl flex items-start gap-3 shadow-sm animate-pulse-slow">
+                    <AlertCircle className="w-5 h-5 text-orange-600 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                        <h4 className="text-sm font-black text-orange-800 leading-tight">Você tem dados não finalizados neste aparelho.</h4>
+                        <p className="text-xs text-orange-700 font-medium mt-1 leading-relaxed">
+                            Uma tentativa anterior de finalizar falhou ou não foi enviada. Os dados foram carregados na tela. 
+                            Revise e clique em finalizar novamente.
+                        </p>
+                    </div>
+                </div>
+            )}
 
-            <ConfirmModal
-                isOpen={isConfirming}
-                title="Concluir Contagem"
-                message="Deseja realmente CONCLUIR esta contagem? Você não poderá alterá-la depois e os dados ficarão bloqueados."
-                confirmText="Verifiquei e Quero Concluir"
-                cancelText="Cancelar"
-                onConfirm={executeCompleteGroup}
-                onCancel={() => setIsConfirming(false)}
-            />
+            {showSummary ? (
+                <div className="p-5 space-y-6">
+                    <div className="text-center py-8">
+                        <div className="bg-white p-5 rounded-3xl shadow-lg border border-[#e9e8e5] inline-flex items-center justify-center mb-5">
+                            <Lock className="w-10 h-10 text-[#B13A2B]" />
+                        </div>
+                        <h2 className="text-2xl font-black text-[#1b1c1a] tracking-tight">Conclusão do Grupo</h2>
+                        <p className="text-sm text-[#8c716c] font-medium mt-1">Revise os dados antes de finalizar a contagem deste local.</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-white border border-[#e9e8e5] rounded-3xl p-5 shadow-sm">
+                            <p className="text-[10px] font-black text-[#8c716c] uppercase tracking-widest mb-1">Contados / Zerados</p>
+                            <p className="text-3xl font-black text-[#1b1c1a]">{items.length - items.filter(i => !zeroed[i.id] && (counts[i.id] === undefined || counts[i.id] === '')).length}</p>
+                        </div>
+                        <div className="bg-white border border-[#e9e8e5] rounded-3xl p-5 shadow-sm flex flex-col items-center justify-center">
+                            <span className="text-green-600 font-black text-sm uppercase tracking-wider">Status</span>
+                            <span className="text-xs font-bold text-[#8c716c]">Pronto p/ Finalizar</span>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3 pt-6">
+                        <button
+                            onClick={executeCompleteGroup}
+                            disabled={syncStatus === 'saving'}
+                            className="w-full py-5 bg-[#1b1c1a] text-white rounded-2xl font-black text-lg flex justify-center items-center active:scale-95 transition shadow-xl disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                            {syncStatus === 'saving' ? (
+                                <div className="flex items-center space-x-2">
+                                    <Loader2 className="w-6 h-6 animate-spin" />
+                                    <span className="text-base uppercase tracking-tight">{syncMessage}</span>
+                                </div>
+                            ) : 'Finalizar Este Grupo'}
+                        </button>
+                        <button
+                            onClick={() => setShowSummary(false)}
+                            className="w-full py-4 text-[#8c716c] font-bold text-sm uppercase tracking-widest active:scale-95 transition"
+                        >
+                            Editar Contagem
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div className="p-4 space-y-4">
+                    {sessionStatus === 'completed' && (
+                        <div className="mx-2 p-4 bg-emerald-50 border-2 border-emerald-100 rounded-3xl flex items-center gap-3">
+                            <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center shadow-sm shrink-0">
+                                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                            </div>
+                            <div>
+                                <p className="text-xs font-black text-emerald-900 uppercase tracking-tight">Modo de Revisão</p>
+                                <p className="text-[11px] font-medium text-emerald-700 leading-tight">Esta contagem já foi enviada, mas você pode editar os valores e salvar novamente se necessário.</p>
+                            </div>
+                        </div>
+                    )}
+                    {items.length === 0 ? (
+                        <p className="text-center mt-10 text-[#8c716c] font-medium">Não há itens vinculados a este local.</p>
+                    ) : items.map((item, index) => {
+                        const val = counts[item.id] ?? ''
+                        const isZeroed = !!zeroed[item.id]
+                        const isFilled = val !== '' || isZeroed
+                        const isInt = isIntegerUnit(item.unit)
+
+                        return (
+                            <div key={item.id} className={`p-6 rounded-[32px] border-2 transition-all shadow-[0_4px_20px_rgb(0,0,0,0.03)] focus-within:border-[#B13A2B] ${
+                                isZeroed ? 'bg-[#FDFDFD] border-gray-100 opacity-60' :
+                                isFilled ? 'bg-white border-white' : 'bg-white border-white'
+                            }`}>
+                                <div className="flex justify-between items-start mb-5 pb-4 border-b border-[#F8F7F4]">
+                                    <div className="flex-1">
+                                        <div className="flex items-center space-x-2 mb-1">
+                                            <span className="bg-[#F8F7F4] text-[#8c716c] text-[10px] font-black px-2 py-0.5 rounded-md">ID #{index + 1}</span>
+                                            {isZeroed && <span className="bg-red-50 text-red-600 text-[10px] font-black px-2 py-0.5 rounded-md uppercase">Item Zerado</span>}
+                                        </div>
+                                        <h3 className={`text-xl font-black leading-tight ${isZeroed ? 'text-gray-400' : 'text-[#1b1c1a]'}`}>{item.name}</h3>
+                                        {item.unit_observation && (
+                                            <p className={`text-xs font-bold mt-1.5 flex items-center ${isZeroed ? 'text-amber-300' : 'text-amber-600'}`}>
+                                                <AlertTriangle className="w-3.5 h-3.5 mr-1 shrink-0" /> {item.unit_observation}
+                                            </p>
+                                        )}
+                                    </div>
+                                    {item.image_url && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setLightboxUrl(item.image_url)}
+                                            className="shrink-0 ml-3 active:scale-95 transition-transform"
+                                        >
+                                            <img
+                                                src={item.image_url}
+                                                alt={item.name}
+                                                className="w-16 h-16 rounded-2xl object-cover border-4 border-[#F8F7F4] shadow-sm"
+                                            />
+                                        </button>
+                                    )}
+                                </div>
+
+                                <div className="flex items-center space-x-4">
+                                    <div className="flex-1">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-[#8c716c] mb-1.5 block">Qtd. Física</label>
+                                        <div className="relative">
+                                            <input
+                                                type="number"
+                                                step={isInt ? "1" : "0.01"}
+                                                inputMode={isInt ? "numeric" : "decimal"}
+                                                className={`w-full text-3xl font-black p-5 bg-[#F8F7F4] border-2 border-transparent rounded-2xl outline-none focus:border-[#B13A2B] transition-all text-center ${
+                                                    isZeroed ? 'text-gray-400' : 'text-[#1b1c1a]'
+                                                }`}
+                                                placeholder="..."
+                                                value={val}
+                                                onChange={(e) => handleChange(item, e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col space-y-2">
+                                        <button
+                                            onClick={() => handleZerado(item)}
+                                            className={`h-14 px-5 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center border-2 ${
+                                                isZeroed
+                                                    ? 'bg-red-50 text-red-600 border-red-100 shadow-inner'
+                                                    : 'bg-white text-[#8c716c] border-[#eeedea] hover:bg-gray-50'
+                                            }`}
+                                        >
+                                            Zerado
+                                        </button>
+                                        <div className="h-10 px-4 bg-[#F8F7F4] rounded-xl flex items-center justify-center border border-[#eeedea]">
+                                            <span className="text-[11px] font-black text-[#b13a2b] uppercase">{item.unit}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    })}
+
+                    {/* FLOAT BAR */}
+                    <div className="fixed bottom-0 left-0 right-0 p-5 bg-white border-t border-[#e9e8e5] shadow-[0_-8px_30px_rgb(0,0,0,0.06)] z-50 flex space-x-3 max-w-md mx-auto rounded-t-[32px]">
+                        <button onClick={handleDeleteSession} disabled={isDeleting} className="p-5 bg-red-50 text-red-600 rounded-2xl active:scale-95 transition hover:bg-red-100 border border-red-100/50">
+                            {isDeleting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Trash2 className="w-6 h-6" />}
+                        </button>
+                        <button onClick={handleManualSave} className="p-5 bg-[#F8F7F4] text-[#58413e] rounded-2xl active:scale-95 transition hover:bg-gray-100 border border-[#eeedea]">
+                            <Save className="w-6 h-6" />
+                        </button>
+                        <button 
+                            onClick={handleCompleteGroup} 
+                            disabled={itemsPendentes > 0}
+                            className={`flex-1 py-5 rounded-2xl font-black flex justify-center items-center text-lg active:scale-95 transition-all shadow-xl ${
+                                itemsPendentes === 0 
+                                    ? (sessionStatus === 'completed' ? 'bg-emerald-600 text-white shadow-emerald-200' : 'bg-[#1b1c1a] text-white shadow-black/20')
+                                    : 'bg-gray-100 text-gray-300'
+                            }`}
+                        >
+                            {sessionStatus === 'completed' ? 'Atualizar Contagem' : `Finalizar Grupo ${itemsPendentes > 0 ? `(${itemsPendentes})` : ''}`}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* LIGHTBOX */}
+            {lightboxUrl && (
+                <div className="fixed inset-0 z-[200] bg-black/95 flex items-center justify-center p-6 backdrop-blur-sm" onClick={() => setLightboxUrl(null)}>
+                    <img src={lightboxUrl} alt="Visualização" className="max-w-full max-h-[80vh] rounded-[40px] shadow-2xl animate-in zoom-in-95 duration-200" />
+                    <button className="absolute top-8 right-8 bg-white/10 text-white p-3 rounded-full hover:bg-white/20"><X className="w-6 h-6" /></button>
+                </div>
+            )}
         </div>
     )
 }

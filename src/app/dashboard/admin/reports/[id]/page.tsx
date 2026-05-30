@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Loader2, ArrowLeft, CheckCircle, XCircle, AlertTriangle, ChevronRight, Calculator, FileWarning } from 'lucide-react'
-import { ConfirmModal } from '@/components/ConfirmModal'
+import { PinConfirmModal } from '@/components/PinConfirmModal'
+import { approveAuditAction, rejectAuditAction } from '@/app/actions/criticalActions'
 import toast from 'react-hot-toast'
 import React, { use } from 'react'
 
@@ -41,49 +42,35 @@ export default function ReportDetailsPage({ params }: { params: Promise<{ id: st
         setConfirmAction(status)
     }
 
-    const executeApproval = async () => {
+    const executeApproval = async (pin: string) => {
+        // pin is received from PinConfirmModal — must validate before executing
         if (!confirmAction) return
         const status = confirmAction
-        setConfirmAction(null)
-        setProcessing(true)
 
         const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new Error('Usuário não autenticado.')
 
-        if (status === 'approved') {
-            const { error: rpcErr } = await supabase.rpc('approve_audit_report', { p_report_id: reportId, p_user_id: user?.id })
+        setProcessing(true)
+        setConfirmAction(null)
 
-            if (rpcErr) {
-                toast.error(rpcErr.message || "Erro ao efetivar transação de estoque no banco.")
-                setProcessing(false)
-                return
+        try {
+            if (status === 'approved') {
+                // approveAuditAction: validates PIN via verify_user_pin RPC, then runs approve_audit_report
+                await approveAuditAction(reportId, user.id, pin)
+                toast.success('Auditoria aprovada e estoque físico ajustado!')
+            } else {
+                // rejectAuditAction: validates PIN via verify_user_pin RPC, then updates status + log
+                await rejectAuditAction(reportId, user.id, pin, report.execution_id)
+                toast.success('Auditoria reprovada/descartada.')
             }
-            toast.success("Auditoria aprovada e estoque físico ajustado!")
-        } else {
-            // Rejeição Simples
-            const { error: repErr } = await supabase.from('audit_reports').update({
-                status_approval: status,
-                approved_by: user?.id,
-                approved_at: new Date().toISOString()
-            }).eq('id', reportId)
-
-            if (repErr) {
-                toast.error("Erro ao reprovar: " + repErr.message)
-                setProcessing(false)
-                return
-            }
-            // Log de auditoria vinculando o execution_id para aparecer na timeline
-            await supabase.from('audit_logs').insert([{
-                action: status,
-                user_id: user?.id,
-                entity_type: 'audit_report',
-                entity_id: reportId,
-                execution_id: report.execution_id
-            }])
-            toast.success("Auditoria reprovada/descartada.")
+            load()
+        } catch (err: any) {
+            setProcessing(false)
+            // Re-throw so PinConfirmModal shows the error inline and keeps modal open
+            throw new Error(err.message || 'Erro ao processar auditoria.')
         }
 
         setProcessing(false)
-        load()
     }
 
     const formatMoney = (val: number) => {
@@ -198,16 +185,15 @@ export default function ReportDetailsPage({ params }: { params: Promise<{ id: st
                 </div>
             )}
 
-            <ConfirmModal
+            <PinConfirmModal
                 isOpen={!!confirmAction}
                 title={confirmAction === 'approved' ? 'Aprovar Auditoria' : 'Reprovar Auditoria'}
                 message={confirmAction === 'approved'
-                    ? 'Tem certeza que deseja APROVAR e AJUSTAR O ESTOQUE FISICAMENTE com estes valores contados? Esta ação é irreversível.'
-                    : 'Tem certeza que deseja REPROVAR e descartar as contagens deste ciclo?'}
-                confirmText={confirmAction === 'approved' ? 'Sim, Aprovar e Ajustar' : 'Sim, Reprovar'}
-                cancelText="Cancelar"
-                onConfirm={executeApproval}
-                onCancel={() => setConfirmAction(null)}
+                    ? 'Digite seu PIN Gerencial para confirmar a aprovação. O estoque teórico será atualizado com os valores contados.'
+                    : 'Digite seu PIN Gerencial para reprovar esta auditoria sem alterar o estoque.'}
+                onConfirmPin={executeApproval}
+                onClose={() => { setConfirmAction(null) }}
+                isDanger={confirmAction === 'rejected'}
             />
         </div>
     )

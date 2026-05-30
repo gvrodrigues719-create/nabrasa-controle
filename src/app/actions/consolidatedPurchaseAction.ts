@@ -1,0 +1,258 @@
+'use server'
+
+import { createClient } from '@supabase/supabase-js'
+import { requireManagerOrAdmin } from '@/lib/auth-utils'
+import { getAccessibleCountScope } from '@/lib/server-auth-context'
+
+const supabase = new Proxy({} as any, {
+    get(target, prop) {
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+        if (!url || !key) throw new Error("Ambiente incompleto: Faltam chaves de banco de dados.")
+        const client = createClient(url, key)
+        const value = client[prop as keyof typeof client]
+        return typeof value === 'function' ? value.bind(client) : value
+    }
+})
+
+function normalizeName(name: string): string {
+    if (!name) return '';
+    return name
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") 
+        .replace(/(\d+[,.]\d+|\d+)\s*(kg|g|l|ml|un|porcao|litro|litros|unidade|und|un|pacote|pct|uni)\b/gi, ' ') 
+        .replace(/[^\w\s]/gi, ' ')       
+        .replace(/\b(maximo|minimo|porcao|unidade|caixa|cx|fardo|uni)\b/gi, ' ')
+        .replace(/\s+/g, ' ')            
+        .trim();
+}
+
+export type ConsolidatedSuggestionItem = {
+    purchase_item_id: string
+    purchase_item_name: string | null
+    unit: string | null
+    consolidated_counted_qty: number
+    min_stock: number
+    max_stock: number
+    suggested_qty: number
+    status: 'Comprar' | 'Suficiente' | 'Sem vínculo' | 'Sem estoque ideal' | 'Revisar'
+    motivo: string
+    origins: string[] // Nomes dos grupos de onde veio o estoque
+    is_corrected: boolean
+}
+
+export async function getConsolidatedPurchaseSuggestionAction(sessionIds: string[]) {
+    let scope: any
+    try {
+        await requireManagerOrAdmin()
+        scope = await getAccessibleCountScope()
+    } catch (e: any) {
+        return { success: false, error: e.message }
+    }
+
+    try {
+        if (!sessionIds || sessionIds.length === 0) throw new Error("Nenhuma sessão selecionada.");
+
+        // 1. Carregar sessões e validar unidade
+        const { data: sessions, error: sessErr } = await supabase
+            .from('count_sessions')
+            .select(`
+                id, 
+                group_id, 
+                user_id,
+                groups!group_id!inner(name, macro_sector),
+                users!user_id!inner(unit_id)
+            `)
+            .in('id', sessionIds);
+
+        if (sessErr || !sessions) throw sessErr || new Error("Erro ao carregar sessões.");
+
+        // ── Validar Escopo ──────────────────────────────────────────────────
+        if (scope.type === 'kitchen') {
+            const hasNonKitchen = sessions.some((s: any) => s.groups?.macro_sector !== 'Cozinha Central');
+            if (hasNonKitchen) throw new Error("Acesso negado: Algumas sessões selecionadas não pertencem à Cozinha Central.");
+        } else if (scope.type === 'store') {
+            const divergentStore = sessions.find((s: any) => (s.users as any)?.unit_id !== scope.unitId);
+            if (divergentStore) throw new Error("Acesso negado: Algumas sessões não pertencem à sua unidade.");
+            
+            const hasKitchen = sessions.some((s: any) => s.groups?.macro_sector === 'Cozinha Central');
+            if (hasKitchen) throw new Error("Acesso negado: Sessões da Cozinha Central não podem ser consolidadas por lojas.");
+        } else if (scope.type === 'restricted') {
+            throw new Error("Acesso restrito.");
+        }
+
+        const storeId = (sessions[0]?.users as any)?.unit_id;
+        if (!storeId) throw new Error("Não foi possível identificar a unidade da primeira sessão.");
+
+        // Validar se todas são da mesma unidade
+        const divergentStore = sessions.find((s: any) => (s.users as any)?.unit_id !== storeId);
+        if (divergentStore) throw new Error("Todas as sessões selecionadas devem pertencer à mesma unidade.");
+
+        // 2. Carregar TODOS os itens das sessões selecionadas
+        const { data: countItems, error: itemsErr } = await supabase
+            .from('count_session_items')
+            .select(`
+                item_id, 
+                counted_quantity, 
+                is_zeroed, 
+                validated_quantity, 
+                validated_is_zeroed,
+                session_id,
+                items!inner(name, unit)
+            `)
+            .in('session_id', sessionIds);
+
+        if (itemsErr || !countItems) throw itemsErr || new Error("Erro ao carregar itens das contagens.");
+
+        // 3. Carregar mapeamentos e parâmetros da loja
+        const { data: mappings } = await supabase.from('count_to_purchase_item_map').select('*');
+        const mappingMap = new Map(mappings?.map((m: any) => [m.count_item_id, m.purchase_item_id]));
+
+        const { data: pItems } = await supabase.from('purchase_items').select('*').eq('is_active', true);
+        const pItemMap = new Map(pItems?.map((p: any) => [p.id, p]));
+
+        const { data: params } = await supabase.from('store_item_parameters').select('*').eq('store_id', storeId);
+        const paramsMap = new Map(params?.map((p: any) => [p.item_id, p]));
+
+        // Match Maps para Vínculo Automático
+        const pItemExactMap = new Map<string, any>(pItems?.map((p: any) => [p.name.toUpperCase(), p]));
+        const pItemNormalizedMap = new Map<string, any>();
+        const ambiguousNames = new Set<string>();
+
+        pItems?.forEach((p: any) => {
+            const norm = normalizeName(p.name);
+            if (!norm) return;
+            if (pItemNormalizedMap.has(norm)) ambiguousNames.add(norm);
+            else pItemNormalizedMap.set(norm, p);
+        });
+
+        // 4. Consolidar Estoque Atual
+        const consolidation = new Map<string, { 
+            purchase_item_id: string | null,
+            count_item_name: string,
+            total_qty: number,
+            origins: Set<string>,
+            has_correction: boolean,
+            unit: string
+        }>();
+
+        for (const ci of countItems) {
+            let purchaseId = (mappingMap.get(ci.item_id) || null) as string | null;
+            const countItemName = (ci.items as any)?.name || '';
+            
+            // Fallback: Vínculo Automático
+            if (!purchaseId) {
+                let pItem = pItemExactMap.get(countItemName.toUpperCase());
+                if (!pItem) {
+                    const norm = normalizeName(countItemName);
+                    if (!ambiguousNames.has(norm)) {
+                        pItem = pItemNormalizedMap.get(norm);
+                    }
+                }
+                if (pItem) purchaseId = pItem.id;
+            }
+
+            const session = sessions.find((s: any) => s.id === ci.session_id);
+            const originName = session?.groups?.name || 'Desconhecido';
+            
+            // Lógica de quantidade efetiva (Auditoria V1.1)
+            const isValidated = ci.validated_quantity !== null && ci.validated_quantity !== undefined;
+            const finalIsZeroed = isValidated ? ci.validated_is_zeroed : ci.is_zeroed;
+            const qty = finalIsZeroed ? 0 : (isValidated ? ci.validated_quantity : (ci.counted_quantity ?? 0));
+
+            const key = (purchaseId || `unlinked_${ci.item_id}`) as string;
+            
+            if (!consolidation.has(key)) {
+                consolidation.set(key, {
+                    purchase_item_id: purchaseId,
+                    count_item_name: (ci.items as any)?.name || 'Sem nome',
+                    total_qty: qty,
+                    origins: new Set([originName]),
+                    has_correction: isValidated,
+                    unit: (ci.items as any)?.unit || 'un'
+                });
+            } else {
+                const existing = consolidation.get(key)!;
+                existing.total_qty += qty;
+                existing.origins.add(originName);
+                if (isValidated) existing.has_correction = true;
+            }
+        }
+
+        // 5. Gerar Sugestões Consolidadas
+        const results: ConsolidatedSuggestionItem[] = [];
+
+        for (const [key, data] of consolidation.entries()) {
+            const pItem = (data.purchase_item_id ? pItemMap.get(data.purchase_item_id) : null) as any;
+            const param = (data.purchase_item_id ? paramsMap.get(data.purchase_item_id) : null) as any;
+            
+            // Prioridade 1: Loja | Prioridade 2: Global
+            const min = param?.min_stock ?? pItem?.min_stock ?? 0;
+            const max = param?.max_stock ?? pItem?.max_stock ?? 0;
+            const stock = data.total_qty;
+
+            let suggested = 0;
+            let status: ConsolidatedSuggestionItem['status'] = 'Suficiente';
+            let motivo = '';
+
+            if (!data.purchase_item_id) {
+                status = 'Sem vínculo';
+                motivo = 'Sem vínculo com item de compra';
+            } else if (max === 0) {
+                status = 'Sem estoque ideal';
+                motivo = 'Sem estoque ideal cadastrado';
+            } else {
+                // Regra Min/Max Consolidada
+                if (min > 0) {
+                    if (stock <= min) {
+                        suggested = Math.max(0, max - stock);
+                        status = 'Comprar';
+                        motivo = 'Abaixo do estoque mínimo consolidado';
+                    } else {
+                        status = 'Suficiente';
+                        motivo = 'Estoque consolidado suficiente';
+                    }
+                } else {
+                    // Fallback apenas Max
+                    suggested = Math.max(0, max - stock);
+                    if (suggested > 0) {
+                        status = 'Comprar';
+                        motivo = 'Reposição até o estoque alvo';
+                    } else {
+                        status = 'Suficiente';
+                        motivo = 'Estoque dentro do alvo';
+                    }
+                }
+            }
+
+            results.push({
+                purchase_item_id: data.purchase_item_id || key,
+                purchase_item_name: pItem?.name || data.count_item_name,
+                unit: pItem?.order_unit || data.unit,
+                consolidated_counted_qty: stock,
+                min_stock: min,
+                max_stock: max,
+                suggested_qty: suggested,
+                status: status === 'Suficiente' ? 'Suficiente' : (status as any),
+                motivo,
+                origins: Array.from(data.origins),
+                is_corrected: data.has_correction
+            });
+        }
+
+        return { 
+            success: true, 
+            data: results,
+            diagnostic: {
+                sessionsUsed: sessionIds.length,
+                storeId,
+                totalItemsConsolidated: results.length
+            }
+        };
+
+    } catch (err: any) {
+        console.error('[getConsolidatedPurchaseSuggestionAction]:', err);
+        return { success: false, error: err.message };
+    }
+}

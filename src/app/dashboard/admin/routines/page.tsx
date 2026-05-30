@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase/client'
-import { Plus, Trash2, Edit2, Loader2, Save, X, CalendarSync, CheckSquare, Square } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Plus, Trash2, Edit2, Loader2, Save, X, CalendarSync, CheckSquare, Square, ArrowLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { ConfirmModal } from '@/components/ConfirmModal'
 
@@ -11,6 +12,7 @@ type Routine = {
     name: string
     frequency: string
     active: boolean
+    routine_type: 'count' | 'checklist'
 }
 
 type Group = {
@@ -19,6 +21,7 @@ type Group = {
 }
 
 export default function RoutinesPage() {
+    const router = useRouter()
     const [routines, setRoutines] = useState<Routine[]>([])
     const [groups, setGroups] = useState<Group[]>([])
     const [loading, setLoading] = useState(true)
@@ -49,6 +52,7 @@ export default function RoutinesPage() {
         setIsEditing(r.id)
         setName(r.name)
         setFrequency(r.frequency || 'daily')
+        // routine_type fallback at read is handled naturally by DB/REST
         const { data } = await supabase.from('routine_groups').select('group_id').eq('routine_id', r.id)
         if (data) {
             setSelectedGroups(data.map(d => d.group_id))
@@ -64,11 +68,11 @@ export default function RoutinesPage() {
         let hasError = false
 
         if (isEditing && isEditing !== 'new') {
-            const { error } = await supabase.from('routines').update({ name, frequency }).eq('id', isEditing)
+            const { error } = await supabase.from('routines').update({ name, frequency, routine_type: 'count' }).eq('id', isEditing)
             if (error) { hasError = true; toast.error(error.message) }
             else inserted = true
         } else {
-            const { data, error } = await supabase.from('routines').insert([{ name, frequency }]).select().single()
+            const { data, error } = await supabase.from('routines').insert([{ name, frequency, routine_type: 'count' }]).select().single()
             if (error) { hasError = true; toast.error(error.message) }
             if (data) {
                 routineId = data.id
@@ -129,8 +133,16 @@ export default function RoutinesPage() {
                 onCancel={() => setItemToDelete(null)}
                 onConfirm={confirmDelete}
             />
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">Rotinas</h2>
+            <div className="flex justify-between items-center mb-4 mt-2">
+                <div className="flex items-center gap-3">
+                    <button 
+                        onClick={() => router.push('/dashboard')}
+                        className="p-2 bg-white border border-gray-200 rounded-xl shadow-sm text-gray-600 hover:bg-gray-50 transition active:scale-95 shrink-0"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">Rotinas</h2>
+                </div>
                 {!isEditing && (
                     <button onClick={() => { setIsEditing('new'); resetForm(); }} className="bg-indigo-600 text-white py-2 px-4 rounded-xl flex items-center space-x-2 shadow-sm hover:bg-indigo-700 transition active:scale-95">
                         <Plus className="w-5 h-5" />

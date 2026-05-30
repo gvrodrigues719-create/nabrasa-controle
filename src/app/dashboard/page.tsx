@@ -1,82 +1,201 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
-import { ClipboardList, Settings, ShieldCheck, Box } from 'lucide-react'
+import { Suspense, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import Header from './components/operator/Header'
+import { ChefHat } from 'lucide-react'
 
-export default function DashboardPage() {
-    const [userRole, setUserRole] = useState<string>('operator')
-    const [userName, setUserName] = useState<string>('')
+// Hooks — Two-Wave Loading Strategy
+import { useDashboardIdentity } from './hooks/useDashboardIdentity'
+import { useWave1Data } from './hooks/useWave1Data'
+import { useWave2Data } from './hooks/useWave2Data'
+import { useDashboardUI } from './hooks/useDashboardUI'
+import { RewardProvider } from './context/RewardContext'
+
+// Drawers
+import LossRegistrationDrawer from './components/LossRegistrationDrawer'
+import HouseHealthDrawer from './components/HouseHealthDrawer'
+import OperationAIDrawer from './components/OperationAIDrawer'
+import RewardsDrawer from './components/RewardsDrawer'
+
+// Home Layouts
+import ManagerHome from './components/manager/ManagerHome'
+import OperatorHome from './components/operator/OperatorHome'
+
+function DashboardContent() {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const isDemoMode = searchParams.get('demo') === 'true' || searchParams.get('demo') === '1'
 
+    // ── IDENTIDADE ──────────────────────────────────────────────────────────
+    const { userRole, userName, fullName, userId, loadingIdentity, unitName } = useDashboardIdentity()
+
+    const isManager = userRole === 'admin' || userRole === 'manager'
+
+    // ── ONDA 1 — Blocos críticos (renderiza imediatamente após identidade) ──
+    const {
+        routinesCount,
+        countsPending,
+        checklistsPending,
+        lateCount,
+        activeSession,
+        myAreaStats,
+        actions,
+        currentGroupId,
+        monthlyPoints,
+        rankPosition,
+        loadingWave1,
+        isTester
+    } = useWave1Data(userId, isDemoMode)
+
+    // ── ONDA 2 — Blocos complementares (carrega em background) ─────────────
+    const {
+        userPoints,
+        monthlyScore,
+        monthlyAvailable,
+        consistency,
+        participation,
+        highlightScore,
+        healthScore,
+        activeLeaks,
+        weeklyLeaks,
+        cmvStatus,
+        lastSealing,
+        topRanking,
+        weeklyFocus,
+        notices,
+        birthdays,
+        loadingWave2,
+        setWeeklyFocus
+    } = useWave2Data(userId, isDemoMode, userRole)
+
+    // ── UI STATE ─────────────────────────────────────────────────────────────
+    const {
+        viewMode,
+        setViewMode,
+        isLossDrawerOpen,
+        setIsLossDrawerOpen,
+        isHealthDrawerOpen,
+        setIsHealthDrawerOpen,
+        isAIDrawerOpen,
+        setIsAIDrawerOpen,
+        isRewardsDrawerOpen,
+        setIsRewardsDrawerOpen
+    } = useDashboardUI(userRole)
+
+    // ── REDIRECIONAMENTO COZINHA CENTRAL ────────────────────────────────────
     useEffect(() => {
-        async function loadProfile() {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (user) {
-                const { data: profile } = await supabase
-                    .from('users')
-                    .select('role, name')
-                    .eq('id', user.id)
-                    .single()
-
-                if (profile) {
-                    setUserRole(profile.role)
-                    // Bug 3: prioriza nome real, fallback para parte local do email
-                    const displayName = profile.name?.trim() || user.email?.split('@')[0] || 'Usuário'
-                    setUserName(displayName)
-                }
-            }
+        if (!loadingIdentity && (userRole === 'kitchen' || fullName === 'Cozinha Central')) {
+            router.push('/dashboard/kitchen')
         }
-        loadProfile()
-    }, [])
+    }, [loadingIdentity, userRole, fullName, router])
+
+    if (loadingIdentity) {
+        return (
+            <div className="min-h-screen bg-[#F8F7F4] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 rounded-full border-4 border-[#B13A2B]/10 border-t-[#B13A2B] animate-spin" />
+                    <span className="text-sm font-bold text-gray-400">Identificando acesso...</span>
+                </div>
+            </div>
+        )
+    }
+
+    // Se for cozinha, não renderiza nada na home principal (o redirect já foi disparado)
+    if (userRole === 'kitchen' || fullName === 'Cozinha Central') {
+        return (
+            <div className="min-h-screen bg-[#F8F7F4] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 rounded-[18px] bg-orange-50 flex items-center justify-center animate-bounce">
+                        <ChefHat className="w-6 h-6 text-orange-600" />
+                    </div>
+                    <span className="text-sm font-bold text-gray-500">Direcionando para Cozinha Central...</span>
+                </div>
+            </div>
+        )
+    }
 
     return (
-        <div className="p-4 space-y-6">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-4">
-                <div className="h-14 w-14 rounded-full bg-indigo-100 flex items-center justify-center">
-                    <span className="text-indigo-700 font-bold text-xl uppercase tracking-wider">
-                        {userName.substring(0, 2)}
-                    </span>
+        <RewardProvider userId={userId}>
+            <div className="min-h-screen bg-[#F8F7F4] pb-10" style={{ fontFamily: 'var(--font-inter), system-ui, sans-serif' }}>
+
+                <Header
+                    userName={userName}
+                    unitName={unitName}
+                    isDemoMode={isDemoMode}
+                    isManager={isManager}
+                    viewMode={viewMode}
+                    setViewMode={setViewMode}
+                />
+
+                <div className="px-5">
+                    {isManager && viewMode === 'manager' ? (
+                        <ManagerHome />
+                    ) : (
+                        <OperatorHome
+                            // ── ONDA 1 — sempre presentes (ou skeleton) ─────
+                            routinesCount={routinesCount}
+                            countsPending={countsPending}
+                            checklistsPending={checklistsPending}
+                            lateCount={lateCount}
+                            activeSession={activeSession}
+                            myAreaStats={myAreaStats}
+                            actions={actions}
+                            loadingWave1={loadingWave1}
+                            isTester={isTester}
+
+                            // ── ONDA 2 — carregam depois, cards mostram skeleton ─
+                            healthScore={healthScore}
+                            activeLeaks={activeLeaks}
+                            weeklyLeaks={weeklyLeaks}
+                            cmvStatus={cmvStatus}
+                            weeklyFocus={weeklyFocus}
+                            monthlyScore={monthlyScore}
+                            monthlyPoints={monthlyPoints}
+                            monthlyAvailable={monthlyAvailable}
+                            consistency={consistency}
+                            participation={participation}
+                            highlightScore={highlightScore}
+                            totalPoints={userPoints ?? 0}
+                            rankPosition={rankPosition}
+                            lastSealing={lastSealing}
+                            topRanking={topRanking}
+                            notices={notices}
+                            birthdays={birthdays}
+                            loadingWave2={loadingWave2}
+
+                            // ── Props de contexto e ação ─────────────────────
+                            userRole={userRole}
+                            userName={userName}
+                            fullName={fullName}
+                            userId={userId}
+                            isDemoMode={isDemoMode}
+                            onViewGlobalClick={() => setIsHealthDrawerOpen(true)}
+                            onReportLoss={() => setIsLossDrawerOpen(true)}
+                            onOpenRewards={() => setIsRewardsDrawerOpen(true)}
+                            onOpenAI={() => setIsAIDrawerOpen(true)}
+                            onUpdateFocus={async (title) => {
+                                setWeeklyFocus(prev => prev ? { ...prev, title, source: 'manual' } : null)
+                            }}
+                            unitName={unitName}
+                        />
+                    )}
                 </div>
-                <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Olá, {userName}</h2>
-                    <p className="text-sm text-gray-500 capitalize">{userRole === 'operator' ? 'Operador' : userRole === 'manager' ? 'Gerente' : 'Administrador'}</p>
-                </div>
+
+                {/* Drawers */}
+                <LossRegistrationDrawer isOpen={isLossDrawerOpen} onClose={() => setIsLossDrawerOpen(false)} userId={userId} currentGroupId={currentGroupId} />
+                <HouseHealthDrawer isOpen={isHealthDrawerOpen} onClose={() => setIsHealthDrawerOpen(false)} userRole={userRole} />
+                <OperationAIDrawer isOpen={isAIDrawerOpen} onClose={() => setIsAIDrawerOpen(false)} userId={userId} userName={userName} />
+                <RewardsDrawer isOpen={isRewardsDrawerOpen} onClose={() => setIsRewardsDrawerOpen(false)} initialBalance={userPoints ?? 0} />
             </div>
+        </RewardProvider>
+    )
+}
 
-            <div className="space-y-4">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Ações Principais</h3>
-
-                <button
-                    onClick={() => router.push('/dashboard/routines')}
-                    className="w-full bg-indigo-600 text-white p-5 rounded-2xl flex items-center justify-between shadow-md hover:bg-indigo-700 hover:shadow-lg transition-all active:scale-95"
-                >
-                    <div className="flex items-center space-x-4">
-                        <ClipboardList className="w-8 h-8" />
-                        <span className="font-semibold text-xl tracking-tight">Efetuar Contagem</span>
-                    </div>
-                </button>
-
-                {['admin', 'manager'].includes(userRole) && (
-                    <div className="grid grid-cols-2 gap-4 mt-6">
-                        <button
-                            onClick={() => router.push('/dashboard/admin/reports')}
-                            className="bg-white border border-gray-200 p-5 rounded-2xl flex flex-col items-center justify-center text-gray-800 hover:bg-gray-50 hover:border-gray-300 transition shadow-sm space-y-3 active:scale-95"
-                        >
-                            <ShieldCheck className="w-8 h-8 text-indigo-600" />
-                            <span className="font-semibold text-sm">Auditoria</span>
-                        </button>
-                        <button
-                            onClick={() => router.push('/dashboard/admin')}
-                            className="bg-white border border-gray-200 p-5 rounded-2xl flex flex-col items-center justify-center text-gray-800 hover:bg-gray-50 hover:border-gray-300 transition shadow-sm space-y-3 active:scale-95"
-                        >
-                            <Settings className="w-8 h-8 text-gray-500" />
-                            <span className="font-semibold text-sm">Configurar</span>
-                        </button>
-                    </div>
-                )}
-            </div>
-        </div>
+export default function DashboardPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-[#F8F7F4] flex items-center justify-center animate-pulse" />}>
+            <DashboardContent />
+        </Suspense>
     )
 }

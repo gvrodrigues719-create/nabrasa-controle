@@ -33,7 +33,7 @@ import type {
 
 import { MOCK_SESSIONS, MOCK_SUMMARY, MOCK_PAYMENT_METHODS } from './takeatMockData'
 
-const BASE_URL     = 'https://backend-pdv.takeat.app'
+const BASE_URL     = process.env.TAKEAT_BASE_URL || 'https://backend-pdv.takeat.app'
 const BASE_API     = `${BASE_URL}/api/v1`
 const MAX_DAYS     = 3  // limite por consulta conforme documentação
 
@@ -42,16 +42,18 @@ const MAX_DAYS     = 3  // limite por consulta conforme documentação
 // POST /public/api/sessions
 // -------------------------------------------------------------------
 export async function authenticate(payload: TakeatAuthPayload): Promise<TakeatAuthResponse> {
-  // TODO: substituir por chamada real
-  // const res = await fetch(`${BASE_URL}/public/api/sessions`, {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify(payload),
-  // })
-  // if (!res.ok) throw new Error(`Takeat auth error: ${res.status}`)
-  // return res.json()
+  const res = await fetch(`${BASE_URL}/public/api/sessions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
 
-  throw new Error('[TakeatService] authenticate() — integração real não implementada ainda.')
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}))
+    throw new Error(`Takeat auth error: ${res.status} ${JSON.stringify(errorData)}`)
+  }
+
+  return res.json()
 }
 
 // -------------------------------------------------------------------
@@ -66,23 +68,34 @@ export async function getTableSessions(
   const start = new Date(params.start_date)
   const end   = new Date(params.end_date)
   const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+  
   if (diffDays > MAX_DAYS) {
     throw new Error(`[TakeatService] Intervalo máximo é ${MAX_DAYS} dias por consulta.`)
   }
 
-  // TODO: substituir por chamada real
-  // const url = new URL(`${BASE_API}/table-sessions`)
-  // url.searchParams.set('start_date', params.start_date)
-  // url.searchParams.set('end_date', params.end_date)
-  // const res = await fetch(url.toString(), {
-  //   headers: { Authorization: `Bearer ${token}` }
-  // })
-  // if (!res.ok) throw new Error(`Takeat sessions error: ${res.status}`)
-  // return res.json()
+  const url = new URL(`${BASE_API}/table-sessions`)
+  url.searchParams.set('start_date', params.start_date)
+  url.searchParams.set('end_date', params.end_date)
 
-  // MOCK — retorna dados estruturados para demonstração
-  console.info('[TakeatService] Usando mock data — integração real pendente.')
-  return MOCK_SESSIONS
+  const res = await fetch(url.toString(), {
+    headers: { 
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/json'
+    }
+  })
+
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => 'Unknown error')
+    throw new Error(`Takeat sessions error: ${res.status} - ${errorText}`)
+  }
+
+  const data = await res.json()
+  // API pode retornar array puro ou wrapper { data: [...] } / { sessions: [...] } / { table_sessions: [...] }
+  if (Array.isArray(data)) return data as TakeatTableSession[]
+  if (Array.isArray(data?.data)) return data.data as TakeatTableSession[]
+  if (Array.isArray(data?.sessions)) return data.sessions as TakeatTableSession[]
+  if (Array.isArray(data?.table_sessions)) return data.table_sessions as TakeatTableSession[]
+  return []
 }
 
 // -------------------------------------------------------------------
@@ -90,38 +103,97 @@ export async function getTableSessions(
 // GET /payment-methods
 // -------------------------------------------------------------------
 export async function getPaymentMethods(token: string) {
-  // TODO: substituir por chamada real
-  // const res = await fetch(`${BASE_API}/payment-methods`, {
-  //   headers: { Authorization: `Bearer ${token}` }
-  // })
-  // return res.json()
-
-  console.info('[TakeatService] getPaymentMethods() — mock.')
-  return MOCK_PAYMENT_METHODS
+  const res = await fetch(`${BASE_API}/payment-methods`, {
+    headers: { 'Authorization': `Bearer ${token}` }
+  })
+  
+  if (!res.ok) throw new Error(`Takeat payment methods error: ${res.status}`)
+  return res.json()
 }
 
 // -------------------------------------------------------------------
 // AGREGAÇÃO — calcula resumo do período a partir das sessões
-// Essa função opera sobre dados locais, não chama a API diretamente
 // -------------------------------------------------------------------
 export function aggregatePeriodSummary(
   sessions: TakeatTableSession[],
   periodStart: string,
   periodEnd: string
 ): TakeatPeriodSummary {
-  // TODO: implementar agregação real quando integração estiver ativa
-  // Por hora retorna o mock summary para demonstração
-  console.info('[TakeatService] aggregatePeriodSummary() — mock.')
-  return MOCK_SUMMARY
+  let totalProductsSold = 0
+  let totalRevenue = 0 // sem serviço
+  let totalWithService = 0
+  let totalPaymentsCount = 0
+  let totalDiscounts = 0
+  const channels = new Set<string>()
+  let nfceCount = 0
+
+  const list = Array.isArray(sessions) ? sessions : []
+
+  list.forEach((session: TakeatTableSession) => {
+    if (!session) return
+    if (session.channel?.name) channels.add(session.channel.name)
+    if (session.nfce) nfceCount++
+    if (Array.isArray(session.payments)) totalPaymentsCount += session.payments.length
+
+    ;(Array.isArray(session.bills) ? session.bills : []).forEach((bill) => {
+      if (!bill) return
+      totalRevenue += parseFloat(bill.total_price || '0')
+      totalWithService += parseFloat(bill.total_service_price || '0')
+      totalDiscounts += parseFloat(bill.total_discount || '0')
+
+      ;(Array.isArray(bill.order_baskets) ? bill.order_baskets : []).forEach((basket) => {
+        ;(Array.isArray(basket?.orders) ? basket.orders : []).forEach((order) => {
+          ;(Array.isArray(order?.order_products) ? order.order_products : []).forEach((product) => {
+            totalProductsSold += Number(product?.amount) || 0
+          })
+        })
+      })
+    })
+  })
+
+  return {
+    total_sessions: list.length,
+    total_products_sold: totalProductsSold,
+    total_revenue: Number(totalRevenue.toFixed(2)),
+    total_with_service: Number(totalWithService.toFixed(2)),
+    total_payments: totalPaymentsCount,
+    total_discounts: Number(totalDiscounts.toFixed(2)),
+    channels_found: Array.from(channels),
+    nfce_available: nfceCount,
+    period_start: periodStart,
+    period_end: periodEnd
+  }
 }
 
 // -------------------------------------------------------------------
 // HELPER — converte data de Brasília para UTC-0 (para enviar à API)
 // -------------------------------------------------------------------
-export function brasiliaToUTC(dateStr: string): string {
-  // Brasília = UTC-3
-  // TODO: usar biblioteca de timezone (date-fns-tz) para produção
-  const date = new Date(dateStr)
-  date.setHours(date.getHours() + 3)
-  return date.toISOString()
+export function brasiliaToUTC(dateStr: string, boundary: 'start' | 'end' = 'start'): string {
+  if (!dateStr || dateStr.length < 10) {
+    throw new Error(`Data inválida recebida: "${dateStr}"`)
+  }
+
+  // Forçamos o parsing tratando como data local para evitar confusão de timezone
+  // YYYY-MM-DD
+  const parts = dateStr.split('-').map(Number)
+  if (parts.length !== 3 || parts.some(isNaN)) {
+    throw new Error(`Formato de data inválido: "${dateStr}"`)
+  }
+
+  // Meses no JS são 0-indexados
+  const date = new Date(parts[0], parts[1] - 1, parts[2])
+  
+  if (isNaN(date.getTime())) {
+    throw new Error(`Data impossível: "${dateStr}"`)
+  }
+
+  if (boundary === 'start') {
+    // 00:00:00 Brasília = 03:00:00 UTC
+    // Usamos Date.UTC para garantir que o resultado seja determinístico
+    return new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], 3, 0, 0, 0)).toISOString().split('.')[0] + 'Z'
+  } else {
+    // 23:59:59 Brasília = 02:59:59 UTC do dia seguinte
+    return new Date(Date.UTC(parts[0], parts[1] - 1, parts[2] + 1, 3, 0, 0, -1)).toISOString().split('.')[0] + 'Z'
+  }
 }
+

@@ -3,7 +3,9 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Loader2, ArrowLeft, History, CheckCircle2, Clock, AlertCircle, Search, Filter } from 'lucide-react'
+import { Loader2, ArrowLeft, History, CheckCircle2, Clock, AlertCircle, Search, Filter, ShoppingCart } from 'lucide-react'
+import { getScopedFilterMetadataAction } from '@/app/actions/commonMetadataAction'
+import { getScopedExecutionHistoryAction } from '@/app/actions/historyAction'
 
 type Execution = {
     execution_id: string
@@ -38,19 +40,22 @@ export default function HistoryPage() {
     }, [])
 
     const loadRoutines = async () => {
-        const { data } = await supabase.from('routines').select('id, name').order('name')
-        if (data) setRoutines(data)
+        const res = await getScopedFilterMetadataAction()
+        if (res.success && res.routines) {
+            setRoutines(res.routines)
+        }
     }
 
     const loadHistory = async () => {
         setLoading(true)
-        let query = supabase.from('v_routine_execution_history').select('*')
-        if (filterRoutine) query = query.eq('routine_id', filterRoutine)
-        if (filterFrom) query = query.gte('started_at', `${filterFrom}T00:00:00Z`)
-        if (filterTo) query = query.lte('started_at', `${filterTo}T23:59:59Z`)
-        query = query.order('started_at', { ascending: false }).limit(50)
-        const { data } = await query
-        if (data) setExecutions(data)
+        const res = await getScopedExecutionHistoryAction({
+            routineId: filterRoutine,
+            from: filterFrom,
+            to: filterTo
+        })
+        if (res.success && res.data) {
+            setExecutions(res.data)
+        }
         setLoading(false)
     }
 
@@ -70,10 +75,17 @@ export default function HistoryPage() {
                 <button onClick={() => router.push('/dashboard')} className="p-2 bg-white rounded-lg shadow-sm border border-gray-200 text-gray-600">
                     <ArrowLeft className="w-5 h-5" />
                 </button>
-                <div>
+                <div className="flex-1">
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Gerencial</p>
                     <h2 className="text-xl font-extrabold text-gray-900 tracking-tight">Histórico de Ciclos</h2>
                 </div>
+                <button 
+                    onClick={() => router.push('/dashboard/admin/history/sessions')}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition shadow-lg shadow-indigo-100"
+                >
+                    <ShoppingCart className="w-4 h-4" />
+                    Consolidar Compra
+                </button>
             </div>
 
             {/* Filtros */}
