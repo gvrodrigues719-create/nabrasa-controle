@@ -25,6 +25,10 @@ export default function IcaraiRouteGuard({ children }: { children: React.ReactNo
                 '/dashboard/history'
             ]
 
+            if (flags.supplyOrders) {
+                allowedPaths.push('/dashboard/purchases')
+            }
+
             const isAllowed = allowedPaths.some(p => pathname === p || pathname.startsWith(p + '/'))
 
             if (!isAllowed) {

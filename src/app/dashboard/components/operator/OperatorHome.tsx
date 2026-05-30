@@ -5,7 +5,7 @@ import ExecutionBlock from '../ExecutionBlock'
 import OperationalAlertBanner from './OperationalAlertBanner'
 import WeeklyProgressBar from '../WeeklyProgressBar'
 import OperationalNoticeCard from './OperationalNoticeCard'
-import { LifeBuoy, ArrowRight, Trophy, Sparkles } from 'lucide-react'
+import { LifeBuoy, ArrowRight, Trophy, Sparkles, ShoppingCart } from 'lucide-react'
 import Link from 'next/link'
 import { WeeklyFocus } from '@/app/actions/weeklyFocusAction'
 import { Leak } from '@/app/actions/efficiencyAction'
@@ -217,6 +217,29 @@ export default function OperatorHome({
                     isTester={isTester}
                     flags={flags}
                 />
+            )}
+
+            {/* 2.1 ABASTECIMENTO (ICARAÍ) — ONDA 1 */}
+            {!loadingWave1 && flags.supplyOrders && (
+                <div className="mx-1 mt-2 mb-2 p-5 rounded-[2rem] bg-orange-50 border border-orange-100 shadow-sm animate-in slide-in-from-bottom duration-500">
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="w-12 h-12 rounded-2xl bg-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-200">
+                            <ShoppingCart className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h3 className="text-base font-black text-orange-950">Fazer Pedido</h3>
+                            <p className="text-[10px] font-bold text-orange-600 uppercase tracking-widest">Solicitar itens para a Cozinha Central</p>
+                        </div>
+                    </div>
+                    
+                    <Link 
+                        href="/dashboard/purchases"
+                        className="flex items-center justify-center w-full bg-orange-600 text-white font-black py-4 rounded-2xl text-sm shadow-md active:scale-95 transition-all group"
+                    >
+                        Abrir
+                        <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                </div>
             )}
 
             {/* 2.2 SUA ÁREA — ONDA 1 */}

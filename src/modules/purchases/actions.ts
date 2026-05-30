@@ -114,7 +114,7 @@ export async function createPurchaseOrderAction(explicitStoreId?: string): Promi
 }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager'].includes(user.role)) throw new Error('Sem permissão')
+        if (!['admin', 'manager', 'operator'].includes(user.role)) throw new Error('Sem permissão')
 
         const storeId = getUserStoreId(user, explicitStoreId)
 
@@ -215,7 +215,7 @@ export async function getOrderDetailAction(orderId: string): Promise<{
     success: boolean; data?: PurchaseOrder & { events: PurchaseOrderEvent[] }; error?: string
 }> {
     try {
-        const { supabase } = await getCurrentUser()
+        const { supabase, user } = await getCurrentUser()
 
         const { data: order, error: orderErr } = await supabase
             .from('purchase_orders')
@@ -231,6 +231,11 @@ export async function getOrderDetailAction(orderId: string): Promise<{
             .eq('id', orderId)
             .single()
         if (orderErr) throw orderErr
+
+        const storeId = getUserStoreId(user)
+        if (!['admin', 'kitchen'].includes(user.role) && order.store_id !== storeId) {
+            throw new Error('Sem permissão: Este pedido pertence a outra loja')
+        }
 
         const { data: events, error: eventsErr } = await supabase
             .from('purchase_order_events')
@@ -431,7 +436,7 @@ export async function cancelOrderAction(
 
         const { data: order } = await supabase
             .from('purchase_orders')
-            .select('status')
+            .select('status, store_id')
             .eq('id', orderId)
             .single()
 
@@ -439,7 +444,10 @@ export async function cancelOrderAction(
         if (['recebido', 'cancelado'].includes(order.status)) {
             throw new Error('Este pedido não pode mais ser cancelado')
         }
-        if (!['admin', 'manager'].includes(user.role)) throw new Error('Sem permissão')
+        if (!['admin', 'manager', 'operator'].includes(user.role)) throw new Error('Sem permissão')
+
+        const storeId = getUserStoreId(user)
+        if (user.role !== 'admin' && order.store_id !== storeId) throw new Error('Sem permissão: Este pedido pertence a outra loja')
 
         const prevStatus = order.status
 
@@ -938,7 +946,7 @@ export async function confirmReceivedAction(
 ): Promise<{ success: boolean; error?: string }> {
     try {
         const { supabase, user } = await getCurrentUser()
-        if (!['admin', 'manager'].includes(user.role)) throw new Error('Sem permissão')
+        if (!['admin', 'manager', 'operator'].includes(user.role)) throw new Error('Sem permissão')
 
         // 1. Validar IDOR e Status do Pedido
         const { data: order } = await supabase
@@ -950,8 +958,10 @@ export async function confirmReceivedAction(
         if (!order) throw new Error('Pedido não encontrado')
         if (order.status !== 'em_entrega') throw new Error('O pedido não está pronto para recebimento (status inválido).')
 
-        // Validar permissão de loja (Admin pode tudo, mas se for Manager, o pedido TEM que ser da loja dele)
-        if (user.role !== 'admin' && order.store_id !== user.primary_group_id) {
+        const storeId = getUserStoreId(user)
+
+        // Validar permissão de loja (Admin pode tudo, mas se não for, o pedido TEM que ser da loja dele)
+        if (user.role !== 'admin' && order.store_id !== storeId) {
             throw new Error('Sem permissão: Você só pode confirmar recebimento de pedidos da sua própria loja.')
         }
 

@@ -13,6 +13,7 @@ export interface UnitFeatureFlags {
   copilot: boolean;
   gamification: boolean;
   operationHero: boolean;
+  supplyOrders: boolean; // Add supplyOrders flag
   isContagemOnly: boolean; // helper extra flag
 }
 
@@ -29,6 +30,7 @@ const DEFAULT_FLAGS: UnitFeatureFlags = {
   copilot: true,
   gamification: true,
   operationHero: true,
+  supplyOrders: true,
   isContagemOnly: false
 };
 
@@ -45,6 +47,7 @@ const ICARAI_FLAGS: UnitFeatureFlags = {
   copilot: false,
   gamification: false,
   operationHero: false,
+  supplyOrders: true,
   isContagemOnly: true
 };
 
@@ -61,6 +64,7 @@ const LOADING_SAFE_FLAGS: UnitFeatureFlags = {
   copilot: false,
   gamification: false,
   operationHero: false,
+  supplyOrders: false,
   isContagemOnly: true
 };
 
