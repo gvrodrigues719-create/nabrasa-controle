@@ -186,6 +186,8 @@ export async function initCountSessionAction(routineId: string, groupId: string,
 
                         // Atualiza localmente para prosseguir sem bloquear
                         existingSession.user_id = userId
+                    } else {
+                        return { blocked: 'Existe uma sessão em andamento que precisa ser assumida antes de continuar.' }
                     }
                 } else {
                     const ownerName = ownerUser?.name || (existingSession.users as any)?.name || 'Outro usuário'
