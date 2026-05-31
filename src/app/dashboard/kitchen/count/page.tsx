@@ -163,7 +163,23 @@ export default function KitchenCountPage() {
         setRefreshing(false)
     }, [])
 
-    useEffect(() => { load() }, [load])
+    useEffect(() => { 
+        load() 
+        
+        const handleFocus = () => {
+            if (document.visibilityState === 'visible') {
+                load(true)
+            }
+        }
+
+        document.addEventListener('visibilitychange', handleFocus)
+        window.addEventListener('focus', handleFocus)
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleFocus)
+            window.removeEventListener('focus', handleFocus)
+        }
+    }, [load])
 
     function handleNavigate(groupId: string) {
         if (!data) return
