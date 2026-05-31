@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@/lib/supabase/server'
 import { getActiveOperator } from '@/app/actions/pinAuth'
+import { getServerAuthContext } from '@/lib/server-auth-context'
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,18 +12,37 @@ const supabaseAdmin = createClient(
 
 export async function getKitchenSessionDetailAction(sessionId: string) {
     try {
-        // Usamos admin para evitar bloqueios de RLS no detalhamento
+        // ── P0-3: Validação de autenticação e escopo ──
+        const userContext = await getServerAuthContext()
+        const isAdmin = userContext.role === 'admin'
+        const isKitchen = userContext.role === 'kitchen'
+        const isKitchenGroup = userContext.groups?.macro_sector === 'Cozinha Central'
+
+        if (!isAdmin && !isKitchen && !isKitchenGroup) {
+            console.warn('[getKitchenSessionDetailAction] Acesso negado:', {
+                userId: userContext.id,
+                role: userContext.role,
+                macro_sector: userContext.groups?.macro_sector
+            })
+            return { success: false, error: 'Acesso negado: Somente operadores da Cozinha Central ou administradores podem acessar este histórico.' }
+        }
+
         const { data: session, error: sErr } = await supabaseAdmin
             .from('count_sessions')
             .select(`
                 *,
-                groups(name),
+                groups(name, macro_sector),
                 users:user_id(name)
             `)
             .eq('id', sessionId)
             .single()
 
         if (sErr) throw sErr
+
+        // Validar que a sessão pertence à Cozinha Central
+        if ((session as any)?.groups?.macro_sector !== 'Cozinha Central' && !isAdmin) {
+            return { success: false, error: 'Esta sessão não pertence à Cozinha Central.' }
+        }
 
         const { data: items, error: iErr } = await supabaseAdmin
             .from('count_session_items')
@@ -96,34 +116,13 @@ export async function validateKitchenSessionAction(
     }
 }
 
-export async function deleteKitchenSessionAction(sessionId: string) {
-    try {
-        const op = await getActiveOperator()
-        if (!op) {
-            const supabase = await createServerClient()
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) throw new Error('Não autenticado')
-        }
-
-        // Deletar itens primeiro (FK constraint)
-        const { error: itemsErr } = await supabaseAdmin
-            .from('count_session_items')
-            .delete()
-            .eq('session_id', sessionId)
-        
-        if (itemsErr) throw itemsErr
-
-        // Deletar a sessão
-        const { error: sessErr } = await supabaseAdmin
-            .from('count_sessions')
-            .delete()
-            .eq('id', sessionId)
-        
-        if (sessErr) throw sessErr
-
-        return { success: true }
-    } catch (e: any) {
-        console.error('[deleteKitchenSessionAction] Erro:', e.message)
-        return { success: false, error: e.message }
+export async function deleteKitchenSessionAction(_sessionId: string) {
+    // ── P0-1: Hard delete completamente bloqueado ──
+    // Sessões da Cozinha Central não podem ser deletadas.
+    // Histórico deve ser preservado para rastreabilidade operacional.
+    console.warn('[deleteKitchenSessionAction] Tentativa de delete bloqueada:', { sessionId: _sessionId })
+    return {
+        success: false,
+        error: 'Operação bloqueada: Sessões de contagem não podem ser excluídas. O histórico é preservado para auditoria.'
     }
 }
