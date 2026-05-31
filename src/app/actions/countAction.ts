@@ -33,7 +33,7 @@ export type InitCountSessionResult = {
 }
 
 export async function initCountSessionAction(routineId: string, groupId: string, _passedUserId: string, options?: { createIfMissing?: boolean }): Promise<InitCountSessionResult> {
-    const createIfMissing = options?.createIfMissing ?? true // default true for backward compat; UI should pass false for read-only
+    const allowSessionMutation = options?.createIfMissing === true // false by default for read-only safety
     try {
         const user = await getServerAuthContext()
         const userId = user.id
@@ -162,29 +162,31 @@ export async function initCountSessionAction(routineId: string, groupId: string,
                 }
 
                 if (canTakeover) {
-                    console.log('[Takeover]', {
-                        event: 'session_taken_over',
-                        sessionId: existingSession.id,
-                        previous_user_id: existingSession.user_id,
-                        new_user_id: userId,
-                        reason: takeoverReason,
-                        timestamp: new Date().toISOString()
-                    })
-
-                    const { error: takeOverErr } = await supabase
-                        .from('count_sessions')
-                        .update({
-                            user_id: userId,
-                            updated_at: new Date().toISOString()
+                    if (allowSessionMutation) {
+                        console.log('[Takeover]', {
+                            event: 'session_taken_over',
+                            sessionId: existingSession.id,
+                            previous_user_id: existingSession.user_id,
+                            new_user_id: userId,
+                            reason: takeoverReason,
+                            timestamp: new Date().toISOString()
                         })
-                        .eq('id', existingSession.id)
 
-                    if (takeOverErr) {
-                        throw new Error(`Erro ao assumir sessão: ${takeOverErr.message}`)
+                        const { error: takeOverErr } = await supabase
+                            .from('count_sessions')
+                            .update({
+                                user_id: userId,
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq('id', existingSession.id)
+
+                        if (takeOverErr) {
+                            throw new Error(`Erro ao assumir sessão: ${takeOverErr.message}`)
+                        }
+
+                        // Atualiza localmente para prosseguir sem bloquear
+                        existingSession.user_id = userId
                     }
-
-                    // Atualiza localmente para prosseguir sem bloquear
-                    existingSession.user_id = userId
                 } else {
                     const ownerName = ownerUser?.name || (existingSession.users as any)?.name || 'Outro usuário'
                     
@@ -209,8 +211,8 @@ export async function initCountSessionAction(routineId: string, groupId: string,
         const { data: exec } = await supabase.from('routine_executions').select('id').eq('routine_id', routineId).eq('status', 'active').maybeSingle()
 
         if (!existingSession) {
-            // ── P0-4: Só cria sessão quando createIfMissing === true ──
-            if (!createIfMissing) {
+            // ── P0-4: Só cria sessão quando allowSessionMutation === true ──
+            if (!allowSessionMutation) {
                 // Modo leitura: retorna dados sem criar sessão
                 const { data: items } = await supabase.from('items').select('id, name, unit, unit_observation, min_expected, max_expected, image_url').eq('group_id', groupId).eq('active', true).order('name', { ascending: true })
                 return {
@@ -236,8 +238,8 @@ export async function initCountSessionAction(routineId: string, groupId: string,
             if (insErr) throw insErr
             if (newSession) sessionId = newSession.id
         } else {
-            // ── P0-4: Só atualiza execution_id quando createIfMissing === true ──
-            if (createIfMissing && exec?.id && existingSession.execution_id !== exec.id) {
+            // ── P0-4: Só atualiza execution_id quando allowSessionMutation === true ──
+            if (allowSessionMutation && exec?.id && existingSession.execution_id !== exec.id) {
                 await supabase.from('count_sessions').update({ execution_id: exec.id }).eq('id', sessionId)
             }
         }
@@ -417,23 +419,21 @@ export async function syncCountSessionAction(
         const { data: allowedItems } = await supabase.from('items').select('id').eq('group_id', sessionOwner.group_id).eq('active', true)
         const allowedIds = new Set((allowedItems || []).map(i => i.id))
 
-        // 1. Upsert dos dados atuais (filtrando itens inválidos)
-        const validCounts: Record<string, string> = {}
-        const rejectedIds: string[] = []
-        for (const itemId of Object.keys(currentCounts)) {
-            if (allowedIds.has(itemId)) {
-                validCounts[itemId] = currentCounts[itemId]
-            } else {
-                rejectedIds.push(itemId)
-            }
+        const receivedItemIds = Array.from(new Set([
+            ...Object.keys(currentCounts),
+            ...Object.keys(zeroedMap)
+        ]))
+
+        const invalidItemIds = receivedItemIds.filter(id => !allowedIds.has(id))
+
+        if (invalidItemIds.length > 0) {
+            console.warn(`[CountAction] P1-6: ${invalidItemIds.length} itemIds rejeitados (não pertencem ao grupo ${sessionOwner.group_id}):`, invalidItemIds.slice(0, 5))
+            return { error: `Payload inválido: ${invalidItemIds.length} item(ns) não pertencem ao grupo desta sessão.` }
         }
 
-        if (rejectedIds.length > 0) {
-            console.warn(`[CountAction] P1-6: ${rejectedIds.length} itemIds rejeitados (não pertencem ao grupo ${sessionOwner.group_id}):`, rejectedIds.slice(0, 5))
-        }
-
-        const upserts = Object.keys(validCounts).map(itemId => {
-            const qty = validCounts[itemId]
+        // 1. Upsert dos dados atuais
+        const upserts = Object.keys(currentCounts).map(itemId => {
+            const qty = currentCounts[itemId]
             return {
                 session_id: sessionId,
                 item_id: itemId,

@@ -80,7 +80,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
             }
         })
 
-        const res = await initCountSessionAction(routineId, groupId, userId)
+        const res = await initCountSessionAction(routineId, groupId, userId, { createIfMissing: false })
 
         if (res.blocked) {
             setBlocked(res.blocked)
