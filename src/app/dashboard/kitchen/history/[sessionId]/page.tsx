@@ -1,17 +1,16 @@
 
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
     Loader2, ArrowLeft, CheckCircle2, AlertTriangle, 
-    Save, History, Edit3, X, Check, Package, Calculator, Trash2
+    Save, History, Edit3, X, Check, Package, Calculator
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { 
     getKitchenSessionDetailAction, 
-    validateKitchenSessionAction,
-    deleteKitchenSessionAction 
+    validateKitchenSessionAction
 } from '@/app/actions/kitchenValidationAction'
 
 export default function KitchenSessionDetailPage({ params }: { params: Promise<{ sessionId: string }> }) {
@@ -26,11 +25,7 @@ export default function KitchenSessionDetailPage({ params }: { params: Promise<{
     const [isEditing, setIsEditing] = useState(false)
     const [reason, setReason] = useState('')
 
-    useEffect(() => {
-        loadDetail()
-    }, [sessionId])
-
-    const loadDetail = async () => {
+    const loadDetail = useCallback(async () => {
         setLoading(true)
         const res = await getKitchenSessionDetailAction(sessionId)
         if (res.success) {
@@ -48,7 +43,11 @@ export default function KitchenSessionDetailPage({ params }: { params: Promise<{
             toast.error(res.error || 'Erro ao carregar detalhes')
         }
         setLoading(false)
-    }
+    }, [sessionId])
+
+    useEffect(() => {
+        loadDetail()
+    }, [loadDetail])
 
     const handleSave = async () => {
         if (!reason && Object.keys(corrections).length > 0) {
@@ -74,21 +73,7 @@ export default function KitchenSessionDetailPage({ params }: { params: Promise<{
         setSaving(false)
     }
     
-    const handleDelete = async () => {
-        if (!window.confirm('Tem certeza que deseja EXCLUIR esta contagem? Esta ação não pode ser desfeita.')) {
-            return
-        }
 
-        setSaving(true)
-        const res = await deleteKitchenSessionAction(sessionId)
-        if (res.success) {
-            toast.success('Contagem excluída com sucesso!')
-            router.push('/dashboard/kitchen/history')
-        } else {
-            toast.error(res.error || 'Erro ao excluir contagem')
-        }
-        setSaving(false)
-    }
 
     if (loading) {
         return (
@@ -129,14 +114,6 @@ export default function KitchenSessionDetailPage({ params }: { params: Promise<{
                 
                 {!isEditing && (
                     <div className="flex items-center gap-2">
-                        <button 
-                            onClick={handleDelete}
-                            disabled={saving}
-                            className="p-2 text-gray-400 hover:text-red-500 transition"
-                            title="Excluir contagem"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
                         <button 
                             onClick={() => setIsEditing(true)}
                             className="flex items-center gap-2 px-3 py-2 bg-orange-50 text-orange-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-orange-100 transition"

@@ -27,11 +27,13 @@ export type InitCountSessionResult = {
     dbCounts?: Record<string, string>
     dbZeroed?: Record<string, boolean>
     unitId?: string | null
+    isKitchenGroup?: boolean
     blocked?: string
     error?: string
 }
 
-export async function initCountSessionAction(routineId: string, groupId: string, _passedUserId: string): Promise<InitCountSessionResult> {
+export async function initCountSessionAction(routineId: string, groupId: string, _passedUserId: string, options?: { createIfMissing?: boolean }): Promise<InitCountSessionResult> {
+    const createIfMissing = options?.createIfMissing ?? true // default true for backward compat; UI should pass false for read-only
     try {
         const user = await getServerAuthContext()
         const userId = user.id
@@ -40,6 +42,17 @@ export async function initCountSessionAction(routineId: string, groupId: string,
         const { data: group } = await supabase.from('groups').select('name, macro_sector, unit_id').eq('id', groupId).single()
 
         const isKitchenGroup = group?.macro_sector === 'Cozinha Central'
+
+        // ── P2-9: Validar vínculo routineId + groupId em routine_groups ──
+        const { data: rgLink } = await supabase
+            .from('routine_groups')
+            .select('id')
+            .eq('routine_id', routineId)
+            .eq('group_id', groupId)
+            .maybeSingle()
+        if (!rgLink) {
+            return { blocked: 'Este grupo não está vinculado a esta rotina.' }
+        }
         
         // ── VALIDAÇÃO DE ESCOPO ───────────────────────────────────────
         if (scope.type === 'restricted') {
@@ -196,6 +209,22 @@ export async function initCountSessionAction(routineId: string, groupId: string,
         const { data: exec } = await supabase.from('routine_executions').select('id').eq('routine_id', routineId).eq('status', 'active').maybeSingle()
 
         if (!existingSession) {
+            // ── P0-4: Só cria sessão quando createIfMissing === true ──
+            if (!createIfMissing) {
+                // Modo leitura: retorna dados sem criar sessão
+                const { data: items } = await supabase.from('items').select('id, name, unit, unit_observation, min_expected, max_expected, image_url').eq('group_id', groupId).eq('active', true).order('name', { ascending: true })
+                return {
+                    sessionId: null,
+                    sessionStatus: 'not_started',
+                    groupName: group?.name || '',
+                    isKitchenGroup,
+                    items: items || [],
+                    dbCounts: {},
+                    dbZeroed: {},
+                    unitId: userData?.unit_id || null
+                }
+            }
+
             const { data: newSession, error: insErr } = await supabase.from('count_sessions').insert([{
                 routine_id: routineId,
                 group_id: groupId,
@@ -207,9 +236,8 @@ export async function initCountSessionAction(routineId: string, groupId: string,
             if (insErr) throw insErr
             if (newSession) sessionId = newSession.id
         } else {
-            // Se a sessão já existia (ex: operador abriu antes de o gerente iniciar ciclo),
-            // amarra ela obrigatoriamente na execução oficial gerada agora
-            if (exec?.id && existingSession.execution_id !== exec.id) {
+            // ── P0-4: Só atualiza execution_id quando createIfMissing === true ──
+            if (createIfMissing && exec?.id && existingSession.execution_id !== exec.id) {
                 await supabase.from('count_sessions').update({ execution_id: exec.id }).eq('id', sessionId)
             }
         }
@@ -236,6 +264,7 @@ export async function initCountSessionAction(routineId: string, groupId: string,
             sessionId,
             sessionStatus,
             groupName: group?.name || '',
+            isKitchenGroup,
             items: items || [],
             dbCounts,
             dbZeroed,
@@ -384,9 +413,27 @@ export async function syncCountSessionAction(
             return { error: 'Sem permissão para finalizar esta contagem.' }
         }
 
-        // 1. Upsert dos dados atuais
-        const upserts = Object.keys(currentCounts).map(itemId => {
-            const qty = currentCounts[itemId]
+        // ── P1-6: Validar que os itemIds pertencem ao grupo da sessão ──
+        const { data: allowedItems } = await supabase.from('items').select('id').eq('group_id', sessionOwner.group_id).eq('active', true)
+        const allowedIds = new Set((allowedItems || []).map(i => i.id))
+
+        // 1. Upsert dos dados atuais (filtrando itens inválidos)
+        const validCounts: Record<string, string> = {}
+        const rejectedIds: string[] = []
+        for (const itemId of Object.keys(currentCounts)) {
+            if (allowedIds.has(itemId)) {
+                validCounts[itemId] = currentCounts[itemId]
+            } else {
+                rejectedIds.push(itemId)
+            }
+        }
+
+        if (rejectedIds.length > 0) {
+            console.warn(`[CountAction] P1-6: ${rejectedIds.length} itemIds rejeitados (não pertencem ao grupo ${sessionOwner.group_id}):`, rejectedIds.slice(0, 5))
+        }
+
+        const upserts = Object.keys(validCounts).map(itemId => {
+            const qty = validCounts[itemId]
             return {
                 session_id: sessionId,
                 item_id: itemId,
@@ -553,7 +600,7 @@ export async function deleteCountSessionAction(sessionId: string): Promise<{ suc
     const userContext = await getServerAuthContext()
     const { data: sess } = await supabase
         .from('count_sessions')
-        .select('status, user_id')
+        .select('status, user_id, group_id, routine_id')
         .eq('id', sessionId)
         .single()
         
@@ -564,11 +611,30 @@ export async function deleteCountSessionAction(sessionId: string): Promise<{ suc
     }
     if (sess.status === 'completed') return { success: false, error: 'Não é possível excluir uma contagem já finalizada.' }
 
+    // ── P0-2: Verificar se é sessão CK — bloquear hard delete (fail-closed) ──
+    if (sess.group_id) {
+        const { data: groupData, error: groupErr } = await supabase.from('groups').select('macro_sector').eq('id', sess.group_id).single()
+        
+        if (groupErr || !groupData) {
+            return {
+                success: false,
+                error: 'Não foi possível validar o setor da sessão. Operação bloqueada por segurança.'
+            }
+        }
+        
+        if (groupData.macro_sector === 'Cozinha Central') {
+            console.warn('[deleteCountSessionAction] Hard delete bloqueado para sessão CK:', sessionId)
+            return { success: false, error: 'Exclusão direta de sessão da Cozinha Central está bloqueada para preservar histórico.' }
+        }
+    }
+
+    // Para as sessões de loja, manteremos o hard delete físico por conservadorismo e garantia de compatibilidade
     // Apaga os itens
     await supabase.from('count_session_items').delete().eq('session_id', sessionId)
     // Apaga a sessão
     const { error } = await supabase.from('count_sessions').delete().eq('id', sessionId)
 
     if (error) return { success: false, error: `Erro ao excluir: ${error.message}` }
+    console.log('[deleteCountSessionAction] Sessão hard-deleted (Loja):', sessionId)
     return { success: true }
 }

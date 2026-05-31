@@ -25,6 +25,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
     const [counts, setCounts] = useState<Record<string, string>>({})
     const [zeroed, setZeroed] = useState<Record<string, boolean>>({})
     const [groupName, setGroupName] = useState('')
+    const [isKitchenGroup, setIsKitchenGroup] = useState(false)
     const [blocked, setBlocked] = useState<string | null>(null)
     const [hasUnsavedDraft, setHasUnsavedDraft] = useState(false)
     const [syncStatus, setSyncStatus] = useState<'synced' | 'saving' | 'offline'>('synced')
@@ -95,6 +96,7 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         }
 
         if (res.groupName) setGroupName(res.groupName)
+        if (res.isKitchenGroup !== undefined) setIsKitchenGroup(res.isKitchenGroup)
         if (res.sessionStatus) setSessionStatus(res.sessionStatus)
         if (res.sessionId) {
             setSessionId(res.sessionId)
@@ -141,10 +143,16 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
         const dbItemsCount = Object.keys(res.dbCounts || {}).length + Object.keys(res.dbZeroed || {}).length;
         
         if (localItemsCount > dbItemsCount && res.sessionId) {
-            console.log('[CountPage] Detectada discrepncia local/DB. Sincronizando recuperao...');
+            console.log('[CountPage] Detectada discrepância local/DB. Sincronizando recuperação...');
             toast("Recuperando dados salvos localmente...", { icon: '🔄' });
             setHasUnsavedDraft(true)
-            syncCountSessionAction(res.sessionId, merged, false, mergedZeroed);
+            
+            const syncRes = await syncCountSessionAction(res.sessionId, merged, false, mergedZeroed);
+            if (syncRes.error) {
+                toast.error(`Aviso: O rascunho local ainda não foi salvo no servidor. Motivo: ${syncRes.error}`, { duration: 6000 });
+            } else {
+                toast.success('Rascunho sincronizado online com sucesso!');
+            }
         }
 
         setLoadingInit(false)
@@ -640,9 +648,11 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
 
                     {/* FLOAT BAR */}
                     <div className="fixed bottom-0 left-0 right-0 p-5 bg-white border-t border-[#e9e8e5] shadow-[0_-8px_30px_rgb(0,0,0,0.06)] z-50 flex space-x-3 max-w-md mx-auto rounded-t-[32px]">
-                        <button onClick={handleDeleteSession} disabled={isDeleting} className="p-5 bg-red-50 text-red-600 rounded-2xl active:scale-95 transition hover:bg-red-100 border border-red-100/50">
-                            {isDeleting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Trash2 className="w-6 h-6" />}
-                        </button>
+                        {!isKitchenGroup && (
+                            <button onClick={handleDeleteSession} disabled={isDeleting} className="p-5 bg-red-50 text-red-600 rounded-2xl active:scale-95 transition hover:bg-red-100 border border-red-100/50">
+                                {isDeleting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Trash2 className="w-6 h-6" />}
+                            </button>
+                        )}
                         <button onClick={handleManualSave} className="p-5 bg-[#F8F7F4] text-[#58413e] rounded-2xl active:scale-95 transition hover:bg-gray-100 border border-[#eeedea]">
                             <Save className="w-6 h-6" />
                         </button>

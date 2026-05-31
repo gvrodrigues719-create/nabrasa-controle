@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { getKitchenCountStatusAction, KitchenCountRoutine, KitchenCountGroup } from '@/app/actions/kitchenCountAction'
 import toast from 'react-hot-toast'
+import { supabase } from '@/lib/supabase/client'
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -178,11 +179,19 @@ export default function KitchenCountPage() {
         router.push(`/dashboard/count/${data.routineId}/${groupId}?returnTo=/dashboard/kitchen/count`)
     }
 
-    function openDiagnostic() {
+    async function openDiagnostic() {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            toast.error("Identidade não confirmada.")
+            return
+        }
+        const userId = user.id
+
         const drafts: {key: string, size: number, type: string}[] = []
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i)
-            if (key && (key.startsWith('count_') || key.startsWith('zeroed_'))) {
+            // Filtra apenas as chaves do usuário logado
+            if (key && (key.startsWith(`count_${userId}_`) || key.startsWith(`zeroed_${userId}_`))) {
                 const val = localStorage.getItem(key)
                 if (val) {
                     try {
@@ -400,19 +409,23 @@ export default function KitchenCountPage() {
                             Copiar Dados p/ Suporte
                         </button>
                         
-                        <button onClick={() => {
-                            if (window.confirm("Isso apagará TODOS os rascunhos locais. Use apenas se orientado pelo suporte.")) {
+                        <button onClick={async () => {
+                            if (window.confirm("Isso apagará TODOS os seus rascunhos locais. Use apenas se orientado pelo suporte.")) {
+                                const { data: { user } } = await supabase.auth.getUser()
+                                if (!user) return
+                                const userId = user.id
+                                
                                 for (let i = localStorage.length - 1; i >= 0; i--) {
                                     const key = localStorage.key(i)
-                                    if (key && (key.startsWith('count_') || key.startsWith('zeroed_'))) {
+                                    if (key && (key.startsWith(`count_${userId}_`) || key.startsWith(`zeroed_${userId}_`))) {
                                         localStorage.removeItem(key)
                                     }
                                 }
                                 setLocalDrafts([])
-                                alert("Dados apagados.")
+                                alert("Seus dados foram apagados.")
                             }
                         }} className="w-full py-2.5 mt-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl text-xs font-bold transition-colors">
-                            Limpar Dados Locais (Perigoso)
+                            Limpar Meus Dados Locais
                         </button>
                     </div>
                 </div>
