@@ -218,12 +218,15 @@ export async function getOperatorDailyTasksAction(userId: string) {
                 if (scope.type === 'store' && macroSector === 'Cozinha Central') return
                 
                 // Isolamento entre lojas (Camboinhas vs Icaraí)
-                // Usando a nova coluna unit_id na rotina (se preenchida) ou no grupo (se preenchida)
-                // Para garantir retrocompatibilidade enquanto não houver backfill 100%, 
-                // assumimos que se a rotina ou grupo TEM unit_id, DEVE bater com o do user.
+                // Deve bater exatamente com a regra de segurança do countAction.ts
                 if (scope.type === 'store' && scope.unitId) {
-                    if (routine.unit_id && routine.unit_id !== scope.unitId) return
-                    if (groupData?.unit_id && groupData.unit_id !== scope.unitId) return
+                    const groupBelongsToMyUnit = groupData?.unit_id === scope.unitId
+                    const routineBelongsToMyUnit = routine.unit_id === scope.unitId
+                    const isGlobalGroup = !groupData?.unit_id
+
+                    const hasExplicitSafeAccess = groupBelongsToMyUnit || (isGlobalGroup && routineBelongsToMyUnit)
+                    
+                    if (!hasExplicitSafeAccess) return
                 }
 
                 // REGRA: Se for contagem, só exibe se houver itens ativos no grupo

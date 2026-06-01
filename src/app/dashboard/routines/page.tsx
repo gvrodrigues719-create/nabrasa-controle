@@ -201,43 +201,24 @@ export default function ActiveRoutinesPage() {
                             </h2>
                         </div>
                         <div className="grid grid-cols-1 gap-3">
-                            {otherTasks.map(t => {
-                                const isBlocked = !t.isMyArea && !isTester && rawRole !== 'admin' && rawRole !== 'manager'
-                                
-                                return isBlocked ? (
-                                    <div 
-                                        key={t.id}
-                                        className="flex items-center justify-between p-4 bg-gray-50/50 rounded-2xl border border-gray-100 opacity-60 cursor-not-allowed"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400">
-                                                <Lock className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-black text-gray-500">{t.name}</p>
-                                                <p className="text-[9px] font-bold text-[#8c716c] uppercase">Bloqueado para este operador</p>
-                                            </div>
+                            {otherTasks.map(t => (
+                                <Link 
+                                    key={t.id}
+                                    href={appendReturnTo(t.url, "/dashboard/routines")}
+                                    className="flex items-center justify-between p-4 bg-white rounded-2xl border border-[#e9e8e5] active:bg-gray-50 transition-colors group"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-gray-100 transition-colors">
+                                            <ListChecks className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-black text-[#1b1c1a]">{t.name}</p>
+                                            <p className="text-[9px] font-bold text-[#8c716c] uppercase">{t.groupName}</p>
                                         </div>
                                     </div>
-                                ) : (
-                                    <Link 
-                                        key={t.id}
-                                        href={appendReturnTo(t.url, "/dashboard/routines")}
-                                        className="flex items-center justify-between p-4 bg-white rounded-2xl border border-[#e9e8e5] active:bg-gray-50 transition-colors"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400">
-                                                <ListChecks className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-black text-[#1b1c1a]">{t.name}</p>
-                                                <p className="text-[9px] font-bold text-[#8c716c] uppercase">{t.groupName}</p>
-                                            </div>
-                                        </div>
-                                        <ArrowLeft className="w-4 h-4 text-gray-300 rotate-180" />
-                                    </Link>
-                                )
-                            })}
+                                    <ArrowLeft className="w-4 h-4 text-gray-300 rotate-180 group-hover:text-gray-400 transition-colors" />
+                                </Link>
+                            ))}
                         </div>
                     </section>
                 )}
