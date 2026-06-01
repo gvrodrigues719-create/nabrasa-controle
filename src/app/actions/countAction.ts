@@ -40,6 +40,7 @@ export async function initCountSessionAction(routineId: string, groupId: string,
         const { data: userData } = await supabase.from('users').select('name, role, primary_group_id, unit_id').eq('id', userId).single()
         const scope = await getAccessibleCountScope()
         const { data: group } = await supabase.from('groups').select('name, macro_sector, unit_id').eq('id', groupId).single()
+        const { data: routineRow } = await supabase.from('routines').select('snapshot_started_at, unit_id').eq('id', routineId).single()
 
         const isKitchenGroup = group?.macro_sector === 'Cozinha Central'
 
@@ -64,35 +65,44 @@ export async function initCountSessionAction(routineId: string, groupId: string,
         if (scope.type === 'store' && isKitchenGroup) {
             return { blocked: 'Acesso negado: Este setor pertence à Cozinha Central.' }
         }
-        // Para lojas, verificar se o grupo é da área do usuário (se não for gerente)
-        const isManager = userData?.role === 'admin' || userData?.role === 'manager'
-        const isMyArea = userData?.primary_group_id === groupId
-        const flags = getUnitFeatureFlags(scope.unitId)
-        // Para unidades Contagem Only (ex: Icaraí), o operador pode acessar qualquer grupo da própria unidade
-        const isContagemOnlyStoreOperator =
-            scope.type === 'store' &&
-            userData?.role === 'operator' &&
-            flags.isContagemOnly
 
-        if (scope.type === 'store' && !isManager && !isMyArea && !isContagemOnlyStoreOperator) {
-            return { blocked: 'Você não tem permissão para realizar contagens fora da sua área designada.' }
-        }
-        if (scope.type === 'store' && scope.unitId) {
-            // Para isContagemOnly, grupo DEVE ter unit_id da loja — sem fallback global
-            if (isContagemOnlyStoreOperator) {
-                if (!group?.unit_id || group.unit_id !== scope.unitId) {
-                    return { blocked: 'Acesso negado: Este setor não pertence à sua unidade.' }
-                }
-            } else if (group?.unit_id && group.unit_id !== scope.unitId) {
+        // Para lojas, aplicar regras de isolamento e autorização
+        if (scope.type === 'store') {
+            // A) Bloquear acesso cruzado de unidades para qualquer papel de loja (gerentes e operadores)
+            if (group?.unit_id && group.unit_id !== scope.unitId) {
                 return { blocked: 'Acesso negado: Este setor pertence a outra unidade.' }
             }
-        }
+            if (routineRow?.unit_id && routineRow.unit_id !== scope.unitId) {
+                return { blocked: 'Acesso negado: Esta rotina pertence a outra unidade.' }
+            }
 
-        const { data: routineRow } = await supabase
-            .from('routines')
-            .select('snapshot_started_at, unit_id')
-            .eq('id', routineId)
-            .single()
+            const isManager = userData?.role === 'admin' || userData?.role === 'manager'
+            
+            // B) Se for operador de loja (não gerente/admin), aplicar regras de rotina e área
+            if (!isManager) {
+                const flags = getUnitFeatureFlags(scope.unitId)
+                const isContagemOnlyStoreOperator = userData?.role === 'operator' && flags.isContagemOnly
+
+                if (isContagemOnlyStoreOperator) {
+                    // Para unidades Contagem Only (ex: Icaraí), o operador só pode acessar se o grupo pertencer explicitamente à sua unidade (sem global fallback)
+                    if (!group?.unit_id || group.unit_id !== scope.unitId) {
+                        return { blocked: 'Acesso negado: Este setor não pertence à sua unidade.' }
+                    }
+                } else {
+                    // Para operadores normais de loja (como Camboinhas):
+                    // Podem acessar qualquer grupo da sua unidade OR grupos globais contanto que a rotina seja de sua unidade.
+                    const groupBelongsToMyUnit = group?.unit_id === scope.unitId
+                    const routineBelongsToMyUnit = routineRow?.unit_id === scope.unitId
+                    const isGlobalGroup = !group?.unit_id
+
+                    const hasExplicitSafeAccess = groupBelongsToMyUnit || (isGlobalGroup && routineBelongsToMyUnit)
+
+                    if (!hasExplicitSafeAccess) {
+                        return { blocked: 'Você não tem permissão para realizar contagens fora da sua unidade ou rotina autorizada.' }
+                    }
+                }
+            }
+        }
 
         const cycleStart = getCycleAnchorDate(routineRow?.snapshot_started_at)
 
