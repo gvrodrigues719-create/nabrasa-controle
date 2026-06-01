@@ -36,6 +36,7 @@ export default function ClientDashboardLayout({
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (event === 'SIGNED_OUT' && !opName) {
+                import('./hooks/useDashboardIdentity').then(m => m.clearDashboardIdentityCache())
                 router.push('/login')
             }
         })
@@ -52,6 +53,8 @@ export default function ClientDashboardLayout({
                 onCancel={() => setShowLogoutConfirm(false)}
                 onConfirm={async () => {
                     setShowLogoutConfirm(false);
+                    const { clearDashboardIdentityCache } = await import('./hooks/useDashboardIdentity');
+                    clearDashboardIdentityCache();
                     if (opName) {
                         await logoutOperator();
                         router.push('/login');
