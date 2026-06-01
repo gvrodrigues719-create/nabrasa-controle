@@ -13,6 +13,7 @@ import OperationAIDrawer from '@/app/dashboard/components/OperationAIDrawer'
 import HouseHealthDrawer from '@/app/dashboard/components/HouseHealthDrawer'
 import RewardsDrawer from '@/app/dashboard/components/RewardsDrawer'
 import { RewardProvider } from '@/app/dashboard/context/RewardContext'
+import { getUnitFeatureFlags } from '@/lib/feature-flags'
 
 export default function MocDemoDashboard() {
     const router = useRouter()
@@ -136,6 +137,7 @@ export default function MocDemoDashboard() {
                         cmvStatus={cmvStatus}
                         weeklyFocus={weeklyFocus}
                         userRole={activeUser.role}
+                        flags={getUnitFeatureFlags(null, false)}
                         routinesCount={3}
                         monthlyScore={85}
                         monthlyPoints={activeUser.weekly_points}

@@ -72,6 +72,7 @@ interface OperatorHomeProps {
     onOpenAI: () => void;
     onUpdateFocus: (title: string) => Promise<void>;
     unitName?: string;
+    flags: any;
 }
 
 export default function OperatorHome({
@@ -112,7 +113,8 @@ export default function OperatorHome({
     onOpenRewards,
     onOpenAI,
     onUpdateFocus,
-    unitName
+    unitName,
+    flags
 }: OperatorHomeProps) {
     const [isRaffleOpen, setIsRaffleOpen] = useState(false)
 
@@ -120,9 +122,6 @@ export default function OperatorHome({
     const SkeletonCard = ({ h = 'h-24' }: { h?: string }) => (
         <div className={`${h} rounded-3xl bg-gray-100 animate-pulse`} />
     )
-
-    const { unitId, loadingIdentity } = useDashboardIdentity()
-    const flags = getUnitFeatureFlags(unitId, loadingIdentity)
 
     return (
         <div className="space-y-4 md:space-y-6 pb-20 md:pb-6">
@@ -220,7 +219,7 @@ export default function OperatorHome({
             )}
 
             {/* 2.1 ABASTECIMENTO (ICARAÍ) — INDEPENDENTE DE WAVE 1 */}
-            {!loadingIdentity && flags.supplyOrders && (
+            {flags.supplyOrders && (
                 <div className="mx-1 mt-2 mb-2 p-5 rounded-[2rem] bg-orange-50 border border-orange-100 shadow-sm animate-in slide-in-from-bottom duration-500">
                     <div className="flex items-center gap-4 mb-4">
                         <div className="w-12 h-12 rounded-2xl bg-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-200">

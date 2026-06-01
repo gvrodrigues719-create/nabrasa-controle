@@ -250,8 +250,9 @@ export async function getOperatorDailyTasksAction(userId: string) {
                     inProgressTasks.push(task)
                 } else if (isMyArea && !isCompleted) {
                     todayTasks.push(task)
-                } else if (!isCompleted && (isTester || userRole === 'admin' || userRole === 'manager' || scope.type === 'store')) {
-                    // Para o Operador Teste, Gestores, ou Operador de Loja normal, todas as outras rotinas da unidade devem ser visíveis e acessíveis
+                } else if (!isCompleted && (isTester || userRole === 'admin' || userRole === 'manager')) {
+                    // Para o Operador Teste, Gestores, as outras rotinas da unidade devem ser visíveis
+                    // Operadores comuns veem apenas a sua área principal (isMyArea).
                     otherTasks.push(task)
                 }
             })

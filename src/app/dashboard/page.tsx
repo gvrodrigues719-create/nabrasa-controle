@@ -22,13 +22,15 @@ import RewardsDrawer from './components/RewardsDrawer'
 import ManagerHome from './components/manager/ManagerHome'
 import OperatorHome from './components/operator/OperatorHome'
 
+import { getUnitFeatureFlags } from '@/lib/feature-flags'
+
 function DashboardContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const isDemoMode = searchParams.get('demo') === 'true' || searchParams.get('demo') === '1'
 
     // ── IDENTIDADE ──────────────────────────────────────────────────────────
-    const { userRole, userName, fullName, userId, loadingIdentity, unitName } = useDashboardIdentity()
+    const { userRole, userName, fullName, userId, unitId, loadingIdentity, unitName } = useDashboardIdentity()
 
     const isManager = userRole === 'admin' || userRole === 'manager'
 
@@ -178,6 +180,7 @@ function DashboardContent() {
                                 setWeeklyFocus(prev => prev ? { ...prev, title, source: 'manual' } : null)
                             }}
                             unitName={unitName}
+                            flags={getUnitFeatureFlags(unitId, loadingIdentity)}
                         />
                     )}
                 </div>

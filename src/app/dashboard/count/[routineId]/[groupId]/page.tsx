@@ -688,9 +688,8 @@ export default function BlindCountPage({ params }: { params: Promise<{ routineId
                         )
                     })}
 
-                    {/* FLOAT BAR */}
                     <div className="fixed bottom-0 left-0 right-0 p-5 bg-white border-t border-[#e9e8e5] shadow-[0_-8px_30px_rgb(0,0,0,0.06)] z-50 flex space-x-3 max-w-md mx-auto rounded-t-[32px]">
-                        {!isKitchenGroup && (
+                        {!isKitchenGroup && (operator?.role === 'admin' || operator?.role === 'manager') && (
                             <button onClick={handleDeleteSession} disabled={isDeleting} className="p-5 bg-red-50 text-red-600 rounded-2xl active:scale-95 transition hover:bg-red-100 border border-red-100/50">
                                 {isDeleting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Trash2 className="w-6 h-6" />}
                             </button>
