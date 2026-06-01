@@ -30,7 +30,7 @@ const DEFAULT_FLAGS: UnitFeatureFlags = {
   copilot: true,
   gamification: true,
   operationHero: true,
-  supplyOrders: true,
+  supplyOrders: false,
   isContagemOnly: false
 };
 

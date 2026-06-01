@@ -250,9 +250,8 @@ export async function getOperatorDailyTasksAction(userId: string) {
                     inProgressTasks.push(task)
                 } else if (isMyArea && !isCompleted) {
                     todayTasks.push(task)
-                } else if (!isCompleted && (isTester || userRole === 'admin' || userRole === 'manager')) {
-                    // Para o Operador Teste, Gestores, as outras rotinas da unidade devem ser visíveis
-                    // Operadores comuns veem apenas a sua área principal (isMyArea).
+                } else if (!isCompleted) {
+                    // Operadores vão ver as outras rotinas na UI, porém bloqueadas
                     otherTasks.push(task)
                 }
             })
