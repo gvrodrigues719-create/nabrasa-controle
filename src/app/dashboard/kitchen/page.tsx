@@ -315,6 +315,9 @@ export default function KitchenPage() {
                             <h2 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Pedidos das Lojas</h2>
                             <p className="text-[10px] text-gray-400 font-bold mt-0.5">Solicitações de abastecimento das unidades</p>
                         </div>
+                        <button onClick={() => router.push('/dashboard/kitchen/orders')} className="text-[10px] font-black text-orange-600 uppercase tracking-widest px-3 py-1.5 bg-orange-50 rounded-xl hover:bg-orange-100 active:scale-95 transition-transform flex items-center gap-1">
+                            Ver Todos <ChevronRight className="w-3 h-3" />
+                        </button>
                     </div>
 
                     {/* Summary strip — só mostra se houver pendências */}
@@ -375,7 +378,7 @@ export default function KitchenPage() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         {(separadosHoje.length > 0 || separadosAntigos.length > 0) && (
-                                            <button onClick={() => router.push('/dashboard/kitchen/planning')} className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-3 py-1.5 bg-gray-50 rounded-xl hover:bg-gray-100 active:scale-95 transition-transform">
+                                            <button onClick={() => router.push('/dashboard/kitchen/orders')} className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-3 py-1.5 bg-gray-50 rounded-xl hover:bg-gray-100 active:scale-95 transition-transform">
                                                 Ver histórico →
                                             </button>
                                         )}
