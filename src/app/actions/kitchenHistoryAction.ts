@@ -62,11 +62,8 @@ export async function getKitchenSessionHistoryAction(filters: { date?: string, g
             endDate.setHours(endDate.getHours() + 3) // Avança 3 horas para cobrir o fim do dia em SP (que entra no dia seguinte UTC)
             const endStr = endDate.toISOString()
 
-            // Para ser ainda mais seguro com o final do dia, vamos usar gte e lte com o range ajustado
-            // Mas note que contagens feitas no início da madrugada (00h-03h UTC) pertencem ao dia anterior em SP.
-            // Para simplificar e garantir que pegamos o que o usuário espera:
-            query = query.gte('started_at', `${filters.date}T00:00:00-03:00`)
-            query = query.lte('started_at', `${filters.date}T23:59:59-03:00`)
+            query = query.gte('completed_at', `${filters.date}T00:00:00-03:00`)
+            query = query.lte('completed_at', `${filters.date}T23:59:59-03:00`)
         }
 
         const { data, error } = await query
@@ -236,8 +233,8 @@ export async function getLatestKitchenRoundAction() {
             .eq('status', 'completed')
             .not('completed_at', 'is', null)
             .eq('groups.macro_sector', 'Cozinha Central')
-            .gte('started_at', `${dateStr}T00:00:00-03:00`)
-            .lte('started_at', `${dateStr}T23:59:59-03:00`)
+            .gte('completed_at', `${dateStr}T00:00:00-03:00`)
+            .lte('completed_at', `${dateStr}T23:59:59-03:00`)
             .order('completed_at', { ascending: false })
 
         if (error) throw error
