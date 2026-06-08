@@ -115,11 +115,13 @@ export default function ReceivingsPage() {
     useEffect(() => { fetchData() }, [weekOffset])
 
     // Data filtering for New Hierarchy
-    const overdueScheduled = overdue
-    const scheduledToday = receivings.filter(r => r.delivery_date === todayStr && r.status === 'scheduled')
+    const overdueScheduled = overdue.filter(r => !r.notes?.includes('Sem Data Definida'))
+    const scheduledToday = receivings.filter(r => r.delivery_date === todayStr && r.status === 'scheduled' && !r.notes?.includes('Sem Data Definida'))
     const partials = receivings.filter(r => r.status === 'partial')
 
-    const actionRequired = [...overdueScheduled, ...scheduledToday, ...partials]
+    const actionRequired = [...overdueScheduled, ...partials]
+    const noDateItems = receivings.filter(r => r.status === 'scheduled' && r.notes?.includes('Sem Data Definida'))
+
     const historical = receivings.filter(r => ['delivered', 'refused', 'canceled'].includes(r.status))
 
     const filteredHistory = useMemo(() => {
@@ -137,7 +139,7 @@ export default function ReceivingsPage() {
             const d = new Date(week.startDate)
             d.setDate(d.getDate() + i)
             const dateStr = d.toISOString().split('T')[0]
-            const items = receivings.filter(r => r.delivery_date === dateStr && r.status === 'scheduled')
+            const items = receivings.filter(r => r.delivery_date === dateStr && r.status === 'scheduled' && !r.notes?.includes('Sem Data Definida'))
             days.push({ dateStr, dateObj: d, items })
         }
         return days
@@ -370,8 +372,20 @@ export default function ReceivingsPage() {
     }
 
     function renderCard(r: CKReceiving) {
-        const isOverdue = r.status === 'scheduled' && r.delivery_date < todayStr
-        const cfg = isOverdue ? { label: 'Atrasada', color: 'bg-orange-50', textColor: 'text-orange-700', dot: 'bg-orange-500' } : RECEIVING_STATUS_CONFIG[r.status]
+        const isOverdue = r.status === 'scheduled' && r.delivery_date < todayStr && !r.notes?.includes('Sem Data Definida')
+        let cfg = isOverdue ? { label: 'Atrasada', color: 'bg-orange-50', textColor: 'text-orange-700', dot: 'bg-orange-500' } : RECEIVING_STATUS_CONFIG[r.status]
+        
+        if (r.status === 'scheduled' && r.notes && !isOverdue) {
+            const m = r.notes.match(/\[Status:\s*(.+?)\]/i)
+            if (m) {
+                const s = m[1].toUpperCase()
+                if (s === 'CONFIRMADO') cfg = { label: 'CONFIRMADO', color: 'bg-blue-50 border border-blue-200', textColor: 'text-blue-700', dot: 'bg-blue-500' }
+                else if (s === 'PREVISTO') cfg = { label: 'PREVISTO', color: 'bg-emerald-50 border border-emerald-200', textColor: 'text-emerald-700', dot: 'bg-emerald-500' }
+                else if (s === 'A CONFIRMAR') cfg = { label: 'A CONFIRMAR', color: 'bg-yellow-50 border border-yellow-200', textColor: 'text-yellow-700', dot: 'bg-yellow-500' }
+                else cfg = { label: s, color: 'bg-gray-100 border border-gray-200', textColor: 'text-gray-700', dot: 'bg-gray-400' }
+            }
+        }
+
         const isActionable = r.status === 'scheduled'
         const isExpanded = expandedCardId === r.id
         return (
@@ -604,6 +618,28 @@ export default function ReceivingsPage() {
                                 </section>
                             )
                         })}
+
+                        {/* Sem Data Definida */}
+                        {noDateItems.length > 0 && (
+                            <section className="pt-4">
+                                <div className="mb-4 p-3.5 rounded-2xl border bg-yellow-50/30 border-yellow-100 flex items-center justify-between shadow-sm">
+                                    <div>
+                                        <h2 className="text-sm font-black uppercase tracking-wider text-yellow-800">
+                                            Sem Data Definida / A Confirmar
+                                        </h2>
+                                        <div className="flex items-center gap-1.5 mt-0.5">
+                                            <p className="text-[11px] font-medium text-yellow-600">
+                                                Fornecedores aguardando confirmação de data
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <span className="text-[10px] font-black uppercase px-2.5 py-1.5 rounded-lg bg-yellow-100 text-yellow-800 shadow-sm">
+                                        {noDateItems.length} {noDateItems.length === 1 ? 'entrega' : 'entregas'}
+                                    </span>
+                                </div>
+                                <div className="space-y-3">{noDateItems.map(renderCard)}</div>
+                            </section>
+                        )}
 
                         {/* Histórico e Concluídas */}
                         {historical.length > 0 && (
